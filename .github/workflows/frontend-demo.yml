@@ -1,0 +1,30 @@
+name: Recovered frontend demo CI
+
+on:
+  push:
+    branches:
+      - 'recovery/**'
+  pull_request:
+    paths:
+      - 'packages/codex-frontend-reconstruction/**'
+      - '.github/workflows/frontend-demo.yml'
+
+jobs:
+  core-and-browser-build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/codex-frontend-reconstruction
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install demo dependencies
+        run: npm install --no-audit --no-fund
+      - name: Core reconstruction tests
+        run: npm run test:core
+      - name: Demo data-model integration tests
+        run: npm run demo:check-model
+      - name: Type-check and bundle React preview
+        run: npm run demo:build

@@ -75,3 +75,17 @@ See `reports/RICH_MESSAGE_PRIMITIVES.md` for source evidence and limitations. Th
 `createConnectedConversationMessageRenderers(host)` bridges the existing block dispatcher to the recovered status/approval/file-review leaves. The host **must** provide Markdown, activity details, images, thinking, activity results, full FileDiff (optional), and explicit action callbacks. Unknown structured messages are never coerced into Markdown; Edit/Accept default to disallowed. The new `ConversationPresentationAdapterModel` is tested separately.
 
 See `reports/CONNECTED_MESSAGE_PRESENTATION.md`. This is a local integration layer only; it has not been mounted in a real React/Electron host or pixel-compared with Codex.
+
+## Browser integration preview (demo-only)
+
+This package now includes `demo/`, a real React/Vite mounting host for the existing recovered modules. On Node.js 22 with npm access:
+
+```bash
+npm install
+npm run test:core
+npm run demo:check-model
+npm run demo:build
+npm run demo:dev
+```
+
+Visit http://127.0.0.1:5173/. The preview uses synthetic conversations and host adapters. **It does not talk to an Agent backend, run commands, modify files, or replicate the private Codex runtime.** See `demo/README.md` and `reports/DEMO_INTEGRATION.md`.
