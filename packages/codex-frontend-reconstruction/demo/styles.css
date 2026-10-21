@@ -75,6 +75,9 @@ button:not(:disabled):hover { transition: background .15s, color .15s; }
 .demo-conversation-intro h1 { color:#f3f3f3; font-size:23px; letter-spacing:-.7px; font-weight:600; margin:0 0 8px; }
 .demo-conversation-intro p { font-size:12px; color:#858585; margin:0; }
 .demo-thread-end { height:25px; }
+/* The recovered virtual list positions an inner flex column via margin-top.
+   Prevent its large spacer margin from collapsing through the outer fixed-height root. */
+.demo-transcript-column > .relative { display: flow-root; }
 .demo-row { position:relative; width:100%; font-size:13px; line-height:1.85; }
 .demo-row--user { display:flex; flex-direction:column; align-items:flex-end; }
 .demo-row--user > div:not(.demo-time-marker) { width:fit-content; max-width:82%; }

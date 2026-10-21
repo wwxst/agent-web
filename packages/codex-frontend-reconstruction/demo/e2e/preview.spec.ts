@@ -17,6 +17,15 @@ test("mounts recovered transcript components and handles mock-only interactions"
   await page.getByRole("button", { name: /跳到开头/ }).click();
   await expect(page.locator('[data-turn-key="history-content:turn:intro"]')).toBeAttached();
   await page.getByRole("button", { name: /跳到最新/ }).click();
+  const lastRow = page.locator('[data-turn-key="history-content:turn:history-45"]');
+  await expect(lastRow).toBeInViewport({ ratio: 0.1 });
+  const geometry = await page.evaluate(() => {
+    const scroll = document.querySelector('[data-testid="transcript-scroll"]');
+    const rows = [...document.querySelectorAll('[data-turn-key]')];
+    return { scrollTop: scroll?.scrollTop, scrollHeight: scroll?.scrollHeight,
+      viewportHeight: scroll?.clientHeight, mountedRowKeys: rows.map(el => el.getAttribute('data-turn-key')) };
+  });
+  console.log('VIRTUALIZER_VIEWPORT', JSON.stringify(geometry));
 
   await page.screenshot({ path: testInfo.outputPath("browser-preview.png"), animations: "disabled" });
   expect(uncaughtErrors).toEqual([]);
