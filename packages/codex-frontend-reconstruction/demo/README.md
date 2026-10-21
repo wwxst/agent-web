@@ -52,3 +52,15 @@ For any live browser testing, watch the browser console for React warnings and c
 ## Automated browser smoke test
 
 After `npm install`, run `npx playwright install chromium` once, then `npm run demo:test:e2e`. The tests run real Chromium against the Vite dev server, exercising initial React mount, simulated composer, long history and conversation switching; screenshot output goes to `demo/test-results/browser-preview.png` by default. They **do not** validate pixel parity or backend integrations.
+
+### Source-first Composer layout checkpoint
+
+The demo now mounts `src/components/CodexComposerLayout.tsx` rather than an
+independent all-in-one composer box. This restores layout slots and state flags
+verified against the user-provided compiled JS, not the actual rich text editor.
+Shell CSS geometry follows original token values (`275px` preferred sidebar,
+`46px` toolbar, `36px` application menu). The old `290px/49px` screenshot-sized
+constants are no longer treated as Codex source facts.
+
+See `reports/SOURCE_TRACE_COMPOSER_SHELL.md` for byte hashes, source signatures,
+limitations, and the reproducible private-source audit command.
