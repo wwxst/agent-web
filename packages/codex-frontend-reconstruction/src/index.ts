@@ -71,3 +71,6 @@ export type { NavigationDestination, NavigationProjection, NavigationProjectionO
 
 export { getAgentActivityCollapseEligibility, projectAgentActivityCollapse } from "./conversation/AgentActivityProjection.js";
 export type { AgentActivityItem, AgentActivityUnit, AgentActivityPersistenceAdapters, AgentActivityCollapseOptions, AgentActivityCollapseProjection } from "./conversation/AgentActivityProjection.js";
+
+export { isUnfinishedGroupItem, isActiveGroupMember, isExplorationCommand, projectActivityGroupHeader, getActiveActivityHeaderLabel, projectCompletedGroupHeaderParts, shouldDemoteCompletedSingleGroup } from "./conversation/AgentActivityGroupPresentation.js";
+export type { GroupActivityItem, ActivityGroupHeaderState, ActivityGroupStateOptions, ActivityHeaderMessage, ActivityHeaderLabel, ToolActivitySummary, CompletedGroupHeaderPart } from "./conversation/AgentActivityGroupPresentation.js";

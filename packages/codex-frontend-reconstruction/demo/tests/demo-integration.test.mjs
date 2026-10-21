@@ -32,7 +32,7 @@ test('synthetic source updates notify once and keep current entries immutable', 
   appendDemoEntries(s, [demoMessageEntry('user', 'new', 'hello')]);
   assert.equal(notifications, 1);
   assert.equal(s.getSnapshot().entries.length, before.entries.length+1);
-  assert.equal(before.entries.length, 14);
+  assert.equal(before.entries.length, 15);
   assert.ok(Object.isFrozen(before.entries));
   assert.equal(s.getSnapshot().entries.at(-1).isLatestTurn, true);
   assert.equal(s.getSnapshot().entries.at(-2).isLatestTurn, false);
@@ -46,7 +46,7 @@ test('recovered projection hands original demo blocks through to recovered dispa
   const s=createDemoSource('frontend');
   const snapshot=s.getSnapshot();
   const projection=buildConversationRenderEntries({...snapshot.projection,baseEntries:[...snapshot.entries]},deps);
-  assert.equal(projection.entries.length,14);
+  assert.equal(projection.entries.length,15);
   assert.equal(projection.entries[0].turnKey,'history-content:turn:intro');
   const userBlocks=getDemoBlocks(projection.entries[0]);
   const firstPlan=buildConversationMessageRenderPlan(userBlocks,{isTurnInProgress:false},planDeps);
@@ -55,6 +55,9 @@ test('recovered projection hands original demo blocks through to recovered dispa
   const activityPlan=buildConversationMessageRenderPlan(activityBlocks,{isTurnInProgress:false},planDeps);
   assert.equal(activityPlan.nodes[0].kind,'activity-group');
   assert.equal(activityPlan.nodes[0].items[0].type,'demo-file-review');
+  const grouped=getDemoBlocks(projection.entries.find(e=>e.turnId==='batch-tools'));
+  assert.equal(grouped[0].items.length,2);
+  assert.equal(grouped[0].items[0].parsedCmd.isFinished,true);
   s.dispose();
 });
 

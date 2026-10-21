@@ -15,7 +15,14 @@ export const DEMO_CONVERSATIONS: ReadonlyArray<{ id: DemoConversationId; title: 
 ];
 
 export function demoItem(id: string, type: string, content?: string, extra: Record<string, unknown> = {}): ConversationMessageItem {
-  return { id, type, ...(content == null ? {} : { content }), completed: true, ...extra };
+  // DEMO ONLY: original exec rows always include parsedCmd; the synthetic
+  // fixture's command/state fields are converted into that shape here.
+  const parsedCmd = type === "exec" && extra.parsedCmd == null ? {
+    cmd: typeof extra.command === "string" ? extra.command : "",
+    type: "unknown", isFinished: extra.state !== "Working",
+  } : {};
+  return { id, type, ...(content == null ? {} : { content }), completed: true,
+    ...(type === "exec" && extra.parsedCmd == null ? {parsedCmd} : {}), ...extra };
 }
 
 export function demoMessageEntry(role: "user" | "assistant", id: string, content: string): ConversationRenderEntry {
@@ -54,6 +61,10 @@ function frontendScenario(): ConversationRenderEntry[] {
     demoActivityEntry("inspect", [demoItem("inspect1", "exec", undefined, {
       heading: "读取模块与状态", command: "ls src/components && cat reports/STATUS.md", output: "ConversationMessageBlocks.tsx\nVirtualizedTurnList.tsx\nConnectedLiveConversationTranscript.tsx", state: "Ready",
     })]),
+    demoActivityEntry("batch-tools", [
+      demoItem("batch-a", "exec", undefined, {heading:"读取第一份源码证据（模拟）",command:"cat original-signatures.txt",output:"source: Xe, We, nk",state:"Ready"}),
+      demoItem("batch-b", "exec", undefined, {heading:"核对分组状态（模拟）",command:"node scripts/audit-agent-activity-evidence.mjs",output:"signature audit: demo fixture",state:"Ready"}),
+    ]),
     demoMessageEntry("user", "ask-testing", "我们需要看到核心测试是否真的能通过。"),
     demoActivityEntry("test", [demoItem("test1", "exec", undefined, {
       heading: "执行核心测试", command: "npm run test:core", output: "# tests 140\n# pass 140\n# fail 0", state: "Ready",

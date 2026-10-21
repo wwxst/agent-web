@@ -27,3 +27,6 @@ export { CodexComposerLayout } from "./components/CodexComposerLayout.js";
 
 export { CodexAgentActivity } from "./components/CodexAgentActivity.js";
 export type { CodexAgentActivityProps } from "./components/CodexAgentActivity.js";
+
+export { CodexActivityGroupRow } from "./components/CodexActivityGroupRow.js";
+export type { CodexActivityGroupRowProps } from "./components/CodexActivityGroupRow.js";

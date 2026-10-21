@@ -2,6 +2,10 @@ import * as React from "react";
 import type { ConversationMessageItem } from "../conversation/ConversationMessageRenderPlan.js";
 import type { AgentActivityUnit, AgentActivityCollapseOptions } from "../conversation/AgentActivityProjection.js";
 import { CodexAgentActivity } from "./CodexAgentActivity.js";
+import { CodexActivityGroupRow } from "./CodexActivityGroupRow.js";
+import { projectActivityGroupHeader, shouldDemoteCompletedSingleGroup,
+  type ActivityHeaderMessage, type ActivityGroupHeaderState,
+} from "../conversation/AgentActivityGroupPresentation.js";
 import {
   projectConversationContent,
   restrictConversationReviewPermissions,
@@ -30,6 +34,22 @@ export interface ConnectedConversationRendererHost extends ConversationContentAd
     getCollapseContext(context: { isActive: boolean; collapseWhenPossible: boolean }):
       Omit<AgentActivityCollapseOptions<ConversationMessageItem>, "units">;
     renderSummary?(count: number, workedForItem: ConversationMessageItem | null): React.ReactNode;
+    /** Original nk/ak group header; We/Sg, mk/rk and icon metadata remain host-owned. */
+    groupHeader?: {
+      getStateContext(context: {items: readonly ConversationMessageItem[]; isActive: boolean}): {
+        isLatestVisibleUnit: boolean;
+        isHeaderInProgress: boolean;
+        isActivitySliceClosed: boolean;
+        isExploring: boolean;
+      };
+      canExpand(items: readonly ConversationMessageItem[]): boolean;
+      renderCompletedSummary(items: readonly ConversationMessageItem[]): React.ReactNode;
+      translateMessage(message: ActivityHeaderMessage): React.ReactNode;
+      renderHostActiveLabel?(item: ConversationMessageItem): React.ReactNode;
+      renderIcon?(state: ActivityGroupHeaderState<ConversationMessageItem>): React.ReactNode;
+      conversationDetailLevel?: string;
+      formatWebSearch?: (action: string | undefined, query: string | undefined) => string;
+    };
   };
 
   ActivityDetails: React.ComponentType<{ item: ConversationMessageItem; isActive: boolean; presentation: "ordinary" | "subagent" | "activity-units" }>;
@@ -118,12 +138,28 @@ export function createConnectedConversationMessageRenderers(host: ConnectedConve
       </div>;
       const units = grouping.toUnits(props.items);
       const context = grouping.getCollapseContext(props);
+      const groupHeader = grouping.groupHeader;
       return <CodexAgentActivity {...context} units={units} renderSummary={grouping.renderSummary}
-        renderUnit={(unit) => unit.kind === "group"
-          ? unit.items.map((item, index) => <div key={item.id ?? `${item.type}:${index}`}>
-              <ActivityContent item={item} isActive={props.isActive} presentation="ordinary" />
-            </div>)
-          : <ActivityContent item={unit.item} isActive={props.isActive} presentation="ordinary" />}
+        renderUnit={(unit) => {
+          if (unit.kind === "standalone") return <ActivityContent item={unit.item} isActive={props.isActive} presentation="ordinary" />;
+          const stateContext = groupHeader?.getStateContext({items: unit.items, isActive: props.isActive});
+          if (groupHeader == null || stateContext == null) return unit.items.map((item, index) =>
+            <div key={item.id ?? `${item.type}:${index}`}><ActivityContent item={item} isActive={props.isActive} presentation="ordinary" /></div>);
+          const state = projectActivityGroupHeader({items: unit.items, ...stateContext});
+          if (shouldDemoteCompletedSingleGroup(unit.items, state)) return unit.items.map((item,index) =>
+            <div key={item.id ?? `${item.type}:${index}`}><ActivityContent item={item} isActive={props.isActive} presentation="ordinary" /></div>);
+          return <CodexActivityGroupRow
+            items={unit.items} {...stateContext}
+            canExpand={groupHeader.canExpand(unit.items)}
+            renderCompletedSummary={groupHeader.renderCompletedSummary}
+            translateMessage={groupHeader.translateMessage}
+            renderHostActiveLabel={groupHeader.renderHostActiveLabel}
+            renderIcon={groupHeader.renderIcon}
+            conversationDetailLevel={groupHeader.conversationDetailLevel}
+            formatWebSearch={groupHeader.formatWebSearch}
+            renderRow={(item) => <ActivityContent item={item} isActive={props.isActive} presentation="ordinary" />}
+          />;
+        }}
       />;
     },
     ActivityItem(props) {

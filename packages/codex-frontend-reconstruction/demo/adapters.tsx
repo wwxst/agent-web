@@ -10,6 +10,7 @@ import type { ConversationMessageItem, ConversationMessagePlanDependencies } fro
 import type { ConversationRenderProjectionDependencies } from "../src/conversation/ConversationRenderEntriesModel.js";
 import type { InlineFileReviewAction, InlineReviewFile } from "../src/conversation/InlineFileReviewModel.js";
 import { getDemoBlocks } from "./mockConversation.js";
+import { projectCompletedGroupHeaderParts, type ToolActivitySummary } from "../src/conversation/AgentActivityGroupPresentation.js";
 
 /**
  * All private Codex host components are replaced explicitly in this DEMO adapter.
@@ -90,6 +91,31 @@ export function makeDemoRow(notify: (message: string) => void) {
         hasFollowingFinalAnswer: true,
       }),
       renderSummary: (count) => `${count} 项工具活动 · 模拟`,
+      groupHeader: {
+        // This is explicitly DEMO state mapping, not private Codex turn state.
+        getStateContext: ({isActive}) => ({ isLatestVisibleUnit: true,
+          isHeaderInProgress: isActive, isActivitySliceClosed: false, isExploring: false }),
+        canExpand: () => true, // DEMO: real mk/rk and tool visibility stay host-owned.
+        renderCompletedSummary: (items) => {
+          const aggregate: ToolActivitySummary = {
+            loadedToolCount:0,mcpToolCallCount:0,mcpToolCallSources:[],
+            createdFileCount:0,editedFileCount:0,deletedFileCount:0,stoppedCreatedFileCount:0,
+            exploredFileCount:0,searchCount:0,listCount:0,visualizationActivity:null,
+            commandCount:items.filter(item=>item.type==="exec").length,
+            completedVisualizationCommandCount:0,runningVisualizationCommandCount:0,
+            completedWebSearchCommandCount:0,runningWebSearchCommandCount:0,
+            webSearchCount:items.filter(item=>item.type==="web-search").length,
+          };
+          const parts=projectCompletedGroupHeaderParts(aggregate,[]);
+          const count=parts.find(part=>part.kind==="commands");
+          return count?.kind==="commands" ? `${count.count} 项命令 · 模拟` : `${items.length} 项活动 · 模拟`;
+        },
+        translateMessage: message => message.defaultMessage.replace(/\{([a-zA-Z]+)\}/g,
+          (_,key:string)=>String(message.values?.[key] ?? "")),
+        renderHostActiveLabel: item => typeof item.heading==="string" ? item.heading : "工具活动 · 模拟",
+        renderIcon: () => <span data-demo-activity-icon="" aria-hidden="true">◇</span>,
+        conversationDetailLevel: "STEPS_PROSE",
+      },
     },
     ActivityDetails,
     ActivityResult: ({ result }) => <pre className="demo-activity-detail">{typeof result === "string" ? result : "模拟活动结果"}</pre>,
