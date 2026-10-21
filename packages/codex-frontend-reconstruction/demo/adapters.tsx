@@ -11,7 +11,8 @@ import type { ConversationRenderProjectionDependencies } from "../src/conversati
 import type { InlineFileReviewAction, InlineReviewFile } from "../src/conversation/InlineFileReviewModel.js";
 import { getDemoBlocks } from "./mockConversation.js";
 import { projectCompletedGroupHeaderParts } from "../src/conversation/AgentActivityGroupPresentation.js";
-import { aggregateAgentActivityUnits, type AggregateUnit } from "../src/conversation/AgentActivityAggregate.js";
+import { aggregateAgentActivityUnits } from "../src/conversation/AgentActivityAggregate.js";
+import { classifyRawActivityItem } from "../src/conversation/AgentActivityRawClassifier.js";
 
 /**
  * All private Codex host components are replaced explicitly in this DEMO adapter.
@@ -104,19 +105,10 @@ export function makeDemoRow(notify: (message: string) => void) {
         renderCompletedSummary: (items) => {
           // DEMO-only normalization. The original private xe classifier remains
           // a separate host boundary; the Le/Be/Ve counter aggregation is recovered.
-          const normalized: AggregateUnit[] = items.map(item => {
-            if (item.type === "exec") return {
-              type: "exec",
-              isInProgress: !(item.parsedCmd != null && typeof item.parsedCmd === "object" && "isFinished" in item.parsedCmd && item.parsedCmd.isFinished === true),
-              searchesWeb: item.searchesWeb === true,
-              createsFolder: item.createsFolder === true,
-            };
-            if (item.type === "web-search") return {
-              type: "web-search", count: 1,
-              runningCount: item.completed === false ? 1 : 0,
-            };
-            return { type: "other" };
-          });
+          // Recovered source xe classification feeds the recovered Le/Be/Ve
+          // aggregator. Demo tool metadata is synthetic; private predicates
+          // and source resolver hooks must come from a future real host.
+          const normalized = items.map(item => classifyRawActivityItem(item));
           const aggregate = aggregateAgentActivityUnits(normalized);
           const parts=projectCompletedGroupHeaderParts(aggregate,[]);
           const count=parts.find(part=>part.kind==="commands");
