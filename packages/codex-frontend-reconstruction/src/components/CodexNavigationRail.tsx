@@ -42,6 +42,7 @@ export function CodexNavigationRail({
   }, [onMeasuredWidthChange]);
 
   return <nav ref={navRef} className="codex-navigation-rail" data-app-navigation-rail="true" aria-label="App navigation">
+    <div className="codex-navigation-rail__divider" aria-hidden="true"/>
     {header && <div className="codex-navigation-rail__header">{header}</div>}
     <div className="codex-navigation-rail__destinations" data-navigation-rail-scroll="true">
       {destinations.map((destination) => <button
