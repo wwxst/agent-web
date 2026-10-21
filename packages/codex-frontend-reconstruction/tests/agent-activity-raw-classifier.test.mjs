@@ -94,6 +94,6 @@ test("xe -> Le aggregation integrates commands, web searches and approvals",()=>
  const result=Le([xe(exec("mkdir repo",false)),xe({type:"web-search",completed:false}),
    xe({type:"automatic-approval-review",id:"r",status:"timedOut"})]);
  assert.equal(result.commandCount,1);assert.equal(result.runningFolderCreationCommandCount,1);
- assert.equal(result.runningWebSearchCount,0);assert.equal(result.runningWebSearchCount,0);
+ assert.equal(result.runningWebSearchCount,1);assert.equal(result.runningWebSearchCommandCount,0);
  assert.equal(result.webSearchCount,1);assert.equal(result.timedOutRequestCount,1);
 });
