@@ -18,10 +18,16 @@ test("mounts recovered transcript components and handles mock-only interactions"
       rootWidth: document.documentElement.scrollWidth, viewportWidth: window.innerWidth,
       theme: getComputedStyle(document.querySelector(".demo-main")!).backgroundColor };
   });
-  expect(layout.sidebar?.width).toBe(290);
+  expect(layout.sidebar?.width).toBe(275); // app-shared token preferred width, not screenshot guess
   expect(layout.menubar?.height).toBe(36);
-  expect(layout.header?.height).toBe(49);
+  expect(layout.header?.height).toBe(46); // app-shared --height-toolbar
   expect(layout.composer?.width).toBeGreaterThan(650);
+  const composerRoot = page.locator('.codex-composer-layout');
+  await expect(composerRoot).toHaveAttribute('data-composer-layout', 'multiline');
+  await expect(composerRoot).toHaveAttribute('data-composer-density', 'comfortable');
+  await expect(composerRoot).toHaveAttribute('data-composer-radius-variant', 'default');
+  await expect(page.locator('.codex-composer-layout__footer')).toHaveAttribute('data-composer-rows', 'stacked');
+  await expect(page.locator('[data-app-shell-frame]')).toHaveAttribute('data-app-shell-sidebar-open', 'true');
   expect(layout.rootWidth).toBeLessThanOrEqual(layout.viewportWidth);
   expect(layout.theme).toBe("rgb(255, 255, 255)");
   await page.screenshot({ path: testInfo.outputPath("codex-light-shell.png"), animations: "disabled" });
