@@ -34,7 +34,7 @@ test("activity collapse state is isolated between demo conversations",async ({pa
 });
 
 
-test("source-derived group row toggles its real subrows independently",async ({page})=>{
+test("source-derived group row toggles its real subrows independently",async ({page},testInfo)=>{
   const errors:string[]=[];
   page.on("pageerror",error=>errors.push(error.message));
   await page.goto("/");
@@ -53,6 +53,8 @@ test("source-derived group row toggles its real subrows independently",async ({p
   await expect(group.locator("[data-codex-group-details]")).toBeVisible();
   await expect(group.locator(".codex-activity-group-row__subrow")).toHaveCount(2);
   await expect(group.getByRole("button",{name:/核对分组状态/})).toBeVisible();
+  await group.scrollIntoViewIfNeeded();
+  await page.screenshot({path:testInfo.outputPath("codex-activity-group-expanded.png"),animations:"disabled"});
   await toggle.click();
   await expect(group.locator("[data-codex-group-details]")).toBeHidden();
   expect(errors).toEqual([]);
