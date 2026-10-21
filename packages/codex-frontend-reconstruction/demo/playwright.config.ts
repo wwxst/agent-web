@@ -8,6 +8,8 @@ export default defineConfig({
   reporter: [["list"]],
   use: {
     ...devices["Desktop Chrome"],
+    // Match the supplied Codex Windows reference screenshot dimensions.
+    viewport: { width: 1352, height: 760 },
     baseURL: "http://127.0.0.1:5173",
     headless: true,
   },

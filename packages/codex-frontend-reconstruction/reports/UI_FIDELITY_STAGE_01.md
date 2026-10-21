@@ -18,7 +18,7 @@ All paths below refer to the unmodified user-provided `frontend.zip`, **not** a 
 - Demonstration-only banner/toolbar no longer take up transcript height; controls are available through an explicit **Demo tools** popover in the header.
 - Composer shape, surface, padding, semantic controls, and message colors were aligned to the observed light reference, while retaining the existing synthetic send/stop behavior. The **real** Codex editor, attachments, model picker, and privilege control are **not** implemented; nonfunctional controls are visibly disabled or labeled mock.
 - `demo/codexDesktopShell.css` is new, separately auditable, independently authored CSS. Neither the compiled vendor assets nor their huge CSS files are committed.
-- Chromium tests now measure shell geometry/light theme, verify the demo tools are hidden by default, and preserve long-history scroll/follow assertions. A baseline shell screenshot is retained by CI before synthetic activity modifies the transcript.
+- Chromium tests use a 1352×760 viewport matching the user screenshot and measure shell geometry/light theme, verify the demo tools are hidden by default, and preserve long-history scroll/follow assertions. A baseline shell screenshot is retained by CI before synthetic activity modifies the transcript.
 
 ## Scope limitations / next parity work
 
