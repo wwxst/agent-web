@@ -80,9 +80,13 @@ export function makeDemoRow(notify: (message: string) => void) {
     // Explicit DEMO Wa/Rk adapters: Codex's private unit classifier and persisted
     // collapse state are not represented by synthetic transcript records.
     agentActivity: {
-      toUnits: (items) => items.map((item, index) => ({
-        key: item.id ?? `${item.type}-${index}`, kind: "group" as const, items: [item],
-      })),
+      // DEMO group factory for Wa: the fixture explicitly models adjacent
+      // activities as one grouped unit. The source classifier is NOT bypassed
+      // in production; a real host must supply Wa's actual unit partition.
+      toUnits: (items) => items.length === 0 ? [] : [{
+        key: `demo-activity-group:${items.map((item, index) => item.id ?? `${item.type}-${index}`).join("|")}`,
+        kind: "group" as const, items,
+      }],
       getCollapseContext: ({ isActive, collapseWhenPossible }) => ({
         hasFinalAssistantStarted: !isActive,
         isTurnCancelled: false,
