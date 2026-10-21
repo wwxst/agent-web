@@ -20,3 +20,7 @@ export type { ActivityStatusTranslation, AutomaticApprovalReviewListProps } from
 
 export { createConnectedConversationMessageRenderers } from "./components/ConnectedConversationMessageRenderers.js";
 export type { ConnectedConversationRendererHost } from "./components/ConnectedConversationMessageRenderers.js";
+
+export { CodexNavigationRail } from "./components/CodexNavigationRail.js";
+export type { CodexNavigationRailProps, CodexRailDestination } from "./components/CodexNavigationRail.js";
+export { CodexComposerLayout } from "./components/CodexComposerLayout.js";

@@ -65,3 +65,6 @@ export * from "./conversation/InlineFileReviewModel.js";
 export * from "./conversation/ActivityStatusPresentation.js";
 
 export * from "./conversation/ConversationPresentationAdapterModel.js";
+
+export { projectNavigationDestinations } from "./conversation/NavigationRailModel.js";
+export type { NavigationDestination, NavigationProjection, NavigationProjectionOptions } from "./conversation/NavigationRailModel.js";

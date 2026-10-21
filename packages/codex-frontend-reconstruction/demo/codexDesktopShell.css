@@ -142,3 +142,15 @@ button:focus-visible, textarea:focus-visible { outline: 2px solid #578cda; outli
 .demo-toast{background:#fff;color:#444;border:1px solid #e1e1e1;box-shadow:0 7px 25px #0002;}
 @media(max-width:860px){.demo-sidebar--collapsed{width:56px;min-width:56px}.demo-transcript-column{width:min(100% - 35px,var(--thread-content-max-width))}.demo-composer-zone{padding:8px 17px 12px}}
 @media(max-width:600px){.demo-window-menu{gap:12px;padding:0 9px}.demo-window-buttons{font-size:11px}.demo-sidebar:not(.demo-sidebar--collapsed){width:56px;min-width:56px}.demo-sidebar:not(.demo-sidebar--collapsed) .demo-sidebar-actions{display:grid}.demo-sidebar:not(.demo-sidebar--collapsed) .demo-nav-action{font-size:0;padding:7px}.demo-sidebar:not(.demo-sidebar--collapsed) .demo-nav-action span,.demo-sidebar:not(.demo-sidebar--collapsed) .demo-section-heading,.demo-sidebar:not(.demo-sidebar--collapsed) .demo-chat-list,.demo-sidebar:not(.demo-sidebar--collapsed) .demo-sidebar-foot{display:none}.demo-header{padding:0 12px}.demo-composer-model{font-size:11px}.demo-transcript-column{width:calc(100% - 26px)}}
+/* A dedicated source-backed rail remains visible when the independent content
+   sidebar closes. Original dWc stores the measured width in
+   --app-shell-navigation-rail-width (52px for the browser w-13 variant). */
+[data-app-shell-feature-navigation="true"] .demo-sidebar--collapsed {
+  display: none;
+}
+[data-app-shell-feature-navigation="true"] .demo-sidebar-foot { display: none; }
+[data-app-shell-feature-navigation="true"] .demo-app { min-width: 0; }
+/* No second 56px mini-sidebar: the original rail already owns that area. */
+@media (max-width:600px) {
+  [data-app-shell-feature-navigation="true"] .demo-sidebar:not(.demo-sidebar--collapsed) { width: var(--spacing-token-sidebar); min-width: var(--spacing-token-sidebar); }
+}

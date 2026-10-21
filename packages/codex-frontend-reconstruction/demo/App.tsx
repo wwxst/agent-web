@@ -1,5 +1,7 @@
 import * as React from "react";
 import { CodexComposerLayout } from "../src/components/CodexComposerLayout.js";
+import { CodexNavigationRail, type CodexRailDestination } from "../src/components/CodexNavigationRail.js";
+import { projectNavigationDestinations } from "../src/conversation/NavigationRailModel.js";
 import type { VirtualizedTurnListApi } from "../src/components/VirtualizedTurnList.js";
 import { ConnectedLiveConversationTranscript } from "../src/components/ConnectedLiveConversationTranscript.js";
 import { BrowserScrollController } from "./browserScrollController.js";
@@ -10,8 +12,11 @@ import {
   type DemoConversationId,
 } from "./mockConversation.js";
 
-function Icon({ name, size = 18 }: { name: "panel" | "search" | "plus" | "branch" | "dots" | "up" | "stop" | "bottom" | "top" | "play" | "refresh" | "terminal" | "check" | "menu" | "copy" | "folder" | "chevron" | "clock" | "plugin" | "settings" | "sliders" | "window" | "square"; size?: number }) {
+function Icon({ name, size = 18 }: { name: "panel" | "search" | "plus" | "branch" | "dots" | "up" | "stop" | "bottom" | "top" | "play" | "refresh" | "terminal" | "check" | "menu" | "copy" | "folder" | "chevron" | "clock" | "plugin" | "settings" | "sliders" | "window" | "square" | "home" | "library" | "tiles"; size?: number }) {
   const children: Record<typeof name, React.ReactNode> = {
+    home: <><path d="m3 11 9-8 9 8v9H3z"/><path d="M9 20v-6h6v6"/></>,
+    library: <><path d="M4 5h5v15H4zM10 3h5v17h-5zM16 7h4v13h-4z"/></>,
+    tiles: <><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></>,
     panel: <><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/></>,
     search: <><circle cx="10.8" cy="10.8" r="6.2"/><path d="m16 16 4.5 4.5"/></>,
     plus: <path d="M12 5v14M5 12h14"/>,
@@ -50,16 +55,17 @@ function ConversationSidebar(props: {
   onToggle: () => void;
   onSelect: (id: DemoConversationId) => void;
   onReset: () => void;
+  navigationRailEnabled: boolean;
 }) {
-  const { active, collapsed, onToggle, onSelect, onReset } = props;
+  const { active, collapsed, onToggle, onSelect, onReset, navigationRailEnabled } = props;
   return <aside className={`demo-sidebar ${collapsed ? "demo-sidebar--collapsed" : ""}`} aria-label="演示会话导航">
     <div className="demo-sidebar-head">
       <div className="demo-logo">{collapsed ? <Icon name="folder" size={18}/> : <><strong>Codex</strong><Icon name="chevron" size={12}/></>}</div>
-      <button className="demo-icon-button demo-collapse-toggle" type="button" title={collapsed ? "展开侧边栏" : "收起侧边栏"} aria-label={collapsed ? "展开侧边栏" : "收起侧边栏"} onClick={onToggle}><Icon name="search" size={17}/></button>
+      <button className="demo-icon-button" type="button" title="搜索尚未恢复" aria-label="搜索尚未恢复" disabled><Icon name="search" size={17}/></button>
     </div>
     <div className="demo-sidebar-actions">
       <button type="button" className="demo-nav-action" title="新建演示会话" onClick={onReset}><Icon name="plus" size={16}/>{!collapsed && <span>New chat</span>}</button>
-      {!collapsed && <>
+      {!collapsed && !navigationRailEnabled && <>
         <div className="demo-nav-action demo-nav-disabled" aria-label="Scheduled 尚未接入"><Icon name="clock" size={15}/> Scheduled</div>
         <div className="demo-nav-action demo-nav-disabled" aria-label="Plugins 尚未接入"><Icon name="plugin" size={15}/> Plugins</div>
       </>}
@@ -74,7 +80,7 @@ function ConversationSidebar(props: {
       </nav>
       <div className="demo-sidebar-spacer"/>
       <div className="demo-section-heading demo-recent-heading">Recents</div>
-      <div className="demo-sidebar-foot"><Icon name="settings" size={15}/> 预览环境 · 本地模拟数据</div>
+      {!navigationRailEnabled && <div className="demo-sidebar-foot"><Icon name="settings" size={15}/> 预览环境 · 本地模拟数据</div>}
     </>}
   </aside>;
 }
@@ -82,7 +88,11 @@ function ConversationSidebar(props: {
 export function App() {
   const [active, setActive] = React.useState<DemoConversationId>("frontend");
   const [generation, setGeneration] = React.useState(0);
+  // The host owns this feature flag. The preview chooses rail-enabled mode
+  // to exercise the independently reconstructed original navigation layout.
+  const navigationRailEnabled = true;
   const [collapsed, setCollapsed] = React.useState(false);
+  const [measuredRailWidth, setMeasuredRailWidth] = React.useState(52);
   const [draft, setDraft] = React.useState("");
   const [playing, setPlaying] = React.useState(false);
   const [toast, setToast] = React.useState<string | null>(null);
@@ -192,7 +202,24 @@ export function App() {
     setActive(id);
   }
 
-  return <div className="demo-desktop" data-app-shell-frame="true" data-app-shell-sidebar-open={!collapsed} data-app-shell-application-menu-bar="true">
+  // The direct/more identity projection is sourced from original GZc/QZc;
+  // routing/feature flags are supplied explicitly by this mock host.
+  const availableRailDestinations: CodexRailDestination[] = [
+    { id: "builtin:home", label: "Home", icon: <Icon name="home" size={18}/>, isCurrentDestination: true, onSelect: () => switchConversation("frontend") },
+    { id: "builtin:activity", label: "Activity", icon: <Icon name="branch" size={18}/> },
+    { id: "builtin:automations", label: "Scheduled", icon: <Icon name="clock" size={18}/> },
+    { id: "builtin:library", label: "Library", icon: <Icon name="library" size={18}/> },
+    { id: "builtin:skills", label: "Skills", icon: <Icon name="tiles" size={18}/> },
+  ];
+  const destinationProjection = projectNavigationDestinations(availableRailDestinations, {
+    navigationRailEnabled,
+    directDestinationIds: ["builtin:home", "builtin:activity", "builtin:automations", "builtin:library", "builtin:skills"],
+  });
+  const railDestinations = destinationProjection.railDestinations.map((item) =>
+    availableRailDestinations.find((candidate) => candidate.id === item.id)!,
+  );
+
+  return <div className="demo-desktop" data-app-shell-frame="true" data-app-shell-feature-navigation={navigationRailEnabled} data-app-shell-sidebar-open={!collapsed} data-app-shell-application-menu-bar="true" style={{ "--app-shell-navigation-rail-width": navigationRailEnabled ? `${measuredRailWidth}px` : "0px" } as React.CSSProperties}>
     <div className="demo-window-menu" aria-label="桌面窗口示意（浏览器内，不是原生 Electron）">
       <span className="demo-menubar-back" aria-hidden="true">‹</span><span className="demo-menubar-back" aria-hidden="true">›</span>
       <span className="demo-menubar-panel" aria-hidden="true"><Icon name="panel" size={15}/></span>
@@ -200,14 +227,22 @@ export function App() {
       <span className="demo-window-buttons" aria-hidden="true">─　□　×</span>
     </div>
     <div className="demo-app" data-codex-shell-preview="light">
-    <ConversationSidebar active={active} collapsed={collapsed} onToggle={() => setCollapsed((v) => !v)} onSelect={switchConversation} onReset={reset}/>
+    {navigationRailEnabled && <CodexNavigationRail
+      destinations={railDestinations}
+      onMeasuredWidthChange={setMeasuredRailWidth}
+      footer={<>
+        <button type="button" disabled aria-label="More（尚未接入）" title="更多导航尚未接入"><Icon name="dots" size={18}/></button>
+        <button type="button" disabled aria-label="Settings（尚未接入）" title="设置尚未接入"><Icon name="settings" size={18}/></button>
+      </>}
+    />}
+    <ConversationSidebar active={active} collapsed={collapsed} navigationRailEnabled={navigationRailEnabled} onToggle={() => setCollapsed((v) => !v)} onSelect={switchConversation} onReset={reset}/>
     <div className="demo-main" data-app-shell-main-surface="default">
       <header className="demo-header" data-app-shell-main-titlebar="true">
         <div className="demo-header-location"><span className="demo-header-folder"><Icon name="folder" size={17}/></span><strong>{DEMO_CONVERSATIONS.find((c) => c.id === active)?.title}</strong></div>
         <div className="demo-header-actions">
           <span className="demo-header-static" title="原版桌面按钮布局参考，暂未接通功能"><Icon name="dots" size={17}/></span>
           <button type="button" className="demo-icon-button" title={showDemoTools ? "收起演示工具" : "打开演示工具"} aria-label={showDemoTools ? "收起演示工具" : "打开演示工具"} aria-expanded={showDemoTools} onClick={() => setShowDemoTools((value) => !value)}><Icon name="sliders" size={17}/></button>
-          <button type="button" className="demo-icon-button" aria-label={collapsed ? "展开侧边栏" : "收起侧边栏"} onClick={() => setCollapsed((value) => !value)}><Icon name="panel" size={17}/></button>
+          <button type="button" className="demo-icon-button demo-collapse-toggle" aria-label={collapsed ? "展开侧边栏" : "收起侧边栏"} onClick={() => setCollapsed((value) => !value)}><Icon name="panel" size={17}/></button>
         </div>
       </header>
       {showDemoTools && <div className="demo-tools-popover" data-testid="demo-tools">

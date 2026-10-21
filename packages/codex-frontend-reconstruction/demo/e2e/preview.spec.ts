@@ -13,12 +13,14 @@ test("mounts recovered transcript components and handles mock-only interactions"
       const r = document.querySelector(selector)?.getBoundingClientRect();
       return r ? { x: r.x, y: r.y, width: r.width, height: r.height } : null;
     };
-    return { sidebar: bounds(".demo-sidebar"), menubar: bounds(".demo-window-menu"),
+    return { rail: bounds("[data-app-navigation-rail]"), sidebar: bounds(".demo-sidebar"), menubar: bounds(".demo-window-menu"),
       header: bounds(".demo-header"), composer: bounds(".demo-composer"),
       rootWidth: document.documentElement.scrollWidth, viewportWidth: window.innerWidth,
       theme: getComputedStyle(document.querySelector(".demo-main")!).backgroundColor };
   });
-  expect(layout.sidebar?.width).toBe(275); // app-shared token preferred width, not screenshot guess
+  expect(layout.rail?.width).toBe(52); // compiled dWc browser:w-13, token --spacing: 4px
+  expect(layout.sidebar?.width).toBe(275); // separate app-shared preferred panel width
+  expect(layout.sidebar?.x).toBe(52); // rail and secondary sidebar are siblings
   expect(layout.menubar?.height).toBe(36);
   expect(layout.header?.height).toBe(46); // app-shared --height-toolbar
   expect(layout.composer?.width).toBeGreaterThan(650);
@@ -28,6 +30,10 @@ test("mounts recovered transcript components and handles mock-only interactions"
   await expect(composerRoot).toHaveAttribute('data-composer-radius-variant', 'default');
   await expect(page.locator('.codex-composer-layout__footer')).toHaveAttribute('data-composer-rows', 'stacked');
   await expect(page.locator('[data-app-shell-frame]')).toHaveAttribute('data-app-shell-sidebar-open', 'true');
+  await expect(page.locator('[data-app-shell-frame]')).toHaveAttribute('data-app-shell-feature-navigation', 'true');
+  await expect(page.getByRole('navigation', {name: 'App navigation'})).toBeVisible();
+  await expect(page.locator('[data-sidebar-destination="builtin:home"]')).toHaveAttribute('aria-current','page');
+  await expect(page.getByRole('button', {name: 'Scheduled'})).toBeDisabled();
   expect(layout.rootWidth).toBeLessThanOrEqual(layout.viewportWidth);
   expect(layout.theme).toBe("rgb(255, 255, 255)");
   await page.screenshot({ path: testInfo.outputPath("codex-light-shell.png"), animations: "disabled" });
