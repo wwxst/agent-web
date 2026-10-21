@@ -1,7 +1,16 @@
 import { test, expect } from "@playwright/test";
 
 test("uses source-confirmed shell dimensions and composer component slots", async ({ page }) => {
+  page.on("pageerror", (e) => console.log("BOOT_PAGEERROR", e.stack ?? e.message));
+  page.on("console", (m) => { if (m.type() === "error") console.log("BOOT_CONSOLE_ERROR", m.text()); });
+  page.on("response", (r) => { if (r.status() >= 400) console.log("BOOT_HTTP_ERROR", r.status(), r.url()); });
   await page.goto("/");
+  console.log("BOOT_STATUS", JSON.stringify(await page.evaluate(() => ({
+    location: location.href,
+    title: document.title,
+    rootChildren: document.querySelector("#root")?.children.length,
+    bodyStart: document.body.innerHTML.slice(0, 350),
+  }))));
   const root = page.locator("[data-app-shell-frame]");
   await expect(root).toHaveAttribute("data-app-shell-sidebar-open", "true");
   await expect(root).toHaveAttribute("data-app-shell-application-menu-bar", "true");
