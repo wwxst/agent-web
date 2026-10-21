@@ -68,3 +68,6 @@ export * from "./conversation/ConversationPresentationAdapterModel.js";
 
 export { projectNavigationDestinations } from "./conversation/NavigationRailModel.js";
 export type { NavigationDestination, NavigationProjection, NavigationProjectionOptions } from "./conversation/NavigationRailModel.js";
+
+export { getAgentActivityCollapseEligibility, projectAgentActivityCollapse } from "./conversation/AgentActivityProjection.js";
+export type { AgentActivityItem, AgentActivityUnit, AgentActivityPersistenceAdapters, AgentActivityCollapseOptions, AgentActivityCollapseProjection } from "./conversation/AgentActivityProjection.js";

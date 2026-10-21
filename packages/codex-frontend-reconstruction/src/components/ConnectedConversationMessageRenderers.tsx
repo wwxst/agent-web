@@ -1,5 +1,7 @@
 import * as React from "react";
 import type { ConversationMessageItem } from "../conversation/ConversationMessageRenderPlan.js";
+import type { AgentActivityUnit, AgentActivityCollapseOptions } from "../conversation/AgentActivityProjection.js";
+import { CodexAgentActivity } from "./CodexAgentActivity.js";
 import {
   projectConversationContent,
   restrictConversationReviewPermissions,
@@ -21,6 +23,15 @@ import type { ConversationMessageRenderers } from "./ConversationMessageBlocks.j
  */
 export interface ConnectedConversationRendererHost extends ConversationContentAdapters {
   Markdown: React.ComponentType<{ text: string; role: "user" | "assistant" | "activity" }>;
+  /** The private Wa unit factory and turn-level Rk state must be host-provided.
+   * Without them, preserve the existing ActivityGroup layout unchanged. */
+  agentActivity?: {
+    toUnits(items: ConversationMessageItem[]): AgentActivityUnit<ConversationMessageItem>[];
+    getCollapseContext(context: { isActive: boolean; collapseWhenPossible: boolean }):
+      Omit<AgentActivityCollapseOptions<ConversationMessageItem>, "units">;
+    renderSummary?(count: number, workedForItem: ConversationMessageItem | null): React.ReactNode;
+  };
+
   ActivityDetails: React.ComponentType<{ item: ConversationMessageItem; isActive: boolean; presentation: "ordinary" | "subagent" | "activity-units" }>;
   ActivityResult: ConversationMessageRenderers["ActivityResult"];
   GeneratedImages: ConversationMessageRenderers["GeneratedImages"];
@@ -99,11 +110,21 @@ export function createConnectedConversationMessageRenderers(host: ConnectedConve
       </div>;
     },
     ActivityGroup(props) {
-      return <div data-conversation-activity-group="" className="flex flex-col gap-2">
+      const grouping = host.agentActivity;
+      if (grouping == null) return <div data-conversation-activity-group="" className="flex flex-col gap-2">
         {props.items.map((item, index) => <div key={item.id ?? `${item.type}:${index}`}>
           <ActivityContent item={item} isActive={props.isActive} presentation="ordinary" />
         </div>)}
       </div>;
+      const units = grouping.toUnits(props.items);
+      const context = grouping.getCollapseContext(props);
+      return <CodexAgentActivity {...context} units={units} renderSummary={grouping.renderSummary}
+        renderUnit={(unit) => unit.kind === "group"
+          ? unit.items.map((item, index) => <div key={item.id ?? `${item.type}:${index}`}>
+              <ActivityContent item={item} isActive={props.isActive} presentation="ordinary" />
+            </div>)
+          : <ActivityContent item={unit.item} isActive={props.isActive} presentation="ordinary" />}
+      />;
     },
     ActivityItem(props) {
       return <div data-conversation-activity-item="">

@@ -24,3 +24,6 @@ export type { ConnectedConversationRendererHost } from "./components/ConnectedCo
 export { CodexNavigationRail } from "./components/CodexNavigationRail.js";
 export type { CodexNavigationRailProps, CodexRailDestination } from "./components/CodexNavigationRail.js";
 export { CodexComposerLayout } from "./components/CodexComposerLayout.js";
+
+export { CodexAgentActivity } from "./components/CodexAgentActivity.js";
+export type { CodexAgentActivityProps } from "./components/CodexAgentActivity.js";

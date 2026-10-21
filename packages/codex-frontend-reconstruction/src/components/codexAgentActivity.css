@@ -1,0 +1,9 @@
+/* Independently authored presentation. Source evidence: Rk/Hk/ek in
+ * sites-end-resource-fa77a923096d.js; text, icons, animation remain host-owned. */
+.codex-agent-activity { display:flex; flex-direction:column; gap:var(--conversation-grouped-item-gap, 4px); min-width:0; }
+.codex-agent-activity__toggle { display:flex; gap:8px; align-items:center; border:0; background:transparent; padding:4px 0; text-align:left; cursor:pointer; color:var(--demo-dim, #888); font:inherit; font-size:12.5px; }
+.codex-agent-activity__toggle:hover { color:var(--demo-text,#333); }
+.codex-agent-activity__toggle:focus-visible { outline:2px solid var(--demo-accent,#666); outline-offset:3px; border-radius:4px; }
+.codex-agent-activity__toggle-icon { width:14px; font-size:16px; line-height:1; display:inline-flex; justify-content:center; }
+.codex-agent-activity__details,.codex-agent-activity__persistent { display:flex; flex-direction:column; min-width:0; gap:var(--conversation-grouped-item-gap, 4px); }
+.codex-agent-activity__details[hidden] { display:none; }

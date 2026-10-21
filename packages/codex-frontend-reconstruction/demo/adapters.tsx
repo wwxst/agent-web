@@ -76,6 +76,21 @@ function DemoFileDiff({ oldFile: oldVersion, newFile: newVersion, overflow }: {
 export function makeDemoRow(notify: (message: string) => void) {
   const host: ConnectedConversationRendererHost = {
     Markdown,
+    // Explicit DEMO Wa/Rk adapters: Codex's private unit classifier and persisted
+    // collapse state are not represented by synthetic transcript records.
+    agentActivity: {
+      toUnits: (items) => items.map((item, index) => ({
+        key: item.id ?? `${item.type}-${index}`, kind: "group" as const, items: [item],
+      })),
+      getCollapseContext: ({ isActive, collapseWhenPossible }) => ({
+        hasFinalAssistantStarted: !isActive,
+        isTurnCancelled: false,
+        allowCollapseBeforeFinal: collapseWhenPossible,
+        preventAutoCollapse: false,
+        hasFollowingFinalAnswer: true,
+      }),
+      renderSummary: (count) => `${count} 项工具活动 · 模拟`,
+    },
     ActivityDetails,
     ActivityResult: ({ result }) => <pre className="demo-activity-detail">{typeof result === "string" ? result : "模拟活动结果"}</pre>,
     GeneratedImages: () => <span className="demo-muted">图片展示尚未接通</span>,
