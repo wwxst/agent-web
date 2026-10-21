@@ -92,3 +92,8 @@ Visit http://127.0.0.1:5173/. The preview uses synthetic conversations and host 
 
 
 UI alignment checkpoint: see `reports/UI_FIDELITY_STAGE_01.md` for the light desktop shell, source evidence, browser test geometry, and remaining Composer/Electron gaps.
+
+
+## Current source vs UI audit (2026-10-21)
+
+See [`reports/UI_SOURCE_COVERAGE_AUDIT_2026-10-21.md`](reports/UI_SOURCE_COVERAGE_AUDIT_2026-10-21.md) and the accompanying `UI_SOURCE_COVERAGE_MATRIX_2026-10-21.csv` for source-evidence confidence, mock-only sections and verified test limits. Earlier STATUS / CONTINUATION records are preserved as historical checkpoints and are not the current state.
