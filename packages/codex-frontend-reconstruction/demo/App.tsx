@@ -9,7 +9,7 @@ import {
   type DemoConversationId,
 } from "./mockConversation.js";
 
-function Icon({ name, size = 18 }: { name: "panel" | "search" | "plus" | "branch" | "dots" | "up" | "stop" | "bottom" | "top" | "play" | "refresh" | "terminal" | "check" | "menu" | "copy"; size?: number }) {
+function Icon({ name, size = 18 }: { name: "panel" | "search" | "plus" | "branch" | "dots" | "up" | "stop" | "bottom" | "top" | "play" | "refresh" | "terminal" | "check" | "menu" | "copy" | "folder" | "chevron" | "clock" | "plugin" | "settings" | "sliders" | "window" | "square"; size?: number }) {
   const children: Record<typeof name, React.ReactNode> = {
     panel: <><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/></>,
     search: <><circle cx="10.8" cy="10.8" r="6.2"/><path d="m16 16 4.5 4.5"/></>,
@@ -26,10 +26,23 @@ function Icon({ name, size = 18 }: { name: "panel" | "search" | "plus" | "branch
     check: <path d="m5 12 4 4L19 6"/>,
     menu: <><path d="M4 7h16M4 12h16M4 17h16"/></>,
     copy: <><rect x="8" y="8" width="11" height="11" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/></>,
+    folder: <><path d="M3 7.5a2 2 0 0 1 2-2h5l2.2 2.5H19a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></>,
+    chevron: <path d="m7 10 5 5 5-5"/>,
+    clock: <><circle cx="12" cy="12" r="9"/><path d="M12 6v6l4 2"/></>,
+    plugin: <><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="3"/><path d="M12 3.5v5.5M12 15v5.5"/></>,
+    settings: <><circle cx="12" cy="12" r="3"/><path d="M5 12H2m20 0h-3M12 5V2m0 20v-3M5.5 5.5l2.1 2.1m8.8 8.8 2.1 2.1m0-13-2.1 2.1m-8.8 8.8-2.1 2.1"/></>,
+    sliders: <><path d="M8 4h12M4 4h0M4 12h12m4 0h0M4 20h4m4 0h8"/><circle cx="6" cy="4" r="2"/><circle cx="18" cy="12" r="2"/><circle cx="10" cy="20" r="2"/></>,
+    window: <><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18"/></>,
+    square: <rect x="4" y="4" width="16" height="16" rx="3"/>,
   };
   return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{children[name]}</svg>;
 }
 
+/**
+ * Browser-only shell adapter. This renders the documented layout of the
+ * desktop sidebar; it does not claim to restore Codex's private navigation.
+ * Real buttons are wired; undiscovered product actions are plain text.
+ */
 function ConversationSidebar(props: {
   active: DemoConversationId;
   collapsed: boolean;
@@ -40,24 +53,27 @@ function ConversationSidebar(props: {
   const { active, collapsed, onToggle, onSelect, onReset } = props;
   return <aside className={`demo-sidebar ${collapsed ? "demo-sidebar--collapsed" : ""}`} aria-label="演示会话导航">
     <div className="demo-sidebar-head">
-      <div className="demo-logo"><span className="demo-logo-mark">✳</span>{!collapsed && <span>Codex <span className="demo-logo-lab">Preview</span></span>}</div>
-      <button className="demo-icon-button" title={collapsed ? "展开侧边栏" : "收起侧边栏"} aria-label={collapsed ? "展开侧边栏" : "收起侧边栏"} onClick={onToggle}><Icon name="panel" /></button>
+      <div className="demo-logo">{collapsed ? <Icon name="folder" size={18}/> : <><strong>Codex</strong><Icon name="chevron" size={12}/></>}</div>
+      <button className="demo-icon-button demo-collapse-toggle" type="button" title={collapsed ? "展开侧边栏" : "收起侧边栏"} aria-label={collapsed ? "展开侧边栏" : "收起侧边栏"} onClick={onToggle}><Icon name="search" size={17}/></button>
     </div>
-    {collapsed ? <div className="demo-sidebar-min"><button className="demo-icon-button" onClick={onReset} title="重新加载演示"><Icon name="plus" /></button></div> : <>
-      <div className="demo-sidebar-actions">
-        <button type="button" className="demo-nav-action" onClick={onReset}><Icon name="plus" size={17}/> 新建演示会话</button>
-        <div className="demo-nav-action demo-nav-disabled" aria-label="搜索功能尚未接入"><Icon name="search" size={17}/> 搜索（待接入）</div>
-      </div>
-      <div className="demo-section-heading">最近的会话 <span>DEMO</span></div>
+    <div className="demo-sidebar-actions">
+      <button type="button" className="demo-nav-action" title="新建演示会话" onClick={onReset}><Icon name="plus" size={16}/>{!collapsed && <span>New chat</span>}</button>
+      {!collapsed && <>
+        <div className="demo-nav-action demo-nav-disabled" aria-label="Scheduled 尚未接入"><Icon name="clock" size={15}/> Scheduled</div>
+        <div className="demo-nav-action demo-nav-disabled" aria-label="Plugins 尚未接入"><Icon name="plugin" size={15}/> Plugins</div>
+      </>}
+    </div>
+    {!collapsed && <>
+      <div className="demo-section-heading">Projects</div>
       <nav className="demo-chat-list" aria-label="会话">
+        <div className="demo-project-heading"><Icon name="folder" size={16}/> agent web</div>
         {DEMO_CONVERSATIONS.map((item) => <button type="button" key={item.id} className={`demo-chat-link ${item.id === active ? "is-active" : ""}`} onClick={() => onSelect(item.id)} aria-current={item.id === active ? "page" : undefined}>
           <span className="demo-chat-link-title">{item.title}</span>
-          <span className="demo-chat-link-subtitle">{item.subtitle}</span>
         </button>)}
       </nav>
       <div className="demo-sidebar-spacer"/>
-      <div className="demo-sidebar-project"><span className="demo-project-box"><Icon name="branch" size={16}/></span><div><strong>agent-web</strong><small>recovery / demo</small></div><Icon name="dots" size={16}/></div>
-      <div className="demo-sidebar-foot">只读演示 · 不连接真实 Agent</div>
+      <div className="demo-section-heading demo-recent-heading">Recents</div>
+      <div className="demo-sidebar-foot"><Icon name="settings" size={15}/> 预览环境 · 本地模拟数据</div>
     </>}
   </aside>;
 }
@@ -70,6 +86,7 @@ export function App() {
   const [playing, setPlaying] = React.useState(false);
   const [toast, setToast] = React.useState<string | null>(null);
   const [historyAdded, setHistoryAdded] = React.useState(false);
+  const [showDemoTools, setShowDemoTools] = React.useState(false);
   const scrollElementRef = React.useRef<HTMLDivElement | null>(null);
   const virtualizerApiRef = React.useRef<VirtualizedTurnListApi | null>(null);
   const timerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -174,26 +191,40 @@ export function App() {
     setActive(id);
   }
 
-  return <div className="demo-app">
+  return <div className="demo-desktop">
+    <div className="demo-window-menu" aria-label="桌面窗口示意（浏览器内，不是原生 Electron）">
+      <span className="demo-menubar-back" aria-hidden="true">‹</span><span className="demo-menubar-back" aria-hidden="true">›</span>
+      <span className="demo-menubar-panel" aria-hidden="true"><Icon name="panel" size={15}/></span>
+      <span>File</span><span>Edit</span><span>View</span><span>Help</span>
+      <span className="demo-window-buttons" aria-hidden="true">─　□　×</span>
+    </div>
+    <div className="demo-app" data-codex-shell-preview="light">
     <ConversationSidebar active={active} collapsed={collapsed} onToggle={() => setCollapsed((v) => !v)} onSelect={switchConversation} onReset={reset}/>
     <div className="demo-main">
       <header className="demo-header">
-        <div className="demo-header-location"><span className="demo-header-folder">agent-web</span><span className="demo-breadcrumb">/</span><strong>{DEMO_CONVERSATIONS.find((c) => c.id === active)?.title}</strong><span className="demo-header-chevron">⌄</span></div>
-        <div className="demo-header-actions"><span className="demo-header-badge"><span className="demo-online-dot" /> MOCK DATA</span><button type="button" className="demo-icon-button" title="重置演示" onClick={reset}><Icon name="refresh" size={17}/></button></div>
+        <div className="demo-header-location"><span className="demo-header-folder"><Icon name="folder" size={17}/></span><strong>{DEMO_CONVERSATIONS.find((c) => c.id === active)?.title}</strong></div>
+        <div className="demo-header-actions">
+          <span className="demo-header-static" title="原版桌面按钮布局参考，暂未接通功能"><Icon name="dots" size={17}/></span>
+          <button type="button" className="demo-icon-button" title={showDemoTools ? "收起演示工具" : "打开演示工具"} aria-label={showDemoTools ? "收起演示工具" : "打开演示工具"} aria-expanded={showDemoTools} onClick={() => setShowDemoTools((value) => !value)}><Icon name="sliders" size={17}/></button>
+          <button type="button" className="demo-icon-button" aria-label={collapsed ? "展开侧边栏" : "收起侧边栏"} onClick={() => setCollapsed((value) => !value)}><Icon name="panel" size={17}/></button>
+        </div>
       </header>
-      <div className="demo-banner"><span>预览版</span> 正在使用已恢复的会话组件与模拟数据。不是 Codex 官方 UI，也尚未接入真实 Agent / Electron。</div>
-      <div className="demo-toolbar">
-        <button type="button" onClick={playSample} disabled={playing}><Icon name="play" size={15}/> 模拟运行</button>
-        <button type="button" onClick={injectHistory} disabled={historyAdded}><Icon name="plus" size={15}/> 添加 45 条历史</button>
-        <button type="button" onClick={() => void virtualizerApiRef.current?.scrollToKey(`history-content:turn:${source.getSnapshot().entries[0]?.turnId ?? ""}`, undefined, {align:"top"})}><Icon name="top" size={15}/> 跳到开头</button>
-        <button type="button" onClick={scrollToBottom}><Icon name="bottom" size={15}/> 跳到最新</button>
-      </div>
+      {showDemoTools && <div className="demo-tools-popover" data-testid="demo-tools">
+        <p>本地演示工具 · 不执行真实 Agent 请求</p>
+        <div className="demo-toolbar">
+          <button type="button" onClick={playSample} disabled={playing}><Icon name="play" size={15}/> 模拟运行</button>
+          <button type="button" onClick={injectHistory} disabled={historyAdded}><Icon name="plus" size={15}/> 添加 45 条历史</button>
+          <button type="button" onClick={() => void virtualizerApiRef.current?.scrollToKey(`history-content:turn:${source.getSnapshot().entries[0]?.turnId ?? ""}`, undefined, {align:"top"})}><Icon name="top" size={15}/> 跳到开头</button>
+          <button type="button" onClick={scrollToBottom}><Icon name="bottom" size={15}/> 跳到最新</button>
+          <button type="button" onClick={reset}><Icon name="refresh" size={15}/> 重置</button>
+        </div>
+      </div>}
       <div className="demo-scroll-region" ref={scrollElementRef} onScroll={() => {
         scrollController.notifyScroll();
         shouldFollowRef.current = scrollController.getLastScrollDistanceFromBottomPx() < 120;
       }} data-testid="transcript-scroll">
         <div className="demo-transcript-column">
-          <div className="demo-conversation-intro"><span className="demo-intro-symbol">⌘</span><h1>{DEMO_CONVERSATIONS.find((c) => c.id === active)?.title}</h1><p>agent-web · React / TypeScript 集成预览</p></div>
+          <div className="demo-conversation-intro"><h1>{DEMO_CONVERSATIONS.find((c) => c.id === active)?.title}</h1><div className="demo-worked-label">Worked for 2m 11s <Icon name="chevron" size={12}/><span> · mock</span></div></div>
           <ConnectedLiveConversationTranscript
             key={`${active}-${generation}`}
             source={source}
@@ -212,19 +243,23 @@ export function App() {
       </div>
       <div className="demo-composer-zone">
         <div className="demo-composer-wrap">
-          <div className="demo-composer-label"><span className="demo-git-icon"><Icon name="branch" size={14}/></span> agent-web <span className="demo-composer-separator">·</span> <span className="demo-muted">本地模拟会话</span></div>
           <div className="demo-composer">
-            <textarea aria-label="演示消息输入" data-testid="composer" placeholder="发送消息…（演示模式，不调用真实 Agent）" rows={2} value={draft} onChange={(event: React.ChangeEvent<HTMLTextAreaElement>) => setDraft(event.target.value)} onKeyDown={(event: React.KeyboardEvent<HTMLTextAreaElement>) => {
+            <textarea aria-label="演示消息输入" data-testid="composer" placeholder="Work with Codex" rows={2} value={draft} onChange={(event: React.ChangeEvent<HTMLTextAreaElement>) => setDraft(event.target.value)} onKeyDown={(event: React.KeyboardEvent<HTMLTextAreaElement>) => {
               if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) { event.preventDefault(); sendMessage(); }
             }}/>
-            <div className="demo-composer-controls"><div className="demo-composer-options"><span className="demo-composer-model">✳ Demo Agent <span>⌄</span></span><span className="demo-composer-model">模拟 · 无后端</span></div>
-              <button type="button" data-testid="send-button" aria-label={playing ? "停止模拟" : "发送模拟消息"} title={playing ? "停止模拟" : "发送模拟消息"} className="demo-send-button" disabled={!playing && !draft.trim()} onClick={playing ? stopSample : sendMessage}><Icon name={playing ? "stop" : "up"} size={17}/></button>
+            <div className="demo-composer-controls">
+              <div className="demo-composer-options">
+                <button type="button" className="demo-composer-plus" title="附件尚未恢复" disabled aria-label="附件尚未恢复"><Icon name="plus" size={20}/></button>
+                <span className="demo-composer-permission" title="演示模式，无真实权限授予">♧ Full access <span>· mock</span></span>
+              </div>
+              <div className="demo-composer-right"><span className="demo-composer-model">Demo Agent <span>Medium</span> <Icon name="chevron" size={12}/></span>
+                <button type="button" data-testid="send-button" aria-label={playing ? "停止模拟" : "发送模拟消息"} title={playing ? "停止模拟" : "发送模拟消息"} className="demo-send-button" disabled={!playing && !draft.trim()} onClick={playing ? stopSample : sendMessage}><Icon name={playing ? "stop" : "up"} size={16}/></button>
+              </div>
             </div>
           </div>
-          <div className="demo-composer-hint">Enter 发送 · Shift+Enter 换行　|　所有输出均为模拟，不会执行命令或写入文件</div>
         </div>
       </div>
     </div>
     {toast && <div className="demo-toast" role="status"><Icon name="check" size={17}/>{toast}</div>}
-  </div>;
+  </div></div>;
 }
