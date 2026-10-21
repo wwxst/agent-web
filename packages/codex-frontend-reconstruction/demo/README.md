@@ -83,3 +83,6 @@ account customization, peek, original icon system, Electron/window variants).
 ### Recovered AgentActivity disclosure checkpoint
 
 `CodexAgentActivity.tsx` now implements source-confirmed collapse eligibility and unit partitioning from original `sites-end-resource` (`Lk`/`kk`/`Rk`/`Hk`), with private predicates supplied by an explicit demo-only host. Grouped activity is interactive; tool commands, approvals and patches still **never execute**. See [`../reports/AGENT_ACTIVITY_SOURCE_RECOVERY.md`](../reports/AGENT_ACTIVITY_SOURCE_RECOVERY.md) for exact SHA/signatures, unimplemented animation/persistence/summary branches and tests.
+
+
+Group-header verification: the mock scenario now includes a two-command group. Expand its outer AgentActivity disclosure and then the inner completed command summary; the two command subrows mount only when expanded. Both levels use source-aligned React components but all command output and icons are DEMO. See `demo/e2e/agent-activity.spec.ts` and `reports/AGENT_ACTIVITY_GROUP_HEADER_SOURCE_RECOVERY.md`.

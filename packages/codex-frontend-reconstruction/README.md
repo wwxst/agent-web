@@ -104,3 +104,8 @@ reordering and private icon assets are not restored. See
 ### Source-backed AgentActivity collapse checkpoint
 
 The recovered `AgentActivityProjection` and `CodexAgentActivity` implement part of the original `Rk`/`Lk`/`kk` collapse composition; private item predicates and tool renderers remain injected adapters. Evidence and remaining work: [`reports/AGENT_ACTIVITY_SOURCE_RECOVERY.md`](reports/AGENT_ACTIVITY_SOURCE_RECOVERY.md).
+
+
+## Source-checked group headers (2026-10-21)
+
+See [AgentActivity group-header recovery](reports/AGENT_ACTIVITY_GROUP_HEADER_SOURCE_RECOVERY.md). This stage restores Xe/Ze/Q/K/I active state selection, sk message identifiers, je ordering and Ye standalone demotion into the existing ActivityGroup pipeline. The real Sg/We aggregation, nk tool row details/icons, and Electron backend are **not** recovered. The browser demo remains mock-only.
