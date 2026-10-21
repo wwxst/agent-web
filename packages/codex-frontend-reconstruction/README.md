@@ -100,3 +100,7 @@ rail-versus-sidebar destination routing; `src/components/CodexNavigationRail.tsx
 provides the independently measured `<nav>` landmark. The real account state,
 reordering and private icon assets are not restored. See
 `reports/NAVIGATION_RAIL_SOURCE_RECOVERY.md` and `demo/README.md`.
+
+### Source-backed AgentActivity collapse checkpoint
+
+The recovered `AgentActivityProjection` and `CodexAgentActivity` implement part of the original `Rk`/`Lk`/`kk` collapse composition; private item predicates and tool renderers remain injected adapters. Evidence and remaining work: [`reports/AGENT_ACTIVITY_SOURCE_RECOVERY.md`](reports/AGENT_ACTIVITY_SOURCE_RECOVERY.md).

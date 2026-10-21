@@ -79,3 +79,7 @@ than pretending to navigate to nonexistent routes.
 See [`../reports/NAVIGATION_RAIL_SOURCE_RECOVERY.md`](../reports/NAVIGATION_RAIL_SOURCE_RECOVERY.md)
 for exact source identifiers and what remains unimplemented (drag/reorder,
 account customization, peek, original icon system, Electron/window variants).
+
+### Recovered AgentActivity disclosure checkpoint
+
+`CodexAgentActivity.tsx` now implements source-confirmed collapse eligibility and unit partitioning from original `sites-end-resource` (`Lk`/`kk`/`Rk`/`Hk`), with private predicates supplied by an explicit demo-only host. Grouped activity is interactive; tool commands, approvals and patches still **never execute**. See [`../reports/AGENT_ACTIVITY_SOURCE_RECOVERY.md`](../reports/AGENT_ACTIVITY_SOURCE_RECOVERY.md) for exact SHA/signatures, unimplemented animation/persistence/summary branches and tests.
