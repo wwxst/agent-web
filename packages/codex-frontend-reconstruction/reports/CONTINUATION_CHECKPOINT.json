@@ -1,0 +1,26 @@
+{
+  "date": "2026-10-21",
+  "stage": "live conversation render-entry projection and virtualized transcript composition",
+  "base": "codex-frontend-virtualized-list-full.zip",
+  "new_modules": [
+    "ConversationRenderEntriesModel.ts",
+    "LiveConversationTranscript.tsx"
+  ],
+  "tests_total": 87,
+  "test_command": "npm run test:core",
+  "test_status": "pass",
+  "ui_static_typecheck": "pass with temporary minimal React declaration shim",
+  "remaining_next": [
+    "wire actual cA host subscriptions and base renderEntries producer",
+    "implement live message/activity row renderer",
+    "finish virtualized-list host scroll/follow/restore transactions",
+    "composer and bridge integration",
+    "Electron runtime and visual verification"
+  ],
+  "no_claims": [
+    "not recovered authors original source",
+    "not runnable complete Codex frontend",
+    "no Electron or screenshot parity",
+    "no GitHub push"
+  ]
+}
