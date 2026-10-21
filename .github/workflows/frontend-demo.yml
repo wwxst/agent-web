@@ -28,3 +28,14 @@ jobs:
         run: npm run demo:check-model
       - name: Type-check and bundle React preview
         run: npm run demo:build
+      - name: Install Chromium for browser smoke
+        run: npx playwright install --with-deps chromium
+      - name: Browser smoke tests
+        run: npm run demo:test:e2e
+      - name: Upload browser preview screenshot
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: codex-style-demo-browser-preview
+          path: packages/codex-frontend-reconstruction/demo/test-results/
+          if-no-files-found: warn

@@ -46,3 +46,7 @@ Recommended: Node.js 20.19+ or 22.12+. On Windows, use the same commands in Powe
 6. Run `npm run demo:build`, capture a screenshot and compare against your locally installed Codex. Record differences rather than claiming visual fidelity.
 
 For any live browser testing, watch the browser console for React warnings and check the main transcript scroller. See `reports/DEMO_INTEGRATION.md` for the integration boundary and validation checklist.
+
+## Automated browser smoke test
+
+After `npm install`, run `npx playwright install chromium` once, then `npm run demo:test:e2e`. The tests run real Chromium against the Vite dev server, exercising initial React mount, simulated composer, long history and conversation switching; screenshot output goes to `demo/test-results/browser-preview.png` by default. They **do not** validate pixel parity or backend integrations.

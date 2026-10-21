@@ -28,3 +28,5 @@ The styling is a temporary integration skin based on generic Codex-like patterns
 - Mock "Reject" only displays a notification; accept/edit explicitly disabled.
 - The composer returns an offline simulated reply; no network API is called.
 - Binary original Codex resources and copyrighted archive remain local and are not committed to the public repository.
+
+- `npm run demo:test:e2e`: when Chromium/Playwright is installed, covers real React mount, client navigation, mock send and virtualization navigation. Screenshots demonstrate only a preview state, not original Codex parity.
