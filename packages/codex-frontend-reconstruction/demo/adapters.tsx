@@ -107,7 +107,7 @@ export function makeDemoRow(notify: (message: string) => void) {
           const normalized: AggregateUnit[] = items.map(item => {
             if (item.type === "exec") return {
               type: "exec",
-              isInProgress: item.parsedCmd?.isFinished !== true,
+              isInProgress: !(item.parsedCmd != null && typeof item.parsedCmd === "object" && "isFinished" in item.parsedCmd && item.parsedCmd.isFinished === true),
               searchesWeb: item.searchesWeb === true,
               createsFolder: item.createsFolder === true,
             };
