@@ -4,14 +4,34 @@ test("mounts recovered transcript components and handles mock-only interactions"
   const uncaughtErrors: string[] = [];
   page.on("pageerror", (error) => uncaughtErrors.push(error.message));
   await page.goto("/");
-  await expect(page.getByRole("heading", { name: "恢复 Codex 会话界面" })).toBeVisible();
+  await expect(page.locator(".demo-header-location strong")).toHaveText("恢复 Codex 会话界面");
   await expect(page.locator("[data-demo-role='assistant']").first()).toBeVisible();
+  await expect(page.getByRole("button", { name: "打开演示工具" })).toBeVisible();
+  await expect(page.getByTestId("demo-tools")).toHaveCount(0);
+  const layout = await page.evaluate(() => {
+    const bounds = (selector: string) => {
+      const r = document.querySelector(selector)?.getBoundingClientRect();
+      return r ? { x: r.x, y: r.y, width: r.width, height: r.height } : null;
+    };
+    return { sidebar: bounds(".demo-sidebar"), menubar: bounds(".demo-window-menu"),
+      header: bounds(".demo-header"), composer: bounds(".demo-composer"),
+      rootWidth: document.documentElement.scrollWidth, viewportWidth: window.innerWidth,
+      theme: getComputedStyle(document.querySelector(".demo-main")!).backgroundColor };
+  });
+  expect(layout.sidebar?.width).toBe(290);
+  expect(layout.menubar?.height).toBe(36);
+  expect(layout.header?.height).toBe(49);
+  expect(layout.composer?.width).toBeGreaterThan(650);
+  expect(layout.rootWidth).toBeLessThanOrEqual(layout.viewportWidth);
+  expect(layout.theme).toBe("rgb(255, 255, 255)");
+  await page.screenshot({ path: testInfo.outputPath("codex-light-shell.png"), animations: "disabled" });
 
   const composer = page.getByRole("textbox", { name: "演示消息输入" });
   await composer.fill("测试模拟会话投影");
   await page.getByRole("button", { name: "发送模拟消息" }).click();
   await expect(page.getByText("已收到你的消息", { exact: false })).toBeVisible();
 
+  await page.getByRole("button", { name: "打开演示工具" }).click();
   await page.getByRole("button", { name: /添加 45 条历史/ }).click();
   await expect(page.getByRole("button", { name: /添加 45 条历史/ })).toBeDisabled();
   await page.getByRole("button", { name: /跳到开头/ }).click();
@@ -36,7 +56,8 @@ test("switches the mock conversation and shows its real recovered row dispatch",
   page.on("pageerror", (error) => uncaughtErrors.push(error.message));
   await page.goto("/");
   await page.getByRole("button", { name: /工具调用与审批交互/ }).click();
-  await expect(page.getByRole("heading", { name: "工具调用与审批交互" })).toBeVisible();
+  await expect(page.locator(".demo-header-location strong")).toHaveText("工具调用与审批交互");
   await expect(page.locator("[data-demo-role='assistant']").first()).toBeVisible();
+  await expect(page.getByRole("button", { name: "打开演示工具" })).toBeVisible();
   expect(uncaughtErrors).toEqual([]);
 });
