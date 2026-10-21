@@ -109,3 +109,5 @@ The recovered `AgentActivityProjection` and `CodexAgentActivity` implement part 
 ## Source-checked group headers (2026-10-21)
 
 See [AgentActivity group-header recovery](reports/AGENT_ACTIVITY_GROUP_HEADER_SOURCE_RECOVERY.md). This stage restores Xe/Ze/Q/K/I active state selection, sk message identifiers, je ordering and Ye standalone demotion into the existing ActivityGroup pipeline. The real Sg/We aggregation, nk tool row details/icons, and Electron backend are **not** recovered. The browser demo remains mock-only.
+
+- [AgentActivity 聚合规则的源码证据及限制](reports/AGENT_ACTIVITY_AGGREGATE_SOURCE_RECOVERY.md)
