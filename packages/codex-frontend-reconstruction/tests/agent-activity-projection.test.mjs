@@ -63,3 +63,11 @@ test("Rk: when collapse is unavailable full unit order is preserved",()=>{
  const units=[single("a","exec"),single("b","patch")];const x=projectAgentActivityCollapse(base(units,{hasFinalAssistantStarted:false}));
  assert.deepEqual(x.expandedUnits,units);assert.equal(x.isCollapsed,false);
 });
+
+test("Rk: a worked-for-only activity must not vanish into an empty disclosure",()=>{
+ const worked=single("worked","worked-for",{durationMs:8000});
+ const x=projectAgentActivityCollapse(base([worked]));
+ assert.equal(x.canToggle,false);
+ assert.equal(x.isCollapsed,false);
+ assert.deepEqual(x.expandedUnits,[worked]);
+});

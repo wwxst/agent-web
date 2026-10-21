@@ -158,6 +158,12 @@ export function projectAgentActivityCollapse<T extends AgentActivityItem>(
     count > 0 && !soleCompaction;
   // Hk receives an empty toggleProps for non-toggleable content and leaves it expanded.
   const isCollapsed = canToggle && eligible.isCollapsed;
+  // Rk's `!re && B.length === 0 && H.length === 0 && W.length === 0`
+  // fallback renders the original units (not an empty worked-for-only row).
+  if (!canToggle && expandedUnits.length === 0 && persistentUnits.length === 0 && preToggleUnits.length === 0) {
+    expandedUnits.push(...units);
+    workedForItem = null;
+  }
   return {
     shouldAllowCollapse: eligible.shouldAllowCollapse,
     isCollapsed,
