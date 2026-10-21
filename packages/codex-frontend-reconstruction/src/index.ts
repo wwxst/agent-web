@@ -74,3 +74,7 @@ export type { AgentActivityItem, AgentActivityUnit, AgentActivityPersistenceAdap
 
 export { isUnfinishedGroupItem, isActiveGroupMember, isExplorationCommand, projectActivityGroupHeader, getActiveActivityHeaderLabel, projectCompletedGroupHeaderParts, shouldDemoteCompletedSingleGroup } from "./conversation/AgentActivityGroupPresentation.js";
 export type { GroupActivityItem, ActivityGroupHeaderState, ActivityGroupStateOptions, ActivityHeaderMessage, ActivityHeaderLabel, ToolActivitySummary, CompletedGroupHeaderPart } from "./conversation/AgentActivityGroupPresentation.js";
+
+// Source-derived aggregation of normalized Le/Be/Ve activity units.
+export { aggregateAgentActivityUnits } from "./conversation/AgentActivityAggregate.js";
+export type { AggregateUnit, ActivityAggregate, ReviewFailure, SourceDescriptor, VisualizationKind } from "./conversation/AgentActivityAggregate.js";
