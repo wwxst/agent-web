@@ -1,0 +1,18 @@
+{
+  "name": "codex-frontend-semantic-reconstruction",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Independently reconstructed, typed modules based on analysis of a compiled desktop frontend.",
+  "scripts": {
+    "build:core": "tsc -p tsconfig.core.json",
+    "test:core": "npm run build:core && node --test tests/*.test.mjs"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.3",
+    "@types/react": "^19.0.0"
+  },
+  "peerDependencies": {
+    "react": ">=18"
+  }
+}
