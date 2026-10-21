@@ -89,3 +89,6 @@ npm run demo:dev
 ```
 
 Visit http://127.0.0.1:5173/. The preview uses synthetic conversations and host adapters. **It does not talk to an Agent backend, run commands, modify files, or replicate the private Codex runtime.** See `demo/README.md` and `reports/DEMO_INTEGRATION.md`.
+
+
+UI alignment checkpoint: see `reports/UI_FIDELITY_STAGE_01.md` for the light desktop shell, source evidence, browser test geometry, and remaining Composer/Electron gaps.

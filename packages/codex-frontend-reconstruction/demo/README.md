@@ -1,5 +1,7 @@
 # Browser integration demo · recovered Codex frontend
 
+The current preview includes an **evidence-informed light Windows desktop shell**, not a verified reproduction of the original private component tree. See [`../reports/UI_FIDELITY_STAGE_01.md`](../reports/UI_FIDELITY_STAGE_01.md) for source CSS selectors, the reference screenshot layout, known limitations and validation.
+
 This is a **local interactive integration preview**, not the official Codex desktop UI, a production Agent client, or a reproduction of private Codex runtime behavior.
 
 ## Launch with Codex / your terminal
@@ -33,14 +35,14 @@ Recommended: Node.js 20.19+ or 22.12+. On Windows, use the same commands in Powe
 
 - No Agent API / real model inference, true streaming execution, attachments, file writes or security approvals.
 - No original Codex Markdown engine, full FileDiff renderer, real Composer, Electron preload, IPC or design-system theme.
-- Visual appearance is a temporary Codex-style preview; pixel parity is unverified. Never treat a mock command/result as real terminal output.
+- Visual appearance is a source-audited light-shell iteration, **not pixel-level parity**. Original UI components and Composer runtime remain unimplemented. Never treat a mock command/result as real terminal output.
 - No end-to-end browser verification has been completed until the commands above run on an npm-enabled environment.
 
 ## Local smoke checks after npm install
 
 1. Open the page and verify conversation rows render without console errors.
 2. Expand an activity; clicking "Reject" must only display a mock notification.
-3. Click "添加 45 条历史", scroll to the top and back; the virtualized window should update.
+3. Open **演示工具** in the header, then click "添加 45 条历史", scroll to the top and back; the virtualized window should update.
 4. Submit a Chinese message using Enter; a marked **模拟回复** should appear.
 5. Start/stop the simulation and switch conversations. No backend requests should occur.
 6. Run `npm run demo:build`, capture a screenshot and compare against your locally installed Codex. Record differences rather than claiming visual fidelity.
