@@ -1,0 +1,48 @@
+/*
+ * Source-anchored semantic port, NOT shipped Codex CSS.
+ * app-initial-e7c27dd40beb.css: _ComposerLayoutRoot_5est5_2,
+ * _ComposerLayoutBody_5est5_2, _ComposerLayoutInput_5est5_2,
+ * _ComposerLayoutFooter_5est5_2 and variant attribute rules.
+ * app-shared-dc7535e633d7.css: --composer-radius, --spacing-token-button-composer.
+ * Unproven shadow/input-editor details intentionally remain host-owned.
+ */
+.codex-composer-layout {
+  --composer-layout-radius: var(--composer-radius, 22px);
+  --composer-layout-background: var(--color-surface-elevated-secondary, #fff);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--composer-layout-radius);
+  background: var(--composer-layout-background);
+  min-width: 0;
+}
+.codex-composer-layout[data-composer-radius-variant="large"] {
+  --composer-layout-radius: calc(var(--spacing, 4px) * 7);
+}
+.codex-composer-layout__body {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.codex-composer-layout__input { min-width: 0; }
+.codex-composer-layout__footer {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.codex-composer-layout__footer[data-composer-rows="stacked"] {
+  flex-wrap: wrap;
+}
+.codex-composer-layout__leading,
+.codex-composer-layout__trailing { display: flex; align-items: center; min-width: 0; }
+.codex-composer-layout__trailing { margin-left: auto; justify-content: flex-end; }
+.codex-composer-layout__reply-context,
+.codex-composer-layout__attachments { min-width: 0; }
+/* Source density variants govern editor metrics; the actual editor remains separate. */
+.codex-composer-layout[data-composer-density="compact"] {
+  --composer-layout-control-size: calc(var(--spacing, 4px) * 5);
+}
+.codex-composer-layout[data-composer-density="comfortable"] {
+  --composer-layout-control-size: calc(var(--spacing, 4px) * 8);
+}

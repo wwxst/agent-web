@@ -1,4 +1,5 @@
 import * as React from "react";
+import { CodexComposerLayout } from "../src/components/CodexComposerLayout.js";
 import type { VirtualizedTurnListApi } from "../src/components/VirtualizedTurnList.js";
 import { ConnectedLiveConversationTranscript } from "../src/components/ConnectedLiveConversationTranscript.js";
 import { BrowserScrollController } from "./browserScrollController.js";
@@ -191,7 +192,7 @@ export function App() {
     setActive(id);
   }
 
-  return <div className="demo-desktop">
+  return <div className="demo-desktop" data-app-shell-frame="true" data-app-shell-sidebar-open={!collapsed} data-app-shell-application-menu-bar="true">
     <div className="demo-window-menu" aria-label="桌面窗口示意（浏览器内，不是原生 Electron）">
       <span className="demo-menubar-back" aria-hidden="true">‹</span><span className="demo-menubar-back" aria-hidden="true">›</span>
       <span className="demo-menubar-panel" aria-hidden="true"><Icon name="panel" size={15}/></span>
@@ -200,8 +201,8 @@ export function App() {
     </div>
     <div className="demo-app" data-codex-shell-preview="light">
     <ConversationSidebar active={active} collapsed={collapsed} onToggle={() => setCollapsed((v) => !v)} onSelect={switchConversation} onReset={reset}/>
-    <div className="demo-main">
-      <header className="demo-header">
+    <div className="demo-main" data-app-shell-main-surface="default">
+      <header className="demo-header" data-app-shell-main-titlebar="true">
         <div className="demo-header-location"><span className="demo-header-folder"><Icon name="folder" size={17}/></span><strong>{DEMO_CONVERSATIONS.find((c) => c.id === active)?.title}</strong></div>
         <div className="demo-header-actions">
           <span className="demo-header-static" title="原版桌面按钮布局参考，暂未接通功能"><Icon name="dots" size={17}/></span>
@@ -243,20 +244,24 @@ export function App() {
       </div>
       <div className="demo-composer-zone">
         <div className="demo-composer-wrap">
-          <div className="demo-composer">
-            <textarea aria-label="演示消息输入" data-testid="composer" placeholder="Work with Codex" rows={2} value={draft} onChange={(event: React.ChangeEvent<HTMLTextAreaElement>) => setDraft(event.target.value)} onKeyDown={(event: React.KeyboardEvent<HTMLTextAreaElement>) => {
+          <CodexComposerLayout
+            className="demo-composer"
+            layout="multiline"
+            density="comfortable"
+            radiusVariant="default"
+            surfaceVariant="default"
+            input={<textarea aria-label="演示消息输入" data-testid="composer" placeholder="Work with Codex" rows={2} value={draft} onChange={(event: React.ChangeEvent<HTMLTextAreaElement>) => setDraft(event.target.value)} onKeyDown={(event: React.KeyboardEvent<HTMLTextAreaElement>) => {
               if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) { event.preventDefault(); sendMessage(); }
-            }}/>
-            <div className="demo-composer-controls">
-              <div className="demo-composer-options">
-                <button type="button" className="demo-composer-plus" title="附件尚未恢复" disabled aria-label="附件尚未恢复"><Icon name="plus" size={20}/></button>
-                <span className="demo-composer-permission" title="演示模式，无真实权限授予">♧ Full access <span>· mock</span></span>
-              </div>
-              <div className="demo-composer-right"><span className="demo-composer-model">Demo Agent <span>Medium</span> <Icon name="chevron" size={12}/></span>
-                <button type="button" data-testid="send-button" aria-label={playing ? "停止模拟" : "发送模拟消息"} title={playing ? "停止模拟" : "发送模拟消息"} className="demo-send-button" disabled={!playing && !draft.trim()} onClick={playing ? stopSample : sendMessage}><Icon name={playing ? "stop" : "up"} size={16}/></button>
-              </div>
-            </div>
-          </div>
+            }}/>}
+            leadingControls={<div className="demo-composer-options">
+              <button type="button" className="demo-composer-plus" title="附件尚未恢复" disabled aria-label="附件尚未恢复"><Icon name="plus" size={20}/></button>
+              <span className="demo-composer-permission" title="演示模式，无真实权限授予">♧ Full access <span>· mock</span></span>
+            </div>}
+            trailingControls={<div className="demo-composer-right">
+              <span className="demo-composer-model">Demo Agent <span>Medium</span> <Icon name="chevron" size={12}/></span>
+              <button type="button" data-testid="send-button" aria-label={playing ? "停止模拟" : "发送模拟消息"} title={playing ? "停止模拟" : "发送模拟消息"} className="demo-send-button" disabled={!playing && !draft.trim()} onClick={playing ? stopSample : sendMessage}><Icon name={playing ? "stop" : "up"} size={16}/></button>
+            </div>}
+          />
         </div>
       </div>
     </div>
