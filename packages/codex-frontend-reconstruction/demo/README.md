@@ -64,3 +64,18 @@ constants are no longer treated as Codex source facts.
 
 See `reports/SOURCE_TRACE_COMPOSER_SHELL.md` for byte hashes, source signatures,
 limitations, and the reproducible private-source audit command.
+
+
+### Source-verified navigation rail checkpoint
+
+`CodexNavigationRail` now renders the **separate** `nav[data-app-navigation-rail]`
+landmark discovered in original compiled `app-initial`. Its direct destinations
+are projected through `NavigationRailModel` and the secondary project/chat panel
+is an independent sibling. Closing the secondary panel leaves the browser rail
+mounted; measured width is forwarded to the shell variable. The host provides
+icons and real actions — the demo's unavailable destinations are disabled rather
+than pretending to navigate to nonexistent routes.
+
+See [`../reports/NAVIGATION_RAIL_SOURCE_RECOVERY.md`](../reports/NAVIGATION_RAIL_SOURCE_RECOVERY.md)
+for exact source identifiers and what remains unimplemented (drag/reorder,
+account customization, peek, original icon system, Electron/window variants).
