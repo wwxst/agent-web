@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "rootDir": "..",
+    "outDir": "../demo-model-build",
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "skipLibCheck": true
+  },
+  "include": ["mockConversation.ts", "../src/conversation/ConversationRenderEntriesModel.ts", "../src/conversation/ConversationMessageRenderPlan.ts", "../src/conversation/LiveConversationSource.ts"]
+}
