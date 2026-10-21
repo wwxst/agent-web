@@ -78,3 +78,5 @@ export type { GroupActivityItem, ActivityGroupHeaderState, ActivityGroupStateOpt
 // Source-derived aggregation of normalized Le/Be/Ve activity units.
 export { aggregateAgentActivityUnits } from "./conversation/AgentActivityAggregate.js";
 export type { AggregateUnit, ActivityAggregate, ReviewFailure, SourceDescriptor, VisualizationKind } from "./conversation/AgentActivityAggregate.js";
+
+export * from "./conversation/AgentActivityRawClassifier.js";
