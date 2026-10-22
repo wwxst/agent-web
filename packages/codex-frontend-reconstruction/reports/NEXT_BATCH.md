@@ -7,21 +7,29 @@
 - The small `composer-1bf0334fecde.js` component is a generic compact/discussion composer with `onCancel/onChange/onSubmit`; do not mistake it for the full conversation composer without a verified call-site match.
 - Latest source-derived tool-activity/diff commit: `f6f04330c5a910ca48823f9d88a05355ee5cb993`. CI verified 296/296 core tests, 4/4 demo model tests, strict React/TypeScript build and 12/12 Chromium tests.
 
-## Source files to trace before implementation
+## Source trace completed for the current gate
 
-Use the local, user-supplied `frontend.zip`; do not commit its proprietary compiled assets.
+The exact main-composer call path is now traced from the supplied bundle:
 
-1. `frontend/webview/assets/app-initial-5851df3f6cb1.js` — identify the actual conversation composer call site and its injected controller/host callbacks, not just the generic layout wrapper.
-2. `frontend/webview/assets/composer-controls-26fb26618ba3.js` — trace the exact toolbar/input action variants and enabled/disabled conditions.
-3. `frontend/webview/assets/composer-provider-c4735dd21754.js`, `composer-scope-provider-cb17532fb9ac.js`, `composer-entry-3b36ec52926c.js`, `composer-state-fb90173904c6.js` — verify which provider/state contracts belong to the main composer and which belong to specialized browser-skill flows.
-4. Matching `app-initial-e7c27dd40beb.css`, `composer-controls-d0f9925fd25f.css`, and composer/editor CSS chunks — restore only source-confirmed styling and slot behavior.
+- `app-primary-fe8a450b3b04.js` (`YMt`) owns the main host callbacks, source-side readiness/submit/stop state and outer form.
+- `app-initial-5851df3f6cb1.js` (`XWu`) mounts `composerController.view.dom`, sets placeholder/submit readiness, registers controller submission, and forwards composition/input events.
+- `reports/COMPOSER_SOURCE_RECOVERY.md` records the source facts, full asset hashes, remaining uncertainty and a reproducible audit command.
+- `src/conversation/ComposerInteractionModel.ts` is integrated into the browser demo's send path; the current textarea remains clearly demo-only.
 
-## Implementation gate
+## Next implementation gate — controller/editor boundary
 
-- First document the actual main-composer component tree, controlled editor state, submit/stop lifecycle, keyboard/composition handling, attachment/paste/drop behavior and source-owned disabled states.
-- Then implement a typed host-neutral controller contract and wire a React Composer component through the existing `CodexComposerLayout`; preserve all verified layout work.
-- Host callbacks must be explicit. No real message send, file upload, permission change or command execution may be faked as an integrated backend action.
-- Only after the original host boundary is established should the Electron bridge be connected to the existing Agent backend.
+1. Define the typed controller contract only for methods directly observed in `XWu` (`view.dom`, `setPlaceholder`, `setInputActive`, `clearInitialInputFocus`, `focus`, `addSubmitHandler`, `cancelPendingSubmit`, `setSubmitReady`) and verify signatures against the actual controller factory before adding optional methods.
+2. Recover the controller factory and ProseMirror/plugin/keymap dependencies from the compiled bundle. Do not substitute a hand-built contenteditable and call it the original editor.
+3. Implement the mount/cleanup adapter around a real controller-owned DOM node, with tests for placeholder/aria label, submit readiness, composition callbacks, resize/font updates, focus requests and deferred detach.
+4. Trace file paste/drop intake and send/stop button state branches before wiring the matching host-neutral callback contract.
+5. Keep Electron IPC and Agent backend actions behind explicit host callbacks; do not report demo mock actions as real sends/stops/uploads.
+
+## Acceptance
+
+- Run `scripts/audit-composer-evidence.mjs` against the exact private source assets.
+- Add focused model tests and Playwright tests for the actual React-mounted controller DOM.
+- Keep core tests, strict React/TypeScript build, and browser smoke suite green.
+- Do not claim Composer parity or a runnable Electron application until the controller/editor is genuinely mounted and compared with the matching installed Codex build.
 
 ## Acceptance
 

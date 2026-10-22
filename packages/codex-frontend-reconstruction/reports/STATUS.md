@@ -109,3 +109,12 @@
 ## Next implementation gate
 
 See `reports/NEXT_BATCH.md`: trace the actual main conversation Composer call site and event/controller contract in the provided bundle before implementing editor behavior or wiring any host action.
+
+
+## Latest verified checkpoint — main Composer submit-gate recovery (2026-10-22)
+
+- Traced the actual main Composer in `app-primary-fe8a450b3b04.js` (`YMt`) and its rich-text editor in `app-initial-5851df3f6cb1.js` (`XWu`); exact full SHA-256 hashes and reproducible signature checks are recorded in `reports/COMPOSER_SOURCE_RECOVERY.md`.
+- Added `ComposerInteractionModel.ts` for the source-confirmed submit-readiness and outer host gates; integrated it into the existing demo send path rather than leaving it as a standalone test-only module.
+- Added IME composition guards to the demo input and a browser test. This is an explicit textarea-demo safety adaptation, not a claim of ProseMirror keyboard parity.
+- Current verified baseline before this batch: commit `44829b77e98cfe8a660afa8eb8f8466234a5c3d8`, with 296/296 core tests, 4/4 demo model tests, strict React/TypeScript build, and 12/12 Chromium tests. New batch CI is pending.
+- Still missing: actual ProseMirror controller/editor integration, complete paste/drop and attachment routing, source-exact stop/streaming state transitions, Electron IPC, and real Agent backend connection.

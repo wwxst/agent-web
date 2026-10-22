@@ -32,3 +32,19 @@ test("uses source-confirmed shell dimensions and composer component slots", asyn
   await expect(root).toHaveAttribute("data-app-shell-sidebar-open", "false");
   expect(uncaught).toEqual([]);
 });
+
+test("prevents Enter from submitting while the demo input is composing", async ({ page }) => {
+  await page.goto("/");
+  const composer = page.getByRole("textbox", { name: "演示消息输入" });
+  await composer.fill("拼音输入");
+  await composer.evaluate((el) => el.dispatchEvent(new CompositionEvent("compositionstart", { bubbles: true })));
+  await expect(composer).toHaveAttribute("data-composing", "true");
+  await composer.press("Enter");
+  await expect(composer).toHaveValue("拼音输入");
+  await expect(page.getByText("已收到你的消息", { exact: false })).toHaveCount(0);
+
+  await composer.evaluate((el) => el.dispatchEvent(new CompositionEvent("compositionend", { bubbles: true })));
+  await expect(composer).toHaveAttribute("data-composing", "false");
+  await composer.press("Enter");
+  await expect(page.getByText("已收到你的消息", { exact: false })).toBeVisible();
+});
