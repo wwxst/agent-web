@@ -122,6 +122,15 @@ See [AgentActivity group-header recovery](reports/AGENT_ACTIVITY_GROUP_HEADER_SO
 
 - [xe/we/Te 原始活动分类源码恢复与缺口](reports/AGENT_ACTIVITY_RAW_CLASSIFIER_SOURCE_RECOVERY.md)
 
+## Source-derived tool detail leaves (2026-10-22)
+
+- `src/components/CodexSourceToolActivityLeaves.tsx` mounts independent React leaves for compiled `RC/EC/NC/CC/PT/IT` behavior through the existing activity renderer.
+- `src/conversation/ToolPatchDiffPresentationModel.ts` restores patch diff counts and the first changed-line navigation target from the source-observed diff-stat fallback.
+- `tests/tool-patch-diff-presentation-model.test.mjs` covers unified diffs, add/delete content fallbacks and changed-line selection.
+- `scripts/audit-tool-detail-evidence.mjs` pins the original compiled bundle hash and checks 55 signatures. `reports/TOOL_ACTIVITY_VISUAL_LEAVES.md` records the source hashes, UI boundary and remaining host integration.
+
+The browser preview remains synthetic/demo-only. It does not reproduce the private Codex design-system, full FileDiff renderer, Electron bridge or live Agent backend.
+
 ## Tool activity history entity store
 
 ToolActivityHistoryEntityStore.ts implements a host-side history entity cache with separate canonical-entity and assistant-message-presence channels, matching the observed Mr(Au/Vd) call shape. ConnectedConversationMessageRenderers can now mount ConnectedCodexToolActivityItem in the live transcript through a stable host-supplied source registry; the browser demo exercises this path using explicitly synthetic entities. This is an independent frontend implementation, not a direct import of Codex's private query runtime or a real Agent backend connection. See reports/TOOL_ACTIVITY_HISTORY_ENTITY_STORE.md for the source audit and remaining integration boundary.
