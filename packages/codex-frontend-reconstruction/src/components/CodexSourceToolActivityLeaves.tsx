@@ -333,6 +333,7 @@ function PatchFileRow(props: {
               </>
             : unified
               ? <CodexSourcePatchDiffPreview patch={diff}
+                  isShortView={props.status === "pending"}
                   header={<ApprovalReviewDetails reviews={props.automaticApprovalReviews}
                     isDeclined={props.status === "auto-review-declined"} />} />
               : <>

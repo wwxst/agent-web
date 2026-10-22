@@ -22,6 +22,8 @@ const FILE_DIFF_OPTIONS = {
 export function CodexSourcePatchDiffPreview(props: {
   patch: string;
   header?: React.ReactNode;
+  /** IT passes true only for pending file changes (original max-h-25). */
+  isShortView?: boolean;
 }) {
   const fileDiff = React.useMemo(() => {
     try {
@@ -40,7 +42,8 @@ export function CodexSourcePatchDiffPreview(props: {
   return (
     <div data-codex-source-diff-engine="pierre">
       {props.header}
-      <div className="codex-source-tool-patch-file__diff-viewport">
+      <div className={"codex-source-tool-patch-file__diff-viewport" +
+        (props.isShortView === true ? " is-short" : "")}>
         {fileDiff != null
           ? <FileDiff
               fileDiff={fileDiff}

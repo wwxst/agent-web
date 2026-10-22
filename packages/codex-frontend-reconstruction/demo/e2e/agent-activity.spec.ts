@@ -137,6 +137,7 @@ test("source-shaped PT/IT leaf shows patch status and expands unified diff witho
   await expect(firstFile.locator("[data-codex-source-patch-diff]")).toBeVisible();
   const diffEngine = firstFile.locator("[data-codex-source-diff-engine='pierre']");
   await expect(diffEngine).toBeVisible();
+  await expect(diffEngine.locator(".codex-source-tool-patch-file__diff-viewport")).toHaveCSS("max-height", "100px");
   await expect(diffEngine.getByText("createToolActivityHistorySource")).toBeVisible();
   await expect(diffEngine.getByText("diff --git")).toHaveCount(0);
   await expect(diffEngine.locator("[data-line]").first()).toBeVisible();
