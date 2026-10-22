@@ -55,6 +55,7 @@ const checks = [
       "submitPendingWhenReady()",
       "getText(e=this.dictation.document)",
       "destroy()",
+      "return new EUu(i,a,n,c,o,s,u,d,l,t?.restoreMarkdownLinksAsTextLinks??!1,t?.restorePathLinksAsFileMentions??!0,t?.plainTextMode??!1,r,f)",
     ],
   },
   {
@@ -63,7 +64,7 @@ const checks = [
     signatures: [
       "composerController:s,conversationId:c,draftKey:l,initialPrompt:u,initialPromptKind:d",
       "enableRichText:!0",
-      "return new EUu(i,a,n,c,o,s,u,d,l,t?.restoreMarkdownLinksAsTextLinks??!1,t?.restorePathLinksAsFileMentions??!0,t?.plainTextMode??!1,r,f)",
+      "S=s??v()",
       "!w.view.isDestroyed&&w.destroy()",
     ],
   },
