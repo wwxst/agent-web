@@ -123,7 +123,7 @@ export function createToolActivityHistorySource(
       state: currentState(),
       queryPlan,
       historyEntity,
-      assistantMessageEntity,
+      assistantMessagePresence,
       historyLoaded,
       assistantMessagePresenceLoaded,
       error: hasSubscriptionError ? subscriptionError : null,

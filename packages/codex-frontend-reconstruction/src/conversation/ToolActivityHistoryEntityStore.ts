@@ -71,7 +71,7 @@ export function createToolActivityHistoryEntityStore(): ToolActivityHistoryEntit
     const entry = channels[channel].get(keyOf(query));
     return Object.freeze({
       loaded: entry?.loaded === true,
-      value: (entry?.value as T | undefined | null) ?? undefined,
+      value: entry?.loaded ? entry.value as T | undefined | null : undefined,
     });
   }
 
@@ -83,7 +83,10 @@ export function createToolActivityHistoryEntityStore(): ToolActivityHistoryEntit
     if (closed) return () => {};
     const entry = entryFor(channel, query);
     entry.listeners.add(listener);
-    if (entry.loaded) listener(entry.value);
+    if (entry.loaded) {
+      try { listener(entry.value); }
+      catch (error) { entry.listeners.delete(listener); throw error; }
+    }
     let active = true;
     return () => {
       if (!active) return;

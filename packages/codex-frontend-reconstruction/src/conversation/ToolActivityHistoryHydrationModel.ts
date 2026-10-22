@@ -94,7 +94,7 @@ export interface ToolActivityHistoryHydrationResult {
 
 export interface ToolActivityHistoryHydrationInput {
   historyEntity: ToolActivityHistoryEntity | null | undefined;
-  assistantMessageEntity?: ToolActivityHistoryEntity | null | undefined;
+  assistantMessagePresence?: unknown;
   context: ToolActivityHistoryHydrationContext;
   dependencies: ToolActivityHistoryHydrationDependencies;
 }

@@ -107,8 +107,8 @@ test("assistant-message presence channel gates streaming exactly by truthiness",
   queryContext:context,hydrationContext:{isTurnInProgress:true},
  },store);
  store.publishHistoryEntity(q,{type:"agentMessage",text:"partial",phase:"commentary"});
- assert.equal(source.getSnapshot().item?.isStreaming,true);
+ assert.equal(source.getSnapshot().item?.completed,false);
  store.publishAssistantMessagePresence(q,{exists:true});
- assert.equal(source.getSnapshot().item?.isStreaming,false);
+ assert.equal(source.getSnapshot().item?.completed,true);
  source.dispose();store.dispose();
 });

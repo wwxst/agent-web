@@ -33,7 +33,7 @@ export function CodexToolActivityItem<T extends ToolItem>(props:CodexToolActivit
   }
   const hydration = props.historyHydration == null ? null :
     hydrateToolActivityItemFromHistory(item, props.historyHydration.historyEntity,
-      props.historyHydration.assistantMessageEntity, props.historyHydration.context,
+      props.historyHydration.assistantMessagePresence, props.historyHydration.context,
       props.historyHydration.dependencies);
   if(hydration?.item===null)return null;
   const activeItem:ToolItem=hydration?.item??item;
