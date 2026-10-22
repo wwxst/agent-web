@@ -76,5 +76,29 @@ test("fk/SO source detail entry delegates real exec leaves without changing grou
   await expect(leaves.first()).toHaveAttribute("data-codex-tool-status","finished");
   await expect(leaves.first().locator("[data-demo-xc-command]")).toHaveAttribute("data-demo-summary-kind","unknown");
   await expect(leaves.first().locator("[data-demo-xc-command]")).toHaveAttribute("data-demo-in-progress","false");
+  const commandToggle = leaves.first().locator("[data-codex-source-command-toggle]");
+  await commandToggle.click();
+  await expect(commandToggle).toHaveAttribute("aria-expanded", "true");
+  await expect(leaves.first().locator("[data-codex-source-command-body]")).toBeVisible();
+  expect(errors).toEqual([]);
+});
+
+test("source-shaped PT/IT leaf shows patch status and expands unified diff without host writes", async ({page}) => {
+  const errors: string[] = [];
+  page.on("pageerror", error => errors.push(error.message));
+  await page.goto("/");
+  await page.getByRole("button", {name:/工具调用与审批交互/}).click();
+  const patchActivity = page.locator("[data-recovered-agent-activity]").nth(1);
+  await patchActivity.getByRole("button", {name:/项工具活动/}).click();
+  const patch = patchActivity.locator("[data-codex-source-patch]");
+  await expect(patch).toBeVisible();
+  await expect(patch).toHaveAttribute("data-patch-status", "pending");
+  await expect(patch.locator("[data-codex-source-patch-file]")).toHaveCount(2);
+  const firstFile = patch.locator("[data-codex-source-patch-file]").first();
+  await expect(firstFile.locator(".codex-source-tool-patch-file__status")).toContainText("正在编辑");
+  const diffToggle = firstFile.getByRole("button", {name:/展开差异/});
+  await diffToggle.click();
+  await expect(firstFile.locator("[data-codex-source-patch-diff]")).toBeVisible();
+  await expect(firstFile.locator(".diff-added")).toContainText("createToolActivityHistorySource");
   expect(errors).toEqual([]);
 });
