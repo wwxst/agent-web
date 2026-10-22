@@ -308,7 +308,7 @@ export function App() {
               if (isComposing || event.nativeEvent.isComposing) { event.preventDefault(); return; }
               event.preventDefault();
               sendMessage();
-            }}/>
+            }}/>}
             leadingControls={<div className="demo-composer-options">
               <button type="button" className="demo-composer-plus" title="附件尚未恢复" disabled aria-label="附件尚未恢复"><Icon name="plus" size={20}/></button>
               <span className="demo-composer-permission" title="演示模式，无真实权限授予">♧ Full access <span>· mock</span></span>
