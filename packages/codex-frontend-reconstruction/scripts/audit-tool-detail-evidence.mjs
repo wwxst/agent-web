@@ -16,7 +16,18 @@ const signatures=[
  "function xC(e){","isBackgroundTerminalRunning:b","isBackgroundTerminalFinished:x",
  "function PT(e){","u=Gf(n)?\`auto-review-declined\`:n.success===!0?\`applied\`",
  "if(!m&&Object.keys(n.changes).length===0)return null",
- "showDiffDetails:!et"
+ "showDiffDetails:!et",
+ "function zO(e){",
+ "Mr(Au,{hostId:s.hostId,threadId:s.conversationId,entityKey:n,itemId:o})",
+ "Mr(Vd,a.type===`assistant-message`?{hostId:s.hostId,threadId:s.conversationId,entityKey:n,itemId:o}:null)",
+ "c?.type===`agentMessage`",
+ "c?.type===`commandExecution`",
+ "c?.type===`fileChange`",
+ "c?.type===`imageGeneration`",
+ "c?.type===`mcpToolCall`",
+ "c?.type===`dynamicToolCall`",
+ "parsedCmd,isFinished:r",
+ "success:r},t[31]=a"
 ];
 const missing=signatures.filter(s=>!content.includes(s));
 if(missing.length){console.error("Missing "+missing.join("\n"));process.exit(1);}

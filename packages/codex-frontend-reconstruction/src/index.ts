@@ -82,3 +82,5 @@ export type { AggregateUnit, ActivityAggregate, ReviewFailure, SourceDescriptor,
 export * from "./conversation/AgentActivityRawClassifier.js";
 
 export * from "./conversation/ToolActivityDetailModel.js";
+
+export * from "./conversation/ToolActivityHistoryHydrationModel.js";
