@@ -96,15 +96,21 @@ test("WC/ZC skill-script summaries show the source-specific background labels", 
   const runningActivity = runningEntry.locator("[data-recovered-agent-activity]");
   await expect(runningEntry).toHaveCount(1);
   await runningActivity.getByRole("button", {name:/项工具活动/}).click();
+  const runningGroup = runningActivity.locator("[data-codex-activity-group]");
+  await expect(runningGroup).toBeVisible();
+  await runningGroup.getByRole("button", {name:/项命令/}).click();
   await expect(runningActivity.locator("[data-codex-source-command-toggle]"))
-    .toContainText("后台终端已启动，正在运行 check.py（来自 Repo Audit 技能）");
+    .toContainText("已启动后台终端，运行来自 Repo Audit 技能的 check.py");
 
   const finishedEntry = page.locator('[data-demo-turn-id="review-skill-script-finished"]');
   const finishedActivity = finishedEntry.locator("[data-recovered-agent-activity]");
   await expect(finishedEntry).toHaveCount(1);
   await finishedActivity.getByRole("button", {name:/项工具活动/}).click();
+  const finishedGroup = finishedActivity.locator("[data-codex-activity-group]");
+  await expect(finishedGroup).toBeVisible();
+  await finishedGroup.getByRole("button", {name:/项命令/}).click();
   await expect(finishedActivity.locator("[data-codex-source-command-toggle]"))
-    .toContainText("后台终端已结束，运行脚本 check.py（来自 Repo Audit 技能）");
+    .toContainText("后台终端已完成运行来自 Repo Audit 技能的 check.py");
 });
 
 test("source-shaped PT/IT leaf shows patch status and expands unified diff without host writes", async ({page}, testInfo) => {

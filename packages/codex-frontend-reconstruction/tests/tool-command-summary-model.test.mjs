@@ -93,28 +93,28 @@ test("WC uses the source-specific skill-script label for background start and fi
   const rawCommand = ["python3", "-u", "/workspace/.agents/skills/repo_audit/scripts/check.py"];
   assert.equal(summary({
     ...base, command, rawCommand, isInProgress: true, isBackgroundTerminalRunning: true,
-  }), "后台终端已启动，正在运行 check.py（来自 Repo Audit 技能）");
+  }), "已启动后台终端，运行来自 Repo Audit 技能的 check.py");
   assert.equal(summary({
     ...base, command, rawCommand, isBackgroundTerminalFinished: true,
-  }), "后台终端已结束，运行脚本 check.py（来自 Repo Audit 技能）");
+  }), "后台终端已完成运行来自 Repo Audit 技能的 check.py");
   assert.equal(summary({
     ...base, command, rawCommand, isBackgroundTerminalFinished: true, wasInterrupted: true,
-  }), "后台终端已停止，命令：脚本 check.py（来自 Repo Audit 技能）");
+  }), "后台终端已通过 来自 Repo Audit 技能的脚本 check.py 停止");
 });
 
 test("WC uses skill-script labels in collapsed summaries but preserves source gating", () => {
   const command = "python3 /workspace/.agents/skills/repo_audit/scripts/check.py";
   const rawCommand = ["python3", "/workspace/.agents/skills/repo_audit/scripts/check.py"];
   assert.equal(summary({ ...base, command, rawCommand, elapsedLabel: "2 秒" }),
-    "已运行脚本 check.py（来自 Repo Audit 技能），耗时 2 秒");
+    "已在 2 秒内运行 来自 Repo Audit 技能的脚本 check.py");
   assert.equal(summary({ ...base, command, rawCommand, wasInterrupted: true, elapsedLabel: "2 秒" }),
-    "已停止脚本 check.py（来自 Repo Audit 技能），耗时 2 秒");
+    "运行 2 秒 后停止 来自 Repo Audit 技能的脚本 check.py");
   assert.equal(summary({ ...base, command, rawCommand, isExpanded: true, elapsedLabel: "2 秒" }),
     "已运行命令，耗时 2 秒");
   assert.equal(summary({ ...base, command, rawCommand, summaryType: "test", isBackgroundTerminalFinished: true }),
     "已运行 " + command);
   assert.equal(summary({ ...base, command, rawCommand, showRawCommand: false, isBackgroundTerminalFinished: true }),
-    "后台终端已结束，运行脚本 check.py（来自 Repo Audit 技能）");
+    "后台终端已完成运行来自 Repo Audit 技能的 check.py");
 });
 
 test("hidden raw-command mode never adds elapsed text to summaries", () => {

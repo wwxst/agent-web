@@ -204,9 +204,11 @@ export function getToolCommandSummary(input: ToolCommandSummaryInput): string {
     (input.isBackgroundTerminalRunning || input.isBackgroundTerminalFinished || !input.isExpanded)
     ? getSkillScriptSummary(input.rawCommand ?? input.command)
     : null;
+  // Match the zh-CN strings for toolSummaryForCmd.skillScript and WC's
+  // background.started/finished/stopped.skillScript branches in the compiled bundle.
   const skillScriptLabel = skillScriptSummary == null
     ? collapsedCommand
-    : "脚本 " + skillScriptSummary.fileName + "（来自 " + skillScriptSummary.skillName + " 技能）";
+    : "来自 " + skillScriptSummary.skillName + " 技能的脚本 " + skillScriptSummary.fileName;
 
   if (input.wasDeclinedByAutoReview) {
     return collapsedCommand
@@ -234,8 +236,8 @@ export function getToolCommandSummary(input: ToolCommandSummaryInput): string {
   if (genericCommand && input.isInProgress) {
     if (input.isBackgroundTerminalRunning) {
       if (skillScriptSummary != null) {
-        return "后台终端已启动，正在运行 " + skillScriptSummary.fileName +
-          "（来自 " + skillScriptSummary.skillName + " 技能）";
+        return "已启动后台终端，运行来自 " + skillScriptSummary.skillName +
+          " 技能的 " + skillScriptSummary.fileName;
       }
       return rawCommand ? "后台终端已启动，运行命令 " + rawCommand : "后台终端已启动";
     }
@@ -243,25 +245,36 @@ export function getToolCommandSummary(input: ToolCommandSummaryInput): string {
   }
 
   if (genericCommand && input.isBackgroundTerminalFinished) {
-    if (input.wasInterrupted && (skillScriptSummary != null || rawCommand)) {
-      return "后台终端已停止，命令：" + (skillScriptSummary != null ? skillScriptLabel : rawCommand);
+    if (input.wasInterrupted && skillScriptSummary != null) {
+      return "后台终端已通过 " + skillScriptLabel + " 停止";
+    }
+    if (input.wasInterrupted && rawCommand) {
+      return "后台终端已停止，命令：" + rawCommand;
     }
     if (skillScriptSummary != null) {
-      return "后台终端已结束，运行脚本 " + skillScriptSummary.fileName +
-        "（来自 " + skillScriptSummary.skillName + " 技能）";
+      return "后台终端已完成运行来自 " + skillScriptSummary.skillName +
+        " 技能的 " + skillScriptSummary.fileName;
     }
     if (rawCommand) return "已运行 " + rawCommand;
     if (input.wasInterrupted) return "后台终端已停止";
     return "后台终端已结束";
   }
 
-  if (!input.isExpanded && (skillScriptSummary != null || rawCommand)) {
-    const commandLabel = skillScriptSummary != null ? skillScriptLabel : rawCommand;
-    const separator = skillScriptSummary != null ? "" : " ";
+  if (!input.isExpanded && skillScriptSummary != null) {
     if (input.wasInterrupted) {
-      return withElapsed("已停止" + separator + commandLabel, input.elapsedLabel, "，耗时 ");
+      return input.elapsedLabel == null
+        ? "已停止 " + skillScriptLabel
+        : "运行 " + input.elapsedLabel + " 后停止 " + skillScriptLabel;
     }
-    return withElapsed("已运行" + separator + commandLabel, input.elapsedLabel, "，耗时 ");
+    return input.elapsedLabel == null
+      ? "已运行 " + skillScriptLabel
+      : "已在 " + input.elapsedLabel + " 内运行 " + skillScriptLabel;
+  }
+  if (!input.isExpanded && rawCommand) {
+    if (input.wasInterrupted) {
+      return withElapsed("已停止 " + rawCommand, input.elapsedLabel, "，耗时 ");
+    }
+    return withElapsed("已运行 " + rawCommand, input.elapsedLabel, "，耗时 ");
   }
 
   if (input.wasInterrupted) {
