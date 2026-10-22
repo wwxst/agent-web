@@ -102,7 +102,7 @@ test("source-shaped PT/IT leaf shows patch status and expands unified diff witho
   await expect(patch.locator("[data-codex-source-patch-file]")).toHaveCount(2);
   const firstFile = patch.locator("[data-codex-source-patch-file]").first();
   await expect(firstFile.locator(".codex-source-tool-patch-file__status")).toContainText("正在编辑");
-  const diffToggle = firstFile.getByRole("button", {name:/展开差异/});
+  const diffToggle = firstFile.getByRole("button", {name:/切换差异/});
   await diffToggle.click();
   await expect(firstFile.locator("[data-codex-source-patch-diff]")).toBeVisible();
   await expect(firstFile.locator(".diff-added")).toContainText("createToolActivityHistorySource");
