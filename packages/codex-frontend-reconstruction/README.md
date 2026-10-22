@@ -135,7 +135,7 @@ See [tool activity source recovery](reports/TOOL_ACTIVITY_VISUAL_LEAVES.md) for 
 - `src/components/CodexSourceToolActivityLeaves.tsx` mounts independent React leaves for compiled `RC/EC/NC/CC/PT/IT` behavior through the existing activity renderer.
 - `src/conversation/ToolPatchDiffPresentationModel.ts` restores patch diff counts and the first changed-line navigation target from the source-observed diff-stat fallback.
 - `tests/tool-patch-diff-presentation-model.test.mjs` covers unified diffs, add/delete content fallbacks and changed-line selection.
-- `scripts/audit-tool-detail-evidence.mjs` pins the original compiled bundle hash and checks 55 signatures. `reports/TOOL_ACTIVITY_VISUAL_LEAVES.md` records the source hashes, UI boundary and remaining host integration.
+- `scripts/audit-tool-detail-evidence.mjs` pins the original activity and patch-preview bundle hashes and checks 55 activity signatures plus four `s0n/f0n` patch-preview signatures. `reports/TOOL_ACTIVITY_VISUAL_LEAVES.md` records the source hashes, UI boundary and remaining host integration.
 
 The browser preview remains synthetic/demo-only. It does not reproduce the private Codex design-system, full FileDiff renderer, Electron bridge or live Agent backend.
 
