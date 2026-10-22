@@ -137,7 +137,7 @@ function reviewScenario(): ConversationRenderEntry[] {
             "+export const historyLine10 = 10;",
             "+export const historyLine11 = 11;",
             "+export const historyLine12 = 12;",
-          ].join("\\n"),
+          ].join("\n"),
         },
         "src/components/CodexSourceToolActivityLeaves.tsx": {
           type: "add",
