@@ -269,4 +269,4 @@ button:not(:disabled):hover { transition: background .15s, color .15s; }
   .codex-source-tool-patch-file__header { align-items:flex-start; flex-direction:column; }
   .codex-source-tool-patch-file__actions { width:100%; justify-content:space-between; }
 }
-
+.codex-source-tool-patch-file__empty { padding:8px 10px; color:#8d8d8d; font-size:11px; }
