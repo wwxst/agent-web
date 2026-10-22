@@ -28,6 +28,7 @@ export interface ToolCommandSummaryInput {
   wasDeclinedByAutoReview: boolean;
   isExpanded: boolean;
   showRawCommand: boolean;
+  executionStatus?: string | null;
 }
 
 function commandText(command: Command): string {
@@ -55,6 +56,25 @@ export function isDateTimeCheckCommand(command: Command): boolean {
   );
 }
 
+
+function visualizationCommandKind(command: unknown): "create" | "update" | null {
+  const source = typeof command === "string"
+    ? command
+    : Array.isArray(command) ? command.map((part) => String(part)).join(" ") : "";
+  const hasVisualizationPath = /(?:^|[\\/])visualizations(?:[\\/"'\s;]|$)/i.test(source);
+  const hasWriteOperation = /(?:^|\s)(?:apply_patch|mkdir|tee|touch|cp|mv|install)(?:\s|$)|(?:^|[^<])>>?/.test(source);
+  if (!hasVisualizationPath || !hasWriteOperation) return null;
+  if (/\*\*\* Add File:[^\r\n]*[\\/]visualizations(?:[\\/"'\s;]|$)/i.test(source)) return "create";
+  if (/\*\*\* Update File:[^\r\n]*[\\/]visualizations(?:[\\/"'\s;]|$)/i.test(source)) return "update";
+  if (/\*\*\* Delete File:[^\r\n]*[\\/]visualizations(?:[\\/"'\s;]|$)/i.test(source)) return null;
+  return "create";
+}
+
+function isEligibleVisualizationExecutionStatus(status: string | null | undefined): boolean {
+  if (status == null) return true;
+  return status === "inProgress" || status === "completed";
+}
+
 function withElapsed(label: string, elapsed: string | null, separator = "，耗时 "): string {
   return elapsed == null ? label : label + separator + elapsed;
 }
@@ -71,6 +91,12 @@ export function getToolCommandSummary(input: ToolCommandSummaryInput): string {
     return collapsedCommand
       ? "命令被自动审查拒绝：" + collapsedCommand
       : "命令被自动审查拒绝";
+  }
+
+  if (!input.wasInterrupted && isEligibleVisualizationExecutionStatus(input.executionStatus)) {
+    const kind = visualizationCommandKind(input.command);
+    if (kind === "create") return input.isInProgress ? "正在创建可视化" : "已创建可视化";
+    if (kind === "update") return input.isInProgress ? "正在更新可视化" : "已更新可视化";
   }
 
   if (isDateTimeCheckCommand(input.command)) {

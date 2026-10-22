@@ -10,6 +10,8 @@ The visual leaf routing was inspected in the user-provided Codex Windows fronten
 - Main source chunk SHA-256: `a84b2e2181125a3e4d2bc9be458bad4fb36df615243c7f3cc23e076bd4094708`
 - Patch preview source chunk: `frontend/webview/assets/app-initial-5851df3f6cb1.js`
 - Patch preview source chunk SHA-256: `c70d95da34ba7e5962a559dbf68d0102d10b4b47b877f5d9933629bb5a1f3a10`
+- Visualization command helper chunk: `frontend/webview/assets/skill-exploration-labels-dbc7ec897dab.js`
+- Visualization command helper SHA-256: `26c09e991cbfa31950d34e9106bb7f76c4efd6220cb30a606f6c81e7e26399c4`
 
 The pinned bundle contains the dispatch and leaf definitions below. The patch preview/statistics behavior was cross-checked against the sibling chunks `patch-diff-stats-48343cc4a635.js` (SHA-256 `3664f03c29a0d9e3f62ce1972ddc87e71f48432402799dbcf18c5734e35b6025`) and `code-diff-628be5db9fe9.js` (SHA-256 `f402c9dcef03dd1a6d238b0ce1709ec366ef8814ae7e7ee10a41274dab8e7d9b`).
 
@@ -45,7 +47,7 @@ Integration uses the existing `CodexToolActivityLeafRenderer` and `ConnectedConv
 
 ## Audit and verification boundary
 
-`scripts/audit-tool-detail-evidence.mjs` checks both original bundle hashes, 55 activity-leaf signatures, and four `s0n/f0n` patch-preview signatures, including the 1 MiB limit and move-path handling. The 21 added visual-leaf signatures were independently checked against the provided bundle and passed 21/21. The command summary model deliberately leaves the private `executionStatus` create/update classifier and skill-script background summary as documented follow-up work.
+`scripts/audit-tool-detail-evidence.mjs` checks both original bundle hashes, 55 activity-leaf signatures, and four `s0n/f0n` patch-preview signatures, including the 1 MiB limit and move-path handling. The 21 added visual-leaf signatures were independently checked against the provided bundle and passed 21/21. The command summary model now also ports the source `fh/uh` execution-status and visualization-path classifier. Skill-script-specific background labels remain follow-up work.
 
 Source signature checks prove the target compiled branches are present; they do not prove pixel parity. The authored CSS in `demo/styles.css` is a local compatibility layer, not copied Codex CSS. The current browser preview is still a demo host, not a complete Electron app.
 

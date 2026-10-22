@@ -61,6 +61,16 @@ test("WC date summaries include status and elapsed label", () => {
   assert.equal(summary({ ...base, command: "date +%Y-%m-%d", wasInterrupted: true }), "已停止检查当前日期和时间");
 });
 
+
+test("visualization command summaries follow source path, write-command and status predicates", () => {
+  assert.equal(summary({ ...base, command: "mkdir /tmp/visualizations", executionStatus: "inProgress", isInProgress: true }), "正在创建可视化");
+  assert.equal(summary({ ...base, command: "apply_patch\n*** Update File: /tmp/visualizations/chart.ts", executionStatus: "completed" }), "已更新可视化");
+  assert.equal(summary({ ...base, command: "apply_patch\n*** Add File: /tmp/visualizations/chart.ts", executionStatus: null }), "已创建可视化");
+  assert.equal(summary({ ...base, command: "apply_patch\n*** Delete File: /tmp/visualizations/chart.ts", executionStatus: "completed" }), "已运行 apply_patch\n*** Delete File: /tmp/visualizations/chart.ts");
+  assert.equal(summary({ ...base, command: "mkdir /tmp/visualizations", executionStatus: "failed" }), "已运行 mkdir /tmp/visualizations");
+  assert.equal(summary({ ...base, command: "mkdir /tmp/visualizations", executionStatus: "completed", wasDeclinedByAutoReview: true }), "命令被自动审查拒绝：mkdir /tmp/visualizations");
+});
+
 test("hidden raw-command mode never adds elapsed text to summaries", () => {
   assert.equal(summary({ ...base, showRawCommand: false, elapsedLabel: null }), "已运行命令");
   assert.equal(summary({ ...base, showRawCommand: false, isInProgress: true, elapsedLabel: null }), "正在运行命令");
