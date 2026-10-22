@@ -130,7 +130,7 @@ export function createConnectedConversationMessageRenderers(host: ConnectedConve
 
     const hydrationInput = detailHost?.getHistoryHydration?.(item, isActive) ?? null;
     const hydration = hydrationInput == null ? null : hydrateToolActivityItemFromHistory(
-      item, hydrationInput.historyEntity, hydrationInput.assistantMessageEntity,
+      item, hydrationInput.historyEntity, hydrationInput.assistantMessagePresence,
       hydrationInput.context, hydrationInput.dependencies,
     );
     if (hydration?.item === null) return null;
