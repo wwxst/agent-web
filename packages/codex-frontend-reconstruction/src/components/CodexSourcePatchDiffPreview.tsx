@@ -25,7 +25,7 @@ export function CodexSourcePatchDiffPreview(props: {
 }) {
   const fileDiff = React.useMemo(() => {
     try {
-      const parsed = parsePatchFiles(props.patch, undefined, true);
+      const parsed = parsePatchFiles(props.patch);
       if (parsed.length !== 1 || parsed[0]?.files.length !== 1) return null;
       const file = parsed[0].files[0];
       const isBinary = props.patch.split(/\r?\n/).some((line) => line.startsWith("Binary files "));
