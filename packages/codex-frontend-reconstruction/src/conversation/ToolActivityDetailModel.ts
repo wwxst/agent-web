@@ -6,6 +6,7 @@
 import {
   getVisualizationActivityKind,
   isAutoReviewDeclinedToolActivity,
+  isMeaningfulReadToolActivity,
 } from "./ToolActivityHistorySourceTransforms.js";
 export interface ToolItem {type:string;[key:string]:unknown}
 export interface ToolDetailContext {

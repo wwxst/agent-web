@@ -229,3 +229,65 @@ export function formatMcpToolResult(result:unknown,error:unknown,status:unknown)
  }
  return {type:"success",content,structuredContent:result.structuredContent,raw:result};
 }
+
+function normalizeSkillLookupPath(value:string):string {
+ return value.trim().replace(/^\.\/+/,"").replaceAll(/\\/g,"/");
+}
+function normalizeJoinedSkillPath(value:string):string {
+ const path=normalizeSkillLookupPath(value);
+ const drive=path.match(/^[A-Za-z]:/)?path.slice(0,2):"";
+ const rest=drive?path.slice(2):path;
+ const absolute=rest.startsWith("/");
+ const parts:string[]=[];
+ for(const part of rest.split("/")){
+  if(part===""||part===".")continue;
+  if(part===".."){if(parts.length>0&&parts[parts.length-1]!=="..")parts.pop();else if(!absolute)parts.push("..");}
+  else parts.push(part);
+ }
+ return drive+(absolute?"/":"")+parts.join("/");
+}
+function isAbsoluteSkillLookupPath(path:string):boolean {
+ return path.startsWith("/")||/^[A-Za-z]:\//.test(path);
+}
+function skillDefinitionPathResult(segments:string[]):boolean|null {
+ for(let i=0;i<segments.length;i++){
+  const marker=segments[i]?.toLowerCase();
+  if((marker!==".codex"&&marker!==".agents")||segments[i+1]?.toLowerCase()!=="skills")continue;
+  const third=segments[i+2]?.toLowerCase(),skillIndex=i+(third==="_import"||third===".system"?3:2);
+  const skillId=segments[skillIndex]??null;
+  if(skillId!=null&&skillId.length>0){const relative=segments.slice(skillIndex+1);return relative.length===1&&relative[0]?.toLowerCase()==="skill.md";}
+ }
+ for(let i=0;i<segments.length;i++){
+  if(segments[i]?.toLowerCase()!=="plugins")continue;
+  const cached=segments[i+1]?.toLowerCase()==="cache",pluginIndex=i+(cached?3:1),pluginId=segments[pluginIndex]??null;
+  if(pluginId==null)continue;
+  const searchAfter=pluginIndex+(cached?1:0);let skillsIndex=-1;
+  for(let j=searchAfter+1;j<segments.length;j++){if(segments[j]?.toLowerCase()==="skills"){skillsIndex=j;break;}}
+  const noSkills=skillsIndex<0,skillIndex=noSkills?searchAfter:skillsIndex+1;
+  const skillId=noSkills?pluginId:segments[skillIndex]??null,relative=segments.slice(skillIndex+1);
+  if(skillId==null)continue;
+  if(noSkills&&!(relative.length===1&&relative[0]?.toLowerCase()==="skill.md"))continue;
+  return relative.length===1&&relative[0]?.toLowerCase()==="skill.md";
+ }
+ return null;
+}
+/** Source skill-exploration-labels N/P/F/I: meaningful read means a skill-definition file. */
+export function isMeaningfulReadToolActivity(item:HistoryToolItem):boolean {
+ if(item.type!=="exec"||!record(item.parsedCmd)||item.parsedCmd.type!=="read")return false;
+ const rawPath=item.parsedCmd.path??item.parsedCmd.name;
+ if(typeof rawPath!=="string"||rawPath.trim().length===0)return false;
+ const cwd=typeof item.cwd==="string"&&item.cwd.length>0?item.cwd:null;
+ const normalized=normalizeSkillLookupPath(rawPath);
+ let resolved=normalized;
+ if(cwd!=null){
+  const normalizedCwd=normalizeSkillLookupPath(cwd);
+  resolved=isAbsoluteSkillLookupPath(normalized)
+   ?normalizeJoinedSkillPath(normalized)
+   :normalizeJoinedSkillPath(normalizedCwd.replace(/\/+$/,"")+"/"+normalized.replace(/^\/+/,""));
+ }
+ return skillDefinitionPathResult(resolved.replace(/\/+$/,"").split("/").filter(Boolean))===true;
+}
+/** Source $x: assistant text normalization without heartbeat-turn projection. */
+export function normalizeAssistantText(content:string):string {
+ return cleanAssistantContent(content,false,false).content;
+}
