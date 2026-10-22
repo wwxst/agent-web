@@ -1,21 +1,24 @@
 {
   "date": "2026-10-22",
-  "stage": "zO history entity hydration and xC/PT typed tool-leaf integration",
+  "stage": "source-derived history transforms + zO hydration + xC/PT typed leaf adapters",
   "branch": "recovery/codex-frontend-through-connected-message-20261021",
-  "head": "c246bd04aebb7a45665c2457183de8576aadbfd8",
+  "validated_code_head": "5d3efee457b4a24acc0d10e7620137449a51fbb4",
   "new_modules": [
+    "src/conversation/ToolActivityHistorySourceTransforms.ts",
     "src/conversation/ToolActivityHistoryHydrationModel.ts",
-    "src/components/CodexToolActivityLeafRenderer.tsx"
+    "src/components/CodexToolActivityLeafRenderer.tsx",
+    "scripts/audit-tool-history-transforms-evidence.mjs"
   ],
   "test_status": {
-    "core": "235/235 pass",
+    "core": "253/253 pass",
     "demo_model": "4/4 pass",
     "production_typecheck_and_build": "pass",
     "chromium": "9/9 pass",
-    "original_source_audit": "34/34 signatures pass; SHA-256 a84b2e2181125a3e4d2bc9be458bad4fb36df615243c7f3cc23e076bd4094708"
+    "original_source_audits": "sites-end-resource 34/34 signatures; app-initial/app-primary/app-shared 18/18 signatures; pinned SHA-256 checks pass"
   },
   "remaining_next": [
-    "recover wo/Wa/zl/qr/Uf/Po/wl private transforms from their original owning modules",
+    "recover the specialized Uf MCP-to-external-message converter",
+    "recover the NO/mh meaningful-read classifier",
     "connect real Mr(Au/Vd) history subscriptions through a host adapter",
     "implement and visually verify CC/RC/EC/NC/PT/IT leaf components",
     "connect Electron IPC and the Agent backend after frontend contracts are verified",
@@ -29,17 +32,26 @@
     "no pixel-level UI parity verified"
   ],
   "previous_checkpoint": {
-    "date": "2026-10-21",
-    "stage": "live conversation render-entry projection and virtualized transcript composition",
-    "tests_total": 87,
-    "test_command": "npm run test:core",
-    "test_status": "pass",
-    "ui_static_typecheck": "pass with temporary minimal React declaration shim",
-    "no_claims": [
-      "not recovered authors original source",
-      "not runnable complete Codex frontend",
-      "no Electron or screenshot parity",
-      "no GitHub push"
-    ]
+    "date": "2026-10-22",
+    "stage": "zO history entity hydration and xC/PT typed tool-leaf integration",
+    "validated_code_head": "c246bd04aebb7a45665c2457183de8576aadbfd8",
+    "test_status": {
+      "core": "235/235 pass",
+      "demo_model": "4/4 pass",
+      "production_typecheck_and_build": "pass",
+      "chromium": "9/9 pass",
+      "original_source_audit": "34/34 signatures pass"
+    },
+    "earlier_checkpoint": {
+      "date": "2026-10-21",
+      "stage": "live conversation render-entry projection and virtualized transcript composition",
+      "tests_total": 87,
+      "test_status": "pass",
+      "no_claims": [
+        "not original authored source",
+        "not complete runnable Codex frontend",
+        "no Electron or pixel parity"
+      ]
+    }
   }
 }

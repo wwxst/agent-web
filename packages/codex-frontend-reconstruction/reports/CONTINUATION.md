@@ -30,3 +30,16 @@ HEAD: `c246bd04aebb7a45665c2457183de8576aadbfd8`
 - Source-only transforms remain injected. The demo command leaf is synthetic and does not run commands.
 - Validation: 235/235 core tests, 4/4 demo model tests, production typecheck/build, 9/9 Chromium tests, and 34/34 source signatures passed.
 - Next: recover each private transform (wo/Wa/zl/qr/Uf/Po/wl) from its owning original module and connect the real host history subscriptions; then implement/verify actual CC/RC/EC/NC/PT/IT visual leaves. Electron IPC and pixel parity remain open.
+
+
+## Current checkpoint — source-derived history transforms (2026-10-22)
+
+Validated code HEAD: `5d3efee457b4a24acc0d10e7620137449a51fbb4`
+Branch: `recovery/codex-frontend-through-connected-message-20261021`
+
+- Recovered and tested source-derived transforms for assistant content/heartbeat, reasoning summary, file-change mapping (including generated visualization-file filtering), image-generation failure payloads, Codex Apps send-action classification, MCP content/result normalization, visualization activity classification, and auto-review decline detection.
+- `createSourceToolActivityHistoryDependencies(convertMcpToolCall)` supplies those recovered transforms to the zO hydration model. The special MCP-to-external-message conversion (`Uf`) still requires a host callback.
+- Evidence audit: original `sites-end-resource` bundle 34/34 signatures; original `app-initial`, `app-primary`, and `app-shared` helper chunks 18/18 signatures. Their SHA-256 hashes are pinned by the audit scripts.
+- CI: 253/253 core tests, 4/4 demo model tests, strict React/TypeScript build, and 9/9 Chromium tests passed.
+- Next: recover `Uf` and `NO/mh` from their owning source modules, connect real `Mr(Au/Vd)` subscriptions, and implement/version-check the actual `CC/RC/EC/NC/PT/IT` leaves. Then proceed to Electron IPC, Agent backend integration, and version-matched UI comparison.
+- No claim of a complete standalone Codex frontend, real command execution, real approval flow, or pixel parity.

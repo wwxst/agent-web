@@ -91,3 +91,8 @@ Group-header verification: the mock scenario now includes a two-command group. E
 ## Latest tool activity integration
 
 The connected renderer now supports host-resolved zO history hydration before choosing activity content, and typed xC/PT leaf adapters for host-provided read/search/list-files/command/patch visuals. The demo injects only a synthetic command leaf; it does not connect to the private history store, execute commands, approve permissions, or claim original Codex leaf parity. See `../reports/TOOL_ACTIVITY_DETAIL_SOURCE_RECOVERY.md`.
+
+
+## Source-transform provenance
+
+The history hydration layer now uses source-derived helpers for assistant content/heartbeat normalization, reasoning summaries, file-change mapping, image-generation failure records, Codex Apps action classification, MCP result normalization, visualization activity kind and declined-review detection. The MCP-to-external-message converter and real history subscriptions are still host adapters. To verify the pinned original helper chunks, run `node scripts/audit-tool-history-transforms-evidence.mjs <app-initial.js> <app-primary.js> <app-shared.js>`.

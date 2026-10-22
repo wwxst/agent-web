@@ -7,6 +7,8 @@ This package is a staged, independently authored semantic reconstruction of sele
 - `src/conversation/ActiveToolActivityLabel.ts` — activity-label mapping and safe search-term formatting.
 - `src/conversation/ToolActivityDetailModel.ts` — source-derived tool visibility, exec leaf selection and patch status.
 - `src/conversation/ToolActivityHistoryHydrationModel.ts` — LO/HO query planning and zO history entity reconciliation with private transforms injected.
+- `src/conversation/ToolActivityHistorySourceTransforms.ts` — source-derived assistant/heartbeat, reasoning, file-change, image-failure, MCP-result and activity-status transforms.
+- `scripts/audit-tool-history-transforms-evidence.mjs` — verifies SHA-256 and function signatures in the original app-initial/app-primary/app-shared bundles.
 - `src/components/CodexToolActivityLeafRenderer.tsx` — typed xC/PT leaf contracts for host-provided visual components.
 - `src/conversation/ActivityGroupingModel.ts` — activity-row classification and automatic-approval metadata normalization.
 - `src/conversation/TurnEntriesModel.ts` — reply-chain indexing, timestamp markers, item lookup, virtualization estimates and memo equality.

@@ -67,3 +67,11 @@
 - Added `CodexToolActivityLeafRenderer.tsx`: typed host component contracts for xC read/search/list-files/command leaves and PT patch rows; no private visual leaf is represented as recovered.
 - Connected history hydration before content projection in `ConnectedConversationMessageRenderers.tsx`. The browser demo uses a marked mock command leaf adapter.
 - Verified at HEAD `c246bd0`: 235/235 core tests, 4/4 demo model tests, strict React/TypeScript production build, 9/9 Chromium tests, and 34/34 original-source signature checks. Both GitHub Actions workflows passed.
+
+
+## Current checkpoint — source-derived history transforms (2026-10-22)
+
+- Added `ToolActivityHistorySourceTransforms.ts` from the original app-initial, app-primary and app-shared bundle logic: assistant content/heartbeat normalization (`wo`), reasoning summary (`Wa`), file-change projection and visualization filtering (`zl/WMe`), image failure validation (`qr`), Codex Apps action classification (`Po`), MCP result formatting/content normalization (`wl/amn`), visualization activity kind (`cc`) and declined-review predicate (`Gf`).
+- Added `createSourceToolActivityHistoryDependencies`; only the specialized MCP-to-external-message converter (`Uf`) remains a required host adapter for history hydration. The meaningful-read predicate (`NO/mh`) and live `Mr(Au/Vd)` subscriptions also remain host-owned.
+- Validation at code HEAD `5d3efee`: 253/253 core tests, 4/4 demo model tests, production typecheck/build, 9/9 Chromium tests. Original source audits passed 34/34 signatures for sites-end-resource and 18/18 signatures across the three helper bundles.
+- The browser demo remains mock-only; real Electron IPC, live history subscriptions, proprietary visual leaves and pixel-level Codex comparison are not claimed complete.
