@@ -96,14 +96,14 @@ test("WC/ZC skill-script summaries show the source-specific background labels", 
   const runningActivity = runningEntry.locator("[data-recovered-agent-activity]");
   await expect(runningEntry).toHaveCount(1);
   await runningActivity.getByRole("button", {name:/项工具活动/}).click();
-  await expect(runningActivity.locator("[data-codex-source-tool-summary]"))
+  await expect(runningActivity.locator("[data-codex-source-command-toggle]"))
     .toContainText("后台终端已启动，正在运行 check.py（来自 Repo Audit 技能）");
 
   const finishedEntry = page.locator('[data-demo-turn-id="review-skill-script-finished"]');
   const finishedActivity = finishedEntry.locator("[data-recovered-agent-activity]");
   await expect(finishedEntry).toHaveCount(1);
   await finishedActivity.getByRole("button", {name:/项工具活动/}).click();
-  await expect(finishedActivity.locator("[data-codex-source-tool-summary]"))
+  await expect(finishedActivity.locator("[data-codex-source-command-toggle]"))
     .toContainText("后台终端已结束，运行脚本 check.py（来自 Repo Audit 技能）");
 });
 
