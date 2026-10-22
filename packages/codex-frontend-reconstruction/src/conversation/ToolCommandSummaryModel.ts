@@ -257,10 +257,11 @@ export function getToolCommandSummary(input: ToolCommandSummaryInput): string {
 
   if (!input.isExpanded && (skillScriptSummary != null || rawCommand)) {
     const commandLabel = skillScriptSummary != null ? skillScriptLabel : rawCommand;
+    const separator = skillScriptSummary != null ? "" : " ";
     if (input.wasInterrupted) {
-      return withElapsed("已停止 " + commandLabel, input.elapsedLabel, "，耗时 ");
+      return withElapsed("已停止" + separator + commandLabel, input.elapsedLabel, "，耗时 ");
     }
-    return withElapsed("已运行 " + commandLabel, input.elapsedLabel, "，耗时 ");
+    return withElapsed("已运行" + separator + commandLabel, input.elapsedLabel, "，耗时 ");
   }
 
   if (input.wasInterrupted) {
