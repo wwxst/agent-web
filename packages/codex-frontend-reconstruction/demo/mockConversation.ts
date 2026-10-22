@@ -94,6 +94,23 @@ function reviewScenario(): ConversationRenderEntry[] {
     demoActivityEntry("review-exec", [demoItem("review-exec1", "exec", undefined, {
       heading: "读取项目结构", command: "find src -maxdepth 2 -type f", output: "src/components/\nsrc/conversation/\nsrc/index.ts", state: "Ready",
     })]),
+    // Synthetic patch fixture for the source-shaped PT/IT leaf. It does not
+    // modify the demo project or invoke a host file API.
+    demoActivityEntry("review-patch", [demoItem("review-patch1", "patch", undefined, {
+      heading: "演示文件修改", approvalRequestId: "demo-approval-1", state: "Needs input",
+      grantRoot: "/projects/agent-web",
+      visualizationActivities: [{ kind: "update" }],
+      changes: {
+        "src/conversation/ToolActivityHistorySource.ts": {
+          type: "update",
+          unified_diff: "--- a/src/conversation/ToolActivityHistorySource.ts\\n+++ b/src/conversation/ToolActivityHistorySource.ts\\n@@ -1,2 +1,2 @@\\n-export const source = null;\\n+export const source = createToolActivityHistorySource();",
+        },
+        "src/components/CodexSourceToolActivityLeaves.tsx": {
+          type: "add",
+          content: "export function CodexSourcePatchLeaf() {\\n  return null;\\n}\\n",
+        },
+      },
+    })]),
     demoActivityEntry("review-diff", [demoItem("review-diff1", "demo-file-review", undefined, {
       heading: "审阅变更（只读）", filePath: "src/components/VirtualizedTurnList.tsx", state: "Ready",
     })]),
