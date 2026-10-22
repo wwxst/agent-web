@@ -125,7 +125,7 @@ See [AgentActivity group-header recovery](reports/AGENT_ACTIVITY_GROUP_HEADER_SO
 ## Source-derived command summaries and patch previews (2026-10-22)
 
 - `src/conversation/ToolCommandSummaryModel.ts` restores the compiled `WC/JC/GC` generic command, background terminal, date-check and elapsed-time branches. The private execution-status classifier and skill-script-specific labels remain explicit gaps.
-- `src/conversation/ToolPatchDiffPresentationModel.ts` now follows the compiled patch-diff-stats fallback instead of guessing added/deleted line counts from plain source content.
+- `src/conversation/ToolPatchDiffPresentationModel.ts` ports the compiled `s0n/f0n` preview builder plus patch-stat fallback: add/delete contents become unified diffs, update hunks receive missing headers, and previews over 1 MiB are suppressed.
 - File-open callbacks retain the original change path and prefer `grantRoot` over `cwd`, matching the compiled `IT` call shape.
 
 See [tool activity source recovery](reports/TOOL_ACTIVITY_VISUAL_LEAVES.md) for evidence and remaining gaps.

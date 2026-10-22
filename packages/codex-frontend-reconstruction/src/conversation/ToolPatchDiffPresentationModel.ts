@@ -1,3 +1,67 @@
+
+const MAX_PATCH_PREVIEW_BYTES = 1_048_576;
+
+function record(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+function stringValue(value: unknown): string | undefined {
+  return typeof value === "string" ? value : undefined;
+}
+
+/**
+ * Port of compiled app-initial s0n/f0n. It synthesizes unified diffs for
+ * add/delete changes, wraps update hunks with file headers, and enforces the
+ * original 1 MiB preview limit before the renderer receives the text.
+ */
+export function getToolPatchDiffText(path: string, change: unknown): string | null {
+  if (!record(change)) return null;
+  const type = stringValue(change.type);
+  if (type !== "update" && type !== "add" && type !== "delete") return null;
+  const source = type === "update"
+    ? stringValue(change.unified_diff)
+    : stringValue(change.content);
+  if (source == null) return null;
+  const movePath = stringValue(change.move_path) ?? path;
+
+  if (source.length > MAX_PATCH_PREVIEW_BYTES ||
+      path.length * 4 > MAX_PATCH_PREVIEW_BYTES ||
+      (type === "update" && (stringValue(change.move_path)?.length ?? 0) * 2 > MAX_PATCH_PREVIEW_BYTES)) {
+    return null;
+  }
+
+  if (type === "update") {
+    const unifiedDiff = source.trimStart();
+    const hasFileHeaders = /\n?---\s/.test(unifiedDiff);
+    const hasGitHeader = /^diff --git /m.test(unifiedDiff);
+    const body = hasFileHeaders
+      ? unifiedDiff
+      : "--- a/" + path + "\n+++ b/" + movePath + "\n" + unifiedDiff;
+    const prefix = hasGitHeader ? "" : "diff --git a/" + path + " b/" + movePath + "\n";
+    return prefix.length + body.length > MAX_PATCH_PREVIEW_BYTES ? null : prefix + body;
+  }
+
+  const lines = source.replace(/\r\n/g, "\n").split("\n");
+  if (lines.at(-1) === "") lines.pop();
+  const header = [
+    "diff --git a/" + path + " b/" + path,
+    type === "add" ? "new file mode 100644" : "deleted file mode 100644",
+    type === "add" ? "--- /dev/null" : "--- a/" + path,
+    type === "add" ? "+++ b/" + path : "+++ /dev/null",
+  ].join("\n");
+  if (lines.length === 0) {
+    return header.length > MAX_PATCH_PREVIEW_BYTES ? null : header;
+  }
+
+  const hunk = type === "add"
+    ? "@@ -0,0 +1," + lines.length + " @@\n"
+    : "@@ -1," + lines.length + " +0,0 @@\n";
+  const estimatedLength = header.length + 1 + hunk.length +
+    lines.reduce((total, line) => total + line.length + 2, 0);
+  if (estimatedLength > MAX_PATCH_PREVIEW_BYTES) return null;
+  const prefix = type === "add" ? "+" : "-";
+  return header + "\n" + hunk + lines.map((line) => prefix + line).join("\n") + "\n";
+}
+
 export interface ToolPatchDiffPresentation {
   added: number;
   removed: number;

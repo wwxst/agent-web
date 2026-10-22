@@ -4,7 +4,7 @@ import {
   type ToolItem,
 } from "../conversation/ToolActivityDetailModel.js";
 import { isMeaningfulReadToolActivity, getVisualizationActivityKind } from "../conversation/ToolActivityHistorySourceTransforms.js";
-import { getToolPatchDiffPresentation } from "../conversation/ToolPatchDiffPresentationModel.js";
+import { getToolPatchDiffPresentation, getToolPatchDiffText } from "../conversation/ToolPatchDiffPresentationModel.js";
 import { getToolCommandElapsedMs, getToolCommandSummary } from "../conversation/ToolCommandSummaryModel.js";
 import type {
   ExecCommandLeafProps,
@@ -251,11 +251,6 @@ export function CodexSourceExecCommandLeaf(props: ExecCommandLeafProps) {
   );
 }
 
-function changeText(change: unknown): string | null {
-  if (!isRecord(change)) return null;
-  return text(change.unified_diff) ?? text(change.content) ?? text(change.diff) ?? null;
-}
-
 function patchChangeLabel(change: unknown, status: ReturnType<typeof getToolPatchStatus>): string {
   const type = isRecord(change) ? text(change.type) : undefined;
   const action = type === "add" ? "创建" : type === "delete" ? "删除" : "编辑";
@@ -278,7 +273,7 @@ function PatchFileRow(props: {
   automaticApprovalReviews?: unknown;
 }) {
   const [expanded, setExpanded] = React.useState(false);
-  const diff = changeText(props.change);
+  const diff = getToolPatchDiffText(props.path, props.change);
   const diffPresentation = getToolPatchDiffPresentation(diff);
   const counts = diffPresentation;
   const label = patchChangeLabel(props.change, props.status);
