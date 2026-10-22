@@ -60,7 +60,7 @@ test("source-derived group row toggles its real subrows independently",async ({p
   expect(errors).toEqual([]);
 });
 
-test("fk/SO source detail entry delegates real exec leaves without changing group state", async ({page})=>{
+test("fk/SO source detail entry delegates real exec leaves without changing group state", async ({page}, testInfo)=>{
   const errors:string[]=[];page.on("pageerror",e=>errors.push(e.message));
   await page.goto("/");
   const group=page.locator("[data-recovered-agent-activity]").nth(1);
@@ -79,7 +79,12 @@ test("fk/SO source detail entry delegates real exec leaves without changing grou
   const commandToggle = leaves.first().locator("[data-codex-source-command-toggle]");
   await commandToggle.click();
   await expect(commandToggle).toHaveAttribute("aria-expanded", "true");
-  await expect(leaves.first().locator("[data-codex-source-command-body]")).toBeVisible();
+  const commandBody = leaves.first().locator("[data-codex-source-command-body]");
+  await expect(commandBody).toBeVisible();
+  await expect(commandBody).toContainText("cat original-signatures.txt");
+  await expect(commandBody).toContainText("source: Xe, We, nk");
+  await expect(commandBody).toContainText("退出代码 0");
+  await page.screenshot({path:testInfo.outputPath("codex-command-leaf-expanded.png"),animations:"disabled"});
   expect(errors).toEqual([]);
 });
 
