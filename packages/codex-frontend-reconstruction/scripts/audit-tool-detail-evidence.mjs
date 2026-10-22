@@ -20,7 +20,7 @@ const skillScriptSignatures=[
   "function QC(e,t)",
   "function $C(e)"
 ];
-const skillPathSignatures=["isInScriptsFolder:o===leu","relativePathSegments:a.length===1&&o===feu"];
+const skillPathSignatures=["isInScriptsFolder:o===leu","isSkillDefinitionFile:a.length===1&&o===feu"];
 
 const patchSignatures=["function s0n(e,t){","function f0n(e){","if(f0n(t)>1048576||e.length*4>1048576","move_path??e"];
 const signatures=[
