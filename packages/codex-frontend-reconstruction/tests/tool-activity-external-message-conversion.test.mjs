@@ -21,15 +21,16 @@ test("Uf suppresses in-progress Codex Apps message calls and mismatched receipt 
  const mismatched=slackCall({arguments:{channel:"teams",text:"x",library_file_ids:[]}});
  assert.equal(convert(mismatched),null);
 });
-test("Uf builds the source iMessage voice-memo action only for an iMessage phone receipt",()=>{
+test("Uf does not surface the non-Slack Codex Apps receipt branch",()=>{
  const result=convert({type:"mcpToolCall",id:"voice-1",server:"codex_apps",
   appContext:{connectorId:"connector_openai_orbit_user_channel",actionName:"send_voice_memo"},
   status:"completed",arguments:{channel:"imessage",text:"voice caption",library_file_ids:[]},
   result:{structuredContent:{status:"accepted",channel:"imessage",message_id:"m-1",text:null}}});
- assert.equal(result?.type,"assistant-message");assert.equal(result?.content,"voice caption");
- assert.deepEqual(result?.aeonImessageAction,{actionName:"send_voice_memo",text:"voice caption"});
- assert.deepEqual(result?.externalDelivery,{provider:"imessage",state:"accepted",attachmentCount:0});
+ // The source Ihn wrapper only returns the inner helper result when provider is Slack;
+ // other records must pass the separate Fhn external-channel-message predicate.
+ assert.equal(result,null);
 });
+
 test("Uf maps outgoing Teams external-channel results and respects source delivery status",()=>{
  const result=convert({type:"mcpToolCall",id:"teams-1",server:"codex_apps",tool:"teamsbot.send_message",
   appContext:{connectorId:"other",actionName:"other"},status:"completed",
