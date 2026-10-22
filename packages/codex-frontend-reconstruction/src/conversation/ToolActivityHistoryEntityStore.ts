@@ -106,7 +106,7 @@ export function createToolActivityHistoryEntityStore(): ToolActivityHistoryEntit
 
   return {
     subscribeHistoryEntity(query, listener: ToolActivityHistoryEntityListener) {
-      return subscribe("history", query, listener);
+      return subscribe("history", query, (value) => listener(value as ToolActivityHistoryEntity | null | undefined));
     },
     subscribeAssistantMessagePresence(query, listener: ToolActivityAssistantMessagePresenceListener) {
       return subscribe("assistant-message-presence", query, listener);
