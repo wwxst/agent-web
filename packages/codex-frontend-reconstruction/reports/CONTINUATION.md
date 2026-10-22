@@ -55,6 +55,6 @@ PR: [#1](https://github.com/wwxst/agent-web/pull/1) (draft; not merged)
 - Added `ToolActivityHistorySource.ts` to connect LO's query plan and zO's hydration to host-supplied `subscribeHistoryEntity` / `subscribeAssistantMessageEntity` channels. Stale callbacks from a previous conversation/query are rejected and subscriptions are cleaned up on rebind/dispose.
 - Added `ConnectedCodexToolActivityItem.tsx`, using `useSyncExternalStore` to pass the source's hydrated item into the existing activity leaf adapter.
 - CI: 268/268 core tests, 4/4 demo model tests, strict React/TypeScript build, and 9/9 Chromium tests passed.
-- Raw source audits: `sites-end-resource` 34/34 signatures; `app-initial`, `app-primary`, `app-shared`, and `skill-exploration-labels` 27/27 helper signatures with pinned hashes.
+- Raw source audits: `sites-end-resource` 34/34 signatures; `app-initial`, `app-primary`, `app-shared`, and `skill-exploration-labels` 30/30 helper signatures with pinned hashes.
 - Next: implement the host bridge that binds those subscription methods to the actual private Codex query provider, then restore/verify the original `CC/RC/EC/NC/PT/IT` visual leaves. After those contracts are verified, continue with Electron IPC, Agent backend integration, and matched screenshot/interaction comparisons.
 - No claim of a complete standalone Codex frontend or pixel parity. The demo command leaf remains mock-only.

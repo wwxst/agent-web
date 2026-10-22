@@ -41,7 +41,7 @@ At validated code HEAD `d088fdb2387272c0a2de722e0b7075b9c37abc1e`:
 - React/TypeScript production build: passed.
 - Chromium browser tests: 9/9 passed.
 - Main compiled bundle audit: 34/34 signatures and SHA-256 passed.
-- Helper and skill parser audit: 27/27 signatures and SHA-256 passed across app-initial, app-primary, app-shared, and skill-exploration-labels.
+- Helper and skill parser audit: 30/30 signatures and SHA-256 passed across app-initial, app-primary, app-shared, and skill-exploration-labels.
 
 Run the source audits using the original raw assets extracted from the user-provided `frontend.zip`:
 

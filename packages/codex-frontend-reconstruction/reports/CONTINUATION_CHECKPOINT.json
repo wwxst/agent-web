@@ -17,7 +17,7 @@
     "demo_model": "4/4 pass",
     "production_typecheck_and_build": "pass",
     "chromium": "9/9 pass",
-    "original_source_audits": "sites-end-resource 34/34 signatures; app-initial/app-primary/app-shared/skill-exploration-labels 27/27 signatures; pinned SHA-256 checks pass"
+    "original_source_audits": "sites-end-resource 34/34 signatures; app-initial/app-primary/app-shared/skill-exploration-labels 30/30 signatures; pinned SHA-256 checks pass"
   },
   "remaining_next": [
     "bind ToolActivityHistorySubscriptionHost to the actual private Codex Mr(Au/Vd) query runtime; the generic subscription contract is not that runtime implementation",
