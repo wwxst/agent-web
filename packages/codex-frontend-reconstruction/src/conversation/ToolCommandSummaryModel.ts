@@ -98,7 +98,7 @@ function formatSkillNamePart(value: string): string {
     const override = skillScriptNameOverrides.get(lower);
     if (override != null) return override;
     if (index > 0 && skillScriptLowerWords.has(lower)) return lower;
-    return lower.length === 0 ? lower : lower[0].toUpperCase() + lower.slice(1);
+    return lower.length === 0 ? lower : lower.charAt(0).toUpperCase() + lower.slice(1);
   }).join(" ");
 }
 
