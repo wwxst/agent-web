@@ -2,6 +2,7 @@ import {
   getToolActivityHistoryItemId,
   type ToolItem,
 } from "./ToolActivityDetailModel.js";
+import { convertMcpToolCallHistoryEntity } from "./ToolActivityExternalMessageConversion.js";
 import {
   extractImageGenerationFailure,
   formatMcpToolResult,
@@ -72,7 +73,7 @@ export interface ToolActivityHistoryHydrationDependencies {
 }
 /** Source-recovered defaults; only the specialized MCP-to-external-message conversion remains host-injected. */
 export function createSourceToolActivityHistoryDependencies(
-  convertMcpToolCall: ToolActivityHistoryHydrationDependencies["convertMcpToolCall"],
+  convertMcpToolCall: ToolActivityHistoryHydrationDependencies["convertMcpToolCall"] = convertMcpToolCallHistoryEntity,
 ): ToolActivityHistoryHydrationDependencies {
   return {
     prepareAssistantContent: normalizeAssistantHistoryContent,

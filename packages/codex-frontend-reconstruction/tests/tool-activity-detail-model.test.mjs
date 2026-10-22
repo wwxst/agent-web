@@ -86,3 +86,14 @@ test("source Gf and cc defaults are used when private callbacks are not supplied
  assert.equal(patch.kind,"patch");
  assert.equal(patch.showVisualization,true);
 });
+
+test("source NO/mh default recognizes only skill-definition reads",()=>{
+ const skill=project({type:"exec",parsedCmd:{type:"read",isFinished:false,path:".codex/skills/demo/skill.md"},cwd:"/workspace"});
+ assert.equal(skill.kind,"exec");assert.equal(skill.leaf,"read");
+ const plugin=project({type:"exec",parsedCmd:{type:"read",isFinished:false,path:"plugins/example/skills/demo/skill.md"},cwd:"/workspace"});
+ assert.equal(plugin.kind,"exec");
+ const ordinary=project({type:"exec",parsedCmd:{type:"read",isFinished:false,path:"src/main.ts"},cwd:"/workspace"});
+ assert.deepEqual(ordinary,{kind:"hidden",reason:"running-exploration"});
+ const list=project({type:"exec",parsedCmd:{type:"list_files",isFinished:false,path:".codex/skills/demo/skill.md"},cwd:"/workspace"});
+ assert.deepEqual(list,{kind:"hidden",reason:"running-exploration"});
+});

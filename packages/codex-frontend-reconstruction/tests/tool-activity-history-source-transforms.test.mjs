@@ -110,3 +110,15 @@ test("wl handles protocol errors, successful results and failed tool results",()
   type:"error",kind:"tool",error:'{"reason":"no"}',raw:{content:[],structuredContent:{reason:"no"}},
  });
 });
+
+test("NO/mh recognizes Codex, agents, system, imported and plugin skill-definition paths",()=>{
+ const read=(path,cwd)=>isMeaningfulReadToolActivity({type:"exec",parsedCmd:{type:"read",path},cwd});
+ assert.equal(read(".codex/skills/demo/skill.md","/workspace"),true);
+ assert.equal(read(".agents/skills/demo/skill.md","/workspace"),true);
+ assert.equal(read(".codex/skills/.system/demo/skill.md","/workspace"),true);
+ assert.equal(read(".codex/skills/_import/demo/skill.md","/workspace"),true);
+ assert.equal(read("plugins/example/skills/demo/skill.md","/workspace"),true);
+ assert.equal(read("skill.md","/workspace/.codex/skills/demo"),true);
+ assert.equal(read("src/skill.md","/workspace"),false);
+ assert.equal(read(".codex/skills/demo/readme.md","/workspace"),false);
+});

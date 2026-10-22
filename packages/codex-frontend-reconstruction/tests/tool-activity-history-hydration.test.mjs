@@ -190,3 +190,12 @@ test("source dependency factory wires recovered transforms and leaves Uf host-in
   {"x.ts":{type:"add",content:"+"}});
  assert.equal(source.isMcpAppToolCall("codex_apps",{connectorId:"connector_openai_orbit_user_channel",actionName:"send_message"}),true);
 });
+
+test("source dependency factory defaults Uf to the recovered external-message converter",()=>{
+ const source=createSourceToolActivityHistoryDependencies();
+ assert.equal(typeof source.convertMcpToolCall,"function");
+ const item=source.convertMcpToolCall({type:"mcpToolCall",id:"teams-2",server:"codex_apps",tool:"teamsbot.send_message",
+  status:"completed",result:{structuredContent:{external_channel_message:{channel:"teams",direction:"outgoing",
+   binding_id:"b",message:"hello",destination:"channel",delivery_status:"sent"}}}});
+ assert.equal(item?.content,"hello");
+});
