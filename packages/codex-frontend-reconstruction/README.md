@@ -76,7 +76,7 @@ See `reports/CONVERSATION_MESSAGE_RENDERING.md` for source evidence and exact bo
 - `src/components/InlineFileReview.tsx` — compact/too-large review UI with host-supplied full Diff renderer and explicit file-action callbacks.
 - `src/components/ActivityStatusViews.tsx` — activity status and approval review disclosure/notice, with localization and private detail formatter injected.
 
-See `reports/RICH_MESSAGE_PRIMITIVES.md` for source evidence and limitations. The Markdown renderer remains host-owned; inline patch previews use the real `@pierre/diffs` `PatchDiff`/`Virtualizer` engine, while the original multi-item `CodeView` composition and Codex-specific soft themes remain follow-up work.
+See `reports/RICH_MESSAGE_PRIMITIVES.md` for source evidence and limitations. The Markdown renderer remains host-owned; inline patch previews now use the real `@pierre/diffs` `FileDiff` component with parsed source-shaped metadata. Codex's registered soft themes and private theme resolver remain follow-up work.
 
 ## Continuation: connected message presentation adapter
 
@@ -125,7 +125,7 @@ See [AgentActivity group-header recovery](reports/AGENT_ACTIVITY_GROUP_HEADER_SO
 ## Source-derived command summaries and patch previews (2026-10-22)
 
 - `src/conversation/ToolCommandSummaryModel.ts` restores the compiled `WC/JC/GC` generic command, background terminal, date-check and elapsed-time branches. It also ports `ZC/QC/$C`: supported `python`, `python3`, `bash` and `sh` commands that target a skill-owned `scripts` directory receive the original skill/file-specific background-start, background-finish and collapsed labels.
-- `src/conversation/ToolPatchDiffPresentationModel.ts` ports the compiled `s0n/f0n` preview builder plus patch-stat fallback: add/delete contents become unified diffs, update hunks receive missing headers, and previews over 1 MiB are suppressed. `CodexSourcePatchDiffPreview.tsx` sends those unified patches to the real `@pierre/diffs` `PatchDiff` component inside `Virtualizer`, with wrapped unified lines, bar indicators, word-level diffing and line gutters.
+- `src/conversation/ToolPatchDiffPresentationModel.ts` ports the compiled `s0n/f0n` preview builder plus patch-stat fallback: add/delete contents become unified diffs, update hunks receive missing headers, and previews over 1 MiB are suppressed. `CodexSourcePatchDiffPreview.tsx` parses the one-file unified patch into `FileDiffMetadata` and renders it through the real `@pierre/diffs` `FileDiff` component, matching the observed `IT -> BT/VT -> FileDiff` path with unified layout, simple hunk separators, bar indicators and word-level diffing.
 - File-open callbacks retain the original change path and prefer `grantRoot` over `cwd`, matching the compiled `IT` call shape.
 
 See [tool activity source recovery](reports/TOOL_ACTIVITY_VISUAL_LEAVES.md) for evidence and remaining gaps.
@@ -137,7 +137,7 @@ See [tool activity source recovery](reports/TOOL_ACTIVITY_VISUAL_LEAVES.md) for 
 - `tests/tool-patch-diff-presentation-model.test.mjs` covers unified diffs, add/delete content fallbacks and changed-line selection.
 - `scripts/audit-tool-detail-evidence.mjs` pins the original activity, patch-preview and visualization-classifier bundle hashes and checks 55 activity, six skill-script, four patch-preview, two skill-path and two visualization-classifier source signatures. `reports/TOOL_ACTIVITY_VISUAL_LEAVES.md` records the source hashes, UI boundary and remaining host integration.
 
-The browser preview remains synthetic/demo-only. Inline patch details use the real `@pierre/diffs` renderer, but the full original multi-item `CodeView`, private Codex design-system, Electron bridge and live Agent backend are not yet integrated.
+The browser preview remains synthetic/demo-only. Inline patch details now follow the source-observed per-file `FileDiff` path, but Codex's registered soft themes, private design-system, Electron bridge and live Agent backend are not yet integrated.
 
 ## Tool activity history entity store
 
