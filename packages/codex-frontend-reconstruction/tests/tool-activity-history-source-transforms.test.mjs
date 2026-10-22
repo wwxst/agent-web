@@ -4,7 +4,7 @@ import {
   normalizeAssistantHistoryContent as normalizeAssistant, formatReasoningSummary,
   mapHistoryFileChanges, isCodexVisualizationFileChange, extractImageGenerationFailure,
   isCodexAppMessageTool, getVisualizationActivityKind, isAutoReviewDeclinedToolActivity,
-  normalizeMcpContentItem, formatMcpToolResult,
+  normalizeMcpContentItem, formatMcpToolResult, isMeaningfulReadToolActivity,
 } from "../build/ToolActivityHistorySourceTransforms.js";
 const base={phase:"commentary",isStreaming:false,isHeartbeatAutomationTurn:false,isHeartbeatAutomationRequest:false};
 

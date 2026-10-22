@@ -163,7 +163,7 @@ function parseExternalChannelMessage(item:HistoryToolItem):ExternalChannelMessag
 export function convertMcpToolCallHistoryEntity(item:HistoryToolItem):ToolItem|null {
  if(item.type!=="mcpToolCall")return null;
  const appMessage=convertCodexAppsMessage(item);
- if(record(appMessage?.externalDelivery)&&appMessage.externalDelivery.provider==="slack")return appMessage;
+ if(appMessage!=null&&record(appMessage.externalDelivery)&&appMessage.externalDelivery.provider==="slack")return appMessage;
  const external=parseExternalChannelMessage(item);if(external==null)return null;
  const content=normalizeAssistantText(external.message);if(content.length===0)return null;
  const root=typeof external.source_thread_id==="string"&&/^\d+\.\d+$/.test(external.source_thread_id)

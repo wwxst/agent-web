@@ -59,7 +59,7 @@ export function projectToolActivityDetail(item:ToolItem,ctx:ToolDetailContext={}
  const hideRawCommand=workMode&&ctx.renderToolActivityInWorkMode===true;
  if(item.type==="exec"){
    if(!object(item.parsedCmd))return {kind:"fallback"};
-   const summary=item.parsedCmd,hasRead=ctx.isMeaningfulRead?.(item)===true;
+   const summary=item.parsedCmd,hasRead=ctx.isMeaningfulRead?.(item)??isMeaningfulReadToolActivity(item);
    if(workMode&&!hideRawCommand&&!hasRead)return {kind:"hidden",reason:"work-mode"};
    const rawType=summary.type;
    if((rawType==="read"||rawType==="search"||rawType==="list_files")&&
