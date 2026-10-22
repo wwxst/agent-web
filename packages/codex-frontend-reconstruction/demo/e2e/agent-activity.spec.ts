@@ -14,8 +14,8 @@ test("source-derived AgentActivity section mounts and toggles without backend ef
   await expect(toggle).toHaveAttribute("aria-expanded", "true");
   await expect(activity.locator("[data-agent-activity-content]")).toBeVisible();
   await expect(activity.locator("[data-agent-activity-unit]")).toHaveCount(1);
-  // The leaf renderer is still explicitly demo-only, preserving no-IO boundaries.
-  await expect(activity.getByRole("button", {name:/读取模块与状态/})).toBeVisible();
+  // The source-shaped leaf uses hydrated data but performs no host I/O.
+  await expect(activity.locator('[data-codex-source-leaf="exec-command"]')).toBeVisible();
   await toggle.click();
   await expect(activity.locator("[data-agent-activity-content]")).toBeHidden();
   expect(errors).toEqual([]);
@@ -52,7 +52,7 @@ test("source-derived group row toggles its real subrows independently",async ({p
   await expect(toggle).toHaveAttribute("aria-expanded","true");
   await expect(group.locator("[data-codex-group-details]")).toBeVisible();
   await expect(group.locator(".codex-activity-group-row__subrow")).toHaveCount(2);
-  await expect(group.getByRole("button",{name:/核对分组状态/})).toBeVisible();
+  await expect(group.locator('[data-codex-source-leaf="exec-command"]')).toHaveCount(2);
   await group.scrollIntoViewIfNeeded();
   await page.screenshot({path:testInfo.outputPath("codex-activity-group-expanded.png"),animations:"disabled"});
   await toggle.click();
