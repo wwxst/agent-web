@@ -74,8 +74,9 @@ export function CodexSourceExecReadLeaf(props: ExecReadLeafProps & {
   if (isSkillDefinition && !isFinished && props.threadDetailLevel !== "STEPS_PROSE") return null;
   if (!isSkillDefinition && !isFinished) return null;
 
+  const normalizedPath = path.replace(/\\/g, "/");
   const skillName = text(summary.skillName) ??
-    (path.toLowerCase().endsWith("/skill.md") ? basename(path.split("/").slice(0, -1).join("/")) : undefined);
+    (normalizedPath.toLowerCase().endsWith("/skill.md") ? basename(normalizedPath.split("/").slice(0, -1).join("/")) : undefined);
   const title = isSkillDefinition && skillName != null
     ? "已读取 " + skillName + " 技能"
     : "已读取";
