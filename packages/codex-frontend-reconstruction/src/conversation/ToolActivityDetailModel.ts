@@ -24,17 +24,20 @@ export type ToolProjection=
    "automatic-approval-review"|"web-search"}
  |{kind:"fallback"};
 const object=(v:unknown):v is Record<string,unknown>=>v!==null&&typeof v==="object"&&!Array.isArray(v);
-const nonempty=(v:unknown)=>typeof v==="string"&&v.length>0?v:null;
+const stringId=(v:unknown)=>typeof v==="string"?v:null;
 /** HO identity for history hydration in LO/zO. */
 export function getToolActivityHistoryItemId(item:ToolItem):string|null {
- if(item.type==="assistant-message"&&object(item.requestUserInputAsync))
-   return nonempty(item.requestUserInputAsync.sourceItemId);
- if("sourceItemId" in item)return nonempty(item.sourceItemId);
- if("searchItemId" in item)return nonempty(item.searchItemId);
- if(item.type==="exec")return nonempty(item.commandExecutionItemId)??nonempty(item.callId);
+ if(item.type==="assistant-message"&&item.requestUserInputAsync!=null){
+   const request=item.requestUserInputAsync;
+   return stringId(typeof request==="object"&&request!==null
+     ?(request as Record<string,unknown>).sourceItemId:undefined);
+ }
+ if("sourceItemId" in item)return stringId(item.sourceItemId);
+ if("searchItemId" in item)return stringId(item.searchItemId);
+ if(item.type==="exec")return stringId(item.commandExecutionItemId??item.callId);
  if(item.type==="patch"||item.type==="mcp-tool-call"||item.type==="dynamic-tool-call")
-   return nonempty(item.callId);
- return item.type==="generated-image"?nonempty(item.id):null;
+   return stringId(item.callId);
+ return item.type==="generated-image"?stringId(item.id):null;
 }
 /** PT original status precedence. */
 export function getToolPatchStatus(item:ToolItem,ctx:ToolDetailContext={}):PatchStatus {

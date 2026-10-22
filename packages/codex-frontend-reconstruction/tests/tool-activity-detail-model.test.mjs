@@ -10,6 +10,10 @@ test("HO history source IDs and fallback call IDs",()=>{
  assert.equal(id({type:"patch",callId:"p"}),"p");
  assert.equal(id({type:"generated-image",id:"image"}),"image");
  assert.equal(id({type:"unknown",id:"x"}),null);
+ assert.equal(id({type:"exec",commandExecutionItemId:"",callId:"fallback"}),"");
+ assert.equal(id({type:"exec",commandExecutionItemId:null,callId:"fallback"}),"fallback");
+ assert.equal(id({type:"assistant-message",requestUserInputAsync:{sourceItemId:""},searchItemId:"fallback"}),"");
+ assert.equal(id({type:"exec",sourceItemId:undefined,searchItemId:"fallback"}),null);
 });
 test("SO work-mode route excludes tool unless private override",()=>{
  const item=exec("unknown",true);

@@ -1,26 +1,45 @@
 {
-  "date": "2026-10-21",
-  "stage": "live conversation render-entry projection and virtualized transcript composition",
-  "base": "codex-frontend-virtualized-list-full.zip",
+  "date": "2026-10-22",
+  "stage": "zO history entity hydration and xC/PT typed tool-leaf integration",
+  "branch": "recovery/codex-frontend-through-connected-message-20261021",
+  "head": "c246bd04aebb7a45665c2457183de8576aadbfd8",
   "new_modules": [
-    "ConversationRenderEntriesModel.ts",
-    "LiveConversationTranscript.tsx"
+    "src/conversation/ToolActivityHistoryHydrationModel.ts",
+    "src/components/CodexToolActivityLeafRenderer.tsx"
   ],
-  "tests_total": 87,
-  "test_command": "npm run test:core",
-  "test_status": "pass",
-  "ui_static_typecheck": "pass with temporary minimal React declaration shim",
+  "test_status": {
+    "core": "235/235 pass",
+    "demo_model": "4/4 pass",
+    "production_typecheck_and_build": "pass",
+    "chromium": "9/9 pass",
+    "original_source_audit": "34/34 signatures pass; SHA-256 a84b2e2181125a3e4d2bc9be458bad4fb36df615243c7f3cc23e076bd4094708"
+  },
   "remaining_next": [
-    "wire actual cA host subscriptions and base renderEntries producer",
-    "implement live message/activity row renderer",
-    "finish virtualized-list host scroll/follow/restore transactions",
-    "composer and bridge integration",
-    "Electron runtime and visual verification"
+    "recover wo/Wa/zl/qr/Uf/Po/wl private transforms from their original owning modules",
+    "connect real Mr(Au/Vd) history subscriptions through a host adapter",
+    "implement and visually verify CC/RC/EC/NC/PT/IT leaf components",
+    "connect Electron IPC and the Agent backend after frontend contracts are verified",
+    "run version-matched Codex screenshot and interaction comparisons"
   ],
   "no_claims": [
-    "not recovered authors original source",
-    "not runnable complete Codex frontend",
-    "no Electron or screenshot parity",
-    "no GitHub push"
-  ]
+    "not the original authored React/TypeScript source",
+    "not a complete independently runnable Codex frontend",
+    "demo command leaf is mock-only and does not execute tools",
+    "no Electron IPC or backend integration",
+    "no pixel-level UI parity verified"
+  ],
+  "previous_checkpoint": {
+    "date": "2026-10-21",
+    "stage": "live conversation render-entry projection and virtualized transcript composition",
+    "tests_total": 87,
+    "test_command": "npm run test:core",
+    "test_status": "pass",
+    "ui_static_typecheck": "pass with temporary minimal React declaration shim",
+    "no_claims": [
+      "not recovered authors original source",
+      "not runnable complete Codex frontend",
+      "no Electron or screenshot parity",
+      "no GitHub push"
+    ]
+  }
 }

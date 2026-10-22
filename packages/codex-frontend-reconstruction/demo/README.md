@@ -86,3 +86,8 @@ account customization, peek, original icon system, Electron/window variants).
 
 
 Group-header verification: the mock scenario now includes a two-command group. Expand its outer AgentActivity disclosure and then the inner completed command summary; the two command subrows mount only when expanded. Both levels use source-aligned React components but all command output and icons are DEMO. See `demo/e2e/agent-activity.spec.ts` and `reports/AGENT_ACTIVITY_GROUP_HEADER_SOURCE_RECOVERY.md`.
+
+
+## Latest tool activity integration
+
+The connected renderer now supports host-resolved zO history hydration before choosing activity content, and typed xC/PT leaf adapters for host-provided read/search/list-files/command/patch visuals. The demo injects only a synthetic command leaf; it does not connect to the private history store, execute commands, approve permissions, or claim original Codex leaf parity. See `../reports/TOOL_ACTIVITY_DETAIL_SOURCE_RECOVERY.md`.

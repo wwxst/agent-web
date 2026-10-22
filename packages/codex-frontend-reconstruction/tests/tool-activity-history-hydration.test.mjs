@@ -31,6 +31,8 @@ test("query plan uses HO identity and requests external assistant entity only fo
     historyEntity:{hostId:"host",threadId:"thread",entityKey:"history",itemId:"msg-1"},
     assistantMessageEntity:{hostId:"host",threadId:"thread",entityKey:"history",itemId:"msg-1"},
   });
+  assert.equal(buildQueries({type:"exec",commandExecutionItemId:"",callId:"fallback"},base)
+    ?.historyEntity.itemId,"");
 });
 
 test("query plan follows LO bypass rules for missing key/ID and read-only async/input messages", () => {

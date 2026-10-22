@@ -35,3 +35,12 @@ npm run demo:test:e2e
 ```
 
 Passing these checks validates selected model branches and demo wiring, not full Codex UI fidelity.
+
+
+## Verification at HEAD c246bd0
+
+- Core: 235/235 passed.
+- Demo data-model integration: 4/4 passed.
+- React/TypeScript production build: passed.
+- Chromium: 9/9 passed.
+- Original compiled bundle audit: 34/34 signatures and pinned SHA-256 passed.

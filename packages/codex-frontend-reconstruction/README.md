@@ -5,6 +5,9 @@ This package is a staged, independently authored semantic reconstruction of sele
 ## Current modules
 
 - `src/conversation/ActiveToolActivityLabel.ts` — activity-label mapping and safe search-term formatting.
+- `src/conversation/ToolActivityDetailModel.ts` — source-derived tool visibility, exec leaf selection and patch status.
+- `src/conversation/ToolActivityHistoryHydrationModel.ts` — LO/HO query planning and zO history entity reconciliation with private transforms injected.
+- `src/components/CodexToolActivityLeafRenderer.tsx` — typed xC/PT leaf contracts for host-provided visual components.
 - `src/conversation/ActivityGroupingModel.ts` — activity-row classification and automatic-approval metadata normalization.
 - `src/conversation/TurnEntriesModel.ts` — reply-chain indexing, timestamp markers, item lookup, virtualization estimates and memo equality.
 - `src/conversation/TurnItemRenderGroups.ts` — raw turn-item grouping for the conversation timeline.
