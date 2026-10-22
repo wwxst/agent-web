@@ -211,3 +211,62 @@ button:not(:disabled):hover { transition: background .15s, color .15s; }
   .demo-composer-model:nth-child(2) { display:none; }
   .demo-composer-hint { font-size:9px; }
 }
+
+/* Source-shaped Codex tool leaves. These styles are independently authored;
+   the proprietary Codex design-system runtime and compiled CSS are not bundled. */
+.codex-source-tool-leaf { min-width:0; color:var(--demo-text); font-size:12px; line-height:1.65; }
+.codex-source-tool-summary { display:flex; align-items:center; gap:7px; min-width:0; max-width:100%; color:#a6a6a6; }
+.codex-source-tool-summary.is-muted { color:#6f6f6f; }
+.codex-source-tool-summary__icon { display:inline-flex; align-items:center; justify-content:center; flex:0 0 14px; color:#858585; font-size:17px; line-height:1; }
+.codex-source-tool-summary__label { min-width:0; overflow:hidden; text-overflow:ellipsis; }
+.codex-source-tool-review-marker { flex:0 0 auto; color:#c4ad84; border:1px solid #65563e; border-radius:4px; padding:0 4px; font-size:10px; line-height:1.5; }
+.codex-source-tool-path { min-width:0; color:#b6b6b6; font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; overflow-wrap:anywhere; }
+.codex-source-tool-path--button { display:inline; padding:0; border:0; background:transparent; text-align:left; cursor:pointer; }
+.codex-source-tool-path--button:hover { color:#eee; text-decoration:underline; }
+.codex-source-tool-path-separator { color:#666; }
+.codex-source-tool-command__toggle { display:flex; align-items:center; width:100%; min-width:0; padding:3px 0; border:0; background:transparent; color:inherit; text-align:left; cursor:pointer; }
+.codex-source-tool-command__toggle:hover { background:transparent !important; color:var(--demo-text); }
+.codex-source-tool-command__toggle .codex-source-tool-summary { flex:1; }
+.codex-source-tool-command__chevron { display:inline-flex; align-items:center; justify-content:center; flex:0 0 14px; color:#858585; font-size:17px; line-height:1; transition:transform .12s ease; }
+.codex-source-tool-command__chevron.is-expanded { transform:rotate(90deg); }
+.codex-source-tool-command__body { min-width:0; margin:5px 0 3px 21px; padding:10px 12px; border:1px solid var(--demo-border); border-radius:8px; background:var(--demo-panel); color:#bfbfbf; }
+.codex-source-tool-command__command,.codex-source-tool-command__output { max-width:100%; margin:0; white-space:pre-wrap; overflow-wrap:anywhere; font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:11.5px; line-height:1.7; }
+.codex-source-tool-command__command { padding-bottom:7px; color:#d5d5d5; }
+.codex-source-tool-command__command span { color:#8aa99d; }
+.codex-source-tool-command__output { max-height:320px; overflow:auto; border-top:1px solid #383838; padding-top:7px; }
+.codex-source-tool-command__empty-output { color:#888; font-size:11px; }
+.codex-source-tool-command__footer { display:flex; justify-content:space-between; gap:8px; margin-top:8px; padding-top:6px; border-top:1px solid #383838; color:#888; font-size:10.5px; }
+.codex-source-tool-command__footer .is-success { color:#9bc8a2; }
+.codex-source-tool-command__footer .is-error { color:#dca6a6; }
+.codex-source-tool-command__review { margin-top:9px; padding-top:8px; border-top:1px solid #383838; color:#d8bc8c; }
+.codex-source-tool-command__review strong { font-weight:600; }
+.codex-source-tool-command__review p { margin:4px 0 0; color:#b5a17e; white-space:pre-wrap; overflow-wrap:anywhere; }
+.codex-source-tool-patch { display:flex; flex-direction:column; gap:var(--conversation-patch-file-gap,var(--conversation-item-gap,16px)); }
+.codex-source-tool-patch__visualization { color:#a7a7a7; font-size:12px; padding:2px 0 4px; }
+.codex-source-tool-patch__files { display:flex; flex-direction:column; gap:var(--conversation-patch-file-gap,var(--conversation-item-gap,16px)); }
+.codex-source-tool-patch-file { min-width:0; overflow:hidden; border:1px solid #373737; border-radius:8px; background:transparent; }
+.codex-source-tool-patch-file__header { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:6px 12px; min-width:0; padding:7px 9px; }
+.codex-source-tool-patch-file__path-wrap { display:flex; align-items:center; flex:1 1 180px; gap:8px; min-width:0; }
+.codex-source-tool-patch-file__path-wrap .codex-source-tool-path { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.codex-source-tool-patch-file__counts { display:inline-flex; flex:0 0 auto; gap:5px; font-size:10.5px; font-family:ui-monospace,monospace; }
+.codex-source-tool-patch-file__counts .is-added { color:#9bc8a2; }
+.codex-source-tool-patch-file__counts .is-removed { color:#dca6a6; }
+.codex-source-tool-patch-file__actions { display:flex; align-items:center; gap:8px; }
+.codex-source-tool-patch-file__status { color:#9b9b9b; font-size:10.5px; white-space:nowrap; }
+.codex-source-tool-patch-file__status.status-pending,.codex-source-tool-patch-file__status.status-streaming { color:#c7b18a; }
+.codex-source-tool-patch-file__status.status-applied { color:#9bc8a2; }
+.codex-source-tool-patch-file__status.status-rejected,.codex-source-tool-patch-file__status.status-auto-review-declined { color:#dca6a6; }
+.codex-source-tool-patch-file__toggle { border:0; border-radius:5px; padding:3px 6px; background:transparent; color:#aaa; font-size:10.5px; white-space:nowrap; }
+.codex-source-tool-patch-file__toggle:hover { background:#363636; color:#eee; }
+.codex-source-tool-patch-file__diff { border-top:1px solid #373737; background:#202020; overflow:auto; max-height:360px; }
+.codex-source-tool-patch-file__diff pre { margin:0; padding:8px 10px; white-space:pre; overflow:visible; font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:11px; line-height:1.7; }
+.codex-source-tool-patch-file__diff pre span { display:block; min-height:1.7em; }
+.codex-source-tool-patch-file__diff .diff-meta { color:#8e9da6; }
+.codex-source-tool-patch-file__diff .diff-added,.codex-source-tool-patch-file__diff .diff-added-file { background:#203c2b; color:#bde2c4; }
+.codex-source-tool-patch-file__diff .diff-removed,.codex-source-tool-patch-file__diff .diff-deleted-file { background:#472d2e; color:#e9c3c3; }
+.codex-source-tool-patch-file__diff .diff-added-file,.codex-source-tool-patch-file__diff .diff-deleted-file { display:block; padding:8px 10px; white-space:pre-wrap; overflow-wrap:anywhere; }
+@media (max-width:600px) {
+  .codex-source-tool-patch-file__header { align-items:flex-start; flex-direction:column; }
+  .codex-source-tool-patch-file__actions { width:100%; justify-content:space-between; }
+}
+
