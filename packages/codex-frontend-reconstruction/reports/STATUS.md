@@ -75,3 +75,13 @@
 - Added `createSourceToolActivityHistoryDependencies`; only the specialized MCP-to-external-message converter (`Uf`) remains a required host adapter for history hydration. The meaningful-read predicate (`NO/mh`) and live `Mr(Au/Vd)` subscriptions also remain host-owned.
 - Validation at code HEAD `5d3efee`: 253/253 core tests, 4/4 demo model tests, production typecheck/build, 9/9 Chromium tests. Original source audits passed 34/34 signatures for sites-end-resource and 18/18 signatures across the three helper bundles.
 - The browser demo remains mock-only; real Electron IPC, live history subscriptions, proprietary visual leaves and pixel-level Codex comparison are not claimed complete.
+
+
+## Current checkpoint — tool activity history subscription integration (2026-10-22)
+
+- Recovered the external-message conversion branches from original `app-initial` (`ihn/Ihn/Fhn`): accepted Codex Apps Slack receipts and schema-validated outgoing Slack/Teams delivery records. The source's Slack-only return condition is preserved; unrecognized/non-Slack receipt variants are not fabricated into assistant messages.
+- Recovered `NO/mh` meaningful-read classification from `sites-end-resource` plus `skill-exploration-labels` and the app-initial skill-path parser. Read commands are treated as skill exploration only when the resolved path is a `skill.md` definition under the observed Codex/Agents/plugin layouts.
+- Added `ToolActivityHistorySource.ts`: a host-agnostic observable store that connects the verified LO query plan and zO hydration model to two injected subscription channels corresponding to `Mr(Au)` and `Mr(Vd)`. It handles query rebinding, stale callback rejection, cleanup, loading/ready/unavailable/error states, and immutable snapshots.
+- Added `ConnectedCodexToolActivityItem.tsx`: React `useSyncExternalStore` adapter that forwards hydrated item/copy text to the existing source-shaped activity renderer.
+- CI at `d088fdb2387272c0a2de722e0b7075b9c37abc1e`: 268/268 core tests, 4/4 demo model tests, React/TypeScript build and 9/9 Chromium tests passed. Raw `frontend.zip` audit also passed locally: main bundle 34/34 signatures; helper bundles plus skill parser 27/27 signatures with pinned SHA-256 hashes.
+- Remaining boundary: the generic subscription host still needs binding to the actual private Codex query runtime; original visual leaves, Electron IPC, Agent backend integration and version-matched pixel/interaction parity are not complete.

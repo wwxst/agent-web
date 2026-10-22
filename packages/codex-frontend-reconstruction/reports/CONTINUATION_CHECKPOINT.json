@@ -1,34 +1,36 @@
 {
   "date": "2026-10-22",
-  "stage": "source-derived history transforms + zO hydration + xC/PT typed leaf adapters",
+  "stage": "source-derived tool history transforms + host subscription store + connected activity renderer",
   "branch": "recovery/codex-frontend-through-connected-message-20261021",
-  "validated_code_head": "5d3efee457b4a24acc0d10e7620137449a51fbb4",
+  "validated_code_head": "d088fdb2387272c0a2de722e0b7075b9c37abc1e",
   "new_modules": [
     "src/conversation/ToolActivityHistorySourceTransforms.ts",
     "src/conversation/ToolActivityHistoryHydrationModel.ts",
     "src/components/CodexToolActivityLeafRenderer.tsx",
-    "scripts/audit-tool-history-transforms-evidence.mjs"
+    "scripts/audit-tool-history-transforms-evidence.mjs",
+    "src/conversation/ToolActivityExternalMessageConversion.ts",
+    "src/conversation/ToolActivityHistorySource.ts",
+    "src/components/ConnectedCodexToolActivityItem.tsx"
   ],
   "test_status": {
-    "core": "253/253 pass",
+    "core": "268/268 pass",
     "demo_model": "4/4 pass",
     "production_typecheck_and_build": "pass",
     "chromium": "9/9 pass",
-    "original_source_audits": "sites-end-resource 34/34 signatures; app-initial/app-primary/app-shared 18/18 signatures; pinned SHA-256 checks pass"
+    "original_source_audits": "sites-end-resource 34/34 signatures; app-initial/app-primary/app-shared/skill-exploration-labels 27/27 signatures; pinned SHA-256 checks pass"
   },
   "remaining_next": [
-    "recover the specialized Uf MCP-to-external-message converter",
-    "recover the NO/mh meaningful-read classifier",
-    "connect real Mr(Au/Vd) history subscriptions through a host adapter",
-    "implement and visually verify CC/RC/EC/NC/PT/IT leaf components",
-    "connect Electron IPC and the Agent backend after frontend contracts are verified",
-    "run version-matched Codex screenshot and interaction comparisons"
+    "bind ToolActivityHistorySubscriptionHost to the actual private Codex Mr(Au/Vd) query runtime; the generic subscription contract is not that runtime implementation",
+    "implement and visually verify the actual CC/RC/EC/NC/PT/IT leaf components and complete FileDiff/MCP/approval leaves",
+    "mount the connected history/activity renderer in the real live transcript and run version-matched interaction/screenshot comparisons",
+    "connect Electron IPC and the Agent backend after frontend contracts and UI behavior are verified"
   ],
   "no_claims": [
     "not the original authored React/TypeScript source",
     "not a complete independently runnable Codex frontend",
+    "history subscription host is an adapter contract and is not yet bound to Codex private query providers",
     "demo command leaf is mock-only and does not execute tools",
-    "no Electron IPC or backend integration",
+    "no Electron IPC or Agent backend integration",
     "no pixel-level UI parity verified"
   ],
   "previous_checkpoint": {

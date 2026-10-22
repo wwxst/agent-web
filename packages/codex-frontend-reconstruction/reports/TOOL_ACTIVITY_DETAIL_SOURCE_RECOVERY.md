@@ -26,28 +26,28 @@ These are translations of the user-provided compiled bundles, not the original a
 
 ## Remaining host-owned source dependencies
 
-- `Uf`: specialized MCP-to-external-message conversion, including external-delivery parsing. It remains a required callback to `createSourceToolActivityHistoryDependencies`.
-- `NO/mh`: meaningful-read predicate used to decide whether an exploratory command row should be shown.
-- Live `Mr(Au/Vd)` history subscriptions and their resolved host entities.
+- `Uf` / `ihn` / `Ihn` / `Fhn`: the observed external-delivery conversion branches are reconstructed in `ToolActivityExternalMessageConversion.ts`. Only accepted Slack receipts and schema-valid outgoing Slack/Teams records are surfaced; unknown variants are not fabricated.
+- `NO/mh`: skill-definition read detection is reconstructed from `skill-exploration-labels` plus the app-initial path parser.
+- Live `Mr(Au/Vd)` query providers and resolved host entities remain host-owned. `ToolActivityHistorySource.ts` defines the subscription contract and lifecycle, but it is not yet bound to Codex's private query runtime.
 - Original visual components `RC/EC/NC/CC/PT/IT`, complete FileDiff, MCP/approval leaves and the design-system runtime.
 - Electron IPC, real command execution, approval write-back and pixel-level comparison against a version-matched Codex installation.
 
 ## Verification
 
-At validated code HEAD `5d3efee457b4a24acc0d10e7620137449a51fbb4`:
+At validated code HEAD `d088fdb2387272c0a2de722e0b7075b9c37abc1e`:
 
-- Core tests: 253/253 passed.
+- Core tests: 268/268 passed.
 - Demo model integration: 4/4 passed.
 - React/TypeScript production build: passed.
 - Chromium browser tests: 9/9 passed.
 - Main compiled bundle audit: 34/34 signatures and SHA-256 passed.
-- Helper chunk audit: 18/18 signatures and SHA-256 passed.
+- Helper and skill parser audit: 27/27 signatures and SHA-256 passed across app-initial, app-primary, app-shared, and skill-exploration-labels.
 
 Run the source audits using the original raw assets extracted from the user-provided `frontend.zip`:
 
 ```bash
 node scripts/audit-tool-detail-evidence.mjs /path/to/sites-end-resource-fa77a923096d.js
-node scripts/audit-tool-history-transforms-evidence.mjs /path/to/app-initial-5851df3f6cb1.js /path/to/app-primary-fe8a450b3b04.js /path/to/app-shared-bbfeca5e5737.js
+node scripts/audit-tool-history-transforms-evidence.mjs /path/to/app-initial-5851df3f6cb1.js /path/to/app-primary-fe8a450b3b04.js /path/to/app-shared-bbfeca5e5737.js /path/to/skill-exploration-labels-dbc7ec897dab.js
 ```
 
-These checks validate source signatures and reconstructed model behavior, not full Codex UI fidelity.
+These checks validate source signatures and reconstructed model behavior, not full Codex UI fidelity. The history subscription store and connected item renderer are integration contracts; actual Codex query providers, proprietary leaf components and Electron IPC are still not connected.

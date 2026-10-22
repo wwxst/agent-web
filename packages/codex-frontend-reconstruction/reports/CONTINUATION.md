@@ -43,3 +43,18 @@ Branch: `recovery/codex-frontend-through-connected-message-20261021`
 - CI: 253/253 core tests, 4/4 demo model tests, strict React/TypeScript build, and 9/9 Chromium tests passed.
 - Next: recover `Uf` and `NO/mh` from their owning source modules, connect real `Mr(Au/Vd)` subscriptions, and implement/version-check the actual `CC/RC/EC/NC/PT/IT` leaves. Then proceed to Electron IPC, Agent backend integration, and version-matched UI comparison.
 - No claim of a complete standalone Codex frontend, real command execution, real approval flow, or pixel parity.
+
+
+## Current checkpoint — tool activity history subscription integration (2026-10-22)
+
+Validated code HEAD: `d088fdb2387272c0a2de722e0b7075b9c37abc1e`
+Branch: `recovery/codex-frontend-through-connected-message-20261021`
+PR: [#1](https://github.com/wwxst/agent-web/pull/1) (draft; not merged)
+
+- Completed source-derived `Uf` external-delivery conversion for the observed Slack/Teams branches and `NO/mh` skill-definition read classifier.
+- Added `ToolActivityHistorySource.ts` to connect LO's query plan and zO's hydration to host-supplied `subscribeHistoryEntity` / `subscribeAssistantMessageEntity` channels. Stale callbacks from a previous conversation/query are rejected and subscriptions are cleaned up on rebind/dispose.
+- Added `ConnectedCodexToolActivityItem.tsx`, using `useSyncExternalStore` to pass the source's hydrated item into the existing activity leaf adapter.
+- CI: 268/268 core tests, 4/4 demo model tests, strict React/TypeScript build, and 9/9 Chromium tests passed.
+- Raw source audits: `sites-end-resource` 34/34 signatures; `app-initial`, `app-primary`, `app-shared`, and `skill-exploration-labels` 27/27 helper signatures with pinned hashes.
+- Next: implement the host bridge that binds those subscription methods to the actual private Codex query provider, then restore/verify the original `CC/RC/EC/NC/PT/IT` visual leaves. After those contracts are verified, continue with Electron IPC, Agent backend integration, and matched screenshot/interaction comparisons.
+- No claim of a complete standalone Codex frontend or pixel parity. The demo command leaf remains mock-only.

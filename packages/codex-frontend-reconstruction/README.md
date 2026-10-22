@@ -8,7 +8,10 @@ This package is a staged, independently authored semantic reconstruction of sele
 - `src/conversation/ToolActivityDetailModel.ts` — source-derived tool visibility, exec leaf selection and patch status.
 - `src/conversation/ToolActivityHistoryHydrationModel.ts` — LO/HO query planning and zO history entity reconciliation with private transforms injected.
 - `src/conversation/ToolActivityHistorySourceTransforms.ts` — source-derived assistant/heartbeat, reasoning, file-change, image-failure, MCP-result and activity-status transforms.
-- `scripts/audit-tool-history-transforms-evidence.mjs` — verifies SHA-256 and function signatures in the original app-initial/app-primary/app-shared bundles.
+- `src/conversation/ToolActivityExternalMessageConversion.ts` — source-derived accepted Slack receipt and validated Slack/Teams delivery conversion.
+- `src/conversation/ToolActivityHistorySource.ts` — observable host-adapter store that binds LO query plans to the two history subscription channels and runs zO hydration.
+- `src/components/ConnectedCodexToolActivityItem.tsx` — React `useSyncExternalStore` connection from hydrated snapshots to the existing activity leaf renderer.
+- `scripts/audit-tool-history-transforms-evidence.mjs` — verifies SHA-256 and function signatures in the original app-initial/app-primary/app-shared and skill-exploration-labels bundles.
 - `src/components/CodexToolActivityLeafRenderer.tsx` — typed xC/PT leaf contracts for host-provided visual components.
 - `src/conversation/ActivityGroupingModel.ts` — activity-row classification and automatic-approval metadata normalization.
 - `src/conversation/TurnEntriesModel.ts` — reply-chain indexing, timestamp markers, item lookup, virtualization estimates and memo equality.
@@ -44,7 +47,7 @@ The strict core build compiles pure TypeScript modules and the Node test suite c
 - Private host predicates, Markdown/message body, image preview, diff and design-system components, and the Electron bridge require verified adapters.
 - The static transcript component has been syntax-checked but not fully type-checked or mounted with React in this environment.
 - No Electron visual regression has been performed.
-- No GitHub commit or push has been performed.
+- Changes are committed on the separate recovery branch and kept in draft PR #1; `main` has not been merged.
 
 - `src/conversation/ThreadVirtualizerModel.ts` — virtualized turn layout, visible ranges, anchor preservation and navigation offsets recovered from the compiled virtualizer.
 
