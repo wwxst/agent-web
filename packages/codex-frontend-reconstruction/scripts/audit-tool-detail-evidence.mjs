@@ -11,6 +11,17 @@ const visualizationBytes=readFileSync(visualizationFile),visualizationHash=creat
 if(visualizationHash!=="26c09e991cbfa31950d34e9106bb7f76c4efd6220cb30a606f6c81e7e26399c4"){console.error("Original skill-exploration-labels bundle hash mismatch "+visualizationHash);process.exit(1);}
 const visualizationContent=visualizationBytes.toString("utf8");
 const visualizationSignatures=["function g(e){return!x.test(e)||!S.test(e)?null:C.test(e)?`create`:w.test(e)?`update`:T.test(e)?null:`create`}","function _(e){if(e==null)return!0;switch(e){case`inProgress`:case`completed`:return!0;case`failed`:case`declined`:case`interrupted`:return!1}}"];
+
+const skillScriptSignatures=[
+  "toolSummaryForCmd.skillScript",
+  "toolSummaryForCmd.background.started.skillScript",
+  "toolSummaryForCmd.background.finished.skillScript",
+  "function ZC(e)",
+  "function QC(e,t)",
+  "function $C(e)"
+];
+const skillPathSignatures=["isInScriptsFolder:o===leu","relativePathSegments:a.length===1&&o===feu"];
+
 const patchSignatures=["function s0n(e,t){","function f0n(e){","if(f0n(t)>1048576||e.length*4>1048576","move_path??e"];
 const signatures=[
  "function fk(e){","standaloneActivityContentByItemId:O","if(R!=null)return R",
@@ -58,6 +69,6 @@ const signatures=[
  "parsedCmd,isFinished:r",
  "success:r},t[31]=a"
 ];
-const missing=[...signatures.filter(s=>!content.includes(s)),...patchSignatures.filter(s=>!patchContent.includes(s)),...visualizationSignatures.filter(s=>!visualizationContent.includes(s))];
+const missing=[...signatures.filter(s=>!content.includes(s)),...patchSignatures.filter(s=>!patchContent.includes(s)),...visualizationSignatures.filter(s=>!visualizationContent.includes(s)),...skillScriptSignatures.filter(s=>!content.includes(s)),...skillPathSignatures.filter(s=>!patchContent.includes(s))];
 if(missing.length){console.error("Missing "+missing.join("\n"));process.exit(1);}
-console.log("PASS "+signatures.length+" activity + "+patchSignatures.length+" patch-preview + "+visualizationSignatures.length+" visualization-command signatures; source hashes "+hash+" / "+patchHash+" / "+visualizationHash);
+console.log("PASS "+signatures.length+" activity + "+skillScriptSignatures.length+" skill-script + "+patchSignatures.length+" patch-preview + "+skillPathSignatures.length+" skill-path + "+visualizationSignatures.length+" visualization-command signatures; source hashes "+hash+" / "+patchHash+" / "+visualizationHash);

@@ -194,6 +194,7 @@ export function CodexSourceExecCommandLeaf(props: ExecCommandLeafProps) {
   const label = getToolCommandSummary({
     summaryType: text(props.summary.type) ?? "unknown",
     command: props.summary.cmd,
+    rawCommand: props.item.cmd,
     executionStatus: text(props.item.executionStatus),
     elapsedLabel: elapsed,
     isInProgress: props.isInProgress,

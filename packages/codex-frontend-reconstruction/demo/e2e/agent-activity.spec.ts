@@ -88,6 +88,25 @@ test("fk/SO source detail entry delegates real exec leaves without changing grou
   expect(errors).toEqual([]);
 });
 
+test("WC/ZC skill-script summaries show the source-specific background labels", async ({page}) => {
+  await page.goto("/");
+  await page.getByRole("button", {name:/工具调用与审批交互/}).click();
+
+  const runningEntry = page.locator('[data-demo-turn-id="review-skill-script-running"]');
+  const runningActivity = runningEntry.locator("[data-recovered-agent-activity]");
+  await expect(runningEntry).toHaveCount(1);
+  await runningActivity.getByRole("button", {name:/项工具活动/}).click();
+  await expect(runningActivity.locator("[data-codex-source-tool-summary]"))
+    .toContainText("后台终端已启动，正在运行 check.py（来自 Repo Audit 技能）");
+
+  const finishedEntry = page.locator('[data-demo-turn-id="review-skill-script-finished"]');
+  const finishedActivity = finishedEntry.locator("[data-recovered-agent-activity]");
+  await expect(finishedEntry).toHaveCount(1);
+  await finishedActivity.getByRole("button", {name:/项工具活动/}).click();
+  await expect(finishedActivity.locator("[data-codex-source-tool-summary]"))
+    .toContainText("后台终端已结束，运行脚本 check.py（来自 Repo Audit 技能）");
+});
+
 test("source-shaped PT/IT leaf shows patch status and expands unified diff without host writes", async ({page}, testInfo) => {
   const errors: string[] = [];
   page.on("pageerror", error => errors.push(error.message));

@@ -124,7 +124,7 @@ See [AgentActivity group-header recovery](reports/AGENT_ACTIVITY_GROUP_HEADER_SO
 
 ## Source-derived command summaries and patch previews (2026-10-22)
 
-- `src/conversation/ToolCommandSummaryModel.ts` restores the compiled `WC/JC/GC` generic command, background terminal, date-check and elapsed-time branches. The source `fh/uh` execution-status and visualization-path classifier is now included; skill-script-specific background labels remain an explicit gap.
+- `src/conversation/ToolCommandSummaryModel.ts` restores the compiled `WC/JC/GC` generic command, background terminal, date-check and elapsed-time branches. It also ports `ZC/QC/$C`: supported `python`, `python3`, `bash` and `sh` commands that target a skill-owned `scripts` directory receive the original skill/file-specific background-start, background-finish and collapsed labels.
 - `src/conversation/ToolPatchDiffPresentationModel.ts` ports the compiled `s0n/f0n` preview builder plus patch-stat fallback: add/delete contents become unified diffs, update hunks receive missing headers, and previews over 1 MiB are suppressed. `CodexSourcePatchDiffPreview.tsx` sends those unified patches to the real `@pierre/diffs` `PatchDiff` component inside `Virtualizer`, with wrapped unified lines, bar indicators, word-level diffing and line gutters.
 - File-open callbacks retain the original change path and prefer `grantRoot` over `cwd`, matching the compiled `IT` call shape.
 
@@ -135,7 +135,7 @@ See [tool activity source recovery](reports/TOOL_ACTIVITY_VISUAL_LEAVES.md) for 
 - `src/components/CodexSourceToolActivityLeaves.tsx` mounts independent React leaves for compiled `RC/EC/NC/CC/PT/IT` behavior through the existing activity renderer.
 - `src/conversation/ToolPatchDiffPresentationModel.ts` restores patch diff counts and the first changed-line navigation target from the source-observed diff-stat fallback.
 - `tests/tool-patch-diff-presentation-model.test.mjs` covers unified diffs, add/delete content fallbacks and changed-line selection.
-- `scripts/audit-tool-detail-evidence.mjs` pins the original activity, patch-preview and visualization-classifier bundle hashes and checks 55 activity signatures plus six patch/visualization classifier signatures. `reports/TOOL_ACTIVITY_VISUAL_LEAVES.md` records the source hashes, UI boundary and remaining host integration.
+- `scripts/audit-tool-detail-evidence.mjs` pins the original activity, patch-preview and visualization-classifier bundle hashes and checks 55 activity, six skill-script, four patch-preview, two skill-path and two visualization-classifier source signatures. `reports/TOOL_ACTIVITY_VISUAL_LEAVES.md` records the source hashes, UI boundary and remaining host integration.
 
 The browser preview remains synthetic/demo-only. Inline patch details use the real `@pierre/diffs` renderer, but the full original multi-item `CodeView`, private Codex design-system, Electron bridge and live Agent backend are not yet integrated.
 

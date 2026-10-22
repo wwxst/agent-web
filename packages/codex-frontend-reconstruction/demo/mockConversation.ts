@@ -94,6 +94,20 @@ function reviewScenario(): ConversationRenderEntry[] {
     demoActivityEntry("review-exec", [demoItem("review-exec1", "exec", undefined, {
       heading: "读取项目结构", command: "find src -maxdepth 2 -type f", output: "src/components/\nsrc/conversation/\nsrc/index.ts", state: "Ready",
     })]),
+    // Synthetic UI-only fixtures exercise the source ZC/QC/$C script labels.
+    // They do not launch commands or imply that a real skill script ran.
+    demoActivityEntry("review-skill-script-running", [demoItem("review-skill-script-running1", "exec", undefined, {
+      heading: "Skill 脚本后台运行（模拟）",
+      command: "python3 -u /workspace/.agents/skills/repo_audit/scripts/check.py",
+      cmd: ["python3", "-u", "/workspace/.agents/skills/repo_audit/scripts/check.py"],
+      output: "正在检查源码签名（模拟输出）", state: "Working", processId: 4242,
+    })]),
+    demoActivityEntry("review-skill-script-finished", [demoItem("review-skill-script-finished1", "exec", undefined, {
+      heading: "Skill 脚本后台结束（模拟）",
+      command: "python3 -u /workspace/.agents/skills/repo_audit/scripts/check.py",
+      cmd: ["python3", "-u", "/workspace/.agents/skills/repo_audit/scripts/check.py"],
+      output: "源码签名检查完成（模拟输出）", state: "Ready", processId: 4243,
+    })]),
     // Synthetic patch fixture for the source-shaped PT/IT leaf. It does not
     // modify the demo project or invoke a host file API.
     demoActivityEntry("review-patch", [demoItem("review-patch1", "patch", undefined, {

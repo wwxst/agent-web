@@ -47,12 +47,13 @@ Integration uses the existing `CodexToolActivityLeafRenderer` and `ConnectedConv
 
 ## Audit and verification boundary
 
-`scripts/audit-tool-detail-evidence.mjs` checks all three original bundle hashes, 55 activity-leaf signatures, four `s0n/f0n` patch-preview signatures, and two visualization-command classifier signatures. The 21 added visual-leaf signatures were independently checked against the provided bundle and passed 21/21. The command summary model now also ports the source `fh/uh` execution-status and visualization-path classifier. Skill-script-specific background labels remain follow-up work.
+`scripts/audit-tool-detail-evidence.mjs` checks all three original bundle hashes, 55 activity-leaf signatures, six `ZC/QC/$C` skill-script signatures, four `s0n/f0n` patch-preview signatures, two skill-path metadata signatures, and two visualization-command classifier signatures. The 21 added visual-leaf signatures were independently checked against the provided bundle and passed 21/21. The command summary model ports the source `fh/uh` visualization classifier and `ZC/QC/$C` skill-script detection. Background start, finish, stopped, and collapsed summaries now name the script and owning skill only for the source-observed interpreter/path cases.
 
 Source signature checks prove the target compiled branches are present; they do not prove pixel parity. The authored CSS in `demo/styles.css` is a local compatibility layer, not copied Codex CSS. The current browser preview is still a demo host, not a complete Electron app.
 
 Remaining work:
 - keep the source diff synthesis and `@pierre/diffs` rendering in the CI suite; verify real browser output, line gutters, wrapped long lines and large-patch scrolling;
+- retain browser coverage for the newly restored skill-script background start/finish labels and extend the fixtures only where source predicates justify them;
 - move from the single-patch `PatchDiff` adapter toward the original multi-item `CodeView` composition, including the registered Codex soft themes and exact hunk-expansion behavior;
 - bind file opening, approval requests and tool updates to a confirmed Agent/Electron event contract;
 - compare the reconstructed leaf screenshots and interactions against the same Codex build and viewport.
