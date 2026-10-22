@@ -41,8 +41,8 @@ test("clipboard bridge forwards file payloads and preserves DataTransfer", () =>
   const controller = createFakeController();
   const files = [{ name: "readme.txt" }];
   const transfer = { types: ["Files"] };
-  let receivedFiles: readonly File[] | undefined;
-  let receivedTransfer: DataTransfer | null | undefined;
+  let receivedFiles;
+  let receivedTransfer;
   const cleanup = connectComposerControllerClipboardEvents(controller, {
     onPastedFiles(nextFiles, nextTransfer) {
       receivedFiles = nextFiles;
