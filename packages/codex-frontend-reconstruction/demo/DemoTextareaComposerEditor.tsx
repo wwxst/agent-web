@@ -5,6 +5,11 @@ import type {
   ComposerEditorViewPort,
 } from "../src/conversation/ComposerControllerContract.js";
 import { resolveComposerEditorKeyAction } from "../src/conversation/ComposerEditorBehaviorModel.js";
+import { CodexSourceComposerHostEvents } from "../src/components/CodexSourceComposerHostEvents.js";
+import type {
+  ComposerPastedLinkPayload,
+  ComposerPastedTextPayload,
+} from "../src/conversation/ComposerControllerContract.js";
 
 class DemoTextareaComposerController implements ComposerControllerPort {
   readonly view: ComposerEditorViewPort;
@@ -12,6 +17,10 @@ class DemoTextareaComposerController implements ComposerControllerPort {
   private inputActive = false;
   private submitReady = false;
   private submitHandlers = new Set<(timestamp?: number) => void>();
+  private pastedImagesHandlers = new Set<(images: readonly File[]) => void>();
+  private pastedFilesHandlers = new Set<(files: readonly File[], dataTransfer?: DataTransfer | null) => void>();
+  private pastedTextHandlers = new Set<(payload: ComposerPastedTextPayload) => boolean | void>();
+  private pastedLinkHandlers = new Set<(payload: ComposerPastedLinkPayload) => boolean | void>();
 
   constructor(private readonly element: HTMLTextAreaElement) {
     this.view = { dom: element, isDestroyed: false };
@@ -63,6 +72,35 @@ class DemoTextareaComposerController implements ComposerControllerPort {
     this.submitReady = ready;
   }
 
+  addPastedImagesHandler(handler: (images: readonly File[]) => void): void {
+    this.pastedImagesHandlers.add(handler);
+  }
+
+  removePastedImagesHandler(handler: (images: readonly File[]) => void): void {
+    this.pastedImagesHandlers.delete(handler);
+  }
+
+  addPastedFilesHandler(handler: (files: readonly File[], dataTransfer?: DataTransfer | null) => void): void {
+    this.pastedFilesHandlers.add(handler);
+  }
+
+  removePastedFilesHandler(handler: (files: readonly File[], dataTransfer?: DataTransfer | null) => void): void {
+    this.pastedFilesHandlers.delete(handler);
+  }
+
+  addPastedTextHandler(handler: (payload: ComposerPastedTextPayload) => boolean | void): void {
+    this.pastedTextHandlers.add(handler);
+  }
+
+  removePastedTextHandler(handler: (payload: ComposerPastedTextPayload) => boolean | void): void {
+    this.pastedTextHandlers.delete(handler);
+  }
+
+  subscribePastedLink(handler: (payload: ComposerPastedLinkPayload) => boolean | void): () => void {
+    this.pastedLinkHandlers.add(handler);
+    return () => this.pastedLinkHandlers.delete(handler);
+  }
+
   requestSubmit(timestamp?: number): void {
     if (!this.submitReady || this.view.isDestroyed) return;
     for (const handler of this.submitHandlers) handler(timestamp);
@@ -73,6 +111,10 @@ class DemoTextareaComposerController implements ComposerControllerPort {
     this.inputActive = false;
     this.view.isDestroyed = true;
     this.submitHandlers.clear();
+    this.pastedImagesHandlers.clear();
+    this.pastedFilesHandlers.clear();
+    this.pastedTextHandlers.clear();
+    this.pastedLinkHandlers.clear();
   }
 }
 
@@ -80,6 +122,10 @@ export interface DemoTextareaComposerEditorProps {
   value: string;
   onChange: (value: string) => void;
   onSubmit: (timestamp?: number) => void;
+  onPastedImages?: (images: readonly File[]) => void;
+  onPastedFiles?: (files: readonly File[], dataTransfer?: DataTransfer | null) => void;
+  onPastedText?: (payload: ComposerPastedTextPayload) => boolean | void;
+  onPastedLink?: (payload: ComposerPastedLinkPayload) => boolean | void;
 }
 
 /**
@@ -144,6 +190,14 @@ export function DemoTextareaComposerEditor(props: DemoTextareaComposerEditorProp
   }, [controller, props.value]);
 
   return (
+    <>
+    <CodexSourceComposerHostEvents
+      controller={controller}
+      onPastedImages={props.onPastedImages}
+      onPastedFiles={props.onPastedFiles}
+      onPastedText={props.onPastedText}
+      onPastedLink={props.onPastedLink}
+    />
     <CodexSourceComposerEditorMount
       controller={controller}
       ariaLabel="演示消息输入"
@@ -159,5 +213,6 @@ export function DemoTextareaComposerEditor(props: DemoTextareaComposerEditorProp
       }}
       onSubmit={(timestamp) => latest.current.onSubmit(timestamp)}
     />
+    </>
   );
 }

@@ -77,6 +77,13 @@ const checks = [
       "T.emit(`pasted-text`,{codeBlockLanguage:h,markdown:g,text:p==null?c:uG(p).content})",
       "T.emit(`pasted-link`,new cUu(c,l??``))",
       "transformPastedText:M.transformPastedText",
+      "addPastedImagesHandler(e)",
+      "removePastedImagesHandler(e)",
+      "addPastedFilesHandler(t)",
+      "removePastedFilesHandler(t)",
+      "addPastedTextHandler(t)",
+      "removePastedTextHandler(t)",
+      "subscribePastedLink(e)",
     ],
   },
   {

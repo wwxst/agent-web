@@ -303,7 +303,14 @@ export function App() {
             density="comfortable"
             radiusVariant="default"
             surfaceVariant="default"
-            input={<DemoTextareaComposerEditor value={draft} onChange={setDraft} onSubmit={sendMessage} />}
+            input={<DemoTextareaComposerEditor
+              value={draft}
+              onChange={setDraft}
+              onSubmit={sendMessage}
+              onPastedImages={() => notify("演示模式：图片上传尚未接入。")}
+              onPastedFiles={() => notify("演示模式：文件上传尚未接入。")}
+              onPastedText={() => false}
+            />}
             leadingControls={<div className="demo-composer-options">
               <button type="button" className="demo-composer-plus" title="附件尚未恢复" disabled aria-label="附件尚未恢复"><Icon name="plus" size={20}/></button>
               <span className="demo-composer-permission" title="演示模式，无真实权限授予">♧ Full access <span>· mock</span></span>

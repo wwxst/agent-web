@@ -99,3 +99,11 @@ The source factory is `rUu` in the pinned `app-initial-5851df3f6cb1.js` asset. I
 ### Validation boundary
 
 The read-only audit now checks the `rUu` schema/plugin/keymap/paste/drop signatures against the exact bundle hash. This proves that the local source file still matches the analyzed build; it does not make the private ProseMirror schema, plugins or file-upload host actions available in the reconstructed demo.
+
+
+## Controller clipboard host bridge — implementation checkpoint (2026-10-22)
+
+- Extended `ComposerControllerPort` with the source-observed pasted-image, pasted-file, large-paste-text and pasted-link subscriptions from `EUu`. Payload types preserve the original distinction between `File[]`, `DataTransfer`, large-paste `text/markdown/codeBlockLanguage`, and link `text/html`.
+- Added `connectComposerControllerClipboardEvents` plus `CodexSourceComposerHostEvents`. The bridge lives at the host boundary, not inside the layout component; paired subscriptions are removed on cleanup and the pasted-link subscription uses its returned unsubscribe function.
+- The visible textarea demo controller implements the contract only so React mount/cleanup is testable. It does not synthesize paste events or perform uploads. Demo callbacks explicitly report that image/file upload is not integrated; large pasted text returns `false` so the editor's normal paste path is not consumed.
+- Added source audit signatures for all four controller event APIs. This adapter alone is not a claim that ProseMirror paste/drop behavior is restored.
