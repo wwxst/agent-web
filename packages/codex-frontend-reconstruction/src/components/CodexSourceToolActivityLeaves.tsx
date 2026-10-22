@@ -347,7 +347,7 @@ function PatchFileRow(props: {
                     ? "diff-meta"
                     : line.startsWith("+") ? "diff-added"
                       : line.startsWith("-") ? "diff-removed" : "";
-                  return <span key={index} className={className}>{line}{"\\n"}</span>;
+                  return <span key={index} className={className}>{line}{"\n"}</span>;
                 })}</pre>
               : <pre className={isAdd ? "diff-added-file" : isDelete ? "diff-deleted-file" : ""}>{diff}</pre>}
       </div>}

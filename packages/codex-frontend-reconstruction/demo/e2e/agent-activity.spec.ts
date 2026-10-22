@@ -106,6 +106,7 @@ test("source-shaped PT/IT leaf shows patch status and expands unified diff witho
   await diffToggle.click();
   await expect(firstFile.locator("[data-codex-source-patch-diff]")).toBeVisible();
   await expect(firstFile.locator(".diff-added")).toContainText("createToolActivityHistorySource");
+  await expect(firstFile.locator("[data-codex-source-patch-diff]")).not.toContainText("\\n");
   await patchActivity.scrollIntoViewIfNeeded();
   await page.screenshot({path:testInfo.outputPath("codex-patch-leaf-expanded.png"),animations:"disabled"});
   expect(errors).toEqual([]);
