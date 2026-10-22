@@ -102,3 +102,22 @@ test("source-shaped PT/IT leaf shows patch status and expands unified diff witho
   await expect(firstFile.locator(".diff-added")).toContainText("createToolActivityHistorySource");
   expect(errors).toEqual([]);
 });
+
+test("source-shaped RC/EC/NC leaves route read search and file-list summaries", async ({page}) => {
+  const errors: string[] = [];
+  page.on("pageerror", error => errors.push(error.message));
+  await page.goto("/");
+  await page.getByRole("button", {name:/工具调用与审批交互/}).click();
+  const activity = page.locator("[data-recovered-agent-activity]").nth(4);
+  await activity.getByRole("button", {name:/项工具活动/}).click();
+  const group = activity.locator("[data-codex-activity-group]");
+  await expect(group).toBeVisible();
+  await group.getByRole("button", {name:/3 项命令/}).click();
+  await expect(activity.locator('[data-codex-source-leaf="exec-read"]')).toHaveCount(1);
+  await expect(activity.locator('[data-codex-source-leaf="exec-search"]')).toHaveCount(1);
+  await expect(activity.locator('[data-codex-source-leaf="exec-list-files"]')).toHaveCount(1);
+  await expect(activity.locator('[data-codex-source-leaf="exec-read"]')).toContainText("ToolActivityHistorySource.ts");
+  await expect(activity.locator('[data-codex-source-leaf="exec-search"]')).toContainText("useSyncExternalStore");
+  await expect(activity.locator('[data-codex-source-leaf="exec-list-files"]')).toContainText("src/conversation");
+  expect(errors).toEqual([]);
+});
