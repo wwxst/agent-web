@@ -71,3 +71,14 @@ PR: #1 (draft; not merged): https://github.com/wwxst/agent-web/pull/1
 - CI: 275/275 core tests, 4/4 demo model tests, strict React/TypeScript build, and 9/9 Chromium tests passed. Source audit signatures and pinned bundle hashes remain passing.
 - Next: mount the connected history renderer into the live transcript using stable per-item source lifetimes, then bind the host-side store to confirmed Agent events/Electron IPC. Restore/verify the actual CC/RC/EC/NC/PT/IT visual leaves and run version-matched screenshot/interaction comparisons.
 - Boundary: the new cache reimplements the observed query-channel contract; it is not the original private Codex query runtime. No claim of a complete standalone Codex frontend or pixel parity. The demo command leaf remains mock-only.
+## Current checkpoint — connected history source mounted in the live transcript (2026-10-22)
+
+Validated code HEAD: cfee2d640aeeedf604ffb327916583fc918148ee
+Branch: recovery/codex-frontend-through-connected-message-20261021
+PR: #1 (draft; not merged): https://github.com/wwxst/agent-web/pull/1
+
+- ConnectedConversationMessageRenderers now supports a stable host-supplied history source and mounts ConnectedCodexToolActivityItem inside the actual transcript rendering path; the legacy resolved-hydration path remains available for hosts that have not adopted it.
+- The browser demo now exercises the store → history source → useSyncExternalStore → tool-leaf path with explicitly synthetic fixture entities, and disposes the source registry when its row host is unmounted.
+- Playwright verifies two activity leaves are mounted through the connected source and report ready history state. CI: 275/275 core tests, 4/4 demo model tests, strict React/TypeScript build, and 9/9 Chromium tests passed.
+- Next: restore/verify the original CC/RC/EC/NC/PT/IT visual leaves, then connect the host store to confirmed Agent backend events/Electron IPC and perform version-matched screenshot/interaction comparisons.
+- Boundary: the history source/cache is a reconstructed independent-frontend contract, not the private Codex Mr/Au/Vd runtime. Demo fixtures and command leaf are mock-only; no claim of full UI parity.
