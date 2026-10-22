@@ -95,3 +95,17 @@
 - Source audit records: `sites-end-resource` 34/34 signatures; helper bundles and skill-path parser 30/30 signatures with pinned hashes. These are signature checks, not visual-parity measurements.
 - **Next implementation gate:** restore/verify the original `CC/RC/EC/NC/PT/IT` leaves and complete FileDiff/MCP/approval visuals from the exact user-provided Codex bundle; then bind the host entity store to a confirmed Agent/Electron event contract and run version-matched screenshot/interaction tests.
 - **Known boundary:** this current workspace's accessible Library does not contain the referenced Codex `frontend.zip` or `sites-end-resource-fa77a923096d.js`; the original visual leaf work must not be guessed. No complete Electron app, real Agent event stream, real command execution, or pixel-level parity is claimed.
+
+
+## Latest verified checkpoint — source-aligned FileDiff and fallback (2026-10-22)
+
+- Branch: `recovery/codex-frontend-through-connected-message-20261021`; draft PR #1 remains open. Latest implementation commit: `f6f04330c5a910ca48823f9d88a05355ee5cb993`.
+- In `CodexSourcePatchDiffPreview.tsx`, the actual `@pierre/diffs` `FileDiff` host now receives the source-observed `composer-diff-simple-line` class and vertical-scroll behavior. The source's pending/regular viewport bounds are preserved as 100px / 240px.
+- The `VT` fallback now uses the original change content for add/update and a deleted-content label for delete, rather than displaying the synthesized git header when the parser cannot render a binary or invalid diff.
+- The synthetic patch fixture now exercises actual vertical scrolling and a binary-diff fallback. Browser tests verify line gutters, source classes, viewport overflow, scroll movement and binary fallback.
+- GitHub Actions at `f6f0433` passed: 296/296 core tests, 4/4 demo model tests, strict React/TypeScript build, and 12/12 Chromium tests. The prior failed run at `e033ffa` was caused by a double-escaped newline in the new fixture; the fixture was corrected before this green checkpoint.
+- The public repository still contains no raw original bundle. The preview remains synthetic/demo-only; the Codex soft-theme resolver, full private design system, live history runtime, Electron IPC and real Agent backend are not yet integrated.
+
+## Next implementation gate
+
+See `reports/NEXT_BATCH.md`: trace the actual main conversation Composer call site and event/controller contract in the provided bundle before implementing editor behavior or wiring any host action.
