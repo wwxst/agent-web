@@ -118,6 +118,7 @@ test("NO/mh recognizes Codex, agents, system, imported and plugin skill-definiti
  assert.equal(read(".codex/skills/.system/demo/skill.md","/workspace"),true);
  assert.equal(read(".codex/skills/_import/demo/skill.md","/workspace"),true);
  assert.equal(read("plugins/example/skills/demo/skill.md","/workspace"),true);
+ assert.equal(isMeaningfulReadToolActivity({type:"exec",parsedCmd:{type:"read",name:".agents/skills/demo/skill.md"},cwd:"/workspace"}),true);
  assert.equal(read("skill.md","/workspace/.codex/skills/demo"),true);
  assert.equal(read("src/skill.md","/workspace"),false);
  assert.equal(read(".codex/skills/demo/readme.md","/workspace"),false);
