@@ -332,7 +332,7 @@ function PatchFileRow(props: {
                 <div className="codex-source-tool-patch-file__empty">{isDelete ? "文件内容已删除" : "没有差异"}</div>
               </>
             : unified
-              ? <CodexSourcePatchDiffPreview patch={diff}
+              ? <CodexSourcePatchDiffPreview patch={diff} path={props.path} change={props.change}
                   isShortView={props.status === "pending"}
                   header={<ApprovalReviewDetails reviews={props.automaticApprovalReviews}
                     isDeclined={props.status === "auto-review-declined"} />} />

@@ -129,7 +129,7 @@ test("source-shaped PT/IT leaf shows patch status and expands unified diff witho
   const patch = patchActivity.locator("[data-codex-source-patch]");
   await expect(patch).toBeVisible();
   await expect(patch).toHaveAttribute("data-patch-status", "pending");
-  await expect(patch.locator("[data-codex-source-patch-file]")).toHaveCount(2);
+  await expect(patch.locator("[data-codex-source-patch-file]")).toHaveCount(3);
   const firstFile = patch.locator("[data-codex-source-patch-file]").first();
   await expect(firstFile.locator(".codex-source-tool-patch-file__status")).toContainText("正在编辑");
   const diffToggle = firstFile.getByRole("button", {name:/切换差异/});
@@ -137,12 +137,24 @@ test("source-shaped PT/IT leaf shows patch status and expands unified diff witho
   await expect(firstFile.locator("[data-codex-source-patch-diff]")).toBeVisible();
   const diffEngine = firstFile.locator("[data-codex-source-diff-engine='pierre']");
   await expect(diffEngine).toBeVisible();
-  await expect(diffEngine.locator(".codex-source-tool-patch-file__diff-viewport")).toHaveCSS("max-height", "100px");
+  const diffViewport = diffEngine.locator(".codex-source-tool-patch-file__diff-viewport");
+  await expect(diffViewport).toHaveCSS("max-height", "100px");
+  await expect(diffViewport).toHaveClass(/composer-diff-simple-line/);
+  await expect(diffViewport).toHaveCSS("overflow-y", "auto");
   await expect(diffEngine.getByText("createToolActivityHistorySource")).toBeVisible();
+  await expect.poll(() => diffViewport.evaluate((el) => el.scrollHeight > el.clientHeight)).toBe(true);
+  await diffViewport.evaluate((el) => { el.scrollTop = el.scrollHeight; });
+  await expect.poll(() => diffViewport.evaluate((el) => el.scrollTop)).toBeGreaterThan(0);
+  await diffViewport.evaluate((el) => { el.scrollTop = 0; });
   await expect(diffEngine.getByText("diff --git")).toHaveCount(0);
   await expect(diffEngine.locator("[data-line]").first()).toBeVisible();
   await patchActivity.scrollIntoViewIfNeeded();
   await page.screenshot({path:testInfo.outputPath("codex-patch-leaf-expanded.png"),animations:"disabled"});
+  const binaryFile = patch.locator("[data-codex-source-patch-file]").nth(2);
+  await binaryFile.getByRole("button", {name:/切换差异/}).click();
+  const binaryFallback = binaryFile.locator("[data-codex-source-patch-fallback]");
+  await expect(binaryFallback).toContainText("Binary files a/assets/preview.bin and b/assets/preview.bin differ");
+  await expect(binaryFallback).not.toContainText("diff --git");
   expect(errors).toEqual([]);
 });
 
