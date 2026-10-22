@@ -14,6 +14,13 @@ import { projectCompletedGroupHeaderParts } from "../src/conversation/AgentActiv
 import { aggregateAgentActivityUnits } from "../src/conversation/AgentActivityAggregate.js";
 import { classifyRawActivityItem } from "../src/conversation/AgentActivityRawClassifier.js";
 import type { ExecCommandLeafProps } from "../src/components/CodexToolActivityLeafRenderer.js";
+import {
+  CodexSourceExecCommandLeaf,
+  CodexSourceExecListFilesLeaf,
+  CodexSourceExecReadLeaf,
+  CodexSourceExecSearchLeaf,
+  CodexSourcePatchLeaf,
+} from "../src/components/CodexSourceToolActivityLeaves.js";
 import { createToolActivityHistoryEntityStore } from "../src/conversation/ToolActivityHistoryEntityStore.js";
 import { createToolActivityHistorySource, type ConnectedToolActivityHistorySource } from "../src/conversation/ToolActivityHistorySource.js";
 import type { ToolItem } from "../src/conversation/ToolActivityDetailModel.js";
@@ -64,8 +71,7 @@ function DemoCommandLeaf(props: ExecCommandLeafProps) {
     data-demo-in-progress={String(props.isInProgress)}
     data-demo-background-running={String(props.isBackgroundTerminalRunning)}
     data-demo-background-finished={String(props.isBackgroundTerminalFinished)}>
-    <ActivityDetails item={props.item as ConversationMessageItem}
-      isActive={props.isInProgress} presentation="ordinary" />
+    <CodexSourceExecCommandLeaf {...props} />
   </div>;
 }
 
@@ -166,8 +172,9 @@ export function makeDemoRow(notify: (message: string) => void) {
         conversationDetailLevel: "STEPS_PROSE",
       },
     },
-    // Explicit DEMO host: only fk/SO dispatch is reconstructed. xC/PT leaf
-    // visuals still use the earlier mock ActivityDetails, never real execution.
+    // Explicit DEMO host: recovered fk/SO routing now mounts independently
+    // authored, source-shaped xC/PT leaves. The fixtures remain synthetic; no
+    // command execution, file mutation, or privileged host action is performed.
     toolActivity: {
       getHistorySource,
       getContext: (_item, isActive) => ({
@@ -181,7 +188,13 @@ export function makeDemoRow(notify: (message: string) => void) {
         threadDetailLevel: "STEPS_PROSE", summaryTone: "default", showSummaryIcon: true,
         hideRawCommand: false,
       }),
-      leafAdapters: { Command: DemoCommandLeaf },
+      leafAdapters: {
+        Read: CodexSourceExecReadLeaf,
+        Search: CodexSourceExecSearchLeaf,
+        ListFiles: CodexSourceExecListFilesLeaf,
+        Command: DemoCommandLeaf,
+        Patch: CodexSourcePatchLeaf,
+      },
     },
     ActivityDetails,
     ActivityResult: ({ result }) => <pre className="demo-activity-detail">{typeof result === "string" ? result : "模拟活动结果"}</pre>,
