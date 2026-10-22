@@ -36,3 +36,6 @@ export type { CodexToolActivityItemProps } from "./components/CodexToolActivityI
 
 export { renderCodexToolActivityLeaf } from "./components/CodexToolActivityLeafRenderer.js";
 export type { ToolActivityLeafAdapters, ToolActivityLeafContext, ExecReadLeafProps, ExecSearchLeafProps, ExecListFilesLeafProps, ExecCommandLeafProps, PatchLeafProps } from "./components/CodexToolActivityLeafRenderer.js";
+
+export { ConnectedCodexToolActivityItem } from "./components/ConnectedCodexToolActivityItem.js";
+export type { ConnectedCodexToolActivityItemProps } from "./components/ConnectedCodexToolActivityItem.js";
