@@ -83,7 +83,7 @@ test("fk/SO source detail entry delegates real exec leaves without changing grou
   expect(errors).toEqual([]);
 });
 
-test("source-shaped PT/IT leaf shows patch status and expands unified diff without host writes", async ({page}) => {
+test("source-shaped PT/IT leaf shows patch status and expands unified diff without host writes", async ({page}, testInfo) => {
   const errors: string[] = [];
   page.on("pageerror", error => errors.push(error.message));
   await page.goto("/");
@@ -106,6 +106,8 @@ test("source-shaped PT/IT leaf shows patch status and expands unified diff witho
   await diffToggle.click();
   await expect(firstFile.locator("[data-codex-source-patch-diff]")).toBeVisible();
   await expect(firstFile.locator(".diff-added")).toContainText("createToolActivityHistorySource");
+  await patchActivity.scrollIntoViewIfNeeded();
+  await page.screenshot({path:testInfo.outputPath("codex-patch-leaf-expanded.png"),animations:"disabled"});
   expect(errors).toEqual([]);
 });
 
