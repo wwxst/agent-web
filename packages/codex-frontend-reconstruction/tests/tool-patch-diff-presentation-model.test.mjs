@@ -16,7 +16,7 @@ test("s0n preserves update hunks and adds missing git/file headers", () => {
   assert.equal(diffText("src/a.ts", { type: "update", unified_diff: "@@ -1 +1 @@\n-old\n+new" }),
     "diff --git a/src/a.ts b/src/a.ts\n--- a/src/a.ts\n+++ b/src/a.ts\n@@ -1 +1 @@\n-old\n+new");
   assert.equal(diffText("src/a.ts", { type: "update", move_path: "src/b.ts", unified_diff: "--- a/src/a.ts\n+++ b/src/b.ts\n@@ -1 +1 @@\n-old\n+new" }),
-    "--- a/src/a.ts\n+++ b/src/b.ts\n@@ -1 +1 @@\n-old\n+new");
+    "diff --git a/src/a.ts b/src/b.ts\n--- a/src/a.ts\n+++ b/src/b.ts\n@@ -1 +1 @@\n-old\n+new");
 });
 
 test("s0n returns null when the source preview exceeds the original 1 MiB cap", () => {
