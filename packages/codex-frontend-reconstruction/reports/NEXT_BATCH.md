@@ -1,40 +1,35 @@
-# Next reconstruction batch — Composer controller and host contract
+# Next reconstruction batch — Composer clipboard host bridge and stop state
 
-## Current verified base
+## Verified base
 
-- `CodexComposerLayout.tsx` restores only the source-confirmed layout slots and attributes from `app-initial-5851df3f6cb1.js` (`kcr/Pcr/Hcr`) and the matching CSS layout selectors.
-- The visible demo input still uses a synthetic textarea and mock send/stop behavior. It is **not** the original editor and does not connect to Electron or the Agent backend.
-- The small `composer-1bf0334fecde.js` component is a generic compact/discussion composer with `onCancel/onChange/onSubmit`; do not mistake it for the full conversation composer without a verified call-site match.
-- Latest source-derived tool-activity/diff commit: `f6f04330c5a910ca48823f9d88a05355ee5cb993`. CI verified 296/296 core tests, 4/4 demo model tests, strict React/TypeScript build and 12/12 Chromium tests.
+- Latest branch head: `d6240f005e382437c14dce1662bd73d332ea7889`; draft PR #1 remains open.
+- `ComposerEditorBehaviorModel.ts` now ports the source-confirmed keyboard routing from `rUu`; the demo uses it for Enter routing but still uses a textarea.
+- The exact `app-initial` asset audit passes 40/40 signatures for the editor/controller factory, keymap, plugin order, paste/drop and clipboard serialization. `app-primary` passes 9/9; the controller hook passes 4/4.
+- Successful implementation CI at parent `154fbb6`: 309/309 core tests, 4/4 demo integration tests, strict React/TypeScript build, 13/13 Chromium tests. A follow-up commit corrected only one case-sensitive audit signature; its GitHub Actions status is still pending.
 
-## Source trace completed for the current gate
+## Next implementation gate — controller clipboard events
 
-The exact main-composer call path is now traced from the supplied bundle:
+The original `EUu` controller exposes these source-confirmed event methods:
 
-- `app-primary-fe8a450b3b04.js` (`YMt`) owns the main host callbacks, source-side readiness/submit/stop state and outer form.
-- `app-initial-5851df3f6cb1.js` (`XWu`) mounts `composerController.view.dom`, sets placeholder/submit readiness, registers controller submission, and forwards composition/input events.
-- `reports/COMPOSER_SOURCE_RECOVERY.md` records the source facts, full asset hashes, remaining uncertainty and a reproducible audit command.
-- `src/conversation/ComposerInteractionModel.ts` is integrated into the browser demo's send path; the current textarea remains clearly demo-only.
+- `addPastedImagesHandler` / `removePastedImagesHandler`
+- `addPastedFilesHandler` / `removePastedFilesHandler`
+- `addPastedTextHandler` / `removePastedTextHandler`
+- `subscribePastedLink`, which returns an unsubscribe callback
 
-## Next implementation gate — original editor plugins and submission events
+The main host (`YMt` in `app-primary-fe8a450b3b04.js`) registers the image/file handlers and routes them to host file selection; it registers the large-paste handler only when its feature/policy gate is enabled. The outer form also owns `onPasteCapture`, `onDropCapture`, and `onSubmit`; the drop/paste overlay helper is a separate host concern. These event handlers belong at the main Composer host boundary, not in the layout-only `CodexComposerLayout`.
 
-1. Recover the `rUu` ProseMirror construction path, schema, extension list, plugin/keymap setup and the event that emits the controller's `submit` event. The demo adapter currently implements only a native Enter handler for testing.
-2. Port the source-confirmed Enter/IME, mention selection, rich-link click/edit, and plain-text/markdown behavior only after tracing their original plugin branches.
-3. Trace the file paste/drop intake path through `_jt` and the composer toolbar to recover the exact upload-intake contract; keep file selection disabled in the demo until that boundary is implemented.
-4. Trace `Ti/wi/Ci` and the host's `onStop` path to restore send-versus-stop button presentation and enabled/loading states.
-5. Preserve the current DOM mount adapter as a boundary; do not claim ProseMirror parity until the original controller and plugin semantics are mounted and browser-tested.
-6. Keep Electron IPC and Agent backend actions behind explicit host callbacks; do not report demo mock actions as real sends/stops/uploads.
+Implement next:
 
-## Acceptance
-
-- Run `scripts/audit-composer-evidence.mjs` against the exact private source assets.
-- Add focused model tests and Playwright tests for the actual React-mounted controller DOM.
-- Keep core tests, strict React/TypeScript build, and browser smoke suite green.
-- Do not claim Composer parity or a runnable Electron application until the controller/editor is genuinely mounted and compared with the matching installed Codex build.
+1. Extend the typed controller contract with payloads for pasted images, files plus their `DataTransfer`, large-paste text (`text`, optional `markdown` and `codeBlockLanguage`), and pasted-link text/HTML.
+2. Add a small host event bridge that registers and removes the source controller handlers as the controller or callbacks change. Preserve the source distinction between paired add/remove methods and the unsubscribe-returning pasted-link subscription.
+3. Add lifecycle tests using a fake controller port: handlers register once, current callbacks are used, all listeners are removed on controller replacement/unmount, and a large-paste handler's `false` result is preserved.
+4. Trace the exact outer `pd/hd` paste/drop helpers and their source callback conditions before wiring any actual file selection. Keep uploads disabled in the demo until a real host callback exists; tests must not report mock file events as successful uploads.
+5. Then recover the source stop/send control states (`Ti/wi/Ci`, `onStop`, streaming, pending uploads, disabled/loading states) and connect them to the current button only through an explicit host-neutral state model.
 
 ## Acceptance
 
-- Pin the source asset SHA-256 values and add focused signature audits for the exact call site and event branches.
-- Add model tests for source-confirmed state transitions and Playwright tests for the actual rendered React Composer behavior.
-- Keep the full browser suite green and label all mock-only controls honestly.
-- Do not claim Composer parity or a runnable Electron application until it is launched and compared with the matching installed Codex build.
+- Run `scripts/audit-composer-evidence.mjs` against the user's exact private assets.
+- Run core tests, demo integration tests, strict React/TypeScript build and the complete Chromium suite.
+- No raw compiled assets are committed.
+- No real upload, message send or stop action is claimed until an actual host callback is connected.
+- Do not claim the ProseMirror editor or complete Composer has been restored until the original controller/schema/plugins are mounted and compared against the matching Codex build.

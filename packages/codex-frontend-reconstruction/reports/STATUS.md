@@ -127,3 +127,17 @@ See `reports/NEXT_BATCH.md`: trace the actual main conversation Composer call si
 - Integrated that mount boundary into the visible demo via an explicitly named `DemoTextareaComposerEditor`. It exercises controller submit registration and composition lifecycle, but it remains a textarea demo adapter, not the original ProseMirror editor.
 - The new factory signatures are now part of `scripts/audit-composer-evidence.mjs`; run it against the exact private assets before changing controller behavior.
 - New mount-adapter CI is pending. Remaining: original ProseMirror plugins/keymaps, full paste/drop/file intake, source-exact stop/streaming transitions, Electron IPC and real Agent backend.
+
+
+## Latest checkpoint — rUu ProseMirror keyboard and clipboard trace (2026-10-22)
+
+- Branch: `recovery/codex-frontend-through-connected-message-20261021`; draft PR #1 remains open. Implementation commit: `154fbb655ac9316c8abb1b71c03b52fe4c076ec3`; the follow-up audit-signature correction is `d6240f005e382437c14dce1662bd73d332ea7889`.
+- Traced `rUu` in the exact supplied `app-initial-5851df3f6cb1.js`: rich-text schema selection, ordered plugin groups, Enter/Shift-Enter/Alt-Enter/Mod-Enter routing, host shortcut override, IME guard, paste events, file-drop behavior and clipboard serialization.
+- Added `src/conversation/ComposerEditorBehaviorModel.ts` and seven focused core tests; the existing `DemoTextareaComposerEditor` now uses this source-derived submit-versus-editor-command decision. This does not implement ProseMirror commands or claim rich-editor parity.
+- The workflow for implementation commit `154fbb6` passed: 309/309 core tests, 4/4 demo integration tests, strict React/TypeScript build, and 13/13 Chromium tests. Commit `d6240f0` only corrects the case-sensitive source signature in the audit script; its source hash/signature audit was also run locally against the extracted bundle and passed (app-primary 9/9, app-initial 40/40, controller hook 4/4).
+- The exact original bundle remains private and is not committed. The current demo still uses a textarea controller. Actual ProseMirror schema/plugins, controller clipboard event subscriptions, host file-upload actions, stop/streaming state integration, Electron IPC and Agent backend are still not implemented.
+- The GitHub Actions runs for the audit-only follow-up are still reported in progress by GitHub; do not describe those exact run IDs as completed. The successful parent run validates the implementation code, and the local audit validates the corrected source signature set.
+
+## Next gate
+
+Follow `reports/NEXT_BATCH.md`: add the typed controller paste-event contract and host-level event bridge from the observed `addPastedImagesHandler`, `addPastedFilesHandler`, `addPastedTextHandler`, and `subscribePastedLink` APIs; trace and test the outer Composer's paste/drop routing before enabling any upload UI.
