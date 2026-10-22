@@ -117,6 +117,21 @@ function reviewScenario(): ConversationRenderEntry[] {
     demoActivityEntry("review-approval", [demoItem("review-approval1", "demo-approval-expandable", undefined, {
       heading: "需要明确授权", state: "Needs input",
     })]),
+    // Three source-shaped xC leaf variants; all records are synthetic and read-only.
+    demoActivityEntry("review-exploration", [
+      demoItem("review-read1", "exec", undefined, {
+        heading: "读取文件", state: "Ready", cwd: "/projects/agent-web",
+        parsedCmd: { type: "read", isFinished: true, name: "ToolActivityHistorySource.ts", path: "src/conversation/ToolActivityHistorySource.ts" },
+      }),
+      demoItem("review-search1", "exec", undefined, {
+        heading: "搜索代码", state: "Ready",
+        parsedCmd: { type: "search", isFinished: true, query: "useSyncExternalStore", path: "src/components" },
+      }),
+      demoItem("review-list1", "exec", undefined, {
+        heading: "列出文件", state: "Ready",
+        parsedCmd: { type: "list_files", isFinished: true, path: "src/conversation" },
+      }),
+    ]),
     demoMessageEntry("assistant", "review-final", "**演示不会触发真实权限变更。** 与 Agent 后端接入时，需要在宿主层明确实现权限校验、授权请求和执行回调。"),
   ];
 }
