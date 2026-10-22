@@ -106,7 +106,7 @@ test("WC uses skill-script labels in collapsed summaries but preserves source ga
   const command = "python3 /workspace/.agents/skills/repo_audit/scripts/check.py";
   const rawCommand = ["python3", "/workspace/.agents/skills/repo_audit/scripts/check.py"];
   assert.equal(summary({ ...base, command, rawCommand, elapsedLabel: "2 秒" }),
-    "已在 2 秒内运行 来自 Repo Audit 技能的脚本 check.py");
+    "已在 2 秒 内运行 来自 Repo Audit 技能的脚本 check.py");
   assert.equal(summary({ ...base, command, rawCommand, wasInterrupted: true, elapsedLabel: "2 秒" }),
     "运行 2 秒 后停止 来自 Repo Audit 技能的脚本 check.py");
   assert.equal(summary({ ...base, command, rawCommand, isExpanded: true, elapsedLabel: "2 秒" }),
