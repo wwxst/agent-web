@@ -88,3 +88,5 @@ export * from "./conversation/ToolActivityHistoryHydrationModel.js";
 export * from "./conversation/ToolActivityHistorySourceTransforms.js";
 
 export * from "./conversation/ToolActivityExternalMessageConversion.js";
+
+export * from "./conversation/ToolActivityHistorySource.js";
