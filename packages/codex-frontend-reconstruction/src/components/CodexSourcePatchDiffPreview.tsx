@@ -21,17 +21,19 @@ export function CodexSourcePatchDiffPreview(props: {
   header?: React.ReactNode;
 }) {
   return (
-    <Virtualizer
-      className="codex-source-tool-patch-file__diff-viewport"
-      contentClassName="codex-source-tool-patch-file__diff-content"
-    >
+    <div data-codex-source-diff-engine="pierre">
+      <Virtualizer
+        className="codex-source-tool-patch-file__diff-viewport"
+        contentClassName="codex-source-tool-patch-file__diff-content"
+      >
       {props.header}
       <PatchDiff
         patch={props.patch}
         options={PATCH_DIFF_OPTIONS}
-        className="codex-source-diff-engine"
+        className="codex-source-tool-patch-file__diff-engine"
         style={{ fontSize: "11px", lineHeight: 1.7 }}
       />
-    </Virtualizer>
+      </Virtualizer>
+    </div>
   );
 }
