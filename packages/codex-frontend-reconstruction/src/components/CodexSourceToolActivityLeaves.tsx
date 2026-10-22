@@ -78,16 +78,18 @@ export function CodexSourceExecReadLeaf(props: ExecReadLeafProps & {
     (path.toLowerCase().endsWith("/skill.md") ? basename(path.split("/").slice(0, -1).join("/")) : undefined);
   const title = isSkillDefinition && skillName != null
     ? "已读取 " + skillName + " 技能"
-    : "已读取 " + (label || path || "文件");
+    : "已读取";
+  const displayPath = label || path || "文件";
   const pathNode = props.onOpenFile && path
     ? <button type="button" className="codex-source-tool-path codex-source-tool-path--button"
-        onClick={() => props.onOpenFile?.({ path, cwd: props.cwd, hostId: props.hostId })}
-        data-agent-activity-file-link="">{path || label}</button>
-    : <span className="codex-source-tool-path" data-agent-activity-file-link="">{path || label}</span>;
+        title={path} onClick={() => props.onOpenFile?.({ path, cwd: props.cwd, hostId: props.hostId })}
+        data-agent-activity-file-link="">{displayPath}</button>
+    : <span className="codex-source-tool-path" title={path || undefined}
+        data-agent-activity-file-link="">{displayPath}</span>;
 
   return (
     <div className="codex-source-tool-leaf" data-codex-source-leaf="exec-read">
-      <ToolSummary label={<>{title}{path ? <> <span className="codex-source-tool-path-separator">·</span> {pathNode}</> : null}</>}
+      <ToolSummary label={isSkillDefinition ? title : <>{title} {pathNode}</>}
         summaryIcon={props.summaryIcon} automaticApprovalReviews={props.automaticApprovalReviews} />
     </div>
   );
@@ -123,17 +125,19 @@ export function CodexSourceExecListFilesLeaf(props: ExecListFilesLeafProps) {
   </div>;
 }
 
-function commandSummary(props: ExecCommandLeafProps, elapsed: string | null): string {
-  const command = props.hideRawCommand ? "" : commandText(props.item.cmd ?? props.summary.cmd);
-  const withCommand = (prefix: string) => command ? prefix + " " + command : prefix;
-  if (props.wasDeclinedByAutoReview) return withCommand("命令被自动审查拒绝");
-  if (props.isBackgroundTerminalRunning) return withCommand("后台终端已启动");
+function commandSummary(props: ExecCommandLeafProps, elapsed: string | null, expanded: boolean): string {
+  const rawCommand = props.hideRawCommand ? "" : commandText(props.item.cmd ?? props.summary.cmd);
+  const collapsedCommand = expanded ? "" : rawCommand;
+  const withCollapsedCommand = (prefix: string) => collapsedCommand ? prefix + " " + collapsedCommand : prefix;
+  const withRawCommand = (prefix: string) => rawCommand ? prefix + " " + rawCommand : prefix;
+  if (props.wasDeclinedByAutoReview) return withCollapsedCommand("命令被自动审查拒绝");
+  if (props.isBackgroundTerminalRunning) return withRawCommand("后台终端已启动");
   if (props.isBackgroundTerminalFinished) {
-    return props.wasInterrupted ? withCommand("后台终端已停止") : withCommand("后台终端已完成");
+    return props.wasInterrupted ? withRawCommand("后台终端已停止") : withRawCommand("后台终端已完成");
   }
-  if (props.wasInterrupted) return withCommand("已停止命令") + (elapsed ? " · " + elapsed : "");
+  if (props.wasInterrupted) return withCollapsedCommand("已停止命令") + (elapsed ? " · " + elapsed : "");
   if (props.isInProgress) return "正在运行命令" + (elapsed ? " · " + elapsed : "");
-  return withCommand(command ? "已运行" : "命令已完成") + (elapsed ? " · " + elapsed : "");
+  return withCollapsedCommand(collapsedCommand ? "已运行" : "命令已完成") + (elapsed ? " · " + elapsed : "");
 }
 
 /**
@@ -154,7 +158,7 @@ export function CodexSourceExecCommandLeaf(props: ExecCommandLeafProps) {
 
   const elapsedMs = durationMs ?? (startedAtMs == null ? null : Math.max(0, nowMs - startedAtMs));
   const elapsed = elapsedMs == null ? null : formatElapsed(elapsedMs);
-  const label = commandSummary(props, elapsed);
+  const label = commandSummary(props, elapsed, expanded);
   const output = isRecord(props.item.output) ? props.item.output : null;
   const outputText = text(output?.aggregatedOutput) ?? "";
   const exitCode = typeof output?.exitCode === "number" ? output.exitCode : undefined;
