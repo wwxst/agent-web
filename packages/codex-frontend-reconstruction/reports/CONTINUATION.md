@@ -58,3 +58,16 @@ PR: [#1](https://github.com/wwxst/agent-web/pull/1) (draft; not merged)
 - Raw source audits: `sites-end-resource` 34/34 signatures; `app-initial`, `app-primary`, `app-shared`, and `skill-exploration-labels` 30/30 helper signatures with pinned hashes.
 - Next: implement the host bridge that binds those subscription methods to the actual private Codex query provider, then restore/verify the original `CC/RC/EC/NC/PT/IT` visual leaves. After those contracts are verified, continue with Electron IPC, Agent backend integration, and matched screenshot/interaction comparisons.
 - No claim of a complete standalone Codex frontend or pixel parity. The demo command leaf remains mock-only.
+
+## Current checkpoint — concrete tool history entity cache (2026-10-22)
+
+Validated code HEAD: 73fe61bdb18008434d7bb527af23f5ff65794422
+Branch: recovery/codex-frontend-through-connected-message-20261021
+PR: #1 (draft; not merged): https://github.com/wwxst/agent-web/pull/1
+
+- Inspected the supplied readable sites-end-resource-fa77a923096d.js implementation of zO: Mr(Au, query) provides the canonical history entity, while Mr(Vd, query) is a separate truthy/falsy assistant-message presence channel used to gate streaming.
+- Added ToolActivityHistoryEntityStore.ts, a concrete independent-frontend cache with separate history/presence channels, cached replay, exact host/thread/entity/item identity, thread clearing, and disposal.
+- Connected the cache to ToolActivityHistorySource.ts; ConnectedCodexToolActivityItem.tsx remains the React useSyncExternalStore renderer boundary.
+- CI: 275/275 core tests, 4/4 demo model tests, strict React/TypeScript build, and 9/9 Chromium tests passed. Source audit signatures and pinned bundle hashes remain passing.
+- Next: mount the connected history renderer into the live transcript using stable per-item source lifetimes, then bind the host-side store to confirmed Agent events/Electron IPC. Restore/verify the actual CC/RC/EC/NC/PT/IT visual leaves and run version-matched screenshot/interaction comparisons.
+- Boundary: the new cache reimplements the observed query-channel contract; it is not the original private Codex query runtime. No claim of a complete standalone Codex frontend or pixel parity. The demo command leaf remains mock-only.

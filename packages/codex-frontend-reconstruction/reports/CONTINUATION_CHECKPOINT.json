@@ -1,8 +1,8 @@
 {
   "date": "2026-10-22",
-  "stage": "source-derived tool history transforms + host subscription store + connected activity renderer",
+  "stage": "source-derived tool history hydration + concrete host entity store + connected activity renderer",
   "branch": "recovery/codex-frontend-through-connected-message-20261021",
-  "validated_code_head": "5ecc8c1e4a8f7d612c3f72ace47513c49bd2c6a0",
+  "validated_code_head": "73fe61bdb18008434d7bb527af23f5ff65794422",
   "new_modules": [
     "src/conversation/ToolActivityHistorySourceTransforms.ts",
     "src/conversation/ToolActivityHistoryHydrationModel.ts",
@@ -10,20 +10,23 @@
     "scripts/audit-tool-history-transforms-evidence.mjs",
     "src/conversation/ToolActivityExternalMessageConversion.ts",
     "src/conversation/ToolActivityHistorySource.ts",
-    "src/components/ConnectedCodexToolActivityItem.tsx"
+    "src/components/ConnectedCodexToolActivityItem.tsx",
+    "src/conversation/ToolActivityHistoryEntityStore.ts",
+    "tests/tool-activity-history-entity-store.test.mjs",
+    "reports/TOOL_ACTIVITY_HISTORY_ENTITY_STORE.md"
   ],
   "test_status": {
-    "core": "268/268 pass",
+    "core": "275/275 pass",
     "demo_model": "4/4 pass",
     "production_typecheck_and_build": "pass",
     "chromium": "9/9 pass",
     "original_source_audits": "sites-end-resource 34/34 signatures; app-initial/app-primary/app-shared/skill-exploration-labels 30/30 signatures; pinned SHA-256 checks pass"
   },
   "remaining_next": [
-    "bind ToolActivityHistorySubscriptionHost to the actual private Codex Mr(Au/Vd) query runtime; the generic subscription contract is not that runtime implementation",
-    "implement and visually verify the actual CC/RC/EC/NC/PT/IT leaf components and complete FileDiff/MCP/approval leaves",
-    "mount the connected history/activity renderer in the real live transcript and run version-matched interaction/screenshot comparisons",
-    "connect Electron IPC and the Agent backend after frontend contracts and UI behavior are verified"
+    "mount ConnectedCodexToolActivityItem into the live transcript through a stable per-item source registry; verify React updates and unsubscribe behavior in browser tests",
+    "connect the host-side entity store to the actual Agent backend event stream and Electron IPC after the event contract is confirmed; the private Codex Mr/Au/Vd runtime is not imported into the independent frontend",
+    "implement and visually verify the actual CC/RC/EC/NC/PT/IT leaves and complete FileDiff/MCP/approval leaves",
+    "run version-matched original-vs-reconstruction screenshots and interaction comparisons"
   ],
   "no_claims": [
     "not the original authored React/TypeScript source",
@@ -31,7 +34,9 @@
     "history subscription host is an adapter contract and is not yet bound to Codex private query providers",
     "demo command leaf is mock-only and does not execute tools",
     "no Electron IPC or Agent backend integration",
-    "no pixel-level UI parity verified"
+    "no pixel-level UI parity verified",
+    "ToolActivityHistoryEntityStore is a reconstructed host-side cache, not the private Codex Mr/Au/Vd runtime",
+    "the connected activity history path is not yet mounted in the live transcript with a real Agent event stream"
   ],
   "previous_checkpoint": {
     "date": "2026-10-22",

@@ -121,3 +121,7 @@ See [AgentActivity group-header recovery](reports/AGENT_ACTIVITY_GROUP_HEADER_SO
 - [AgentActivity 聚合规则的源码证据及限制](reports/AGENT_ACTIVITY_AGGREGATE_SOURCE_RECOVERY.md)
 
 - [xe/we/Te 原始活动分类源码恢复与缺口](reports/AGENT_ACTIVITY_RAW_CLASSIFIER_SOURCE_RECOVERY.md)
+
+## Tool activity history entity store
+
+ToolActivityHistoryEntityStore.ts implements a host-side history entity cache with separate canonical-entity and assistant-message-presence channels, matching the observed Mr(Au/Vd) call shape. It feeds ToolActivityHistorySource.ts and the existing connected React leaf renderer. This is an independent frontend implementation, not a direct import of Codex's private query runtime. See reports/TOOL_ACTIVITY_HISTORY_ENTITY_STORE.md for the source audit and remaining integration boundary.
