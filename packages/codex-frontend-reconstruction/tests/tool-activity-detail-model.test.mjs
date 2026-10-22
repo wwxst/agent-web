@@ -76,3 +76,13 @@ test("SO ignores placeholder kinds and leaves extensions alone",()=>{
  assert.equal(project({type:"exec"}).kind,"fallback");
 });
 test("xC passes original parsed summary when the command is not declined",()=>{ const p=project(exec("read",true)); assert.equal(p.kind,"exec"); assert.deepEqual(p.summary,{type:"read",isFinished:true,cmd:"echo hi"}); });
+
+test("source Gf and cc defaults are used when private callbacks are not supplied",()=>{
+ const declined=project(exec("read",true,{executionStatus:"declined",automaticApprovalReviews:[{status:"denied"}]}));
+ assert.equal(declined.kind,"exec");
+ assert.equal(declined.wasDeclinedByAutoReview,true);
+ assert.deepEqual(declined.summary,{type:"unknown",cmd:"echo hi",isFinished:true});
+ const patch=project({type:"patch",changes:{},visualizationActivities:[{kind:"create"}]});
+ assert.equal(patch.kind,"patch");
+ assert.equal(patch.showVisualization,true);
+});

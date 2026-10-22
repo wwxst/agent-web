@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {
   buildToolActivityHistoryQueryPlan as buildQueries,
   hydrateToolActivityItemFromHistory as hydrate,
+  createSourceToolActivityHistoryDependencies,
 } from "../build/ToolActivityHistoryHydrationModel.js";
 
 const deps = {
@@ -176,4 +177,16 @@ test("assistant copy text follows trim and streaming permission rule", () => {
 test("unmatched history entity preserves original item identity", () => {
   const item={type:"exec",callId:"x"};
   assert.equal(hydrate(item,{type:"unrecognized"},null,ctx,deps).item,item);
+});
+
+test("source dependency factory wires recovered transforms and leaves Uf host-injected",()=>{
+ const convert=()=>null;
+ const source=createSourceToolActivityHistoryDependencies(convert);
+ assert.equal(source.convertMcpToolCall,convert);
+ assert.equal(source.prepareAssistantContent({content:"hello",phase:"commentary",isStreaming:false,
+  isHeartbeatAutomationTurn:false,isHeartbeatAutomationRequest:false}).content,"hello");
+ assert.equal(source.reasoningSummaryToText(["one","two"]),"**one**\n\ntwo");
+ assert.deepEqual(source.mapFileChanges([{path:"x.ts",kind:{type:"add"},diff:"+"}]),
+  {"x.ts":{type:"add",content:"+"}});
+ assert.equal(source.isMcpAppToolCall("codex_apps",{connectorId:"connector_openai_orbit_user_channel",actionName:"send_message"}),true);
 });

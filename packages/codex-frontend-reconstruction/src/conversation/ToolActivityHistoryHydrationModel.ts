@@ -2,6 +2,14 @@ import {
   getToolActivityHistoryItemId,
   type ToolItem,
 } from "./ToolActivityDetailModel.js";
+import {
+  extractImageGenerationFailure,
+  formatMcpToolResult,
+  formatReasoningSummary,
+  isCodexAppMessageTool,
+  mapHistoryFileChanges,
+  normalizeAssistantHistoryContent,
+} from "./ToolActivityHistorySourceTransforms.js";
 
 export type ToolActivityHistoryEntity = Record<string, unknown> & { type: string };
 
@@ -62,6 +70,21 @@ export interface ToolActivityHistoryHydrationDependencies {
   isMcpAppToolCall(server: unknown, appContext: unknown): boolean;
   formatMcpResult(result: unknown, error: unknown, status: unknown): unknown;
 }
+/** Source-recovered defaults; only the specialized MCP-to-external-message conversion remains host-injected. */
+export function createSourceToolActivityHistoryDependencies(
+  convertMcpToolCall: ToolActivityHistoryHydrationDependencies["convertMcpToolCall"],
+): ToolActivityHistoryHydrationDependencies {
+  return {
+    prepareAssistantContent: normalizeAssistantHistoryContent,
+    reasoningSummaryToText: formatReasoningSummary,
+    convertMcpToolCall,
+    mapFileChanges: mapHistoryFileChanges,
+    imageGenerationFailure: extractImageGenerationFailure,
+    isMcpAppToolCall: isCodexAppMessageTool,
+    formatMcpResult: formatMcpToolResult,
+  };
+}
+
 export interface ToolActivityHistoryHydrationResult {
   item: ToolItem | null;
   assistantCopyText: string | null | undefined;

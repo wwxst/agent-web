@@ -28,7 +28,7 @@ function firstMemoryCitation(content:string,start=0):number {
  for(const tag of memoryCitationNames){const i=content.indexOf(tag,start);if(i!==-1&&(found===-1||i<found))found=i;}
  return found;
 }
-function trimIncompleteMemoryCitation(content:string,isStreaming:boolean):string {
+function trimIncompleteMemoryCitation(content:string):string {
  let target=firstMemoryCitation(content);if(target===-1)return content;
  const tickChar=String.fromCharCode(96);let cursor=0;
  while(cursor<content.length){
@@ -51,7 +51,7 @@ function cleanAssistantContent(content:string,isStreaming:boolean,unwrapCdata:bo
  const unwrapped=unwrapPaddedCdata(content,unwrapCdata);
  if(skipCompletion.test(unwrapped.trim()))return {content:"",removed:true,isSkippedCompletion:true};
  const changedByUnwrap=unwrapped!==content;
- let cleaned=trimIncompleteMemoryCitation(unwrapped.replace(memoryCitationBlocks,""),isStreaming);
+ let cleaned=trimIncompleteMemoryCitation(unwrapped.replace(memoryCitationBlocks,""));
  const incompleteStart=isStreaming?cleaned.lastIndexOf("<"):-1;
  if(incompleteStart!==-1&&memoryCitationOpen.startsWith(cleaned.slice(incompleteStart)))cleaned=cleaned.slice(0,incompleteStart);
  if(changedByUnwrap&&cleaned===unwrapped)return {content:cleaned,removed:true};
@@ -101,9 +101,7 @@ function parseHeartbeatTurn(content:string):ParsedHeartbeat|null {
  return parseHeartbeat(content);
 }
 function visibleHeartbeatTurnFallback(content:string):string {
- const visible=visibleTextWithoutHeartbeat(content);
- if(visible!=="")return visible??content;
- const block=lastHeartbeat(content);return block==null?"":heartbeatMessage(block);
+ return visibleTextWithoutHeartbeat(content)??"";
 }
 function stripIncompleteHeartbeat(content:string):string {
  let start=content.toLowerCase().indexOf("<heartbeat>");const lastOpen=content.lastIndexOf("<");

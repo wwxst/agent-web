@@ -1,7 +1,12 @@
 /**
  * Audited source semantics: sites-end-resource-...js fk -> LO -> SO -> xC/PT.
- * Private NO/mh, Gf, cc remain callbacks; leaf visuals still host-owned.
+ * The default Gf/cc predicates are sourced from the original app-primary/app-initial chunks.
+ * The private NO/mh read classifier and leaf visuals remain host-owned.
  */
+import {
+  getVisualizationActivityKind,
+  isAutoReviewDeclinedToolActivity,
+} from "./ToolActivityHistorySourceTransforms.js";
 export interface ToolItem {type:string;[key:string]:unknown}
 export interface ToolDetailContext {
  isWorkMode?:boolean;
@@ -58,7 +63,7 @@ export function projectToolActivityDetail(item:ToolItem,ctx:ToolDetailContext={}
    const rawType=summary.type;
    if((rawType==="read"||rawType==="search"||rawType==="list_files")&&
        summary.isFinished!==true&&!hasRead)return {kind:"hidden",reason:"running-exploration"};
-   const declined=ctx.isAutoReviewDeclined?.(item)===true;
+   const declined=ctx.isAutoReviewDeclined?.(item)??isAutoReviewDeclinedToolActivity(item);
    const effective=declined?"unknown":rawType;
    const leaf=effective==="read"||effective==="search"||effective==="list_files"?effective:"command";
    const normalizedSummary=declined?{type:"unknown",cmd:summary.cmd,isFinished:true}:summary;
@@ -72,7 +77,8 @@ export function projectToolActivityDetail(item:ToolItem,ctx:ToolDetailContext={}
  if(item.type==="patch"){
    if(workMode&&!hideRawCommand)return {kind:"hidden",reason:"work-mode"};
    const status=getToolPatchStatus(item,ctx);
-   const visible=ctx.hasVisualizationActivity?.(item)===true&&
+   const hasVisualization=ctx.hasVisualizationActivity?.(item)??(getVisualizationActivityKind(item.visualizationActivities)!==null);
+   const visible=hasVisualization&&
      !["rejected","stopped","auto-review-declined"].includes(status);
    const fileCount=object(item.changes)?Object.keys(item.changes).length:0;
    if(!visible&&fileCount===0)return {kind:"hidden",reason:"empty-patch"};
