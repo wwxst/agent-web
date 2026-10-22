@@ -4,6 +4,13 @@ import type { ToolItem, ToolProjection } from "../conversation/ToolActivityDetai
 type VisibleToolProjection = Exclude<ToolProjection, {kind:"hidden"}>;
 type Component<P> = React.ComponentType<P>;
 
+export interface ToolActivityOpenFileRequest {
+  path: string;
+  line?: number;
+  cwd?: string | null | undefined;
+  hostId: string;
+}
+
 export interface ToolActivityLeafContext {
   conversationId: string;
   hostId: string;
@@ -17,6 +24,7 @@ export interface ToolActivityLeafContext {
   summaryIcon?: React.ReactNode | undefined;
   hideRawCommand: boolean;
   toolActivityTurnKey?: string | undefined;
+  onOpenFile?: (request: ToolActivityOpenFileRequest) => void;
 }
 export interface ExecReadLeafProps {
   summary: Record<string,unknown>;
@@ -25,6 +33,7 @@ export interface ExecReadLeafProps {
   threadDetailLevel?: string | undefined;
   automaticApprovalReviews?: unknown;
   summaryIcon?: React.ReactNode;
+  onOpenFile?: (request: ToolActivityOpenFileRequest) => void;
 }
 export interface ExecSearchLeafProps {
   summary: Record<string,unknown>;
@@ -43,6 +52,7 @@ export interface ExecCommandLeafProps {
 export interface PatchLeafProps {
   item:ToolItem; isTurnCancelled:boolean; cwd?:string|null|undefined;
   hostId:string; showDiffDetails:boolean; summaryIcon?:React.ReactNode;
+  onOpenFile?: (request: ToolActivityOpenFileRequest) => void;
 }
 /** xC/PT prop contracts: actual Codex visual leaves are host-supplied. */
 export interface ToolActivityLeafAdapters {
@@ -63,7 +73,8 @@ export function renderCodexToolActivityLeaf(
         return Read == null ? undefined : <Read summary={projection.summary}
           cwd={item.cwd as string|null|undefined} hostId={context.hostId}
           threadDetailLevel={context.threadDetailLevel}
-          automaticApprovalReviews={item.automaticApprovalReviews} summaryIcon={context.summaryIcon}/>;
+          automaticApprovalReviews={item.automaticApprovalReviews} summaryIcon={context.summaryIcon}
+          onOpenFile={context.onOpenFile}/>;
       }
       case "search": {
         const Search = adapters.Search;
@@ -94,7 +105,7 @@ export function renderCodexToolActivityLeaf(
   if(projection.kind==="patch"&&Patch!=null){
     return <Patch item={item} isTurnCancelled={context.isTurnCancelled}
       cwd={context.cwd} hostId={context.hostId} showDiffDetails={projection.showDiffDetails}
-      summaryIcon={context.summaryIcon}/>;
+      summaryIcon={context.summaryIcon} onOpenFile={context.onOpenFile}/>;
   }
   return undefined;
 }
