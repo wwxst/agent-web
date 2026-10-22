@@ -23,6 +23,11 @@ test("uses source-confirmed shell dimensions and composer component slots", asyn
   await expect(composer).toHaveAttribute("data-composer-surface-variant", "default");
   await expect(composer.locator(".codex-composer-layout__input[data-composer-input]")).toBeVisible();
   await expect(composer.locator(".codex-composer-layout__footer[data-composer-rows='stacked']")).toBeVisible();
+  const editorHost = page.locator(".codex-source-rich-text-input");
+  await expect(editorHost).toHaveAttribute("data-rich-text-layout", "multiline");
+  const editorDom = page.getByRole("textbox", { name: "演示消息输入" });
+  await expect(editorDom).toHaveAttribute("data-virtualkeyboard", "true");
+  await expect(editorDom).toHaveAttribute("placeholder", "Work with Codex");
 
   // Retain existing demo interactions through the recovered layout slots.
   await page.getByRole("textbox", { name: "演示消息输入" }).fill("源码布局接线检查");

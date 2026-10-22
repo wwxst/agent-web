@@ -48,6 +48,23 @@ const checks = [
       "e.view.dom.dataset.virtualkeyboard=`true`",
       "new ResizeObserver(P)",
       "addEventListener(`loadingdone`,P)",
+      "function SUu(e,t)",
+      "EUu=class{view;eventEmitter;inlineMentionIconRegistry",
+      "addSubmitHandler(e)",
+      "requestSubmitWhenReady(e,t)",
+      "submitPendingWhenReady()",
+      "getText(e=this.dictation.document)",
+      "destroy()",
+    ],
+  },
+  {
+    file: "use-chatgpt-composer-controller-2d447301fbc7.js",
+    sha256: "e39ff89c1c226141bc5f0af4f6ca70cc09e98b26561ff28fd4ab4b17a9becbef",
+    signatures: [
+      "composerController:s,conversationId:c,draftKey:l,initialPrompt:u,initialPromptKind:d",
+      "enableRichText:!0",
+      "return new EUu(i,a,n,c,o,s,u,d,l,t?.restoreMarkdownLinksAsTextLinks??!1,t?.restorePathLinksAsFileMentions??!0,t?.plainTextMode??!1,r,f)",
+      "!w.view.isDestroyed&&w.destroy()",
     ],
   },
 ];

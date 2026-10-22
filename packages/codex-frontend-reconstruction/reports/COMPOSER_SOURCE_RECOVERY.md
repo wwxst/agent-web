@@ -54,3 +54,16 @@ Directly confirmed source facts:
 - Electron IPC and the real Agent backend connection.
 
 Do not claim main Composer parity until the actual controller/editor is mounted, all source-confirmed callbacks are wired to an explicit host contract, and browser interaction/screenshot comparisons run against the matching original build.
+
+
+## Controller factory and mounted editor DOM — follow-up checkpoint
+
+The factory path has now been traced beyond the component props:
+
+- `use-chatgpt-composer-controller-2d447301fbc7.js` creates or accepts a controller and disposes an owned instance on unmount.
+- The exported factory `SUu` in `app-initial-5851df3f6cb1.js` calls `rUu` to build the ProseMirror view/event emitter, then constructs the `EUu` controller.
+- The controller's concrete source surface includes `view`, `initialInputFocused`, `getText`, `setText`, `setPlaceholder`, `setInputActive`, `clearInitialInputFocus`, `focus`, `addSubmitHandler`, `cancelPendingSubmit`, `setSubmitReady`, and `destroy`. Its submit event listener receives an optional numeric timestamp, not a DOM `SubmitEvent`.
+- Added `ComposerControllerContract.ts` and `CodexSourceComposerEditorMount.tsx` around this observed interface. The mount adapter handles DOM mounting/detaching, label/placeholder, readiness and submit registration, composition/input callbacks, overflow observation, font-load updates and focus requests.
+- The demo now uses `DemoTextareaComposerEditor` to exercise this mounted-controller boundary. Its native textarea is deliberately a demo-only controller implementation; the actual ProseMirror factory and plugins have not been copied into the demo.
+
+The exact factory bundle SHA-256 is `e39ff89c1c226141bc5f0af4f6ca70cc09e98b26561ff28fd4ab4b17a9becbef`. The audit script now checks the factory and controller-class signatures in addition to the main Composer and RichTextInput assets.

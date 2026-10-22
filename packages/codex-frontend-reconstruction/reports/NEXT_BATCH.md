@@ -16,13 +16,14 @@ The exact main-composer call path is now traced from the supplied bundle:
 - `reports/COMPOSER_SOURCE_RECOVERY.md` records the source facts, full asset hashes, remaining uncertainty and a reproducible audit command.
 - `src/conversation/ComposerInteractionModel.ts` is integrated into the browser demo's send path; the current textarea remains clearly demo-only.
 
-## Next implementation gate — controller/editor boundary
+## Next implementation gate — original editor plugins and submission events
 
-1. Define the typed controller contract only for methods directly observed in `XWu` (`view.dom`, `setPlaceholder`, `setInputActive`, `clearInitialInputFocus`, `focus`, `addSubmitHandler`, `cancelPendingSubmit`, `setSubmitReady`) and verify signatures against the actual controller factory before adding optional methods.
-2. Recover the controller factory and ProseMirror/plugin/keymap dependencies from the compiled bundle. Do not substitute a hand-built contenteditable and call it the original editor.
-3. Implement the mount/cleanup adapter around a real controller-owned DOM node, with tests for placeholder/aria label, submit readiness, composition callbacks, resize/font updates, focus requests and deferred detach.
-4. Trace file paste/drop intake and send/stop button state branches before wiring the matching host-neutral callback contract.
-5. Keep Electron IPC and Agent backend actions behind explicit host callbacks; do not report demo mock actions as real sends/stops/uploads.
+1. Recover the `rUu` ProseMirror construction path, schema, extension list, plugin/keymap setup and the event that emits the controller's `submit` event. The demo adapter currently implements only a native Enter handler for testing.
+2. Port the source-confirmed Enter/IME, mention selection, rich-link click/edit, and plain-text/markdown behavior only after tracing their original plugin branches.
+3. Trace the file paste/drop intake path through `_jt` and the composer toolbar to recover the exact upload-intake contract; keep file selection disabled in the demo until that boundary is implemented.
+4. Trace `Ti/wi/Ci` and the host's `onStop` path to restore send-versus-stop button presentation and enabled/loading states.
+5. Preserve the current DOM mount adapter as a boundary; do not claim ProseMirror parity until the original controller and plugin semantics are mounted and browser-tested.
+6. Keep Electron IPC and Agent backend actions behind explicit host callbacks; do not report demo mock actions as real sends/stops/uploads.
 
 ## Acceptance
 

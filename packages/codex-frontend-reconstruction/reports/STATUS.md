@@ -118,3 +118,12 @@ See `reports/NEXT_BATCH.md`: trace the actual main conversation Composer call si
 - Added IME composition guards to the demo input and a browser test. This is an explicit textarea-demo safety adaptation, not a claim of ProseMirror keyboard parity.
 - Current verified baseline before this batch: commit `44829b77e98cfe8a660afa8eb8f8466234a5c3d8`, with 296/296 core tests, 4/4 demo model tests, strict React/TypeScript build, and 12/12 Chromium tests. New batch CI is pending.
 - Still missing: actual ProseMirror controller/editor integration, complete paste/drop and attachment routing, source-exact stop/streaming state transitions, Electron IPC, and real Agent backend connection.
+
+
+## Latest verified checkpoint — source-confirmed controller mount boundary (2026-10-22)
+
+- The previous Composer submit-gate commit `85bd8421ae8c8cbd49d36715dc1803bdadb485f1` passed CI: 302/302 core tests, 4/4 demo model tests, strict React/TypeScript build and 13/13 Chromium tests.
+- Traced `SUu -> rUu -> EUu` in the supplied original bundle and `use-chatgpt-composer-controller-2d447301fbc7.js`; added the minimal typed controller contract and a React DOM mount/cleanup adapter.
+- Integrated that mount boundary into the visible demo via an explicitly named `DemoTextareaComposerEditor`. It exercises controller submit registration and composition lifecycle, but it remains a textarea demo adapter, not the original ProseMirror editor.
+- The new factory signatures are now part of `scripts/audit-composer-evidence.mjs`; run it against the exact private assets before changing controller behavior.
+- New mount-adapter CI is pending. Remaining: original ProseMirror plugins/keymaps, full paste/drop/file intake, source-exact stop/streaming transitions, Electron IPC and real Agent backend.

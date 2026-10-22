@@ -1,5 +1,6 @@
 import * as React from "react";
 import { CodexComposerLayout } from "../src/components/CodexComposerLayout.js";
+import { DemoTextareaComposerEditor } from "./DemoTextareaComposerEditor.js";
 import { CodexNavigationRail, type CodexRailDestination } from "../src/components/CodexNavigationRail.js";
 import { projectNavigationDestinations } from "../src/conversation/NavigationRailModel.js";
 import type { VirtualizedTurnListApi } from "../src/components/VirtualizedTurnList.js";
@@ -95,7 +96,6 @@ export function App() {
   const [collapsed, setCollapsed] = React.useState(false);
   const [measuredRailWidth, setMeasuredRailWidth] = React.useState(52);
   const [draft, setDraft] = React.useState("");
-  const [isComposing, setIsComposing] = React.useState(false);
   const [playing, setPlaying] = React.useState(false);
   const [toast, setToast] = React.useState<string | null>(null);
   const [historyAdded, setHistoryAdded] = React.useState(false);
@@ -303,12 +303,7 @@ export function App() {
             density="comfortable"
             radiusVariant="default"
             surfaceVariant="default"
-            input={<textarea aria-label="演示消息输入" data-testid="composer" data-composing={isComposing ? "true" : "false"} placeholder="Work with Codex" rows={2} value={draft} onChange={(event: React.ChangeEvent<HTMLTextAreaElement>) => setDraft(event.target.value)} onCompositionStart={() => setIsComposing(true)} onCompositionEnd={() => setIsComposing(false)} onKeyDown={(event: React.KeyboardEvent<HTMLTextAreaElement>) => {
-              if (event.key !== "Enter" || event.shiftKey) return;
-              if (isComposing || event.nativeEvent.isComposing) { event.preventDefault(); return; }
-              event.preventDefault();
-              sendMessage();
-            }}/>}
+            input={<DemoTextareaComposerEditor value={draft} onChange={setDraft} onSubmit={sendMessage} />}
             leadingControls={<div className="demo-composer-options">
               <button type="button" className="demo-composer-plus" title="附件尚未恢复" disabled aria-label="附件尚未恢复"><Icon name="plus" size={20}/></button>
               <span className="demo-composer-permission" title="演示模式，无真实权限授予">♧ Full access <span>· mock</span></span>
