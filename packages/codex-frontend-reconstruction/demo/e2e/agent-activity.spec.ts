@@ -88,7 +88,8 @@ test("source-shaped PT/IT leaf shows patch status and expands unified diff witho
   page.on("pageerror", error => errors.push(error.message));
   await page.goto("/");
   await page.getByRole("button", {name:/工具调用与审批交互/}).click();
-  const patchActivity = page.locator("[data-recovered-agent-activity]").nth(1);
+  const patchActivity = page.locator("[data-recovered-agent-activity]").filter({hasText:"演示文件修改"});
+  await expect(patchActivity).toHaveCount(1);
   await patchActivity.getByRole("button", {name:/项工具活动/}).click();
   const patch = patchActivity.locator("[data-codex-source-patch]");
   await expect(patch).toBeVisible();
@@ -108,7 +109,8 @@ test("source-shaped RC/EC/NC leaves route read search and file-list summaries", 
   page.on("pageerror", error => errors.push(error.message));
   await page.goto("/");
   await page.getByRole("button", {name:/工具调用与审批交互/}).click();
-  const activity = page.locator("[data-recovered-agent-activity]").nth(4);
+  const activity = page.locator("[data-recovered-agent-activity]").filter({hasText:"读取文件"});
+  await expect(activity).toHaveCount(1);
   await activity.getByRole("button", {name:/项工具活动/}).click();
   const group = activity.locator("[data-codex-activity-group]");
   await expect(group).toBeVisible();
