@@ -104,7 +104,8 @@ export function renderCodexToolActivityLeaf(
   const Patch = adapters.Patch;
   if(projection.kind==="patch"&&Patch!=null){
     return <Patch item={item} isTurnCancelled={context.isTurnCancelled}
-      cwd={context.cwd} hostId={context.hostId} showDiffDetails={projection.showDiffDetails}
+      cwd={context.cwd} grantRoot={typeof item.grantRoot === "string" ? item.grantRoot : undefined}
+      hostId={context.hostId} showDiffDetails={projection.showDiffDetails}
       summaryIcon={context.summaryIcon} onOpenFile={context.onOpenFile}/>;
   }
   return undefined;

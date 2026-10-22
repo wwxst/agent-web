@@ -1,92 +1,90 @@
-type Data = Record<string, unknown>;
-
-const isRecord = (value: unknown): value is Data =>
-  value !== null && typeof value === "object" && !Array.isArray(value);
-const text = (value: unknown): string | undefined =>
-  typeof value === "string" ? value : undefined;
-
 export interface ToolPatchDiffPresentation {
   added: number;
   removed: number;
-  /** First changed line in the new file, falling back to the first removed line and then line 1. */
+  /** First changed line, with the original helper's line-one fallback. */
   openLocationLine: number;
 }
 
-function countContentLines(content: string): number {
-  if (content === "") return 0;
-  const lines = content.split(/\r?\n/);
-  return lines.length - (lines[lines.length - 1] === "" ? 1 : 0);
+interface ParsedDiffStats {
+  added: number;
+  removed: number;
+  firstAdditionLine: number | null;
+  firstDeletionLine: number | null;
 }
 
-/**
- * Projects the compiled patch-diff-stats helper's observable contract:
- * count unified-diff additions/deletions without counting file headers, and
- * open the file at the first added/deleted line. Plain add/delete content uses
- * a line-count fallback and opens at line 1.
- */
-export function getToolPatchDiffPresentation(
-  diff: string | null,
-  change: unknown,
-): ToolPatchDiffPresentation | null {
-  const changeType = isRecord(change) ? text(change.type) : undefined;
-  const content = isRecord(change) ? text(change.content) : undefined;
-  if (diff == null || diff === "") {
-    if ((changeType === "add" || changeType === "delete") && content != null) {
-      const lines = countContentLines(content);
-      if (lines === 0) return null;
-      return changeType === "add"
-        ? { added: lines, removed: 0, openLocationLine: 1 }
-        : { added: 0, removed: lines, openLocationLine: 1 };
-    }
-    return null;
-  }
-
+function parseUnifiedDiff(diff: string): ParsedDiffStats | null {
   const lines = diff.split(/\r?\n/);
-  const isUnifiedDiff = lines.some((line) => line.startsWith("@@ ")) ||
-    lines.some((line) => line.startsWith("+++ ")) ||
-    lines.some((line) => line.startsWith("--- "));
-  if (!isUnifiedDiff) {
-    if ((changeType === "add" || changeType === "delete") && content != null) {
-      const lineCount = countContentLines(content);
-      if (lineCount === 0) return null;
-      return changeType === "add"
-        ? { added: lineCount, removed: 0, openLocationLine: 1 }
-        : { added: 0, removed: lineCount, openLocationLine: 1 };
-    }
-    return null;
-  }
-
+  let oldLine: number | null = null;
+  let newLine: number | null = null;
+  let foundFileHeader = false;
+  let foundHunk = false;
   let added = 0;
   let removed = 0;
-  let newLine: number | null = null;
   let firstAdditionLine: number | null = null;
   let firstDeletionLine: number | null = null;
 
   for (const line of lines) {
-    const hunk = line.match(/^@@ -\d+(?:,\d+)? \+(\d+)(?:,\d+)? @@/);
-    if (hunk) {
-      newLine = Number(hunk[1]);
+    if (line.startsWith("--- ") || line.startsWith("+++ ")) {
+      foundFileHeader = true;
       continue;
     }
-    if (line.startsWith("+++") || line.startsWith("---")) continue;
+    const hunk = line.match(/^@@ -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@/);
+    if (hunk) {
+      foundHunk = true;
+      oldLine = Number(hunk[1]);
+      newLine = Number(hunk[2]);
+      continue;
+    }
+    if (!foundHunk) continue;
+    if (line.startsWith("diff --git ")) break;
+    if (line.startsWith("\\ No newline")) continue;
     if (line.startsWith("+")) {
       added += 1;
       if (firstAdditionLine == null) firstAdditionLine = newLine ?? 1;
       if (newLine != null) newLine += 1;
     } else if (line.startsWith("-")) {
       removed += 1;
-      if (firstDeletionLine == null) firstDeletionLine = newLine ?? 1;
-    } else if (line.startsWith(" ") && newLine != null) {
-      newLine += 1;
+      if (firstDeletionLine == null) firstDeletionLine = oldLine ?? newLine ?? 1;
+      if (oldLine != null) oldLine += 1;
+    } else if (line.startsWith(" ")) {
+      if (oldLine != null) oldLine += 1;
+      if (newLine != null) newLine += 1;
     }
   }
 
-  // The compiled helper falls back to raw +/- counting when a diff parser
-  // reports no additions/deletions; the loop above performs that count.
-  if (added === 0 && removed === 0 && !lines.some((line) => line.startsWith("@@ "))) return null;
+  if (!foundHunk && !foundFileHeader) return null;
+  return { added, removed, firstAdditionLine, firstDeletionLine };
+}
+
+function countRawDiffLines(diff: string): { added: number; removed: number } {
+  let added = 0;
+  let removed = 0;
+  for (const line of diff.split(/\r?\n/)) {
+    if (line.startsWith("+++") || line.startsWith("---")) continue;
+    if (line.startsWith("+")) added += 1;
+    else if (line.startsWith("-")) removed += 1;
+  }
+  return { added, removed };
+}
+
+/**
+ * Mirrors patch-diff-stats-48343cc4a635.js: parse the first unified diff,
+ * fall back to raw +/- line counts when parsing yields no changes, exclude
+ * file headers, and use line 1 for that raw-count fallback.
+ */
+export function getToolPatchDiffPresentation(diff: string | null): ToolPatchDiffPresentation | null {
+  if (!diff) return null;
+  const parsed = parseUnifiedDiff(diff);
+  if (parsed == null || (parsed.added === 0 && parsed.removed === 0)) {
+    const raw = countRawDiffLines(diff);
+    if (raw.added > 0 || raw.removed > 0) {
+      return { ...raw, openLocationLine: 1 };
+    }
+  }
+  if (parsed == null) return null;
   return {
-    added,
-    removed,
-    openLocationLine: firstAdditionLine ?? firstDeletionLine ?? 1,
+    added: parsed.added,
+    removed: parsed.removed,
+    openLocationLine: parsed.firstAdditionLine ?? parsed.firstDeletionLine ?? 1,
   };
 }

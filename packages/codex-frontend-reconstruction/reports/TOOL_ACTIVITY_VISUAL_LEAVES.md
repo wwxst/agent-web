@@ -35,14 +35,15 @@ New source module: `src/components/CodexSourceToolActivityLeaves.tsx`
 - `CodexSourceExecListFilesLeaf` restores file-list summary variants.
 - `CodexSourceExecCommandLeaf` restores collapsed-by-default command details, hydrated output/exit status, elapsed time and interruption/automatic-review-decline presentation. It never starts a command.
 - `CodexSourcePatchLeaf` and its file row restore the source status precedence, visualization activity label, per-file status, compact diff disclosure, basename/full-path presentation, unified-diff line coloring and source-observed empty/oversized-preview fallback.
-- `src/conversation/ToolPatchDiffPresentationModel.ts` ports the observed patch-stat fallback: excludes unified-diff headers, counts additions/deletions, and derives the file-open line from the first added line or first deletion, falling back to line 1. The row passes that line through the explicit host `onOpenFile` callback.
+- `src/conversation/ToolPatchDiffPresentationModel.ts` ports `patch-diff-stats` behavior: parse unified-diff counts, exclude file headers, fall back to raw `+`/`-` lines when parsing yields no changes, and use line 1 for that fallback. The file-open request carries the source path, `grantRoot ?? cwd`, and parsed open line.
+- `src/conversation/ToolCommandSummaryModel.ts` ports the observable `WC` summary branches and `JC` elapsed-time precedence. In-progress commands use the live clock; completed commands use `durationMs` rather than continuing to count from `startedAtMs`. Hidden-raw-command mode omits the command disclosure and elapsed label.
 - Optional `onOpenFile` is an explicit host callback. Without a host callback, paths are display-only. No file mutation or approval write-back is implemented in the leaf components.
 
 Integration uses the existing `CodexToolActivityLeafRenderer` and `ConnectedConversationMessageRenderers`; it does not create a second transcript or bypass history hydration. The browser preview uses explicitly synthetic fixtures for command, patch, read, search and list-files rows.
 
 ## Audit and verification boundary
 
-`scripts/audit-tool-detail-evidence.mjs` now checks the original bundle hash and 55 source signatures, including the CC/RC/EC/NC/SC/WC/PT/IT branches and their key summary/fallback markers. The 21 added visual-leaf signatures were independently checked against the provided bundle and passed 21/21.
+`scripts/audit-tool-detail-evidence.mjs` now checks the original bundle hash and 55 source signatures, including the CC/RC/EC/NC/SC/WC/PT/IT branches and their key summary/fallback markers. The 21 added visual-leaf signatures were independently checked against the provided bundle and passed 21/21. The command summary model deliberately leaves the private `executionStatus` create/update classifier and skill-script background summary as documented follow-up work.
 
 Source signature checks prove the target compiled branches are present; they do not prove pixel parity. The authored CSS in `demo/styles.css` is a local compatibility layer, not copied Codex CSS. The current browser preview is still a demo host, not a complete Electron app.
 

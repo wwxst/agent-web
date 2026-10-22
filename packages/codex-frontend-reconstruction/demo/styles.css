@@ -233,6 +233,8 @@ button:not(:disabled):hover { transition: background .15s, color .15s; }
 .codex-source-tool-path--button { display:inline; padding:0; border:0; background:transparent; text-align:left; cursor:pointer; }
 .codex-source-tool-path--button:hover { color:#eee; text-decoration:underline; }
 .codex-source-tool-path-separator { color:#666; }
+.codex-source-tool-command__static { display:flex; align-items:center; width:100%; min-width:0; padding:3px 0; color:inherit; text-align:left; }
+.codex-source-tool-command__static .codex-source-tool-summary { flex:1; }
 .codex-source-tool-command__toggle { display:flex; align-items:center; width:100%; min-width:0; padding:3px 0; border:0; background:transparent; color:inherit; text-align:left; cursor:pointer; }
 .codex-source-tool-command__toggle:hover { background:transparent !important; color:var(--demo-text); }
 .codex-source-tool-command__toggle .codex-source-tool-summary { flex:1; }

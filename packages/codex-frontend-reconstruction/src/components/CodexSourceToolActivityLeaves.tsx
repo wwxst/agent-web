@@ -5,6 +5,7 @@ import {
 } from "../conversation/ToolActivityDetailModel.js";
 import { isMeaningfulReadToolActivity, getVisualizationActivityKind } from "../conversation/ToolActivityHistorySourceTransforms.js";
 import { getToolPatchDiffPresentation } from "../conversation/ToolPatchDiffPresentationModel.js";
+import { getToolCommandElapsedMs, getToolCommandSummary } from "../conversation/ToolCommandSummaryModel.js";
 import type {
   ExecCommandLeafProps,
   ExecListFilesLeafProps,
@@ -165,45 +166,6 @@ export function CodexSourceExecListFilesLeaf(props: ExecListFilesLeafProps) {
   </div>;
 }
 
-function isDateTimeCheckCommand(value: unknown): boolean {
-  const tokens = Array.isArray(value)
-    ? value.map((part) => String(part))
-    : typeof value === "string"
-      ? (value.match(/"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|[^\s]+/g) ?? [])
-          .map((part) => part.replace(/^["']|["']$/g, ""))
-      : [];
-  const executable = tokens[0];
-  if (executable == null || basename(executable).toLowerCase() !== "date") return false;
-  return tokens.slice(1).every((arg) =>
-    arg.startsWith("+") || arg === "-u" || arg === "--utc" ||
-    arg === "--universal" || arg === "-R" || arg === "--rfc-email" ||
-    arg === "-I" || arg.startsWith("-I=") || arg.startsWith("--iso-8601") ||
-    arg.startsWith("--rfc-3339")
-  );
-}
-
-function commandSummary(props: ExecCommandLeafProps, elapsed: string | null, expanded: boolean): string {
-  const rawCommand = props.hideRawCommand ? "" : commandText(props.item.cmd ?? props.summary.cmd);
-  const collapsedCommand = expanded ? "" : rawCommand;
-  const withCommand = (prefix: string, command = collapsedCommand) => command ? prefix + " " + command : prefix;
-  const withElapsed = (label: string) => elapsed ? label + " · " + elapsed : label;
-
-  if (props.wasDeclinedByAutoReview) return withCommand("命令被自动审查拒绝");
-  if (isDateTimeCheckCommand(props.item.cmd ?? props.summary.cmd)) {
-    if (props.wasInterrupted) return withElapsed("已停止检查当前日期和时间");
-    if (props.isInProgress) return withElapsed("正在检查当前日期和时间");
-    return withElapsed("已检查当前日期和时间");
-  }
-  if (props.isBackgroundTerminalRunning) return withCommand("后台终端已启动", rawCommand);
-  if (props.isBackgroundTerminalFinished) {
-    if (props.wasInterrupted) return withCommand("后台终端已停止", rawCommand);
-    return withCommand(rawCommand ? "已运行" : "后台终端已完成", rawCommand);
-  }
-  if (props.wasInterrupted) return withElapsed(withCommand("已停止", collapsedCommand || "命令").trim());
-  if (props.isInProgress) return withElapsed("正在运行命令");
-  return withElapsed(withCommand(collapsedCommand ? "已运行" : "命令已运行", collapsedCommand));
-}
-
 /**
  * Source-shaped CC command leaf. The disclosure starts collapsed like the
  * compiled component; output and exit status are projections of the hydrated
@@ -213,16 +175,33 @@ export function CodexSourceExecCommandLeaf(props: ExecCommandLeafProps) {
   const [expanded, setExpanded] = React.useState(false);
   const startedAtMs = typeof props.item.startedAtMs === "number" ? props.item.startedAtMs : null;
   const durationMs = typeof props.item.durationMs === "number" ? props.item.durationMs : null;
+  const [initialStartedAtMs] = React.useState(() =>
+    startedAtMs ?? (props.isInProgress ? Date.now() : null));
+  const effectiveStartedAtMs = startedAtMs ?? initialStartedAtMs;
   const [nowMs, setNowMs] = React.useState(() => Date.now());
   React.useEffect(() => {
-    if (!props.isInProgress || props.isBackgroundTerminalRunning || startedAtMs == null) return;
+    if (props.hideRawCommand || !props.isInProgress || props.isBackgroundTerminalRunning ||
+        effectiveStartedAtMs == null) return;
     const timer = setInterval(() => setNowMs(Date.now()), 1000);
     return () => clearInterval(timer);
-  }, [props.isInProgress, props.isBackgroundTerminalRunning, startedAtMs]);
+  }, [props.hideRawCommand, props.isInProgress, props.isBackgroundTerminalRunning, effectiveStartedAtMs]);
 
-  const elapsedMs = durationMs ?? (startedAtMs == null ? null : Math.max(0, nowMs - startedAtMs));
-  const elapsed = elapsedMs == null ? null : formatElapsed(elapsedMs);
-  const label = commandSummary(props, elapsed, expanded);
+  const elapsedMs = getToolCommandElapsedMs({
+    durationMs, isInProgress: props.isInProgress, nowMs, startedAtMs: effectiveStartedAtMs,
+  });
+  const elapsed = !props.hideRawCommand && elapsedMs > 0 ? formatElapsed(elapsedMs) : null;
+  const label = getToolCommandSummary({
+    summaryType: text(props.summary.type) ?? "unknown",
+    command: props.summary.cmd,
+    elapsedLabel: elapsed,
+    isInProgress: props.isInProgress,
+    isBackgroundTerminalRunning: props.isBackgroundTerminalRunning,
+    isBackgroundTerminalFinished: props.isBackgroundTerminalFinished,
+    wasInterrupted: props.wasInterrupted,
+    wasDeclinedByAutoReview: props.wasDeclinedByAutoReview,
+    isExpanded: expanded,
+    showRawCommand: !props.hideRawCommand,
+  });
   const output = isRecord(props.item.output) ? props.item.output : null;
   const outputText = text(output?.aggregatedOutput) ?? "";
   const exitCode = typeof output?.exitCode === "number" ? output.exitCode : undefined;
@@ -235,15 +214,21 @@ export function CodexSourceExecCommandLeaf(props: ExecCommandLeafProps) {
   return (
     <div className="codex-source-tool-leaf codex-source-tool-command"
       data-codex-source-leaf="exec-command">
-      <button type="button" className="codex-source-tool-command__toggle"
-        aria-expanded={expanded} onClick={() => setExpanded((value) => !value)}
-        data-codex-source-command-toggle="">
-        <span className={"codex-source-tool-command__chevron" + (expanded ? " is-expanded" : "")}
-          aria-hidden="true">›</span>
-        <ToolSummary label={label} summaryIcon={props.showSummaryIcon ? props.summaryIcon : null}
-          automaticApprovalReviews={props.item.automaticApprovalReviews}
-          className={props.summaryTone === "muted" ? "is-muted" : ""} />
-      </button>
+      {props.hideRawCommand
+        ? <div className="codex-source-tool-command__static" data-codex-source-command-static="">
+            <ToolSummary label={label} summaryIcon={props.showSummaryIcon ? props.summaryIcon : null}
+              automaticApprovalReviews={props.item.automaticApprovalReviews}
+              className={props.summaryTone === "muted" ? "is-muted" : ""} />
+          </div>
+        : <button type="button" className="codex-source-tool-command__toggle"
+            aria-expanded={expanded} onClick={() => setExpanded((value) => !value)}
+            data-codex-source-command-toggle="">
+            <span className={"codex-source-tool-command__chevron" + (expanded ? " is-expanded" : "")}
+              aria-hidden="true">›</span>
+            <ToolSummary label={label} summaryIcon={props.showSummaryIcon ? props.summaryIcon : null}
+              automaticApprovalReviews={props.item.automaticApprovalReviews}
+              className={props.summaryTone === "muted" ? "is-muted" : ""} />
+          </button>}
       {expanded && !props.hideRawCommand && <div className="codex-source-tool-command__body" data-codex-source-command-body="">
         {command && <pre className="codex-source-tool-command__command"><span aria-hidden="true">$ </span>{command}</pre>}
         {outputText && <pre className="codex-source-tool-command__output">{outputText}</pre>}
@@ -287,19 +272,20 @@ function PatchFileRow(props: {
   status: ReturnType<typeof getToolPatchStatus>;
   showDiffDetails: boolean;
   cwd?: string | null | undefined;
+  grantRoot?: string | null | undefined;
   hostId: string;
   onOpenFile?: (request: ToolActivityOpenFileRequest) => void;
   automaticApprovalReviews?: unknown;
 }) {
   const [expanded, setExpanded] = React.useState(false);
   const diff = changeText(props.change);
-  const diffPresentation = getToolPatchDiffPresentation(diff, props.change);
+  const diffPresentation = getToolPatchDiffPresentation(diff);
   const counts = diffPresentation;
   const label = patchChangeLabel(props.change, props.status);
   const type = isRecord(props.change) ? text(props.change.type) : undefined;
-  const displayPath = text(isRecord(props.change) ? props.change.move_path : undefined) ?? props.path;
+  const displayPath = props.path;
   const shortPath = basename(displayPath);
-  const openFile = () => props.onOpenFile?.({ path: displayPath, ...(diffPresentation ? { line: diffPresentation.openLocationLine } : {}), cwd: props.cwd, hostId: props.hostId });
+  const openFile = () => props.onOpenFile?.({ path: props.path, ...(diffPresentation ? { line: diffPresentation.openLocationLine } : {}), cwd: props.grantRoot ?? props.cwd ?? null, hostId: props.hostId });
   // IT exposes the disclosure whenever diff details are enabled; its body
   // distinguishes an unavailable/oversized preview from an empty diff.
   const canExpand = props.showDiffDetails;
@@ -314,6 +300,7 @@ function PatchFileRow(props: {
       data-change-type={type ?? "update"} data-patch-status={props.status}>
       <div className="codex-source-tool-patch-file__header">
         <div className="codex-source-tool-patch-file__path-wrap">
+          {props.status === "auto-review-declined" && <span className="codex-source-tool-patch-file__declined-label">文件变更被自动审查拒绝：</span>}
           {props.onOpenFile
             ? <button type="button" className="codex-source-tool-path codex-source-tool-path--button"
                 title={displayPath} onClick={openFile} data-agent-activity-file-link="">{shortPath}</button>
@@ -324,7 +311,7 @@ function PatchFileRow(props: {
           </span>}
         </div>
         <div className="codex-source-tool-patch-file__actions">
-          <span className={"codex-source-tool-patch-file__status status-" + props.status}>{label}</span>
+          {props.status !== "auto-review-declined" && <span className={"codex-source-tool-patch-file__status status-" + props.status}>{label}</span>}
           {canExpand && <button type="button" className="codex-source-tool-patch-file__toggle"
             aria-label={"切换差异 " + shortPath}
             title={expanded ? "收起差异" : "展开差异"}
@@ -385,7 +372,7 @@ export function CodexSourcePatchLeaf(props: PatchLeafProps & {
       </div>}
       <div className="codex-source-tool-patch__files">
         {changes.map(([path, change]) => <PatchFileRow key={path} path={path} change={change}
-          status={status} showDiffDetails={props.showDiffDetails} cwd={props.cwd}
+          status={status} showDiffDetails={props.showDiffDetails} cwd={props.cwd} grantRoot={props.grantRoot}
           hostId={props.hostId} onOpenFile={props.onOpenFile}
           automaticApprovalReviews={item.automaticApprovalReviews} />)}
       </div>

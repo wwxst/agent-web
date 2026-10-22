@@ -122,6 +122,14 @@ See [AgentActivity group-header recovery](reports/AGENT_ACTIVITY_GROUP_HEADER_SO
 
 - [xe/we/Te 原始活动分类源码恢复与缺口](reports/AGENT_ACTIVITY_RAW_CLASSIFIER_SOURCE_RECOVERY.md)
 
+## Source-derived command summaries and patch previews (2026-10-22)
+
+- `src/conversation/ToolCommandSummaryModel.ts` restores the compiled `WC/JC/GC` generic command, background terminal, date-check and elapsed-time branches. The private execution-status classifier and skill-script-specific labels remain explicit gaps.
+- `src/conversation/ToolPatchDiffPresentationModel.ts` now follows the compiled patch-diff-stats fallback instead of guessing added/deleted line counts from plain source content.
+- File-open callbacks retain the original change path and prefer `grantRoot` over `cwd`, matching the compiled `IT` call shape.
+
+See [tool activity source recovery](reports/TOOL_ACTIVITY_VISUAL_LEAVES.md) for evidence and remaining gaps.
+
 ## Source-derived tool detail leaves (2026-10-22)
 
 - `src/components/CodexSourceToolActivityLeaves.tsx` mounts independent React leaves for compiled `RC/EC/NC/CC/PT/IT` behavior through the existing activity renderer.
