@@ -1,4 +1,4 @@
-type Command = string | readonly unknown[] | null | undefined;
+type Command = unknown;
 
 export interface ToolCommandElapsedInput {
   durationMs?: number | null;

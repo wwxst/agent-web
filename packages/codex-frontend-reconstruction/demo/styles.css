@@ -264,6 +264,7 @@ button:not(:disabled):hover { transition: background .15s, color .15s; }
 .codex-source-tool-patch-file__counts .is-removed { color:#dca6a6; }
 .codex-source-tool-patch-file__actions { display:flex; align-items:center; gap:8px; }
 .codex-source-tool-patch-file__status { color:#9b9b9b; font-size:10.5px; white-space:nowrap; }
+.codex-source-tool-patch-file__declined-label { flex:0 0 auto; color:var(--demo-dim); font-size:11px; }
 .codex-source-tool-patch-file__status.status-pending,.codex-source-tool-patch-file__status.status-streaming { color:#c7b18a; }
 .codex-source-tool-patch-file__status.status-applied { color:#9bc8a2; }
 .codex-source-tool-patch-file__status.status-rejected,.codex-source-tool-patch-file__status.status-auto-review-declined { color:#dca6a6; }
