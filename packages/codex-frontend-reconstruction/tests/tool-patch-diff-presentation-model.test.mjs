@@ -48,10 +48,10 @@ test("patch diff stats fall back to line one for deleted-file content", () => {
   }), { added: 0, removed: 2, openLocationLine: 1 });
 });
 
-test("patch diff stats omit empty and unchanged content", () => {
+test("patch diff stats omit empty content and preserve zero counts for unchanged unified diffs", () => {
   assert.equal(present(null, { type: "add", content: "" }), null);
   assert.equal(present("plain context", { type: "update" }), null);
-  assert.equal(present("--- a/file\n+++ b/file\n@@ -1 +1 @@\n same", {
+  assert.deepEqual(present("--- a/file\n+++ b/file\n@@ -1 +1 @@\n same", {
     type: "update",
     unified_diff: "--- a/file\n+++ b/file\n@@ -1 +1 @@\n same",
   }), { added: 0, removed: 0, openLocationLine: 1 });
