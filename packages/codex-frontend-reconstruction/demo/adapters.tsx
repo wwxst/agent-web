@@ -121,6 +121,15 @@ export function makeDemoRow(notify: (message: string) => void) {
         conversationDetailLevel: "STEPS_PROSE",
       },
     },
+    // Explicit DEMO host: only fk/SO dispatch is reconstructed. xC/PT leaf
+    // visuals still use the earlier mock ActivityDetails, never real execution.
+    toolActivity: {
+      getContext: (_item, isActive) => ({
+        isTurnInProgress: isActive,
+        isWorkMode: false,
+        renderToolActivityInWorkMode: true,
+      }),
+    },
     ActivityDetails,
     ActivityResult: ({ result }) => <pre className="demo-activity-detail">{typeof result === "string" ? result : "模拟活动结果"}</pre>,
     GeneratedImages: () => <span className="demo-muted">图片展示尚未接通</span>,

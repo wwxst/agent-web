@@ -59,3 +59,17 @@ test("source-derived group row toggles its real subrows independently",async ({p
   await expect(group.locator("[data-codex-group-details]")).toBeHidden();
   expect(errors).toEqual([]);
 });
+
+test("fk/SO source detail entry delegates real exec leaves without changing group state", async ({page})=>{
+  const errors:string[]=[];page.on("pageerror",e=>errors.push(e.message));
+  await page.goto("/");
+  const group=page.locator("[data-recovered-agent-activity]").nth(1);
+  await group.getByRole("button",{name:/2 项工具活动/}).click();
+  await group.locator("[data-codex-activity-group]").getByRole("button",{name:/2 项命令/}).click();
+  const leaves=group.locator("[data-codex-tool-activity-item]");
+  await expect(leaves).toHaveCount(2);
+  await expect(leaves.first()).toHaveAttribute("data-codex-tool-leaf","exec");
+  await expect(leaves.first()).toHaveAttribute("data-codex-tool-exec-kind","command");
+  await expect(leaves.first()).toHaveAttribute("data-codex-tool-status","finished");
+  expect(errors).toEqual([]);
+});

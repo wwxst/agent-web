@@ -3,6 +3,8 @@ import type { ConversationMessageItem } from "../conversation/ConversationMessag
 import type { AgentActivityUnit, AgentActivityCollapseOptions } from "../conversation/AgentActivityProjection.js";
 import { CodexAgentActivity } from "./CodexAgentActivity.js";
 import { CodexActivityGroupRow } from "./CodexActivityGroupRow.js";
+import { CodexToolActivityItem } from "./CodexToolActivityItem.js";
+import type { ToolDetailContext } from "../conversation/ToolActivityDetailModel.js";
 import { projectActivityGroupHeader, shouldDemoteCompletedSingleGroup,
   type ActivityHeaderMessage, type ActivityGroupHeaderState,
 } from "../conversation/AgentActivityGroupPresentation.js";
@@ -52,6 +54,13 @@ export interface ConnectedConversationRendererHost extends ConversationContentAd
     };
   };
 
+  /** Optional source fk/SO dispatcher. Absent in old hosts: preserve old behavior.
+   * Host supplies private NO/Gf/cc predicates and real xC/PT/Fh leaf renderers. */
+  toolActivity?: {
+    getContext(item: ConversationMessageItem, isActive: boolean): ToolDetailContext;
+    standaloneActivityContentByItemId?: ReadonlyMap<string, React.ReactNode>;
+    wrapSearchableContent?: (item: ConversationMessageItem, content: React.ReactNode) => React.ReactNode;
+  };
   ActivityDetails: React.ComponentType<{ item: ConversationMessageItem; isActive: boolean; presentation: "ordinary" | "subagent" | "activity-units" }>;
   ActivityResult: ConversationMessageRenderers["ActivityResult"];
   GeneratedImages: ConversationMessageRenderers["GeneratedImages"];
@@ -108,6 +117,13 @@ export function createConnectedConversationMessageRenderers(host: ConnectedConve
     }
     if (projection.kind === "markdown") {
       return <host.Markdown text={projection.text} role="activity" />;
+    }
+    if (host.toolActivity != null) {
+      const detailHost = host.toolActivity;
+      return <CodexToolActivityItem item={item} context={detailHost.getContext(item, isActive)}
+        standaloneActivityContentByItemId={detailHost.standaloneActivityContentByItemId}
+        wrapSearchableContent={detailHost.wrapSearchableContent}
+        renderLeaf={() => <host.ActivityDetails item={item} isActive={isActive} presentation={presentation} />} />;
     }
     return <host.ActivityDetails item={item} isActive={isActive} presentation={presentation} />;
   }

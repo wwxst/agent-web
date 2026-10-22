@@ -30,3 +30,6 @@ export type { CodexAgentActivityProps } from "./components/CodexAgentActivity.js
 
 export { CodexActivityGroupRow } from "./components/CodexActivityGroupRow.js";
 export type { CodexActivityGroupRowProps } from "./components/CodexActivityGroupRow.js";
+
+export { CodexToolActivityItem } from "./components/CodexToolActivityItem.js";
+export type { CodexToolActivityItemProps } from "./components/CodexToolActivityItem.js";
