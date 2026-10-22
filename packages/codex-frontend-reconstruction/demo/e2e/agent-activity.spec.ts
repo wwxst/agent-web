@@ -93,6 +93,9 @@ test("source-shaped PT/IT leaf shows patch status and expands unified diff witho
   const patchActivity = patchEntry.locator("[data-recovered-agent-activity]");
   await expect(patchActivity).toHaveCount(1);
   await patchActivity.getByRole("button", {name:/项工具活动/}).click();
+  // The reconstructed host nests the one-item activity disclosure inside the outer section.
+  const patchDetailToggle = patchActivity.getByRole("button", {name:/项活动/});
+  await patchDetailToggle.click();
   const patch = patchActivity.locator("[data-codex-source-patch]");
   await expect(patch).toBeVisible();
   await expect(patch).toHaveAttribute("data-patch-status", "pending");
