@@ -58,7 +58,7 @@ const checks = [
       "return new EUu(i,a,n,c,o,s,u,d,l,t?.restoreMarkdownLinksAsTextLinks??!1,t?.restorePathLinksAsFileMentions??!0,t?.plainTextMode??!1,r,f)",
       "function rUu(e=null,{addInitialContentToHistory:t=!1,defaultTextKind:n=`plain`",
       "C=x?.pmu.schema()??kja",
-      "plugins:[P.createPlugin(C),KBu(P),g_e(),...B==null?[]:[B],GVU,oIu()",
+      "plugins:[P.createPlugin(C),KBu(P),g_e(),...B==null?[]:[B],GVu,oIu()",
       "S.listInput,S.codeBlockFenceExit,S.inputRules,S.inputRulesHistoryIsolation",
       "S.typedTable,S.blockquoteBackspace,S.backspace,S.tabIndent,S.codeBlockDeletion",
       "S.codeBlockArrowExit,S.extensionKeymap",
