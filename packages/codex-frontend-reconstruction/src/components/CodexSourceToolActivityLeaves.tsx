@@ -159,7 +159,7 @@ export function CodexSourceExecListFilesLeaf(props: ExecListFilesLeafProps) {
     ? (isFinished ? "已列出" : "正在列出") + " " + path + " 中的文件"
     : (isFinished ? "已列出文件" : "正在列出文件");
   return <div className="codex-source-tool-leaf" data-codex-source-leaf="exec-list-files">
-    <ToolSummary label={label} summaryIcon={props.summaryIcon}
+    <ToolSummaryWithReviews label={label} summaryIcon={props.summaryIcon}
       automaticApprovalReviews={props.automaticApprovalReviews} />
   </div>;
 }
