@@ -66,7 +66,7 @@ test('long history adds unique keys and can be projected without duplicate rows'
   appendDemoEntries(s, makeLongHistory());
   const snapshot=s.getSnapshot();
   const output=buildConversationRenderEntries({...snapshot.projection,baseEntries:[...snapshot.entries]},deps);
-  assert.equal(output.entries.length,51);
+  assert.equal(output.entries.length,52); // one additional synthetic PT/IT patch fixture in the review conversation
   const keys=output.entries.map(e=>e.turnKey);
   assert.equal(new Set(keys).size,keys.length);
   assert.equal(keys.at(-1),'history-content:turn:history-45');
