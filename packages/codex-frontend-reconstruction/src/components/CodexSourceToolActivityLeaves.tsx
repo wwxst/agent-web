@@ -244,7 +244,9 @@ function PatchFileRow(props: {
   const type = isRecord(props.change) ? text(props.change.type) : undefined;
   const displayPath = text(isRecord(props.change) ? props.change.move_path : undefined) ?? props.path;
   const openFile = () => props.onOpenFile?.({ path: displayPath, cwd: props.cwd, hostId: props.hostId });
-  const canExpand = props.showDiffDetails && diff != null && diff.length > 0;
+  // IT exposes the disclosure whenever diff details are enabled; its body
+  // distinguishes an unavailable/oversized preview from an empty diff.
+  const canExpand = props.showDiffDetails;
   const lines = diff?.split(/\r?\n/) ?? [];
   const unified = lines.some((line) => line.startsWith("@@ ")) ||
     lines.some((line) => line.startsWith("+++ ")) || lines.some((line) => line.startsWith("--- "));
@@ -275,17 +277,21 @@ function PatchFileRow(props: {
           </button>}
         </div>
       </div>
-      {expanded && diff != null && <div className="codex-source-tool-patch-file__diff"
+      {expanded && <div className="codex-source-tool-patch-file__diff"
         role="region" aria-label={displayPath + " 文件差异"} data-codex-source-patch-diff="">
-        {unified
-          ? <pre>{lines.map((line, index) => {
-              const className = line.startsWith("+++") || line.startsWith("---") || line.startsWith("@@ ")
-                ? "diff-meta"
-                : line.startsWith("+") ? "diff-added"
-                  : line.startsWith("-") ? "diff-removed" : "";
-              return <span key={index} className={className}>{line}{"\n"}</span>;
-            })}</pre>
-          : <pre className={isAdd ? "diff-added-file" : isDelete ? "diff-deleted-file" : ""}>{diff}</pre>}
+        {diff == null
+          ? <div className="codex-source-tool-patch-file__empty">差异过大，无法预览</div>
+          : diff === ""
+            ? <div className="codex-source-tool-patch-file__empty">{isDelete ? "文件内容已删除" : "没有差异"}</div>
+            : unified
+              ? <pre>{lines.map((line, index) => {
+                  const className = line.startsWith("+++") || line.startsWith("---") || line.startsWith("@@ ")
+                    ? "diff-meta"
+                    : line.startsWith("+") ? "diff-added"
+                      : line.startsWith("-") ? "diff-removed" : "";
+                  return <span key={index} className={className}>{line}{"\\n"}</span>;
+                })}</pre>
+              : <pre className={isAdd ? "diff-added-file" : isDelete ? "diff-deleted-file" : ""}>{diff}</pre>}
       </div>}
     </section>
   );
