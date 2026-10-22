@@ -39,8 +39,8 @@ test("clipboard bridge registers only callbacks supplied by the host", () => {
 
 test("clipboard bridge forwards file payloads and preserves DataTransfer", () => {
   const controller = createFakeController();
-  const files = [{ name: "readme.txt" }] as unknown as File[];
-  const transfer = { types: ["Files"] } as unknown as DataTransfer;
+  const files = [{ name: "readme.txt" }];
+  const transfer = { types: ["Files"] };
   let receivedFiles: readonly File[] | undefined;
   let receivedTransfer: DataTransfer | null | undefined;
   const cleanup = connectComposerControllerClipboardEvents(controller, {
