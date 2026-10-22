@@ -4,6 +4,7 @@ import {
   type ToolItem,
 } from "../conversation/ToolActivityDetailModel.js";
 import { isMeaningfulReadToolActivity, getVisualizationActivityKind } from "../conversation/ToolActivityHistorySourceTransforms.js";
+import { getToolPatchDiffPresentation } from "../conversation/ToolPatchDiffPresentationModel.js";
 import type {
   ExecCommandLeafProps,
   ExecListFilesLeafProps,
@@ -270,31 +271,6 @@ function changeText(change: unknown): string | null {
   return text(change.unified_diff) ?? text(change.content) ?? text(change.diff) ?? null;
 }
 
-function changeCounts(diff: string | null, change?: unknown): { added: number; removed: number } | null {
-  if (diff == null) {
-    if (!isRecord(change)) return null;
-    const type = text(change.type);
-    const content = text(change.content);
-    if (content == null || (type !== "add" && type !== "delete")) return null;
-    const lines = content === "" ? 0 : content.split(/\r?\n/).filter((line, index, all) =>
-      !(index === all.length - 1 && line === "")
-    ).length;
-    return type === "add" ? { added: lines, removed: 0 } : { added: 0, removed: lines };
-  }
-  const lines = diff.split(/\r?\n/);
-  const looksUnified = lines.some((line) => line.startsWith("@@ ")) ||
-    lines.some((line) => line.startsWith("+++ ")) || lines.some((line) => line.startsWith("--- "));
-  if (!looksUnified) return null;
-  let added = 0;
-  let removed = 0;
-  for (const line of lines) {
-    if (line.startsWith("+++") || line.startsWith("---")) continue;
-    if (line.startsWith("+")) added += 1;
-    if (line.startsWith("-")) removed += 1;
-  }
-  return { added, removed };
-}
-
 function patchChangeLabel(change: unknown, status: ReturnType<typeof getToolPatchStatus>): string {
   const type = isRecord(change) ? text(change.type) : undefined;
   const action = type === "add" ? "创建" : type === "delete" ? "删除" : "编辑";
@@ -317,12 +293,13 @@ function PatchFileRow(props: {
 }) {
   const [expanded, setExpanded] = React.useState(false);
   const diff = changeText(props.change);
-  const counts = changeCounts(diff, props.change);
+  const diffPresentation = getToolPatchDiffPresentation(diff, props.change);
+  const counts = diffPresentation;
   const label = patchChangeLabel(props.change, props.status);
   const type = isRecord(props.change) ? text(props.change.type) : undefined;
   const displayPath = text(isRecord(props.change) ? props.change.move_path : undefined) ?? props.path;
   const shortPath = basename(displayPath);
-  const openFile = () => props.onOpenFile?.({ path: displayPath, cwd: props.cwd, hostId: props.hostId });
+  const openFile = () => props.onOpenFile?.({ path: displayPath, ...(diffPresentation ? { line: diffPresentation.openLocationLine } : {}), cwd: props.cwd, hostId: props.hostId });
   // IT exposes the disclosure whenever diff details are enabled; its body
   // distinguishes an unavailable/oversized preview from an empty diff.
   const canExpand = props.showDiffDetails;
