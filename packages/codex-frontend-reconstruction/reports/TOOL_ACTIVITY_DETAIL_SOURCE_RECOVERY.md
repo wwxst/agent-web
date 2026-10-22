@@ -34,7 +34,7 @@ These are translations of the user-provided compiled bundles, not the original a
 
 ## Verification
 
-At validated code HEAD `d088fdb2387272c0a2de722e0b7075b9c37abc1e`:
+At validated code HEAD `5ecc8c1e4a8f7d612c3f72ace47513c49bd2c6a0`:
 
 - Core tests: 268/268 passed.
 - Demo model integration: 4/4 passed.

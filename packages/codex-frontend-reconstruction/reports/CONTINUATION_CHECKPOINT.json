@@ -2,7 +2,7 @@
   "date": "2026-10-22",
   "stage": "source-derived tool history transforms + host subscription store + connected activity renderer",
   "branch": "recovery/codex-frontend-through-connected-message-20261021",
-  "validated_code_head": "d088fdb2387272c0a2de722e0b7075b9c37abc1e",
+  "validated_code_head": "5ecc8c1e4a8f7d612c3f72ace47513c49bd2c6a0",
   "new_modules": [
     "src/conversation/ToolActivityHistorySourceTransforms.ts",
     "src/conversation/ToolActivityHistoryHydrationModel.ts",

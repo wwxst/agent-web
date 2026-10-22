@@ -47,7 +47,7 @@ Branch: `recovery/codex-frontend-through-connected-message-20261021`
 
 ## Current checkpoint — tool activity history subscription integration (2026-10-22)
 
-Validated code HEAD: `d088fdb2387272c0a2de722e0b7075b9c37abc1e`
+Validated code HEAD: `5ecc8c1e4a8f7d612c3f72ace47513c49bd2c6a0`
 Branch: `recovery/codex-frontend-through-connected-message-20261021`
 PR: [#1](https://github.com/wwxst/agent-web/pull/1) (draft; not merged)
 
