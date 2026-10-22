@@ -55,9 +55,47 @@ function ToolSummary(props: {
           : <span className="codex-source-tool-summary__icon">{props.summaryIcon}</span>}
       <span className="codex-source-tool-summary__label">{props.label}</span>
       {hasApprovalReviews && <span className="codex-source-tool-review-marker"
-        aria-label="存在自动审批审查记录" title="自动审批审查记录">审查</span>}
+        aria-label="存在自动审批审查记录" title="自动审批审查记录" data-codex-source-review-indicator="">✓</span>}
     </div>
   );
+}
+
+function ApprovalReviewDetails(props: { reviews: unknown; isDeclined?: boolean }) {
+  const reviews = Array.isArray(props.reviews) ? props.reviews.filter(isRecord) : [];
+  if (reviews.length === 0) return null;
+  if (props.isDeclined) {
+    return <div className="codex-source-tool-review-details" data-codex-source-review-details="">
+      <p>需要明确授权才能执行此操作。</p>
+      {reviews.map((review, index) => {
+        const rationale = text(review.rationale) ?? text(review.reason) ?? text(review.message);
+        return rationale ? <p key={text(review.id) ?? index}>{rationale}</p> : null;
+      })}
+    </div>;
+  }
+  return <div className="codex-source-tool-review-details" data-codex-source-review-details="">
+    {reviews.map((review, index) => {
+      const status = text(review.status) ?? "审查记录";
+      const risk = text(review.riskLevel);
+      const rationale = text(review.rationale) ?? text(review.reason) ?? text(review.message);
+      return <details key={text(review.id) ?? index} className="codex-source-tool-review-details__item">
+        <summary>{status}{risk ? " · " + risk : ""}</summary>
+        {rationale && <p>{rationale}</p>}
+      </details>;
+    })}
+  </div>;
+}
+
+function ToolSummaryWithReviews(props: {
+  label: React.ReactNode;
+  summaryIcon?: React.ReactNode;
+  automaticApprovalReviews?: unknown;
+  className?: string;
+}) {
+  if (!reviewsExist(props.automaticApprovalReviews)) return <ToolSummary {...props} />;
+  return <details className="codex-source-tool-summary-disclosure" data-codex-source-review-disclosure="">
+    <summary><ToolSummary {...props} /></summary>
+    <ApprovalReviewDetails reviews={props.automaticApprovalReviews} />
+  </details>;
 }
 
 /** Source-shaped RC read leaf; file opening remains an explicit host capability. */
@@ -90,7 +128,7 @@ export function CodexSourceExecReadLeaf(props: ExecReadLeafProps & {
 
   return (
     <div className="codex-source-tool-leaf" data-codex-source-leaf="exec-read">
-      <ToolSummary label={isSkillDefinition ? title : <>{title} {pathNode}</>}
+      <ToolSummaryWithReviews label={isSkillDefinition ? title : <>{title} {pathNode}</>}
         summaryIcon={props.summaryIcon} automaticApprovalReviews={props.automaticApprovalReviews} />
     </div>
   );
@@ -107,7 +145,7 @@ export function CodexSourceExecSearchLeaf(props: ExecSearchLeafProps) {
   else if (query) label = (isFinished ? "已搜索" : "正在搜索") + " “" + query + "”";
   else label = isFinished ? "已搜索文件" : "正在搜索文件";
   return <div className="codex-source-tool-leaf" data-codex-source-leaf="exec-search">
-    <ToolSummary label={label} summaryIcon={props.summaryIcon}
+    <ToolSummaryWithReviews label={label} summaryIcon={props.summaryIcon}
       automaticApprovalReviews={props.automaticApprovalReviews} />
   </div>;
 }
@@ -217,6 +255,7 @@ export function CodexSourceExecCommandLeaf(props: ExecCommandLeafProps) {
                   : <span>{props.isBackgroundTerminalFinished ? "后台终端已结束" : "执行已结束"}</span>}
           {props.isReadOnly && <span>只读会话</span>}
         </div>
+        {!props.wasDeclinedByAutoReview && <ApprovalReviewDetails reviews={props.item.automaticApprovalReviews} />}
         {props.wasDeclinedByAutoReview && <div className="codex-source-tool-command__review">
           <strong>自动审查拒绝</strong>
           <p>{denialRationale || "没有提供拒绝原因。"}</p>
@@ -274,6 +313,7 @@ function PatchFileRow(props: {
   cwd?: string | null | undefined;
   hostId: string;
   onOpenFile?: (request: ToolActivityOpenFileRequest) => void;
+  automaticApprovalReviews?: unknown;
 }) {
   const [expanded, setExpanded] = React.useState(false);
   const diff = changeText(props.change);
@@ -319,6 +359,7 @@ function PatchFileRow(props: {
       </div>
       {expanded && <div className="codex-source-tool-patch-file__diff"
         role="region" aria-label={displayPath + " 文件差异"} data-codex-source-patch-diff="">
+        <ApprovalReviewDetails reviews={props.automaticApprovalReviews} isDeclined={props.status === "auto-review-declined"} />
         {diff == null
           ? <div className="codex-source-tool-patch-file__empty">差异过大，无法预览</div>
           : diff === ""
@@ -368,7 +409,8 @@ export function CodexSourcePatchLeaf(props: PatchLeafProps & {
       <div className="codex-source-tool-patch__files">
         {changes.map(([path, change]) => <PatchFileRow key={path} path={path} change={change}
           status={status} showDiffDetails={props.showDiffDetails} cwd={props.cwd}
-          hostId={props.hostId} onOpenFile={props.onOpenFile} />)}
+          hostId={props.hostId} onOpenFile={props.onOpenFile}
+          automaticApprovalReviews={item.automaticApprovalReviews} />)}
       </div>
     </div>
   );
