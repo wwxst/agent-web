@@ -272,18 +272,10 @@ button:not(:disabled):hover { transition: background .15s, color .15s; }
 .codex-source-tool-patch-file__toggle:hover { background:#363636; color:#eee; }
 .codex-source-tool-patch-file__chevron { display:inline-block; transform:rotate(0deg); transition:transform .12s ease; }
 .codex-source-tool-patch-file__chevron.is-expanded { transform:rotate(90deg); }
-.codex-source-tool-patch-file__diff { border-top:1px solid var(--demo-border); background:var(--color-codex-diff-surface,var(--demo-panel)); color:var(--demo-text); overflow:auto; max-height:360px; }
-.codex-source-tool-patch-file__diff pre { margin:0; padding:8px 10px; white-space:pre; overflow:visible; font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:11px; line-height:1.7; }
-.codex-source-tool-patch-file__diff pre span { display:block; min-height:1.7em; }
-.codex-source-tool-patch-file__diff-lines { min-width:100%; padding:5px 0; font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:11px; line-height:1.7; }
-.codex-source-tool-patch-file__diff-line { display:grid; grid-template-columns:3.5ch 3.5ch 1.3ch minmax(0,1fr); min-height:1.7em; white-space:pre; }
-.codex-source-tool-patch-file__line-number { min-width:0; padding:0 4px; color:var(--demo-dim); text-align:right; user-select:none; }
-.codex-source-tool-patch-file__line-marker { text-align:center; color:var(--demo-dim); user-select:none; }
-.codex-source-tool-patch-file__line-content { min-width:0; padding:0 8px 0 2px; white-space:pre; }
-.codex-source-tool-patch-file__diff-hunk { padding:2px 10px; white-space:pre; font-size:10.5px; line-height:1.7; }
-.codex-source-tool-patch-file__diff .diff-meta { color:var(--demo-dim); background:var(--demo-raised); }
-.codex-source-tool-patch-file__diff .diff-added,.codex-source-tool-patch-file__diff .diff-added-file { background:var(--color-codex-diff-added,#dff2e2); color:var(--demo-text); }
-.codex-source-tool-patch-file__diff .diff-removed,.codex-source-tool-patch-file__diff .diff-deleted-file { background:var(--color-codex-diff-deleted,#ffe1e0); color:var(--demo-text); }
+.codex-source-tool-patch-file__diff { border-top:1px solid var(--demo-border); background:var(--color-codex-diff-surface,var(--demo-panel)); color:var(--demo-text); overflow:visible; }
+.codex-source-tool-patch-file__diff-viewport { max-height:360px; overflow:auto; min-width:0; background:var(--color-codex-diff-surface,var(--demo-panel)); }
+.codex-source-tool-patch-file__diff-content { min-width:0; }
+.codex-source-tool-patch-file__diff-engine { display:block; min-width:100%; font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:11px; line-height:1.7; }
 .codex-source-tool-patch-file__diff .diff-added-file,.codex-source-tool-patch-file__diff .diff-deleted-file { display:block; padding:8px 10px; white-space:pre-wrap; overflow-wrap:anywhere; }
 @media (max-width:600px) {
   .codex-source-tool-patch-file__header { align-items:flex-start; flex-direction:column; }

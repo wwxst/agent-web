@@ -137,7 +137,7 @@ See [tool activity source recovery](reports/TOOL_ACTIVITY_VISUAL_LEAVES.md) for 
 - `tests/tool-patch-diff-presentation-model.test.mjs` covers unified diffs, add/delete content fallbacks and changed-line selection.
 - `scripts/audit-tool-detail-evidence.mjs` pins the original activity, patch-preview and visualization-classifier bundle hashes and checks 55 activity signatures plus six patch/visualization classifier signatures. `reports/TOOL_ACTIVITY_VISUAL_LEAVES.md` records the source hashes, UI boundary and remaining host integration.
 
-The browser preview remains synthetic/demo-only. It does not reproduce the private Codex design-system, full FileDiff renderer, Electron bridge or live Agent backend.
+The browser preview remains synthetic/demo-only. Inline patch details use the real `@pierre/diffs` renderer, but the full original multi-item `CodeView`, private Codex design-system, Electron bridge and live Agent backend are not yet integrated.
 
 ## Tool activity history entity store
 

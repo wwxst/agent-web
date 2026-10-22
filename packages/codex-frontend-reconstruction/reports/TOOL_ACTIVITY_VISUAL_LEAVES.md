@@ -38,7 +38,7 @@ New source module: `src/components/CodexSourceToolActivityLeaves.tsx`
 - `CodexSourceExecSearchLeaf` restores query/path summary variants.
 - `CodexSourceExecListFilesLeaf` restores file-list summary variants.
 - `CodexSourceExecCommandLeaf` restores collapsed-by-default command details, hydrated output/exit status, elapsed time and interruption/automatic-review-decline presentation. It never starts a command.
-- `CodexSourcePatchLeaf` and its file row restore the source status precedence, visualization activity label, per-file status, compact diff disclosure, basename/full-path presentation, old/new line-number gutters, omission of Git/file metadata from the visible hunk, and source-observed empty/oversized-preview fallback. The current line renderer remains a compatibility implementation, not the original virtualized `@pierre/diffs` FileDiff engine.
+- `CodexSourcePatchLeaf` and its file row restore the source status precedence, visualization activity label, per-file status, compact diff disclosure, basename/full-path presentation, and source-observed empty/oversized-preview fallback. The diff body now uses the actual `@pierre/diffs` React `PatchDiff` inside its `Virtualizer`, with unified layout, wrapped lines, bar indicators, word-level diffing, line gutters and Pierre themes. The original Codex build embeds this engine in a multi-item `CodeView`; this adapter uses a single-patch surface and the built-in `pierre-dark`/`pierre-light` themes rather than Codex’s registered soft-theme variants.
 - `src/conversation/ToolPatchDiffPresentationModel.ts` ports `patch-diff-stats` behavior: parse unified-diff counts, exclude file headers, fall back to raw `+`/`-` lines when parsing yields no changes, and use line 1 for that fallback. The file-open request carries the source path, `grantRoot ?? cwd`, and parsed open line.
 - `src/conversation/ToolCommandSummaryModel.ts` ports the observable `WC` summary branches and `JC` elapsed-time precedence. In-progress commands use the live clock; completed commands use `durationMs` rather than continuing to count from `startedAtMs`. Hidden-raw-command mode omits the command disclosure and elapsed label.
 - Optional `onOpenFile` is an explicit host callback. Without a host callback, paths are display-only. No file mutation or approval write-back is implemented in the leaf components.
@@ -52,7 +52,7 @@ Integration uses the existing `CodexToolActivityLeafRenderer` and `ConnectedConv
 Source signature checks prove the target compiled branches are present; they do not prove pixel parity. The authored CSS in `demo/styles.css` is a local compatibility layer, not copied Codex CSS. The current browser preview is still a demo host, not a complete Electron app.
 
 Remaining work:
-- keep the new diff-presentation model and React leaf coverage in the CI suite; latest core tests and TypeScript/Vite build have passed, while the browser smoke run is checked separately;
-- replace remaining host-injected visual leaves with source-shaped equivalents where source evidence supports it;
+- keep the source diff synthesis and `@pierre/diffs` rendering in the CI suite; verify real browser output, line gutters, wrapped long lines and large-patch scrolling;
+- move from the single-patch `PatchDiff` adapter toward the original multi-item `CodeView` composition, including the registered Codex soft themes and exact hunk-expansion behavior;
 - bind file opening, approval requests and tool updates to a confirmed Agent/Electron event contract;
 - compare the reconstructed leaf screenshots and interactions against the same Codex build and viewport.

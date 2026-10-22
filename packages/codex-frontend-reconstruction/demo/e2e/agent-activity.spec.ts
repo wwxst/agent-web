@@ -110,10 +110,11 @@ test("source-shaped PT/IT leaf shows patch status and expands unified diff witho
   const diffToggle = firstFile.getByRole("button", {name:/切换差异/});
   await diffToggle.click();
   await expect(firstFile.locator("[data-codex-source-patch-diff]")).toBeVisible();
-  await expect(firstFile.locator(".diff-added")).toContainText("createToolActivityHistorySource");
-  await expect(firstFile.locator("[data-codex-source-patch-diff]")).not.toContainText("diff --git");
-  await expect(firstFile.locator("[data-codex-source-diff-line-number]").first()).toBeVisible();
-  await expect(firstFile.locator("[data-codex-source-patch-diff]")).not.toContainText("\\n");
+  const diffEngine = firstFile.locator("[data-codex-source-diff-engine='pierre']");
+  await expect(diffEngine).toBeVisible();
+  await expect(diffEngine.getByText("createToolActivityHistorySource")).toBeVisible();
+  await expect(diffEngine.getByText("diff --git")).toHaveCount(0);
+  await expect(diffEngine.locator("[data-line]").first()).toBeVisible();
   await patchActivity.scrollIntoViewIfNeeded();
   await page.screenshot({path:testInfo.outputPath("codex-patch-leaf-expanded.png"),animations:"disabled"});
   expect(errors).toEqual([]);
