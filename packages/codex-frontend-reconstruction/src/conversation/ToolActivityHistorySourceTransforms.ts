@@ -274,7 +274,7 @@ function skillDefinitionPathResult(segments:string[]):boolean|null {
 /** Source skill-exploration-labels N/P/F/I: meaningful read means a skill-definition file. */
 export function isMeaningfulReadToolActivity(item:HistoryToolItem):boolean {
  if(item.type!=="exec"||!record(item.parsedCmd)||item.parsedCmd.type!=="read")return false;
- const rawPath=item.parsedCmd.path??item.parsedCmd.name;
+ const rawPath=item.parsedCmd.path;
  if(typeof rawPath!=="string"||rawPath.trim().length===0)return false;
  const cwd=typeof item.cwd==="string"&&item.cwd.length>0?item.cwd:null;
  const normalized=normalizeSkillLookupPath(rawPath);

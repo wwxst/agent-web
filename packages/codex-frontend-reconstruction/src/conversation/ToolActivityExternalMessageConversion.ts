@@ -7,7 +7,7 @@ interface Receipt {
  text?:string|null;library_file_id?:string;library_file_ids?:string[];workspace_id?:string|null;
 }
 interface ParsedReceipts {receipts:Receipt[];partial:boolean}
-interface AppArgs {channel:Channel;text?:string|null;library_file_ids:string[];destination?:{message_id?:string}|null;metadata?:{effect?:string|null}|null}
+interface AppArgs {channel:Channel;text?:string|null|undefined;library_file_ids:string[];destination?:{message_id?:string|undefined}|null|undefined;metadata?:{effect?:string|null|undefined}|null|undefined}
 const record=(v:unknown):v is Record<string,unknown>=>v!==null&&typeof v==="object"&&!Array.isArray(v);
 const nonempty=(v:unknown):v is string=>typeof v==="string"&&v.length>0;
 const effects=new Set(["slam","loud","gentle","invisible","confetti","fireworks","balloons","heart","lasers","celebration","sparkles","spotlight","echo"]);
