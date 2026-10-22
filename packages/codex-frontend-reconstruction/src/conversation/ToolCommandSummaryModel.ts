@@ -78,7 +78,7 @@ export function getToolCommandSummary(input: ToolCommandSummaryInput): string {
       return withElapsed("已停止检查当前日期和时间", input.elapsedLabel);
     }
     if (input.isInProgress) {
-      return withElapsed("正在检查当前日期和时间", input.elapsedLabel, "（耗时 ");
+      return withElapsed("正在检查当前日期和时间", input.elapsedLabel);
     }
     return withElapsed("已检查当前日期和时间", input.elapsedLabel);
   }
@@ -88,7 +88,7 @@ export function getToolCommandSummary(input: ToolCommandSummaryInput): string {
     if (input.isBackgroundTerminalRunning) {
       return rawCommand ? "后台终端已启动，运行命令 " + rawCommand : "后台终端已启动";
     }
-    return withElapsed("正在运行命令", input.elapsedLabel, "（耗时 ");
+    return withElapsed("正在运行命令", input.elapsedLabel);
   }
 
   if (genericCommand && input.isBackgroundTerminalFinished) {

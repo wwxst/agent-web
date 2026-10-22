@@ -50,7 +50,7 @@ export interface ExecCommandLeafProps {
   summaryIcon?:React.ReactNode | undefined; hideRawCommand:boolean; toolActivityTurnKey?:string | undefined;
 }
 export interface PatchLeafProps {
-  item:ToolItem; isTurnCancelled:boolean; cwd?:string|null|undefined;
+  item:ToolItem; isTurnCancelled:boolean; cwd?:string|null|undefined; grantRoot?:string|null|undefined;
   hostId:string; showDiffDetails:boolean; summaryIcon?:React.ReactNode;
   onOpenFile?: (request: ToolActivityOpenFileRequest) => void;
 }

@@ -56,7 +56,7 @@ test("GC recognizes only date commands with source-observed date/time flags", ()
 });
 
 test("WC date summaries include status and elapsed label", () => {
-  assert.equal(summary({ ...base, command: "date +%Y-%m-%d", elapsedLabel: "3 秒", isInProgress: true }), "正在检查当前日期和时间（耗时 3 秒");
+  assert.equal(summary({ ...base, command: "date +%Y-%m-%d", elapsedLabel: "3 秒", isInProgress: true }), "正在检查当前日期和时间，耗时 3 秒");
   assert.equal(summary({ ...base, command: "date +%Y-%m-%d", elapsedLabel: "3 秒" }), "已检查当前日期和时间，耗时 3 秒");
   assert.equal(summary({ ...base, command: "date +%Y-%m-%d", wasInterrupted: true }), "已停止检查当前日期和时间");
 });
