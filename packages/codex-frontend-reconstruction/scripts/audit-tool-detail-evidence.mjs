@@ -14,6 +14,27 @@ const signatures=[
  "case\`mcp-tool-call\`:{","case\`automatic-approval-review\`:{",
  "function NO(e){return e.parsedCmd.type===\`read\`",
  "function xC(e){","isBackgroundTerminalRunning:b","isBackgroundTerminalFinished:x",
+ "function CC(e){",
+ "function RC(e){",
+ "function EC(e){",
+ "function NC(e){",
+ "function SC(e){",
+ "function WC(e){",
+ "function BT(e){",
+ "function VT(e){",
+ "function IT(e){",
+ "exec-shell-body",
+ "toolSummaryForCmd.searchedForInPath",
+ "toolSummaryForCmd.exploredFilesInPath",
+ "toolSummaryForCmd.read",
+ "codex.patch.change.stoppedCreating",
+ "codex.patch.change.toggleDiff",
+ "codex.patch.change.previewTooLarge",
+ "codex.patch.change.autoReviewDeclined",
+ "Toggle diff for {fileName}",
+ "Diff too large to preview",
+ "Started background terminal with {command}",
+ "Command declined by auto-review"
  "function PT(e){","u=Gf(n)?\`auto-review-declined\`:n.success===!0?\`applied\`",
  "if(!m&&Object.keys(n.changes).length===0)return null",
  "showDiffDetails:!et",
@@ -31,4 +52,4 @@ const signatures=[
 ];
 const missing=signatures.filter(s=>!content.includes(s));
 if(missing.length){console.error("Missing "+missing.join("\n"));process.exit(1);}
-console.log("PASS "+signatures.length+"/"+signatures.length+" original fk/LO/SO/xC/PT signatures; SHA256 "+hash);
+console.log("PASS "+signatures.length+"/"+signatures.length+" original fk/LO/SO/xC/CC/RC/EC/NC/PT/IT signatures; SHA256 "+hash);
