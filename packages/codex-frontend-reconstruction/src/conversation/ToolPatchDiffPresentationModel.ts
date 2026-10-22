@@ -83,7 +83,7 @@ export function getToolPatchDiffPresentation(
 
   // The compiled helper falls back to raw +/- counting when a diff parser
   // reports no additions/deletions; the loop above performs that count.
-  if (added === 0 && removed === 0) return null;
+  if (added === 0 && removed === 0 && !lines.some((line) => line.startsWith("@@ "))) return null;
   return {
     added,
     removed,

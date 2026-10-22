@@ -54,5 +54,5 @@ test("patch diff stats omit empty and unchanged content", () => {
   assert.equal(present("--- a/file\n+++ b/file\n@@ -1 +1 @@\n same", {
     type: "update",
     unified_diff: "--- a/file\n+++ b/file\n@@ -1 +1 @@\n same",
-  }), null);
+  }), { added: 0, removed: 0, openLocationLine: 1 });
 });
