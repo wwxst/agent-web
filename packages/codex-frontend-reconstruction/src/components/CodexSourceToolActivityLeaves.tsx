@@ -133,8 +133,8 @@ function isDateTimeCheckCommand(value: unknown): boolean {
       ? (value.match(/"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|[^\s]+/g) ?? [])
           .map((part) => part.replace(/^["']|["']$/g, ""))
       : [];
-  if (tokens.length === 0) return false;
-  if (basename(tokens[0]).toLowerCase() !== "date") return false;
+  const executable = tokens[0];
+  if (executable == null || basename(executable).toLowerCase() !== "date") return false;
   return tokens.slice(1).every((arg) =>
     arg.startsWith("+") || arg === "-u" || arg === "--utc" ||
     arg === "--universal" || arg === "-R" || arg === "--rfc-email" ||
