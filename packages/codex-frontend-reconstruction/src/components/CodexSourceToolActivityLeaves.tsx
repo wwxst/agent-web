@@ -261,6 +261,69 @@ function patchChangeLabel(change: unknown, status: ReturnType<typeof getToolPatc
   return "已" + action;
 }
 
+function SourceUnifiedDiffPreview(props: { diff: string }) {
+  const lines = props.diff.split(/\r?\n/);
+  if (lines.at(-1) === "") lines.pop();
+  let inHunk = false;
+  let oldLine = 0;
+  let newLine = 0;
+
+  return <div className="codex-source-tool-patch-file__diff-lines" data-codex-source-diff-lines="">
+    {lines.map((line, index) => {
+      if (line.startsWith("diff --git ")) {
+        inHunk = false;
+        return null;
+      }
+      const hunk = line.match(/^@@ -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@/);
+      if (hunk) {
+        inHunk = true;
+        oldLine = Number(hunk[1]);
+        newLine = Number(hunk[2]);
+        return <div key={index} className="codex-source-tool-patch-file__diff-hunk diff-meta"
+          data-codex-source-diff-hunk="">{line}</div>;
+      }
+      if (!inHunk || line.startsWith("\\ No newline")) return null;
+
+      if (line.startsWith("+")) {
+        const lineNumber = newLine;
+        if (newLine > 0) newLine += 1;
+        return <div key={index} className="codex-source-tool-patch-file__diff-line diff-added"
+          data-codex-source-diff-line="" data-codex-source-diff-line-number={lineNumber}>
+          <span className="codex-source-tool-patch-file__line-number" aria-hidden="true"></span>
+          <span className="codex-source-tool-patch-file__line-number" aria-hidden="true">{lineNumber || ""}</span>
+          <span className="codex-source-tool-patch-file__line-marker" aria-hidden="true">+</span>
+          <span className="codex-source-tool-patch-file__line-content">{line.slice(1)}</span>
+        </div>;
+      }
+      if (line.startsWith("-")) {
+        const lineNumber = oldLine;
+        if (oldLine > 0) oldLine += 1;
+        return <div key={index} className="codex-source-tool-patch-file__diff-line diff-removed"
+          data-codex-source-diff-line="" data-codex-source-diff-line-number={lineNumber}>
+          <span className="codex-source-tool-patch-file__line-number" aria-hidden="true">{lineNumber || ""}</span>
+          <span className="codex-source-tool-patch-file__line-number" aria-hidden="true"></span>
+          <span className="codex-source-tool-patch-file__line-marker" aria-hidden="true">−</span>
+          <span className="codex-source-tool-patch-file__line-content">{line.slice(1)}</span>
+        </div>;
+      }
+
+      const oldNumber = oldLine;
+      const newNumber = newLine;
+      if (line.startsWith(" ")) {
+        if (oldLine > 0) oldLine += 1;
+        if (newLine > 0) newLine += 1;
+      }
+      return <div key={index} className="codex-source-tool-patch-file__diff-line"
+        data-codex-source-diff-line="" data-codex-source-diff-line-number={newNumber || oldNumber}>
+        <span className="codex-source-tool-patch-file__line-number" aria-hidden="true">{oldNumber || ""}</span>
+        <span className="codex-source-tool-patch-file__line-number" aria-hidden="true">{newNumber || ""}</span>
+        <span className="codex-source-tool-patch-file__line-marker" aria-hidden="true"></span>
+        <span className="codex-source-tool-patch-file__line-content">{line.startsWith(" ") ? line.slice(1) : line}</span>
+      </div>;
+    })}
+  </div>;
+}
+
 function PatchFileRow(props: {
   path: string;
   change: unknown;
@@ -324,13 +387,7 @@ function PatchFileRow(props: {
           : diff === ""
             ? <div className="codex-source-tool-patch-file__empty">{isDelete ? "文件内容已删除" : "没有差异"}</div>
             : unified
-              ? <pre>{lines.map((line, index) => {
-                  const className = line.startsWith("+++") || line.startsWith("---") || line.startsWith("@@ ")
-                    ? "diff-meta"
-                    : line.startsWith("+") ? "diff-added"
-                      : line.startsWith("-") ? "diff-removed" : "";
-                  return <span key={index} className={className}>{line}{"\n"}</span>;
-                })}</pre>
+              ? <SourceUnifiedDiffPreview diff={diff} />
               : <pre className={isAdd ? "diff-added-file" : isDelete ? "diff-deleted-file" : ""}>{diff}</pre>}
       </div>}
     </section>
