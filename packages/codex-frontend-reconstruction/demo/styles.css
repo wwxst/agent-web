@@ -256,8 +256,10 @@ button:not(:disabled):hover { transition: background .15s, color .15s; }
 .codex-source-tool-patch-file__status.status-pending,.codex-source-tool-patch-file__status.status-streaming { color:#c7b18a; }
 .codex-source-tool-patch-file__status.status-applied { color:#9bc8a2; }
 .codex-source-tool-patch-file__status.status-rejected,.codex-source-tool-patch-file__status.status-auto-review-declined { color:#dca6a6; }
-.codex-source-tool-patch-file__toggle { border:0; border-radius:5px; padding:3px 6px; background:transparent; color:#aaa; font-size:10.5px; white-space:nowrap; }
+.codex-source-tool-patch-file__toggle { display:inline-flex; align-items:center; justify-content:center; flex:0 0 22px; width:22px; height:22px; border:0; border-radius:5px; padding:0; background:transparent; color:#929292; font-size:16px; line-height:1; }
 .codex-source-tool-patch-file__toggle:hover { background:#363636; color:#eee; }
+.codex-source-tool-patch-file__chevron { display:inline-block; transform:rotate(0deg); transition:transform .12s ease; }
+.codex-source-tool-patch-file__chevron.is-expanded { transform:rotate(90deg); }
 .codex-source-tool-patch-file__diff { border-top:1px solid #373737; background:#202020; overflow:auto; max-height:360px; }
 .codex-source-tool-patch-file__diff pre { margin:0; padding:8px 10px; white-space:pre; overflow:visible; font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:11px; line-height:1.7; }
 .codex-source-tool-patch-file__diff pre span { display:block; min-height:1.7em; }
