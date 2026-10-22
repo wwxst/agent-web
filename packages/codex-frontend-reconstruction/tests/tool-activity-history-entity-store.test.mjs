@@ -31,16 +31,17 @@ test("subscriptions replay loaded values and no-op publications do not notify tw
  const entity={type:"commandExecution",status:"completed"};
  store.publishHistoryEntity(q,entity);
  assert.deepEqual(store.getHistoryEntitySnapshot(q),{loaded:true,value:entity});
- let calls=0;
- const stop=store.subscribeHistoryEntity(q,value=>{calls++;assert.equal(value,entity);});
- assert.equal(calls,1);
+ const values=[];
+ const stop=store.subscribeHistoryEntity(q,value=>values.push(value));
+ assert.deepEqual(values,[entity]);
  store.publishHistoryEntity(q,entity);
- assert.equal(calls,1);
- store.publishHistoryEntity(q,{type:"commandExecution",status:"failed"});
- assert.equal(calls,2);
+ assert.deepEqual(values,[entity]);
+ const failed={type:"commandExecution",status:"failed"};
+ store.publishHistoryEntity(q,failed);
+ assert.deepEqual(values,[entity,failed]);
  stop();
  store.publishHistoryEntity(q,{type:"commandExecution",status:"inProgress"});
- assert.equal(calls,2);
+ assert.deepEqual(values,[entity,failed]);
  store.dispose();
 });
 
