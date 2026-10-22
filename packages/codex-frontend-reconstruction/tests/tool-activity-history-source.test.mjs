@@ -11,7 +11,7 @@ function makeHost() {
    history.push(entry);
    return ()=>{entry.active=false;};
   },
-  subscribeAssistantMessageEntity(query,listener) {
+  subscribeAssistantMessagePresence(query,listener) {
    const entry={query,listener,active:true};
    assistant.push(entry);
    return ()=>{entry.active=false;};
@@ -118,7 +118,7 @@ test("subscription failures are exposed and partial subscriptions are cleaned up
   subscribeHistoryEntity(query,listener) {
    const entry={query,listener,active:true};history.push(entry);return ()=>{entry.active=false;};
   },
-  subscribeAssistantMessageEntity() {throw new Error("assistant query unavailable");},
+  subscribeAssistantMessagePresence() {throw new Error("assistant query unavailable");},
  };
  const source=createToolActivityHistorySource({
   item:{type:"assistant-message",searchItemId:"msg-1",content:"local",completed:false},

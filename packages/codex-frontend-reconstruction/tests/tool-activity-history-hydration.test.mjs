@@ -26,11 +26,11 @@ test("query plan uses HO identity and requests external assistant entity only fo
   const base = { hostId:"host", conversationId:"thread", historyEntityKey:"history" };
   assert.deepEqual(buildQueries({type:"exec",commandExecutionItemId:"exec-1"},base), {
     historyEntity:{hostId:"host",threadId:"thread",entityKey:"history",itemId:"exec-1"},
-    assistantMessageEntity:null,
+    assistantMessagePresenceQuery:null,
   });
   assert.deepEqual(buildQueries({type:"assistant-message",searchItemId:"msg-1"},base), {
     historyEntity:{hostId:"host",threadId:"thread",entityKey:"history",itemId:"msg-1"},
-    assistantMessageEntity:{hostId:"host",threadId:"thread",entityKey:"history",itemId:"msg-1"},
+    assistantMessagePresenceQuery:{hostId:"host",threadId:"thread",entityKey:"history",itemId:"msg-1"},
   });
   assert.equal(buildQueries({type:"exec",commandExecutionItemId:"",callId:"fallback"},base)
     ?.historyEntity.itemId,"");

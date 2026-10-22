@@ -15,6 +15,7 @@ import type { ToolItem } from "./ToolActivityDetailModel.js";
 export type ToolActivityHistoryUnsubscribe = () => void;
 export type ToolActivityHistoryEntityListener =
   (entity: ToolActivityHistoryEntity | null | undefined) => void;
+export type ToolActivityAssistantMessagePresenceListener = (presence: unknown) => void;
 
 /**
  * Host adapter for the two source query channels used by the original history
@@ -26,9 +27,9 @@ export interface ToolActivityHistorySubscriptionHost {
     query: ToolActivityHistoryEntityQuery,
     listener: ToolActivityHistoryEntityListener,
   ): ToolActivityHistoryUnsubscribe;
-  subscribeAssistantMessageEntity(
+  subscribeAssistantMessagePresence(
     query: ToolActivityHistoryEntityQuery,
-    listener: ToolActivityHistoryEntityListener,
+    listener: ToolActivityAssistantMessagePresenceListener,
   ): ToolActivityHistoryUnsubscribe;
 }
 
@@ -45,9 +46,9 @@ export interface ToolActivityHistorySourceSnapshot extends ToolActivityHistoryHy
   state: ToolActivityHistorySourceState;
   queryPlan: ToolActivityHistoryQueryPlan | null;
   historyEntity: ToolActivityHistoryEntity | null | undefined;
-  assistantMessageEntity: ToolActivityHistoryEntity | null | undefined;
+  assistantMessagePresence: unknown;
   historyLoaded: boolean;
-  assistantMessageLoaded: boolean;
+  assistantMessagePresenceLoaded: boolean;
   error: unknown | null;
 }
 
@@ -70,7 +71,7 @@ function planSignature(plan: ToolActivityHistoryQueryPlan | null): string {
   if (plan == null) return "";
   return [
     querySignature(plan.historyEntity),
-    plan.assistantMessageEntity == null ? "" : querySignature(plan.assistantMessageEntity),
+    plan.assistantMessagePresenceQuery == null ? "" : querySignature(plan.assistantMessagePresenceQuery),
   ].join("\u0001");
 }
 
@@ -95,9 +96,9 @@ export function createToolActivityHistorySource(
   let revision = 0;
   let closed = false;
   let historyEntity: ToolActivityHistoryEntity | null | undefined;
-  let assistantMessageEntity: ToolActivityHistoryEntity | null | undefined;
+  let assistantMessagePresence: unknown;
   let historyLoaded = false;
-  let assistantMessageLoaded = queryPlan?.assistantMessageEntity == null;
+  let assistantMessagePresenceLoaded = queryPlan?.assistantMessagePresenceQuery == null;
   let subscriptionError: unknown | null = null;
   let hasSubscriptionError = false;
   let activeUnsubscribers: ToolActivityHistoryUnsubscribe[] = [];
@@ -106,14 +107,14 @@ export function createToolActivityHistorySource(
   function currentState(): ToolActivityHistorySourceState {
     if (queryPlan == null) return "unavailable";
     if (hasSubscriptionError) return "error";
-    return historyLoaded && assistantMessageLoaded ? "ready" : "loading";
+    return historyLoaded && assistantMessagePresenceLoaded ? "ready" : "loading";
   }
 
   function makeSnapshot(): ToolActivityHistorySourceSnapshot {
     const hydrated = hydrateToolActivityItemFromHistory(
       input.item,
       historyEntity,
-      assistantMessageEntity,
+      assistantMessagePresence,
       input.hydrationContext ?? {},
       dependencies,
     );
@@ -124,7 +125,7 @@ export function createToolActivityHistorySource(
       historyEntity,
       assistantMessageEntity,
       historyLoaded,
-      assistantMessageLoaded,
+      assistantMessagePresenceLoaded,
       error: hasSubscriptionError ? subscriptionError : null,
       ...hydrated,
     });
@@ -187,11 +188,11 @@ export function createToolActivityHistorySource(
       attach(stopHistory, token, owned);
       if (closed || token !== generation) return;
 
-      if (plan.assistantMessageEntity != null) {
-        const stopAssistant = host.subscribeAssistantMessageEntity(plan.assistantMessageEntity, (entity) => {
+      if (plan.assistantMessagePresenceQuery != null) {
+        const stopAssistant = host.subscribeAssistantMessagePresence(plan.assistantMessagePresenceQuery, (presence) => {
           if (closed || token !== generation) return;
-          assistantMessageEntity = entity;
-          assistantMessageLoaded = true;
+          assistantMessagePresence = presence;
+          assistantMessagePresenceLoaded = true;
           publish();
         });
         attach(stopAssistant, token, owned);
@@ -229,9 +230,9 @@ export function createToolActivityHistorySource(
       queryPlan = nextPlan;
       activeSignature = nextSignature;
       historyEntity = undefined;
-      assistantMessageEntity = undefined;
+      assistantMessagePresence = undefined;
       historyLoaded = false;
-      assistantMessageLoaded = queryPlan?.assistantMessageEntity == null;
+      assistantMessagePresenceLoaded = queryPlan?.assistantMessagePresenceQuery == null;
       hasSubscriptionError = false;
       subscriptionError = null;
       publish();

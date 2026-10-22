@@ -90,3 +90,5 @@ export * from "./conversation/ToolActivityHistorySourceTransforms.js";
 export * from "./conversation/ToolActivityExternalMessageConversion.js";
 
 export * from "./conversation/ToolActivityHistorySource.js";
+
+export * from "./conversation/ToolActivityHistoryEntityStore.js";

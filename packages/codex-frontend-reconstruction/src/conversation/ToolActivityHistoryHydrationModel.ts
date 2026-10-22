@@ -25,7 +25,7 @@ export interface ToolActivityHistoryEntityQuery {
 }
 export interface ToolActivityHistoryQueryPlan {
   historyEntity: ToolActivityHistoryEntityQuery;
-  assistantMessageEntity: ToolActivityHistoryEntityQuery | null;
+  assistantMessagePresenceQuery: ToolActivityHistoryEntityQuery | null;
 }
 
 /** Mirrors LO's bypass rules before entering zO. */
@@ -42,7 +42,7 @@ export function buildToolActivityHistoryQueryPlan(
   };
   return {
     historyEntity: query,
-    assistantMessageEntity: item.type === "assistant-message" ? query : null,
+    assistantMessagePresenceQuery: item.type === "assistant-message" ? query : null,
   };
 }
 
@@ -119,7 +119,7 @@ function fallbackQuestionContent(item: ToolItem, entity: ToolActivityHistoryEnti
 export function hydrateToolActivityItemFromHistory(
   item: ToolItem,
   historyEntity: ToolActivityHistoryEntity | null | undefined,
-  assistantMessageEntity: ToolActivityHistoryEntity | null | undefined,
+  assistantMessagePresence: unknown,
   context: ToolActivityHistoryHydrationContext,
   dependencies: ToolActivityHistoryHydrationDependencies,
 ): ToolActivityHistoryHydrationResult {
@@ -127,7 +127,7 @@ export function hydrateToolActivityItemFromHistory(
 
   if (item.type === "assistant-message" && historyEntity?.type === "agentMessage") {
     const isStreaming = Boolean(context.isTurnInProgress) &&
-      !item.completed && !assistantMessageEntity;
+      !item.completed && !assistantMessagePresence;
     const selectedContent = fallbackQuestionContent(item, historyEntity);
     const { hidden, artifactScanContent: _artifactScanContent, ...contentFields } =
       dependencies.prepareAssistantContent({
