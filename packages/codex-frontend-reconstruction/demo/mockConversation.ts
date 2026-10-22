@@ -103,11 +103,11 @@ function reviewScenario(): ConversationRenderEntry[] {
       changes: {
         "src/conversation/ToolActivityHistorySource.ts": {
           type: "update",
-          unified_diff: "--- a/src/conversation/ToolActivityHistorySource.ts\\n+++ b/src/conversation/ToolActivityHistorySource.ts\\n@@ -1,2 +1,2 @@\\n-export const source = null;\\n+export const source = createToolActivityHistorySource();",
+          unified_diff: "--- a/src/conversation/ToolActivityHistorySource.ts\n+++ b/src/conversation/ToolActivityHistorySource.ts\n@@ -1,2 +1,2 @@\n-export const source = null;\n+export const source = createToolActivityHistorySource();",
         },
         "src/components/CodexSourceToolActivityLeaves.tsx": {
           type: "add",
-          content: "export function CodexSourcePatchLeaf() {\\n  return null;\\n}\\n",
+          content: "export function CodexSourcePatchLeaf() {\n  return null;\n}\n",
         },
       },
     })]),
