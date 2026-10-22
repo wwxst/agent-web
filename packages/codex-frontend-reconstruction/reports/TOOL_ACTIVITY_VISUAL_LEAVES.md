@@ -47,7 +47,7 @@ Integration uses the existing `CodexToolActivityLeafRenderer` and `ConnectedConv
 
 ## Audit and verification boundary
 
-`scripts/audit-tool-detail-evidence.mjs` checks both original bundle hashes, 55 activity-leaf signatures, and four `s0n/f0n` patch-preview signatures, including the 1 MiB limit and move-path handling. The 21 added visual-leaf signatures were independently checked against the provided bundle and passed 21/21. The command summary model now also ports the source `fh/uh` execution-status and visualization-path classifier. Skill-script-specific background labels remain follow-up work.
+`scripts/audit-tool-detail-evidence.mjs` checks all three original bundle hashes, 55 activity-leaf signatures, four `s0n/f0n` patch-preview signatures, and two visualization-command classifier signatures. The 21 added visual-leaf signatures were independently checked against the provided bundle and passed 21/21. The command summary model now also ports the source `fh/uh` execution-status and visualization-path classifier. Skill-script-specific background labels remain follow-up work.
 
 Source signature checks prove the target compiled branches are present; they do not prove pixel parity. The authored CSS in `demo/styles.css` is a local compatibility layer, not copied Codex CSS. The current browser preview is still a demo host, not a complete Electron app.
 
