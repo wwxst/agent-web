@@ -68,6 +68,9 @@ test("fk/SO source detail entry delegates real exec leaves without changing grou
   await group.locator("[data-codex-activity-group]").getByRole("button",{name:/2 项命令/}).click();
   const leaves=group.locator("[data-codex-tool-activity-item]");
   await expect(leaves).toHaveCount(2);
+  const connectedHistory = group.locator("[data-codex-tool-history-connected]");
+  await expect(connectedHistory).toHaveCount(2);
+  await expect(connectedHistory.first()).toHaveAttribute("data-codex-tool-history-state", "ready");
   await expect(leaves.first()).toHaveAttribute("data-codex-tool-leaf","exec");
   await expect(leaves.first()).toHaveAttribute("data-codex-tool-exec-kind","command");
   await expect(leaves.first()).toHaveAttribute("data-codex-tool-status","finished");

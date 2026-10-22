@@ -14,6 +14,9 @@ import { projectCompletedGroupHeaderParts } from "../src/conversation/AgentActiv
 import { aggregateAgentActivityUnits } from "../src/conversation/AgentActivityAggregate.js";
 import { classifyRawActivityItem } from "../src/conversation/AgentActivityRawClassifier.js";
 import type { ExecCommandLeafProps } from "../src/components/CodexToolActivityLeafRenderer.js";
+import { createToolActivityHistoryEntityStore } from "../src/conversation/ToolActivityHistoryEntityStore.js";
+import { createToolActivityHistorySource, type ConnectedToolActivityHistorySource } from "../src/conversation/ToolActivityHistorySource.js";
+import type { ToolItem } from "../src/conversation/ToolActivityDetailModel.js";
 
 /**
  * All private Codex host components are replaced explicitly in this DEMO adapter.
@@ -88,6 +91,37 @@ function DemoFileDiff({ oldFile: oldVersion, newFile: newVersion, overflow }: {
 }
 
 export function makeDemoRow(notify: (message: string) => void) {
+  const historyStore = createToolActivityHistoryEntityStore();
+  const historySources = new Map<string, ConnectedToolActivityHistorySource>();
+  function getHistorySource(item: ConversationMessageItem, isActive: boolean) {
+    // DEMO only: use the fixture's stable ID as the history item ID. A real host
+    // must pass the source item ID and canonical history key from its event store.
+    if (item.type !== "exec" || typeof item.id !== "string") return null;
+    const itemId = typeof item.commandExecutionItemId === "string"
+      ? item.commandExecutionItemId : item.id;
+    const registryKey = JSON.stringify(["demo-host", "demo-conversation", "demo-history", itemId]);
+    const cached = historySources.get(registryKey);
+    if (cached != null) return cached;
+    const queryContext = {
+      hostId: "demo-host", conversationId: "demo-conversation", historyEntityKey: "demo-history",
+    };
+    const query = {
+      hostId: "demo-host", threadId: "demo-conversation", entityKey: "demo-history", itemId,
+    };
+    const status = item.state === "Working" ? "inProgress" : "completed";
+    const output = typeof item.output === "string" ? item.output : undefined;
+    historyStore.publishHistoryEntity(query, {
+      type: "commandExecution", status,
+      ...(output == null ? {} : {aggregatedOutput: output, exitCode: status === "completed" ? 0 : undefined}),
+    });
+    const source = createToolActivityHistorySource({
+      item: {...item, commandExecutionItemId: itemId} as ToolItem,
+      queryContext,
+      hydrationContext: {isTurnInProgress: isActive},
+    }, historyStore);
+    historySources.set(registryKey, source);
+    return source;
+  }
   const host: ConnectedConversationRendererHost = {
     Markdown,
     // Explicit DEMO Wa/Rk adapters: Codex's private unit classifier and persisted
@@ -135,6 +169,7 @@ export function makeDemoRow(notify: (message: string) => void) {
     // Explicit DEMO host: only fk/SO dispatch is reconstructed. xC/PT leaf
     // visuals still use the earlier mock ActivityDetails, never real execution.
     toolActivity: {
+      getHistorySource,
       getContext: (_item, isActive) => ({
         isTurnInProgress: isActive,
         isWorkMode: false,
@@ -187,7 +222,7 @@ export function makeDemoRow(notify: (message: string) => void) {
     dependencies: demoPlanDependencies,
     renderers,
   });
-  return function DemoRow(props: React.ComponentProps<typeof RecoveredRow>) {
+  const DemoRow = function DemoRow(props: React.ComponentProps<typeof RecoveredRow>) {
     const blocks = getDemoBlocks(props.entry);
     const role = blocks[0]?.type === "user-message" ? "user" : blocks[0]?.type === "assistant-message" ? "assistant" : "activity";
     return <div className={`demo-row demo-row--${role}`} data-demo-role={role}>
@@ -197,4 +232,11 @@ export function makeDemoRow(notify: (message: string) => void) {
       <RecoveredRow {...props} />
     </div>;
   };
+  return Object.assign(DemoRow, {
+    dispose() {
+      for (const source of historySources.values()) source.dispose();
+      historySources.clear();
+      historyStore.dispose();
+    },
+  });
 }

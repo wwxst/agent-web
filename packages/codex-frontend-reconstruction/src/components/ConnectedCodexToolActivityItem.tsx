@@ -24,10 +24,13 @@ export function ConnectedCodexToolActivityItem(props: ConnectedCodexToolActivity
   const snapshot = React.useSyncExternalStore(source.subscribe, source.getSnapshot, source.getSnapshot);
   if (snapshot.item == null) return null;
   return (
+    <div data-codex-tool-history-connected="" data-codex-tool-history-state={snapshot.state}
+      data-codex-tool-history-revision={snapshot.revision} style={{ display: "contents" }}>
     <CodexToolActivityItem
       {...renderProps}
       item={snapshot.item}
       assistantCopyText={snapshot.assistantCopyText}
     />
+    </div>
   );
 }

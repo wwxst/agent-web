@@ -4,6 +4,8 @@ import type { AgentActivityUnit, AgentActivityCollapseOptions } from "../convers
 import { CodexAgentActivity } from "./CodexAgentActivity.js";
 import { CodexActivityGroupRow } from "./CodexActivityGroupRow.js";
 import { CodexToolActivityItem } from "./CodexToolActivityItem.js";
+import { ConnectedCodexToolActivityItem } from "./ConnectedCodexToolActivityItem.js";
+import type { ToolActivityHistorySource } from "../conversation/ToolActivityHistorySource.js";
 import type { ToolDetailContext, ToolProjection } from "../conversation/ToolActivityDetailModel.js";
 import {
   hydrateToolActivityItemFromHistory,
@@ -70,6 +72,9 @@ export interface ConnectedConversationRendererHost extends ConversationContentAd
     /** Host resolves the query plan against the actual history store. */
     getHistoryHydration?: (item: ConversationMessageItem, isActive: boolean) =>
       ToolActivityHistoryHydrationInput | null | undefined;
+    /** Stable per-item source registry; host owns source creation, updates and disposal. */
+    getHistorySource?: (item: ConversationMessageItem, isActive: boolean) =>
+      ToolActivityHistorySource | null | undefined;
     /** xC/PT visuals remain host components with source-shaped props. */
     getLeafContext?: (item: ConversationMessageItem, isActive: boolean) =>
       ToolActivityLeafContext | null | undefined;
@@ -128,14 +133,6 @@ export function createConnectedConversationMessageRenderers(host: ConnectedConve
       if (override != null) return override;
     }
 
-    const hydrationInput = detailHost?.getHistoryHydration?.(item, isActive) ?? null;
-    const hydration = hydrationInput == null ? null : hydrateToolActivityItemFromHistory(
-      item, hydrationInput.historyEntity, hydrationInput.assistantMessagePresence,
-      hydrationInput.context, hydrationInput.dependencies,
-    );
-    if (hydration?.item === null) return null;
-    const activeItem = (hydration?.item ?? item) as ConversationMessageItem;
-
     const renderProjectedActivity = (target: ConversationMessageItem): React.ReactNode => {
       const projection = projectConversationContent(target, host, "activity");
       if (projection.kind === "file-review") {
@@ -155,26 +152,52 @@ export function createConnectedConversationMessageRenderers(host: ConnectedConve
       return <host.ActivityDetails item={target} isActive={isActive} presentation={presentation} />;
     };
 
-    if (detailHost == null) return renderProjectedActivity(activeItem);
+    if (detailHost == null) return renderProjectedActivity(item);
+
+    const renderLeaf = (
+      leafItem: import("../conversation/ToolActivityDetailModel.js").ToolItem,
+      leafProjection: Exclude<ToolProjection, {kind:"hidden"}>,
+      assistantCopyText: string | null | undefined,
+    ): React.ReactNode => {
+      const conversationItem = leafItem as ConversationMessageItem;
+      const leafContext = detailHost.getLeafContext?.(conversationItem, isActive);
+      const custom = detailHost.renderLeaf?.(conversationItem, leafProjection, assistantCopyText,
+        {isActive, presentation});
+      if (custom !== undefined) return custom;
+      if (leafContext != null) {
+        const sourceLeaf = renderCodexToolActivityLeaf(leafItem, leafProjection,
+          detailHost.leafAdapters ?? {}, leafContext);
+        if (sourceLeaf !== undefined) return sourceLeaf;
+      }
+      return renderProjectedActivity(conversationItem);
+    };
+
+    // A source-backed row subscribes to Au/Vd-derived host data with
+    // useSyncExternalStore. The host registry must return a stable source for
+    // this item; the legacy resolved-value path remains available to old hosts.
+    const historySource = detailHost.getHistorySource?.(item, isActive) ?? null;
+    if (historySource != null) {
+      return <ConnectedCodexToolActivityItem source={historySource}
+        context={detailHost.getContext(item, isActive)}
+        standaloneActivityContentByItemId={detailHost.standaloneActivityContentByItemId}
+        wrapSearchableContent={detailHost.wrapSearchableContent}
+        renderLeaf={renderLeaf} />;
+    }
+
+    const hydrationInput = detailHost.getHistoryHydration?.(item, isActive) ?? null;
+    const hydration = hydrationInput == null ? null : hydrateToolActivityItemFromHistory(
+      item, hydrationInput.historyEntity, hydrationInput.assistantMessagePresence,
+      hydrationInput.context, hydrationInput.dependencies,
+    );
+    if (hydration?.item === null) return null;
+    const activeItem = (hydration?.item ?? item) as ConversationMessageItem;
+
     return <CodexToolActivityItem item={activeItem} context={detailHost.getContext(activeItem, isActive)}
       assistantCopyText={hydration?.assistantCopyText}
       standaloneActivityContentByItemId={detailHost.standaloneActivityContentByItemId}
       wrapSearchableContent={detailHost.wrapSearchableContent}
-      renderLeaf={(leafItem, leafProjection, assistantCopyText) => {
-        const conversationItem = leafItem as ConversationMessageItem;
-        const leafContext = detailHost.getLeafContext?.(conversationItem, isActive);
-        const custom = detailHost.renderLeaf?.(conversationItem, leafProjection, assistantCopyText,
-          {isActive, presentation});
-        if (custom !== undefined) return custom;
-        if (leafContext != null) {
-          const sourceLeaf = renderCodexToolActivityLeaf(leafItem, leafProjection,
-            detailHost.leafAdapters ?? {}, leafContext);
-          if (sourceLeaf !== undefined) return sourceLeaf;
-        }
-        return renderProjectedActivity(conversationItem);
-      }} />;
+      renderLeaf={renderLeaf} />;
   }
-
   return {
     UserMessage(props) {
       const content = projectConversationContent(props.item, host, "message");

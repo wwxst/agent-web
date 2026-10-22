@@ -113,6 +113,7 @@ export function App() {
     toastTimerRef.current = setTimeout(() => setToast(null), 3600);
   }, []);
   const DemoRow = React.useMemo(() => makeDemoRow(notify), [notify]);
+  React.useEffect(() => () => DemoRow.dispose(), [DemoRow]);
   const onApiChange = React.useCallback((api: VirtualizedTurnListApi | null) => { virtualizerApiRef.current = api; }, []);
   const scrollToBottom = React.useCallback(() => {
     shouldFollowRef.current = true;
