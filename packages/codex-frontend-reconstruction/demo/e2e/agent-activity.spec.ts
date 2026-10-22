@@ -88,7 +88,9 @@ test("source-shaped PT/IT leaf shows patch status and expands unified diff witho
   page.on("pageerror", error => errors.push(error.message));
   await page.goto("/");
   await page.getByRole("button", {name:/工具调用与审批交互/}).click();
-  const patchActivity = page.locator("[data-recovered-agent-activity]").filter({hasText:"演示文件修改"});
+  const patchEntry = page.locator('[data-demo-turn-id="review-patch"]');
+  await expect(patchEntry).toHaveCount(1);
+  const patchActivity = patchEntry.locator("[data-recovered-agent-activity]");
   await expect(patchActivity).toHaveCount(1);
   await patchActivity.getByRole("button", {name:/项工具活动/}).click();
   const patch = patchActivity.locator("[data-codex-source-patch]");
@@ -109,7 +111,9 @@ test("source-shaped RC/EC/NC leaves route read search and file-list summaries", 
   page.on("pageerror", error => errors.push(error.message));
   await page.goto("/");
   await page.getByRole("button", {name:/工具调用与审批交互/}).click();
-  const activity = page.locator("[data-recovered-agent-activity]").filter({hasText:"读取文件"});
+  const leafEntry = page.locator('[data-demo-turn-id="review-exploration"]');
+  await expect(leafEntry).toHaveCount(1);
+  const activity = leafEntry.locator("[data-recovered-agent-activity]");
   await expect(activity).toHaveCount(1);
   await activity.getByRole("button", {name:/项工具活动/}).click();
   const group = activity.locator("[data-codex-activity-group]");
