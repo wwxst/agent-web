@@ -85,3 +85,13 @@
 - Added `ConnectedCodexToolActivityItem.tsx`: React `useSyncExternalStore` adapter that forwards hydrated item/copy text to the existing source-shaped activity renderer.
 - CI at `5ecc8c1e4a8f7d612c3f72ace47513c49bd2c6a0`: 268/268 core tests, 4/4 demo model tests, React/TypeScript build and 9/9 Chromium tests passed. Raw `frontend.zip` audit also passed locally: main bundle 34/34 signatures; helper bundles plus skill parser 30/30 signatures with pinned SHA-256 hashes.
 - Remaining boundary: the generic subscription host still needs binding to the actual private Codex query runtime; original visual leaves, Electron IPC, Agent backend integration and version-matched pixel/interaction parity are not complete.
+
+## Current checkpoint — connected history source mounted in the live transcript (2026-10-22)
+
+- Verified branch HEAD at this documentation update: `3baa88e3870647b93ed3874786b31be07ab57f7c`; the preceding tool-detail evidence commit `396685ee2cc1ce617a664d2d899e8c2ad4cde04e` is part of the earlier history, not the current HEAD.
+- `ConnectedConversationMessageRenderers` mounts `ConnectedCodexToolActivityItem` through a stable host-supplied history-source registry. The legacy pre-hydrated path remains available.
+- The browser demo exercises entity store → history source → `useSyncExternalStore` → tool leaf using explicitly synthetic fixture entities; the source registry is disposed with its row host.
+- Latest confirmed GitHub Actions run: [run 39721848764](https://github.com/wwxst/agent-web/actions/runs/39721848764), successful. Verified checks inherited by the current documentation-only HEAD: 275/275 core tests, 4/4 demo model tests, strict React/TypeScript build, and 9/9 Chromium tests.
+- Source audit records: `sites-end-resource` 34/34 signatures; helper bundles and skill-path parser 30/30 signatures with pinned hashes. These are signature checks, not visual-parity measurements.
+- **Next implementation gate:** restore/verify the original `CC/RC/EC/NC/PT/IT` leaves and complete FileDiff/MCP/approval visuals from the exact user-provided Codex bundle; then bind the host entity store to a confirmed Agent/Electron event contract and run version-matched screenshot/interaction tests.
+- **Known boundary:** this current workspace's accessible Library does not contain the referenced Codex `frontend.zip` or `sites-end-resource-fa77a923096d.js`; the original visual leaf work must not be guessed. No complete Electron app, real Agent event stream, real command execution, or pixel-level parity is claimed.
