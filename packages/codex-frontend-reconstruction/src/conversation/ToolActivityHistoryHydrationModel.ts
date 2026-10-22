@@ -67,6 +67,13 @@ export interface ToolActivityHistoryHydrationResult {
   assistantCopyText: string | null | undefined;
   hiddenByAssistantContent: boolean;
 }
+
+export interface ToolActivityHistoryHydrationInput {
+  historyEntity: ToolActivityHistoryEntity | null | undefined;
+  assistantMessageEntity?: ToolActivityHistoryEntity | null | undefined;
+  context: ToolActivityHistoryHydrationContext;
+  dependencies: ToolActivityHistoryHydrationDependencies;
+}
 function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === "object" && !Array.isArray(value);
 }

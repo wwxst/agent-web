@@ -15,7 +15,7 @@ export interface ToolDetailContext {
 export type PatchStatus="auto-review-declined"|"applied"|"rejected"|"pending"|"streaming"|"stopped";
 export type ToolProjection=
  |{kind:"hidden";reason:"work-mode"|"running-exploration"|"empty-patch"|"ignored-event"}
- |{kind:"exec";leaf:"read"|"search"|"list_files"|"command";isInProgress:boolean;
+ |{kind:"exec";leaf:"read"|"search"|"list_files"|"command";summary:Record<string,unknown>;isInProgress:boolean;
   isBackgroundTerminalRunning:boolean;isBackgroundTerminalFinished:boolean;
   wasInterrupted:boolean;wasDeclinedByAutoReview:boolean;hideRawCommand:boolean}
  |{kind:"patch";status:PatchStatus;showDiffDetails:boolean;showVisualization:boolean;
@@ -58,8 +58,9 @@ export function projectToolActivityDetail(item:ToolItem,ctx:ToolDetailContext={}
    const declined=ctx.isAutoReviewDeclined?.(item)===true;
    const effective=declined?"unknown":rawType;
    const leaf=effective==="read"||effective==="search"||effective==="list_files"?effective:"command";
+   const normalizedSummary=declined?{type:"unknown",cmd:summary.cmd,isFinished:true}:summary;
    const running=summary.isFinished!==true;
-   return {kind:"exec",leaf,isInProgress:running,wasInterrupted:item.executionStatus==="interrupted",
+   return {kind:"exec",leaf,summary:normalizedSummary,isInProgress:running,wasInterrupted:item.executionStatus==="interrupted",
      wasDeclinedByAutoReview:declined,hideRawCommand,
      isBackgroundTerminalRunning:running&&ctx.isTurnInProgress!==true,
      isBackgroundTerminalFinished:!hideRawCommand&&!running&&
