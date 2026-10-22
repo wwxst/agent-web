@@ -238,7 +238,7 @@ export function makeDemoRow(notify: (message: string) => void) {
   const DemoRow = function DemoRow(props: React.ComponentProps<typeof RecoveredRow>) {
     const blocks = getDemoBlocks(props.entry);
     const role = blocks[0]?.type === "user-message" ? "user" : blocks[0]?.type === "assistant-message" ? "assistant" : "activity";
-    return <div className={`demo-row demo-row--${role}`} data-demo-role={role}>
+    return <div className={`demo-row demo-row--${role}`} data-demo-role={role} data-demo-turn-id={props.entry.turnId}>
       {typeof props.entry.timestampSeparatorAtMs === "number" && <div className="demo-time-marker">
         {new Date(props.entry.timestampSeparatorAtMs).toLocaleString("zh-CN")}
       </div>}
