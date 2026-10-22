@@ -76,7 +76,7 @@ See `reports/CONVERSATION_MESSAGE_RENDERING.md` for source evidence and exact bo
 - `src/components/InlineFileReview.tsx` — compact/too-large review UI with host-supplied full Diff renderer and explicit file-action callbacks.
 - `src/components/ActivityStatusViews.tsx` — activity status and approval review disclosure/notice, with localization and private detail formatter injected.
 
-See `reports/RICH_MESSAGE_PRIMITIVES.md` for source evidence and limitations. These components do not yet provide a complete Codex Markdown or FileDiff engine.
+See `reports/RICH_MESSAGE_PRIMITIVES.md` for source evidence and limitations. The Markdown renderer remains host-owned; inline patch previews use the real `@pierre/diffs` `PatchDiff`/`Virtualizer` engine, while the original multi-item `CodeView` composition and Codex-specific soft themes remain follow-up work.
 
 ## Continuation: connected message presentation adapter
 
@@ -125,7 +125,7 @@ See [AgentActivity group-header recovery](reports/AGENT_ACTIVITY_GROUP_HEADER_SO
 ## Source-derived command summaries and patch previews (2026-10-22)
 
 - `src/conversation/ToolCommandSummaryModel.ts` restores the compiled `WC/JC/GC` generic command, background terminal, date-check and elapsed-time branches. The source `fh/uh` execution-status and visualization-path classifier is now included; skill-script-specific background labels remain an explicit gap.
-- `src/conversation/ToolPatchDiffPresentationModel.ts` ports the compiled `s0n/f0n` preview builder plus patch-stat fallback: add/delete contents become unified diffs, update hunks receive missing headers, and previews over 1 MiB are suppressed. The leaf now renders hunk line numbers and hides the Git/file header lines, while the original virtualized `@pierre/diffs` renderer remains a follow-up.
+- `src/conversation/ToolPatchDiffPresentationModel.ts` ports the compiled `s0n/f0n` preview builder plus patch-stat fallback: add/delete contents become unified diffs, update hunks receive missing headers, and previews over 1 MiB are suppressed. `CodexSourcePatchDiffPreview.tsx` sends those unified patches to the real `@pierre/diffs` `PatchDiff` component inside `Virtualizer`, with wrapped unified lines, bar indicators, word-level diffing and line gutters.
 - File-open callbacks retain the original change path and prefer `grantRoot` over `cwd`, matching the compiled `IT` call shape.
 
 See [tool activity source recovery](reports/TOOL_ACTIVITY_VISUAL_LEAVES.md) for evidence and remaining gaps.

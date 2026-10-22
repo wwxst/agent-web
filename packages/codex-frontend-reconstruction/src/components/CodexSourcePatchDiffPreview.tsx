@@ -26,13 +26,13 @@ export function CodexSourcePatchDiffPreview(props: {
         className="codex-source-tool-patch-file__diff-viewport"
         contentClassName="codex-source-tool-patch-file__diff-content"
       >
-      {props.header}
-      <PatchDiff
-        patch={props.patch}
-        options={PATCH_DIFF_OPTIONS}
-        className="codex-source-tool-patch-file__diff-engine"
-        style={{ fontSize: "11px", lineHeight: 1.7 }}
-      />
+        {props.header}
+        <PatchDiff
+          patch={props.patch}
+          options={PATCH_DIFF_OPTIONS}
+          className="codex-source-tool-patch-file__diff-engine"
+          style={{ fontSize: "11px", lineHeight: 1.7 }}
+        />
       </Virtualizer>
     </div>
   );
