@@ -34,7 +34,7 @@ const signatures=[
  "Toggle diff for {fileName}",
  "Diff too large to preview",
  "Started background terminal with {command}",
- "Command declined by auto-review"
+ "Command declined by auto-review",
  "function PT(e){","u=Gf(n)?\`auto-review-declined\`:n.success===!0?\`applied\`",
  "if(!m&&Object.keys(n.changes).length===0)return null",
  "showDiffDetails:!et",
