@@ -66,7 +66,7 @@ test('long history adds unique keys and can be projected without duplicate rows'
   appendDemoEntries(s, makeLongHistory());
   const snapshot=s.getSnapshot();
   const output=buildConversationRenderEntries({...snapshot.projection,baseEntries:[...snapshot.entries]},deps);
-  assert.equal(output.entries.length,53); // synthetic PT/IT patch plus grouped RC/EC/NC leaf fixtures
+  assert.equal(output.entries.length,55); // adds two synthetic skill-script background label fixtures alongside PT/IT and RC/EC/NC leaves
   const keys=output.entries.map(e=>e.turnKey);
   assert.equal(new Set(keys).size,keys.length);
   assert.equal(keys.at(-1),'history-content:turn:history-45');
