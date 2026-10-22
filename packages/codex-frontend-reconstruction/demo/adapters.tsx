@@ -13,6 +13,7 @@ import { getDemoBlocks } from "./mockConversation.js";
 import { projectCompletedGroupHeaderParts } from "../src/conversation/AgentActivityGroupPresentation.js";
 import { aggregateAgentActivityUnits } from "../src/conversation/AgentActivityAggregate.js";
 import { classifyRawActivityItem } from "../src/conversation/AgentActivityRawClassifier.js";
+import type { ExecCommandLeafProps } from "../src/components/CodexToolActivityLeafRenderer.js";
 
 /**
  * All private Codex host components are replaced explicitly in this DEMO adapter.
@@ -52,6 +53,16 @@ function ActivityDetails({ item }: { item: ConversationMessageItem; isActive: bo
       {command != null && <pre><span className="demo-command-prefix">$ </span>{command}</pre>}
       {output != null && <pre>{output}</pre>}
     </div>}
+  </div>;
+}
+
+function DemoCommandLeaf(props: ExecCommandLeafProps) {
+  return <div data-demo-xc-command="" data-demo-summary-kind={String(props.summary.type)}
+    data-demo-in-progress={String(props.isInProgress)}
+    data-demo-background-running={String(props.isBackgroundTerminalRunning)}
+    data-demo-background-finished={String(props.isBackgroundTerminalFinished)}>
+    <ActivityDetails item={props.item as ConversationMessageItem}
+      isActive={props.isInProgress} presentation="ordinary" />
   </div>;
 }
 
@@ -129,6 +140,13 @@ export function makeDemoRow(notify: (message: string) => void) {
         isWorkMode: false,
         renderToolActivityInWorkMode: true,
       }),
+      getLeafContext: (_item, isActive) => ({
+        conversationId: "demo-conversation", hostId: "demo-host", cwd: "/projects/agent-web",
+        isReadOnly: false, isTurnInProgress: isActive, isTurnCancelled: false,
+        threadDetailLevel: "STEPS_PROSE", summaryTone: "default", showSummaryIcon: true,
+        hideRawCommand: false,
+      }),
+      leafAdapters: { Command: DemoCommandLeaf },
     },
     ActivityDetails,
     ActivityResult: ({ result }) => <pre className="demo-activity-detail">{typeof result === "string" ? result : "模拟活动结果"}</pre>,

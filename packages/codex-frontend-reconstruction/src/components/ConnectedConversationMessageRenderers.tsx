@@ -4,7 +4,16 @@ import type { AgentActivityUnit, AgentActivityCollapseOptions } from "../convers
 import { CodexAgentActivity } from "./CodexAgentActivity.js";
 import { CodexActivityGroupRow } from "./CodexActivityGroupRow.js";
 import { CodexToolActivityItem } from "./CodexToolActivityItem.js";
-import type { ToolDetailContext } from "../conversation/ToolActivityDetailModel.js";
+import type { ToolDetailContext, ToolProjection } from "../conversation/ToolActivityDetailModel.js";
+import {
+  hydrateToolActivityItemFromHistory,
+  type ToolActivityHistoryHydrationInput,
+} from "../conversation/ToolActivityHistoryHydrationModel.js";
+import {
+  renderCodexToolActivityLeaf,
+  type ToolActivityLeafAdapters,
+  type ToolActivityLeafContext,
+} from "./CodexToolActivityLeafRenderer.js";
 import { projectActivityGroupHeader, shouldDemoteCompletedSingleGroup,
   type ActivityHeaderMessage, type ActivityGroupHeaderState,
 } from "../conversation/AgentActivityGroupPresentation.js";
@@ -58,8 +67,18 @@ export interface ConnectedConversationRendererHost extends ConversationContentAd
    * Host supplies private NO/Gf/cc predicates and real xC/PT/Fh leaf renderers. */
   toolActivity?: {
     getContext(item: ConversationMessageItem, isActive: boolean): ToolDetailContext;
+    /** Host resolves the query plan against the actual history store. */
+    getHistoryHydration?: (item: ConversationMessageItem, isActive: boolean) =>
+      ToolActivityHistoryHydrationInput | null | undefined;
+    /** xC/PT visuals remain host components with source-shaped props. */
+    getLeafContext?: (item: ConversationMessageItem, isActive: boolean) =>
+      ToolActivityLeafContext | null | undefined;
+    leafAdapters?: ToolActivityLeafAdapters;
     standaloneActivityContentByItemId?: ReadonlyMap<string, React.ReactNode>;
     wrapSearchableContent?: (item: ConversationMessageItem, content: React.ReactNode) => React.ReactNode;
+    renderLeaf?: (item: ConversationMessageItem, projection: Exclude<ToolProjection, {kind:"hidden"}>,
+      assistantCopyText: string | null | undefined,
+      context: {isActive:boolean;presentation:"ordinary"|"subagent"|"activity-units"}) => React.ReactNode | undefined;
   };
   ActivityDetails: React.ComponentType<{ item: ConversationMessageItem; isActive: boolean; presentation: "ordinary" | "subagent" | "activity-units" }>;
   ActivityResult: ConversationMessageRenderers["ActivityResult"];
@@ -101,31 +120,59 @@ export function createConnectedConversationMessageRenderers(host: ConnectedConve
     isActive: boolean;
     presentation: "ordinary" | "subagent" | "activity-units";
   }) {
-    const projection = projectConversationContent(item, host, "activity");
-    if (projection.kind === "file-review") {
-      const review: ConversationFileReviewData = restrictConversationReviewPermissions(projection.review);
-      return <InlineFileReview oldFile={review.oldFile} newFile={review.newFile}
-        compact={review.compact} canEdit={review.canEdit} canAccept={review.canAccept}
-        onAction={(action) => host.onFileReviewAction(item, action)} Diff={host.FileDiff} />;
+    const detailHost = host.toolActivity;
+    // fk resolves standalone subagent/image content before history lookup.
+    if ((item.type === "subagent-activity" || item.type === "generated-image") &&
+        typeof item.id === "string") {
+      const override = detailHost?.standaloneActivityContentByItemId?.get(item.id);
+      if (override != null) return override;
     }
-    if (projection.kind === "approval-reviews") {
-      return <AutomaticApprovalReviewList reviews={projection.approval.reviews}
-        isDeclined={projection.approval.isDeclined} isExpandable={projection.approval.isExpandable}
-        translator={host.translator}
-        getReviewSummary={host.getApprovalReviewSummary}
-        getReviewDetails={host.getApprovalReviewDetails} />;
-    }
-    if (projection.kind === "markdown") {
-      return <host.Markdown text={projection.text} role="activity" />;
-    }
-    if (host.toolActivity != null) {
-      const detailHost = host.toolActivity;
-      return <CodexToolActivityItem item={item} context={detailHost.getContext(item, isActive)}
-        standaloneActivityContentByItemId={detailHost.standaloneActivityContentByItemId}
-        wrapSearchableContent={detailHost.wrapSearchableContent}
-        renderLeaf={() => <host.ActivityDetails item={item} isActive={isActive} presentation={presentation} />} />;
-    }
-    return <host.ActivityDetails item={item} isActive={isActive} presentation={presentation} />;
+
+    const hydrationInput = detailHost?.getHistoryHydration?.(item, isActive) ?? null;
+    const hydration = hydrationInput == null ? null : hydrateToolActivityItemFromHistory(
+      item, hydrationInput.historyEntity, hydrationInput.assistantMessageEntity,
+      hydrationInput.context, hydrationInput.dependencies,
+    );
+    if (hydration?.item === null) return null;
+    const activeItem = hydration?.item ?? item;
+
+    const renderProjectedActivity = (target: ConversationMessageItem): React.ReactNode => {
+      const projection = projectConversationContent(target, host, "activity");
+      if (projection.kind === "file-review") {
+        const review: ConversationFileReviewData = restrictConversationReviewPermissions(projection.review);
+        return <InlineFileReview oldFile={review.oldFile} newFile={review.newFile}
+          compact={review.compact} canEdit={review.canEdit} canAccept={review.canAccept}
+          onAction={(action) => host.onFileReviewAction(target, action)} Diff={host.FileDiff} />;
+      }
+      if (projection.kind === "approval-reviews") {
+        return <AutomaticApprovalReviewList reviews={projection.approval.reviews}
+          isDeclined={projection.approval.isDeclined} isExpandable={projection.approval.isExpandable}
+          translator={host.translator}
+          getReviewSummary={host.getApprovalReviewSummary}
+          getReviewDetails={host.getApprovalReviewDetails} />;
+      }
+      if (projection.kind === "markdown") return <host.Markdown text={projection.text} role="activity" />;
+      return <host.ActivityDetails item={target} isActive={isActive} presentation={presentation} />;
+    };
+
+    if (detailHost == null) return renderProjectedActivity(activeItem);
+    return <CodexToolActivityItem item={activeItem} context={detailHost.getContext(activeItem, isActive)}
+      assistantCopyText={hydration?.assistantCopyText}
+      standaloneActivityContentByItemId={detailHost.standaloneActivityContentByItemId}
+      wrapSearchableContent={detailHost.wrapSearchableContent}
+      renderLeaf={(leafItem, leafProjection, assistantCopyText) => {
+        const conversationItem = leafItem as ConversationMessageItem;
+        const leafContext = detailHost.getLeafContext?.(conversationItem, isActive);
+        const custom = detailHost.renderLeaf?.(conversationItem, leafProjection, assistantCopyText,
+          {isActive, presentation});
+        if (custom !== undefined) return custom;
+        if (leafContext != null) {
+          const sourceLeaf = renderCodexToolActivityLeaf(leafItem, leafProjection,
+            detailHost.leafAdapters ?? {}, leafContext);
+          if (sourceLeaf !== undefined) return sourceLeaf;
+        }
+        return renderProjectedActivity(conversationItem);
+      }} />;
   }
 
   return {

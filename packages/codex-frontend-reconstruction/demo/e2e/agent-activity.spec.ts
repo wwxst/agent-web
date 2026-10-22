@@ -71,5 +71,7 @@ test("fk/SO source detail entry delegates real exec leaves without changing grou
   await expect(leaves.first()).toHaveAttribute("data-codex-tool-leaf","exec");
   await expect(leaves.first()).toHaveAttribute("data-codex-tool-exec-kind","command");
   await expect(leaves.first()).toHaveAttribute("data-codex-tool-status","finished");
+  await expect(leaves.first().locator("[data-demo-xc-command]")).toHaveAttribute("data-demo-summary-kind","unknown");
+  await expect(leaves.first().locator("[data-demo-xc-command]")).toHaveAttribute("data-demo-in-progress","false");
   expect(errors).toEqual([]);
 });
