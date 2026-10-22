@@ -53,7 +53,7 @@ Source signature checks prove the target compiled branches are present; they do 
 
 Remaining work:
 - keep the source diff synthesis and `@pierre/diffs` rendering in the CI suite; verify real browser output, line gutters, wrapped long lines and large-patch scrolling;
-- retain browser coverage for the newly restored skill-script background start/finish labels and extend the fixtures only where source predicates justify them;
+- retain browser coverage for the newly restored skill-script background start/finish labels, preserving `processId` in the synthetic commandExecution history entity because the original background-finished predicate depends on it; keep the completed single-item group demotion from `Ye` intact;
 - move from the single-patch `PatchDiff` adapter toward the original multi-item `CodeView` composition, including the registered Codex soft themes and exact hunk-expansion behavior;
 - bind file opening, approval requests and tool updates to a confirmed Agent/Electron event contract;
 - compare the reconstructed leaf screenshots and interactions against the same Codex build and viewport.

@@ -118,6 +118,7 @@ export function makeDemoRow(notify: (message: string) => void) {
     const output = typeof item.output === "string" ? item.output : undefined;
     historyStore.publishHistoryEntity(query, {
       type: "commandExecution", status,
+      ...(item.processId == null ? {} : {processId: item.processId}),
       ...(output == null ? {} : {aggregatedOutput: output, exitCode: status === "completed" ? 0 : undefined}),
     });
     const source = createToolActivityHistorySource({

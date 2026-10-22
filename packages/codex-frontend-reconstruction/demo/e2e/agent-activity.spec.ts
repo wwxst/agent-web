@@ -106,9 +106,9 @@ test("WC/ZC skill-script summaries show the source-specific background labels", 
   const finishedActivity = finishedEntry.locator("[data-recovered-agent-activity]");
   await expect(finishedEntry).toHaveCount(1);
   await finishedActivity.getByRole("button", {name:/项工具活动/}).click();
-  const finishedGroup = finishedActivity.locator("[data-codex-activity-group]");
-  await expect(finishedGroup).toBeVisible();
-  await finishedGroup.getByRole("button", {name:/项命令/}).click();
+  // Completed single-item groups are demoted to standalone rows by Ye;
+  // the command disclosure is directly under the outer AgentActivity section.
+  await expect(finishedActivity.locator("[data-codex-activity-group]")).toHaveCount(0);
   await expect(finishedActivity.locator("[data-codex-source-command-toggle]"))
     .toContainText("后台终端已完成运行来自 Repo Audit 技能的 check.py");
 });
