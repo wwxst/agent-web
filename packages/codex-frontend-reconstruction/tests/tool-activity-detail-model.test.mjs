@@ -38,6 +38,7 @@ test("xC declined review forces generic command leaf",()=>{
  const a=project(exec("read",true),{isAutoReviewDeclined:()=>true});
  assert.equal(a.wasDeclinedByAutoReview,true);
  assert.equal(a.leaf,"command");
+ assert.deepEqual(a.summary,{type:"unknown",cmd:"echo hi",isFinished:true});
 });
 test("PT status priority",()=>{
  const row={type:"patch",changes:{a:{}}};
@@ -70,3 +71,4 @@ test("SO ignores placeholder kinds and leaves extensions alone",()=>{
  assert.equal(project({type:"custom"}).kind,"fallback");
  assert.equal(project({type:"exec"}).kind,"fallback");
 });
+test("xC passes original parsed summary when the command is not declined",()=>{ const p=project(exec("read",true)); assert.equal(p.kind,"exec"); assert.deepEqual(p.summary,{type:"read",isFinished:true,cmd:"echo hi"}); });

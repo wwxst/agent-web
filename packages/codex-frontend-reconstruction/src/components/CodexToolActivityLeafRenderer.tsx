@@ -14,7 +14,7 @@ export interface ToolActivityLeafContext {
   threadDetailLevel?: string | undefined;
   summaryTone?: string | undefined;
   showSummaryIcon: boolean;
-  summaryIcon?: React.ReactNode;
+  summaryIcon?: React.ReactNode | undefined;
   hideRawCommand: boolean;
   toolActivityTurnKey?: string | undefined;
 }
@@ -38,7 +38,7 @@ export interface ExecCommandLeafProps {
   isBackgroundTerminalRunning:boolean; isBackgroundTerminalFinished:boolean;
   wasInterrupted:boolean; wasDeclinedByAutoReview:boolean;
   summaryTone?:string | undefined; showSummaryIcon:boolean;
-  summaryIcon?:React.ReactNode; hideRawCommand:boolean; toolActivityTurnKey?:string | undefined;
+  summaryIcon?:React.ReactNode | undefined; hideRawCommand:boolean; toolActivityTurnKey?:string | undefined;
 }
 export interface PatchLeafProps {
   item:ToolItem; isTurnCancelled:boolean; cwd?:string|null|undefined;
@@ -58,19 +58,27 @@ export function renderCodexToolActivityLeaf(
 ):React.ReactNode|undefined {
   if(projection.kind==="exec"){
     switch(projection.leaf){
-      case "read": return adapters.Read==null?undefined:
-        <adapters.Read summary={projection.summary} cwd={item.cwd as string|null|undefined}
-          hostId={context.hostId} threadDetailLevel={context.threadDetailLevel}
+      case "read": {
+        const Read = adapters.Read;
+        return Read == null ? undefined : <Read summary={projection.summary}
+          cwd={item.cwd as string|null|undefined} hostId={context.hostId}
+          threadDetailLevel={context.threadDetailLevel}
           automaticApprovalReviews={item.automaticApprovalReviews} summaryIcon={context.summaryIcon}/>;
-      case "search": return adapters.Search==null?undefined:
-        <adapters.Search summary={projection.summary} automaticApprovalReviews={item.automaticApprovalReviews}
-          summaryIcon={context.summaryIcon}/>;
-      case "list_files": return adapters.ListFiles==null?undefined:
-        <adapters.ListFiles summary={projection.summary} automaticApprovalReviews={item.automaticApprovalReviews}
-          summaryIcon={context.summaryIcon}/>;
-      case "command": return adapters.Command==null?undefined:
-        <adapters.Command conversationId={context.conversationId} hostId={context.hostId}
-          isReadOnly={context.isReadOnly} item={item} summary={projection.summary}
+      }
+      case "search": {
+        const Search = adapters.Search;
+        return Search == null ? undefined : <Search summary={projection.summary}
+          automaticApprovalReviews={item.automaticApprovalReviews} summaryIcon={context.summaryIcon}/>;
+      }
+      case "list_files": {
+        const ListFiles = adapters.ListFiles;
+        return ListFiles == null ? undefined : <ListFiles summary={projection.summary}
+          automaticApprovalReviews={item.automaticApprovalReviews} summaryIcon={context.summaryIcon}/>;
+      }
+      case "command": {
+        const Command = adapters.Command;
+        return Command == null ? undefined : <Command conversationId={context.conversationId}
+          hostId={context.hostId} isReadOnly={context.isReadOnly} item={item} summary={projection.summary}
           isInProgress={projection.isInProgress}
           isBackgroundTerminalRunning={projection.isBackgroundTerminalRunning}
           isBackgroundTerminalFinished={projection.isBackgroundTerminalFinished}
@@ -79,10 +87,12 @@ export function renderCodexToolActivityLeaf(
           summaryTone={context.summaryTone} showSummaryIcon={context.showSummaryIcon}
           summaryIcon={context.summaryIcon} hideRawCommand={projection.hideRawCommand}
           toolActivityTurnKey={context.toolActivityTurnKey}/>;
+      }
     }
   }
-  if(projection.kind==="patch"&&adapters.Patch!=null){
-    return <adapters.Patch item={item} isTurnCancelled={context.isTurnCancelled}
+  const Patch = adapters.Patch;
+  if(projection.kind==="patch"&&Patch!=null){
+    return <Patch item={item} isTurnCancelled={context.isTurnCancelled}
       cwd={context.cwd} hostId={context.hostId} showDiffDetails={projection.showDiffDetails}
       summaryIcon={context.summaryIcon}/>;
   }

@@ -134,7 +134,7 @@ export function createConnectedConversationMessageRenderers(host: ConnectedConve
       hydrationInput.context, hydrationInput.dependencies,
     );
     if (hydration?.item === null) return null;
-    const activeItem = hydration?.item ?? item;
+    const activeItem = (hydration?.item ?? item) as ConversationMessageItem;
 
     const renderProjectedActivity = (target: ConversationMessageItem): React.ReactNode => {
       const projection = projectConversationContent(target, host, "activity");

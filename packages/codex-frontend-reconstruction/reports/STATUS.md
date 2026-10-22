@@ -59,3 +59,11 @@
 - Explicitly deny accept/edit without host permission; do not infer private data structure.
 - Core tests: 140 / 140 passing (12 new), targeted TSX static type check with temporary React declaration passed.
 - No real React DOM/Electron mount or visual fidelity validation, and no GitHub push. See `CONNECTED_MESSAGE_PRESENTATION.md`.
+
+
+## Current HEAD update (2026-10-22): history hydration and xC/PT leaf contracts
+
+- Added `ToolActivityHistoryHydrationModel.ts`: source-derived LO query bypass, HO identity, zO entity mapping for assistant messages, reasoning, plans, command execution, file changes, image generation, MCP and dynamic tools. Private source helper functions remain injected.
+- Added `CodexToolActivityLeafRenderer.tsx`: typed host component contracts for xC read/search/list-files/command leaves and PT patch rows; no private visual leaf is represented as recovered.
+- Connected history hydration before content projection in `ConnectedConversationMessageRenderers.tsx`. The browser demo uses a marked mock command leaf adapter.
+- CI pending for this increment. Previous HEAD `396685e` passed 216 core tests, 4 demo model tests, production build and 9 Chromium tests.
