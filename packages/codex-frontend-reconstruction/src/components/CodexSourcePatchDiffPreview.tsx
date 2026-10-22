@@ -28,7 +28,8 @@ export function CodexSourcePatchDiffPreview(props: {
       const parsed = parsePatchFiles(props.patch, undefined, true);
       if (parsed.length !== 1 || parsed[0]?.files.length !== 1) return null;
       const file = parsed[0].files[0];
-      return file != null && !file.isBinary ? file : null;
+      const isBinary = props.patch.split(/\r?\n/).some((line) => line.startsWith("Binary files "));
+      return file != null && !isBinary ? file : null;
     } catch {
       // The original VT leaf falls back to raw change content when no
       // renderable single-file diff can be parsed.
