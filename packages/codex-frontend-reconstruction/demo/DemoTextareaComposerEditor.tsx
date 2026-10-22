@@ -4,6 +4,7 @@ import type {
   ComposerControllerPort,
   ComposerEditorViewPort,
 } from "../src/conversation/ComposerControllerContract.js";
+import { resolveComposerEditorKeyAction } from "../src/conversation/ComposerEditorBehaviorModel.js";
 
 class DemoTextareaComposerController implements ComposerControllerPort {
   readonly view: ComposerEditorViewPort;
@@ -98,11 +99,34 @@ export function DemoTextareaComposerEditor(props: DemoTextareaComposerEditorProp
     element.dataset.composing = "false";
     const instance = new DemoTextareaComposerController(element);
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== "Enter" || event.shiftKey) return;
-      if (event.isComposing || composing.current) {
+      if (event.key !== "Enter") return;
+      const key = event.shiftKey
+        ? "Shift-Enter"
+        : event.altKey
+          ? "Alt-Enter"
+          : event.ctrlKey || event.metaKey
+            ? "Mod-Enter"
+            : "Enter";
+      const action = resolveComposerEditorKeyAction({
+        key,
+        isComposing: event.isComposing || composing.current,
+        keyCode: event.keyCode,
+        // This textarea is an explicitly demo-only editor. The host has not
+        // supplied mention/list/code-block state or a shortcut override.
+        enterBehavior: "enter",
+        suggestionActive: false,
+        isNonWindowsCoarsePointer: false,
+        documentRequiresMultilineEnter: false,
+        isCodeBlock: false,
+        modEnterHandledByEditor: false,
+      });
+      if (action === "composition-deferred") {
+        // Native textarea adaptation: don't insert/submit while an IME is
+        // composing. The original ProseMirror keymap returns false here.
         event.preventDefault();
         return;
       }
+      if (action !== "submit") return;
       event.preventDefault();
       instance.requestSubmit(event.timeStamp);
     };

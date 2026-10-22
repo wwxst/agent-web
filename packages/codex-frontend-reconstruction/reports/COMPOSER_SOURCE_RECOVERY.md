@@ -67,3 +67,35 @@ The factory path has now been traced beyond the component props:
 - The demo now uses `DemoTextareaComposerEditor` to exercise this mounted-controller boundary. Its native textarea is deliberately a demo-only controller implementation; the actual ProseMirror factory and plugins have not been copied into the demo.
 
 The exact factory bundle SHA-256 is `e39ff89c1c226141bc5f0af4f6ca70cc09e98b26561ff28fd4ab4b17a9becbef`. The audit script now checks the factory and controller-class signatures in addition to the main Composer and RichTextInput assets.
+
+
+## ProseMirror factory and event routing — source trace (2026-10-22)
+
+The source factory is `rUu` in the pinned `app-initial-5851df3f6cb1.js` asset. Its options include `defaultTextKind`, `enableCodeBlocks`, `enableFileMentions`, `enableRichText`, `enableSelectedTextLinks`, `enableSkillMentions`, `enableSlashCommands`, `enterBehavior`, `initialDocument`, `literalMarkdownLinkSources`, `onDocumentChange`, `plainTextMode`, the Markdown-link restoration flags, and suggestion options.
+
+### Schema and plugin construction
+
+- Rich-text mode creates the Markdown editor helper (`jja()`) and uses its `pmu.schema()`; otherwise the factory falls back to the shared `kja` schema.
+- The base plugin sequence is source-ordered: placeholder/plugin-state infrastructure; optional literal-Markdown-link tracking; common selection/suggestion plugins; the rich-text plugin set (selection decoration, list input, code-block fence exit, input rules and history isolation); the suggestion plugin set from `HSe`; rich-text editing commands (typed table, blockquote backspace, backspace, tab indent, code-block deletion); the wrapped keymap; optional code-block plugins; rich-text arrow-exit/extension keymaps; link tracking; shared editor plugins; placeholder decoration; link plugins; and the final composer plugin.
+- The `S` fields are properties of the private Markdown-editor plugin bundle, not public package names. Their exact internal implementations remain embedded in the original bundle; this report records the observable order rather than claiming to have recreated them.
+- `EditorView` is configured with `role=textbox`, `aria-multiline=true`, `dir=auto`, `spellcheck=true`, and `tabindex=0`. It also supplies pasted-text/HTML transforms, Markdown node views and selected-inline-atom decorations.
+
+### Keyboard submission semantics
+
+- The wrapped keydown handler first defers to the editor/browser while composing or when `keyCode === 229`.
+- A host shortcut override returning `true` emits the controller's `submit` event with the key event timestamp. Returning `false` suppresses submission and routes Enter to editor commands.
+- Enter is first offered to an active suggestion UI. Otherwise `newline` and `cmdAlways` modes run editor commands; `cmdIfMultiline` does so for a multiline document or code block; the default `enter` mode emits `submit`.
+- Shift-Enter and Alt-Enter route to editor commands. Mod-Enter normally emits `submit`, with explicit source branches for a false host override, the non-Windows coarse-pointer case, and an editor-specific command that can consume the shortcut.
+- `ComposerEditorBehaviorModel.ts` ports this observable submit-versus-editor-command routing and is now used by the demo textarea adapter. The demo deliberately supplies no suggestion, code-block, document-structure or host-shortcut state; it does not emulate ProseMirror list commands or claim editor parity. During IME composition the original keymap returns `false`; the demo textarea adapter separately prevents its native submit/newline behavior for safety.
+
+### Paste, drop, and clipboard serialization
+
+- `handlePaste` lets the app-specific clipboard consumer run first, then classifies pasted files/images and emits `pasted-files` or `pasted-images` to the controller. Large paste content can emit `pasted-text` with text plus optional Markdown and code-block language; a plain URL in an empty inline selection can emit `pasted-link` with both text and HTML.
+- Normal text/HTML paste has distinct branches for plain-text mode, large HTML, browser autocomplete, selected-text link conversion, Markdown parsing, and the Markdown editor's preferred HTML/literal-text handlers. These are editor-owned transformations, not a generic textarea paste operation.
+- File drops are consumed by the editor so the outer Composer host can route them. Plain-text mode inserts dropped text at the drop position; rich-text mode has an additional HTML fallback before leaving other drops to the default editor handling.
+- Clipboard serialization preserves code-block text for a single copied code block and otherwise uses the source's text/Markdown serializer.
+- The controller exposes paired add/remove methods for pasted images, files and large text, plus an unsubscribe-returning pasted-link subscription. The host registers these in the main Composer layer; they do not belong to the layout-only component.
+
+### Validation boundary
+
+The read-only audit now checks the `rUu` schema/plugin/keymap/paste/drop signatures against the exact bundle hash. This proves that the local source file still matches the analyzed build; it does not make the private ProseMirror schema, plugins or file-upload host actions available in the reconstructed demo.
