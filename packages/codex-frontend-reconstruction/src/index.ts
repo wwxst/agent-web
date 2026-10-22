@@ -80,3 +80,5 @@ export { aggregateAgentActivityUnits } from "./conversation/AgentActivityAggrega
 export type { AggregateUnit, ActivityAggregate, ReviewFailure, SourceDescriptor, VisualizationKind } from "./conversation/AgentActivityAggregate.js";
 
 export * from "./conversation/AgentActivityRawClassifier.js";
+
+export * from "./conversation/ToolActivityDetailModel.js";
