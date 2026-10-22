@@ -126,19 +126,43 @@ export function CodexSourceExecListFilesLeaf(props: ExecListFilesLeafProps) {
   </div>;
 }
 
+function isDateTimeCheckCommand(value: unknown): boolean {
+  const tokens = Array.isArray(value)
+    ? value.map((part) => String(part))
+    : typeof value === "string"
+      ? (value.match(/"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|[^\s]+/g) ?? [])
+          .map((part) => part.replace(/^["']|["']$/g, ""))
+      : [];
+  if (tokens.length === 0) return false;
+  if (basename(tokens[0]).toLowerCase() !== "date") return false;
+  return tokens.slice(1).every((arg) =>
+    arg.startsWith("+") || arg === "-u" || arg === "--utc" ||
+    arg === "--universal" || arg === "-R" || arg === "--rfc-email" ||
+    arg === "-I" || arg.startsWith("-I=") || arg.startsWith("--iso-8601") ||
+    arg.startsWith("--rfc-3339")
+  );
+}
+
 function commandSummary(props: ExecCommandLeafProps, elapsed: string | null, expanded: boolean): string {
   const rawCommand = props.hideRawCommand ? "" : commandText(props.item.cmd ?? props.summary.cmd);
   const collapsedCommand = expanded ? "" : rawCommand;
-  const withCollapsedCommand = (prefix: string) => collapsedCommand ? prefix + " " + collapsedCommand : prefix;
-  const withRawCommand = (prefix: string) => rawCommand ? prefix + " " + rawCommand : prefix;
-  if (props.wasDeclinedByAutoReview) return withCollapsedCommand("命令被自动审查拒绝");
-  if (props.isBackgroundTerminalRunning) return withRawCommand("后台终端已启动");
-  if (props.isBackgroundTerminalFinished) {
-    return props.wasInterrupted ? withRawCommand("后台终端已停止") : withRawCommand("后台终端已完成");
+  const withCommand = (prefix: string, command = collapsedCommand) => command ? prefix + " " + command : prefix;
+  const withElapsed = (label: string) => elapsed ? label + " · " + elapsed : label;
+
+  if (props.wasDeclinedByAutoReview) return withCommand("命令被自动审查拒绝");
+  if (isDateTimeCheckCommand(props.item.cmd ?? props.summary.cmd)) {
+    if (props.wasInterrupted) return withElapsed("已停止检查当前日期和时间");
+    if (props.isInProgress) return withElapsed("正在检查当前日期和时间");
+    return withElapsed("已检查当前日期和时间");
   }
-  if (props.wasInterrupted) return withCollapsedCommand("已停止命令") + (elapsed ? " · " + elapsed : "");
-  if (props.isInProgress) return "正在运行命令" + (elapsed ? " · " + elapsed : "");
-  return withCollapsedCommand(collapsedCommand ? "已运行" : "命令已完成") + (elapsed ? " · " + elapsed : "");
+  if (props.isBackgroundTerminalRunning) return withCommand("后台终端已启动", rawCommand);
+  if (props.isBackgroundTerminalFinished) {
+    if (props.wasInterrupted) return withCommand("后台终端已停止", rawCommand);
+    return withCommand(rawCommand ? "已运行" : "后台终端已完成", rawCommand);
+  }
+  if (props.wasInterrupted) return withElapsed(withCommand("已停止", collapsedCommand || "命令").trim());
+  if (props.isInProgress) return withElapsed("正在运行命令");
+  return withElapsed(withCommand(collapsedCommand ? "已运行" : "命令已运行", collapsedCommand));
 }
 
 /**
@@ -163,7 +187,7 @@ export function CodexSourceExecCommandLeaf(props: ExecCommandLeafProps) {
   const output = isRecord(props.item.output) ? props.item.output : null;
   const outputText = text(output?.aggregatedOutput) ?? "";
   const exitCode = typeof output?.exitCode === "number" ? output.exitCode : undefined;
-  const command = commandText(props.item.cmd ?? props.summary.cmd);
+  const command = props.hideRawCommand ? "" : commandText(props.item.cmd ?? props.summary.cmd);
   const reviews = Array.isArray(props.item.automaticApprovalReviews)
     ? props.item.automaticApprovalReviews.filter(isRecord) : [];
   const deniedReview = reviews.find((review) => review.status === "denied");
@@ -181,7 +205,7 @@ export function CodexSourceExecCommandLeaf(props: ExecCommandLeafProps) {
           automaticApprovalReviews={props.item.automaticApprovalReviews}
           className={props.summaryTone === "muted" ? "is-muted" : ""} />
       </button>
-      {expanded && <div className="codex-source-tool-command__body" data-codex-source-command-body="">
+      {expanded && !props.hideRawCommand && <div className="codex-source-tool-command__body" data-codex-source-command-body="">
         {command && <pre className="codex-source-tool-command__command"><span aria-hidden="true">$ </span>{command}</pre>}
         {outputText && <pre className="codex-source-tool-command__output">{outputText}</pre>}
         {outputText === "" && props.isInProgress && <div className="codex-source-tool-command__empty-output">等待命令输出…</div>}
@@ -207,8 +231,17 @@ function changeText(change: unknown): string | null {
   return text(change.unified_diff) ?? text(change.content) ?? text(change.diff) ?? null;
 }
 
-function changeCounts(diff: string | null): { added: number; removed: number } | null {
-  if (diff == null) return null;
+function changeCounts(diff: string | null, change?: unknown): { added: number; removed: number } | null {
+  if (diff == null) {
+    if (!isRecord(change)) return null;
+    const type = text(change.type);
+    const content = text(change.content);
+    if (content == null || (type !== "add" && type !== "delete")) return null;
+    const lines = content === "" ? 0 : content.split(/\r?\n/).filter((line, index, all) =>
+      !(index === all.length - 1 && line === "")
+    ).length;
+    return type === "add" ? { added: lines, removed: 0 } : { added: 0, removed: lines };
+  }
   const lines = diff.split(/\r?\n/);
   const looksUnified = lines.some((line) => line.startsWith("@@ ")) ||
     lines.some((line) => line.startsWith("+++ ")) || lines.some((line) => line.startsWith("--- "));
@@ -225,12 +258,12 @@ function changeCounts(diff: string | null): { added: number; removed: number } |
 
 function patchChangeLabel(change: unknown, status: ReturnType<typeof getToolPatchStatus>): string {
   const type = isRecord(change) ? text(change.type) : undefined;
-  if (status === "auto-review-declined") return "文件变更被自动审查拒绝";
-  if (status === "rejected") return "已拒绝";
   const action = type === "add" ? "创建" : type === "delete" ? "删除" : "编辑";
+  // IT checks stopped before rejected, then uses the pending/streaming state.
   if (status === "stopped") return "已停止" + action;
+  if (status === "rejected" || status === "auto-review-declined") return "已拒绝";
   if (status === "streaming" || status === "pending") return "正在" + action;
-  return "已" + (type === "add" ? "创建" : type === "delete" ? "删除" : "编辑");
+  return "已" + action;
 }
 
 function PatchFileRow(props: {
@@ -244,10 +277,11 @@ function PatchFileRow(props: {
 }) {
   const [expanded, setExpanded] = React.useState(false);
   const diff = changeText(props.change);
-  const counts = changeCounts(diff);
+  const counts = changeCounts(diff, props.change);
   const label = patchChangeLabel(props.change, props.status);
   const type = isRecord(props.change) ? text(props.change.type) : undefined;
   const displayPath = text(isRecord(props.change) ? props.change.move_path : undefined) ?? props.path;
+  const shortPath = basename(displayPath);
   const openFile = () => props.onOpenFile?.({ path: displayPath, cwd: props.cwd, hostId: props.hostId });
   // IT exposes the disclosure whenever diff details are enabled; its body
   // distinguishes an unavailable/oversized preview from an empty diff.
@@ -265,8 +299,8 @@ function PatchFileRow(props: {
         <div className="codex-source-tool-patch-file__path-wrap">
           {props.onOpenFile
             ? <button type="button" className="codex-source-tool-path codex-source-tool-path--button"
-                onClick={openFile} data-agent-activity-file-link="">{displayPath}</button>
-            : <span className="codex-source-tool-path" data-agent-activity-file-link="">{displayPath}</span>}
+                title={displayPath} onClick={openFile} data-agent-activity-file-link="">{shortPath}</button>
+            : <span className="codex-source-tool-path" title={displayPath} data-agent-activity-file-link="">{shortPath}</span>}
           {counts && <span className="codex-source-tool-patch-file__counts">
             <span className="is-added">+{counts.added}</span>
             <span className="is-removed">−{counts.removed}</span>
@@ -275,10 +309,11 @@ function PatchFileRow(props: {
         <div className="codex-source-tool-patch-file__actions">
           <span className={"codex-source-tool-patch-file__status status-" + props.status}>{label}</span>
           {canExpand && <button type="button" className="codex-source-tool-patch-file__toggle"
-            aria-label={(expanded ? "收起" : "展开") + "差异 " + displayPath}
+            aria-label={"切换差异 " + shortPath}
+            title={expanded ? "收起差异" : "展开差异"}
             aria-expanded={expanded} onClick={() => setExpanded((value) => !value)}
             data-codex-source-patch-toggle="">
-            {expanded ? "收起差异" : "查看差异"}
+            <span aria-hidden="true" className={"codex-source-tool-patch-file__chevron" + (expanded ? " is-expanded" : "")}>›</span>
           </button>}
         </div>
       </div>
