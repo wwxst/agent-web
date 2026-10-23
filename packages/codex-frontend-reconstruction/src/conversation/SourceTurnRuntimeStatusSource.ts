@@ -97,7 +97,7 @@ export function createSourceTurnRuntimeStatusSource(
     const latestActivityRetentionInput:SourceLatestActivityRetentionInput={
       isTurnInProgress,
       isTerminalOrSummaryTurn:input.isTerminalOrSummaryTurn,
-      assistantItem:input.assistantItem,
+      ...(input.assistantItem === undefined ? {} : {assistantItem:input.assistantItem}),
       hasInlineSubagentActivity:input.hasInlineSubagentActivity,
       isMostRecentTurn:input.isMostRecentTurn,
       hasUpNextStatusItem:input.hasUpNextStatusItem,
