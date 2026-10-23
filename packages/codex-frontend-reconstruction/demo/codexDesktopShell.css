@@ -249,3 +249,7 @@ button:focus-visible, textarea:focus-visible { outline: 2px solid #578cda; outli
   user-select:none;
 }
 .demo-titlebar-toolbar [data-app-shell-titlebar-content] { min-width:0; flex:1; }
+
+/* Original uUa left panel is the positioning root for its outside sbi
+ * hit area. It must paint above the thread viewport at the shared edge. */
+.demo-sidebar { position:relative; z-index:13; overflow:visible; }

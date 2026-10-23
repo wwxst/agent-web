@@ -63,8 +63,9 @@ function ConversationSidebar(props: {
   onSelect: (id: DemoConversationId) => void;
   onReset: () => void;
   navigationRailEnabled: boolean;
+  resizeHandle?:React.ReactNode;
 }) {
-  const { active, collapsed, onToggle, onSelect, onReset, navigationRailEnabled } = props;
+  const { active, collapsed, onToggle, onSelect, onReset, navigationRailEnabled, resizeHandle } = props;
   return <aside className={`demo-sidebar ${collapsed ? "demo-sidebar--collapsed" : ""}`} aria-label="演示会话导航">
     <div className="demo-sidebar-head">
       <div className="demo-logo">{collapsed ? <Icon name="folder" size={18}/> : <><strong>Codex</strong><Icon name="chevron" size={12}/></>}</div>
@@ -89,6 +90,7 @@ function ConversationSidebar(props: {
       <div className="demo-section-heading demo-recent-heading">Recents</div>
       {!navigationRailEnabled && <div className="demo-sidebar-foot"><Icon name="settings" size={15}/> 预览环境 · 本地模拟数据</div>}
     </>}
+    {!collapsed && resizeHandle}
   </aside>;
 }
 
@@ -335,10 +337,10 @@ export function App() {
         <button type="button" disabled aria-label="Settings（尚未接入）" title="设置尚未接入"><Icon name="settings" size={18}/></button>
       </>}
     />}
-    <ConversationSidebar active={active} collapsed={collapsed} navigationRailEnabled={navigationRailEnabled} onToggle={() => setCollapsed((v) => !v)} onSelect={switchConversation} onReset={reset}/>
-    {!collapsed && <CodexSourceSidebarResizeHandle
-      width={sidebarWidth} availableWidth={availableWidth}
-      onWidthChange={setSidebarWidth}/>}
+    <ConversationSidebar active={active} collapsed={collapsed} navigationRailEnabled={navigationRailEnabled} onToggle={() => setCollapsed((v) => !v)} onSelect={switchConversation} onReset={reset}
+      resizeHandle={<CodexSourceSidebarResizeHandle
+        width={sidebarWidth} availableWidth={availableWidth}
+        onWidthChange={setSidebarWidth}/>}/>
     <div className="demo-main" data-app-shell-main-surface="default"
       data-thread-scroll-layout="default">
       <header className="demo-header" data-app-shell-main-titlebar="true">

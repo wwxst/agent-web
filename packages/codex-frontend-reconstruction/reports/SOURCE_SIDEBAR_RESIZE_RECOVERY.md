@@ -20,3 +20,7 @@ Pinned `frontend.zip` → `app-initial-5851df3f6cb1.js`:
 ## First browser regression and root-token fix
 
 The first Chromium run failed after keyboard ArrowRight because `aria-valuenow` moved to 285 but the side panel CSS remained 275px. This was not a resizer input problem: `--spacing-token-sidebar` is computed on `:root`, so the App-scoped `--codex-sidebar-preferred-width` cannot retroactively affect its inherited value. The source `JFu/YFu` implementation writes/removes the variable directly on `document.documentElement`. We now follow that exact root-target lifecycle through `useLayoutEffect`, and the unchanged browser test still requires the actual panel width to track pointer/keyboard state.
+
+## Pointer hit-testing regression fixed by original DOM nesting
+
+A diagnostic Playwright `elementFromPoint` revealed the first pointer position hit `.demo-thread-scroll-content` rather than the separator. The earlier zero-width flex sibling had no reliable interactive hit surface against the scroll viewport, even with a high z-index. In the original `uUa`, `sbi` is placed within the left `aside` with `relative overflow-visible`. The handle is now rendered as an absolutely anchored right-edge child of the sidebar, above the transcript. Browser validation retains both `elementFromPoint` and `data-resizing=true` checks before verifying the actual dragged width.
