@@ -260,13 +260,12 @@ function reviewScenario(): ConversationRenderEntry[] {
         grouping:"groupable",state:"Working",command:"npm run build",
         heading:"运行中（模拟）",
       }),
-      demoItem("source-hidden-loaded-read","exec",undefined,{
-        grouping:"groupable",parsedCmd:{type:"read",path:"SKILL.md",isFinished:true},
-        demoLoadedToolRead:true,
+      demoItem("source-hidden-visualize-read","exec",undefined,{
+        grouping:"groupable",parsedCmd:{type:"read",path:".codex/skills/visualize/SKILL.md",isFinished:true},
       }),
       demoItem("source-hidden-visualization-command","exec",undefined,{
-        grouping:"groupable",state:"Ready",command:"make preview",
-        demoSuccessfulExecution:true,demoVisualizationKind:"create",
+        grouping:"groupable",state:"Ready",command:"touch visualizations/preview.html",
+        demoSuccessfulExecution:true,
       }),
       demoItem("source-patch-with-visualization","patch",undefined,{
         grouping:"groupable",success:true,changes:{},
