@@ -388,7 +388,11 @@ export function CodexSourcePatchLeaf(props: PatchLeafProps & {
 // Single KO MCP row shares xa title semantics with repeated XO headers.
 // Content/approval detail remains host owned, never parsed as unsafe HTML.
 export function CodexSourceMcpToolCallLeaf(props:McpToolCallLeafProps) {
-  const input=sourceMcpLabelInputFromActivity(props.item);
+  const input=sourceMcpLabelInputFromActivity({
+    completed:props.item.completed,invocation:props.item.invocation,
+    result:props.item.result,toolDisplay:props.item.toolDisplay,
+    toolDefinition:props.item.toolDefinition,
+  });
   const resolved=resolveSourceMcpToolActivityLabel(input,props.labelHost);
   const invocation=isRecord(props.item.invocation)?props.item.invocation:null;
   const visibleLabel=resolved.text ?? text(invocation?.tool) ?? "MCP 工具";
