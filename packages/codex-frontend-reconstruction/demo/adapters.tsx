@@ -165,7 +165,8 @@ export function makeDemoRow(notify: (message: string) => void) {
         getRepeatedRows: items => projectSourceRepeatedActivityRows(items, {
           getGrouping: item => item.grouping==="groupable" ? "groupable" : "standalone",
           canGroupMcpResult: item => item.demoSafeMcpResult === true,
-          getToolDisplaySignature: item => item.demoToolDisplaySignature ?? null,
+          getToolDisplaySignature: item => typeof item.demoToolDisplaySignature === "string"
+            ? item.demoToolDisplaySignature : null,
         }),
         renderRepeatedSummary: group => {
           const first=group.items[0];
