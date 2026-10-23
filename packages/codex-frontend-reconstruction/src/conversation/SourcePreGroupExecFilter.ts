@@ -11,6 +11,7 @@ import {
  * tool reads. Both are now restored from the original skill labels source.
  */
 export interface SourceExecFilterItem {
+  [key:string]:unknown;
   type:string;
   executionStatus?:string;
   parsedCmd?:{type?:string;cmd?:string;isFinished?:boolean};
