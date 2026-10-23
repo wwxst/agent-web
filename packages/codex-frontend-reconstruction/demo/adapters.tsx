@@ -9,7 +9,7 @@ import { createConversationLiveRow } from "../src/components/ConversationMessage
 import type { ConversationMessageItem, ConversationMessagePlanDependencies } from "../src/conversation/ConversationMessageRenderPlan.js";
 import type { ConversationRenderProjectionDependencies } from "../src/conversation/ConversationRenderEntriesModel.js";
 import type { InlineFileReviewAction, InlineReviewFile } from "../src/conversation/InlineFileReviewModel.js";
-import { getDemoBlocks } from "./mockConversation.js";
+import { getDemoBlocks, getDemoHistoryTurnItems } from "./mockConversation.js";
 import { projectCompletedGroupHeaderParts } from "../src/conversation/AgentActivityGroupPresentation.js";
 import { aggregateAgentActivityUnits } from "../src/conversation/AgentActivityAggregate.js";
 import { groupSourceAgentActivityUnits } from "../src/conversation/AgentActivityUnitGrouping.js";
@@ -21,6 +21,12 @@ import {
   createSourceTurnRuntimeStatusStore,
   type ConnectedSourceTurnRuntimeStatusSource,
 } from "../src/conversation/SourceTurnRuntimeStatusSource.js";
+import {
+ createSourceHistoricalTurnContentSource,
+ createSourceHistoricalTurnStore,
+ sourceHistoricalTurnQuery,
+ type ConnectedSourceHistoricalTurnSource,
+} from "../src/conversation/SourceHistoricalTurnContentSource.js";
 import { projectSourceRepeatedActivityRows } from "../src/conversation/SourceRepeatedActivityGroups.js";
 import { partitionSourceAeonActivity } from "../src/conversation/SourceAeonActivityPartitions.js";
 import { classifyRawActivityItem } from "../src/conversation/AgentActivityRawClassifier.js";
@@ -111,6 +117,21 @@ export function makeDemoRow(notify: (message: string) => void) {
   const historyStore = createToolActivityHistoryEntityStore();
   const collapseState = createSourceActivityCollapseState();
   const historySources = new Map<string, ConnectedToolActivityHistorySource>();
+  const historyTurnStore=createSourceHistoricalTurnStore<ConversationMessageItem>();
+  const historicalTurnSources=new Map<string,ConnectedSourceHistoricalTurnSource<ConversationMessageItem>>();
+  const historyTurnQuery={
+    hostId:"demo-host",threadId:"review",entityKey:"fixture-history-content",
+  };
+  function getHistoricalTurnSource(entry:import("../src/conversation/ConversationRenderEntriesModel.js").ConversationRenderEntry){
+    const query=sourceHistoricalTurnQuery(entry);
+    if(query==null)return null;
+    const key=JSON.stringify([query.hostId,query.threadId,query.entityKey]);
+    const existing=historicalTurnSources.get(key);
+    if(existing!=null)return existing;
+    const source=createSourceHistoricalTurnContentSource(query,historyTurnStore);
+    historicalTurnSources.set(key,source);
+    return source;
+  }
   const turnRuntimeStore=createSourceTurnRuntimeStatusStore();
   const turnRuntimeSources=new Map<string,ConnectedSourceTurnRuntimeStatusSource>();
   const liveHistoryQuery={
@@ -327,6 +348,7 @@ export function makeDemoRow(notify: (message: string) => void) {
   const RecoveredRow = createConversationLiveRow({
     getBlocks: getDemoBlocks,
     getTurnRuntimeSource,
+    getHistoricalTurnSource,
     getPlanOptions: (entry) => ({ isTurnInProgress: entry.turn?.status === "inProgress", includeTurnExtras: false,
       isAeonThread: entry.isAeonThread === true,
       // The turn host supplies K/Y/ar/U/rn/we/Ui. Test-only fixture below
@@ -353,6 +375,16 @@ export function makeDemoRow(notify: (message: string) => void) {
       {typeof props.entry.timestampSeparatorAtMs === "number" && <div className="demo-time-marker">
         {new Date(props.entry.timestampSeparatorAtMs).toLocaleString("zh-CN")}
       </div>}
+      {props.entry.turnId==="review-history-hydration" ? <div
+        data-demo-history-turn-controls="">
+        <button type="button" data-demo-load-history=""
+          onClick={()=>historyTurnStore.publish(historyTurnQuery,{
+            status:"completed",items:getDemoHistoryTurnItems(),
+          })}>模拟：读取历史回合</button>
+        <button type="button" data-demo-clear-history=""
+          onClick={()=>historyTurnStore.clearThread("demo-host","review")}>
+          模拟：清除历史缓存</button>
+      </div> : null}
       {props.entry.turnId==="review-live-turn-state" ? <div className="demo-source-turn-controls"
         data-demo-source-turn-controls="">
         <button type="button" data-demo-resolve-up-next=""
@@ -379,6 +411,9 @@ export function makeDemoRow(notify: (message: string) => void) {
       for(const source of turnRuntimeSources.values())source.dispose();
       turnRuntimeSources.clear();
       turnRuntimeStore.dispose();
+      for(const source of historicalTurnSources.values())source.dispose();
+      historicalTurnSources.clear();
+      historyTurnStore.dispose();
       collapseState.dispose();
     },
   });
