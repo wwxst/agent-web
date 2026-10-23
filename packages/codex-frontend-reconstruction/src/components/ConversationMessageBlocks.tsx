@@ -31,6 +31,7 @@ export interface ConversationMessageRenderers {
     collapseWhenPossible: boolean;
     renderMode: "latest" | "all";
     hasFollowingFinalAnswer: boolean;
+    allowLatestCompletedGroup?: boolean | null;
     activityStateKey: string;
   }>;
   ActivityItem: React.ComponentType<{
@@ -87,6 +88,7 @@ export function ConversationMessageBlocks(props: ConversationMessageBlocksProps)
         return <renderers.ActivityGroup items={node.items} isActive={node.isActive}
           collapseWhenPossible={node.collapseWhenPossible} renderMode={node.renderMode}
           hasFollowingFinalAnswer={node.hasFollowingFinalAnswer}
+          allowLatestCompletedGroup={node.allowLatestCompletedGroup}
           activityStateKey={JSON.stringify([activityStateScope ?? "host", node.key])} />;
       case "activity-item":
         return <renderers.ActivityItem item={node.item} isActive={node.isActive}
