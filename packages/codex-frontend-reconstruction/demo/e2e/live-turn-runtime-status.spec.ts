@@ -15,7 +15,7 @@ test("live qn/Qr source updates the mounted latest ga group without replacing it
  // Synthetic host publishes a qn/Qr event into the already mounted source.
  await fixture.locator("[data-demo-resolve-up-next]").click();
  await expect(groups).toHaveCount(1);
- await expect(groups).toContainText("运行了命令");
+ await expect(groups.locator(".codex-activity-group-row__toggle")).toHaveCount(1);
  // qn's concrete completed status overrides raw in_progress (Ge -> K).
  await fixture.locator("[data-demo-complete-turn]").click();
  await expect(groups).toHaveCount(0);
