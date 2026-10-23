@@ -14,8 +14,9 @@ import type {
 export interface SourceAeonActivityPartitionOptions<T extends ConversationMessageItem> {
   items: readonly T[];
   isAeonThread: boolean;
+  hostId?: string | undefined;
   /** Exact private `_mn(item, hostId)` boundary, including approval/result verification. */
-  resolveMcpTask: (item: T) => unknown | null;
+  resolveMcpTask: (item: T, hostId: string | undefined) => unknown | null;
 }
 
 /**
@@ -24,14 +25,14 @@ export interface SourceAeonActivityPartitionOptions<T extends ConversationMessag
  * items without coalescing distinct task results or dropping unrecognized calls.
  */
 export function partitionSourceAeonActivity<T extends ConversationMessageItem>(
-  {items,isAeonThread,resolveMcpTask}: SourceAeonActivityPartitionOptions<T>,
+  {items,isAeonThread,hostId,resolveMcpTask}: SourceAeonActivityPartitionOptions<T>,
 ): ConversationActivityPart[] {
   if (items.length === 0) return [];
   if (!isAeonThread) return [{type:"activity",items:[...items]}];
 
   const result: ConversationActivityPart[] = [];
   for (const item of items) {
-    const task = item.type === "mcp-tool-call" ? resolveMcpTask(item) : null;
+    const task = item.type === "mcp-tool-call" ? resolveMcpTask(item,hostId) : null;
     if (task != null) {
       result.push({type:"result",result:task});
       continue;
