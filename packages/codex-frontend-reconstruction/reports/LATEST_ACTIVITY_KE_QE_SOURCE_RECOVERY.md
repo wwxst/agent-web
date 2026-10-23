@@ -30,3 +30,7 @@ node scripts/audit-latest-activity-evidence.mjs /path/to/frontend/webview/assets
 ```
 
 The script verifies complete SHA-256 hashes and **nine** local source signatures. The original proprietary bundles remain private and are not checked into the repo.
+
+## Follow-up correction and concrete Gi implementation
+
+This earlier checkpoint left `Jt/Kt/qt/Zt` and `Gi` at a private-host boundary. They have now been separately recovered from exact pinned source and connected to the same frontend. The earlier description of `qt` as a generic loaded tool read was imprecise: `qt` accepts only Skill metadata identifying the **visualize** skill/plugin. The new `GI_VISUALIZATION_SOURCE_RECOVERY.md` is authoritative for the precise source classification and Gi formula. Real K/Ui host subscriptions remain missing; do not confuse an explicit test input with an implemented query source.
