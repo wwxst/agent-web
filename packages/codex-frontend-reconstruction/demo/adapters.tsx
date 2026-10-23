@@ -139,6 +139,12 @@ export function makeDemoRow(notify: (message: string) => void) {
     // collapse state are not represented by synthetic transcript records.
     agentActivity: {
       collapseState,
+      // Explicit fixture only. The private host decides combinedUnitKey; no
+      // synthetic trace is inferred from adjacency or command/file types.
+      getCombinedUnitKey: items => {
+        const value=items.find(item => typeof item.demoCombinedTraceKey === "string")?.demoCombinedTraceKey;
+        return typeof value === "string" ? value : null;
+      },
       // N/P source grouping uses *explicit synthetic metadata* from fixtures.
       // The private _e classifier must be provided by a future real host.
       toUnits: (items) => groupSourceAgentActivityUnits(items, {

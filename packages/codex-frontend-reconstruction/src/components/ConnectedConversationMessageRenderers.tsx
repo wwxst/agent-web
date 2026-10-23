@@ -2,6 +2,7 @@ import * as React from "react";
 import type { ConversationMessageItem } from "../conversation/ConversationMessageRenderPlan.js";
 import type { AgentActivityUnit, AgentActivityCollapseOptions } from "../conversation/AgentActivityProjection.js";
 import { CodexAgentActivity } from "./CodexAgentActivity.js";
+import { combineSourceActivityTrace } from "../conversation/SourceCombinedActivityTrace.js";
 import { CodexActivityGroupRow } from "./CodexActivityGroupRow.js";
 import { CodexToolActivityItem } from "./CodexToolActivityItem.js";
 import { ConnectedCodexToolActivityItem } from "./ConnectedCodexToolActivityItem.js";
@@ -50,6 +51,8 @@ export interface ConnectedConversationRendererHost extends ConversationContentAd
       setCollapsed(key: string, collapsed: boolean): void;
     };
     toUnits(items: ConversationMessageItem[]): AgentActivityUnit<ConversationMessageItem>[];
+    /** Original ek: combine into an ok trace only with an explicit host key. */
+    getCombinedUnitKey?(items: readonly ConversationMessageItem[]): string | null | undefined;
     getCollapseContext(context: { isActive: boolean; collapseWhenPossible: boolean; renderMode: "latest" | "all"; hasFollowingFinalAnswer: boolean; activityStateKey: string }):
       Omit<AgentActivityCollapseOptions<ConversationMessageItem>, "units">;
     renderSummary?(count: number, workedForItem: ConversationMessageItem | null): React.ReactNode;
@@ -231,7 +234,9 @@ export function createConnectedConversationMessageRenderers(host: ConnectedConve
           <ActivityContent item={item} isActive={props.isActive} presentation="ordinary" />
         </div>)}
       </div>;
-      const units = grouping.toUnits(props.items);
+      const rawUnits = grouping.toUnits(props.items);
+      const units = combineSourceActivityTrace(rawUnits,
+        grouping.getCombinedUnitKey?.(props.items));
       const context = grouping.getCollapseContext(props);
       const groupHeader = grouping.groupHeader;
       // The source Rk contract accepts controlled collapse state from the turn

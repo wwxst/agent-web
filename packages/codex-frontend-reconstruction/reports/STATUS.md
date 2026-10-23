@@ -176,3 +176,8 @@ Follow `reports/NEXT_BATCH.md`: add the typed controller paste-event contract an
 - Added controlled historical activity disclosure by stable conversation/turn/block identity using the original Rk/Hk host contract. It survives virtual row remount and conversation switching in the demo host; reset clears in-memory state. The existing local fallback remains when no host adapter is supplied.
 - Restored ek's latest-visible-unit and isActivitySliceClosed inputs for group header projection. React interaction and core regression tests added.
 - See `ACTIVITY_COLLAPSE_AND_HEADER_RECOVERY.md`. CI results for this checkpoint must be read from the corresponding GitHub Actions run; no Electron or real Agent execution is claimed.
+
+## 2026-10-23 — combined activity trace branch
+
+- `ek → ok` from the original sites-end-resource bundle is restored in `SourceCombinedActivityTrace`. Existing ActivityGroup conditionally combines multiple N/P units only when the host provides a combinedUnitKey. A deterministic browser fixture proves a real N split followed by an explicit trace merge in one Turn.
+- See `COMBINED_ACTIVITY_TRACE_RECOVERY.md`. CI verification for this commit is separate from prior success counts; the real private key selector, real Agent events, Electron and pixel parity are still missing.

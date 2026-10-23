@@ -99,5 +99,6 @@ export { isSourceGroupRowVisible, getSourceExpandableGroupRows } from "./convers
 export type { SourceGroupVisibilityHost } from "./conversation/AgentActivityGroupVisibility.js";
 export { projectSourceTurnTranscriptBlocks } from "./conversation/SourceTurnTranscriptBlocks.js";
 export type { SourceTurnBlockInput } from "./conversation/SourceTurnTranscriptBlocks.js";
+export { combineSourceActivityTrace } from "./conversation/SourceCombinedActivityTrace.js";
 export { createSourceActivityCollapseState } from "./conversation/SourceActivityCollapseState.js";
 export type { SourceActivityCollapseState } from "./conversation/SourceActivityCollapseState.js";

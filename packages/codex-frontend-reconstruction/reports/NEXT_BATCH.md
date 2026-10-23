@@ -53,3 +53,10 @@
 - ek/hg header input now knows the latest visible unit and source-closed activity slices. Other original host display predicates remain injectable, not reconstructed by guesswork.
 - Source signature and scope: `ACTIVITY_COLLAPSE_AND_HEADER_RECOVERY.md`.
 - Next: recover Wa/hn group classification and nested MCP grouping, then compare exact build matching and do not conflate browser smoke with Electron verification.
+
+## Source ek/ok combined trace (2026-10-23)
+
+- Recovered ek's host-supplied combinedUnitKey branch and ok's source-order flattening of grouped and standalone units. When the key is absent the normal N/P unit layout is unchanged.
+- The existing React activity renderer now invokes this branch; no parallel demo timeline. Synthetic fixture includes an explicit command/patch split and a separate explicit trace key, verified by unit and Chromium regressions.
+- Evidence and limits: `COMBINED_ACTIVITY_TRACE_RECOVERY.md`. The real host's key selector remains unknown.
+- Next concrete source tasks: original private Wa/hn activity classification, MCP repeated-call subgroup composition and running-vs-complete slice visibility, without inferring production metadata from demo fields.

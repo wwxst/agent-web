@@ -11,7 +11,12 @@ test("source N groups command and multi-file patch inside the existing transcrip
   const directActivity=entry.locator("[data-codex-current-turn-activity]");
   await expect(directActivity).toBeVisible();
   const group=directActivity.locator("[data-codex-activity-group]");
+  await expect(group).toHaveCount(1);
   await expect(group).toBeVisible();
+  // N produced two real groups at the explicit patch boundary; ek/ok joins
+  // them only for the host-declared combined trace.
+  await expect(group).toContainText("编辑了文件");
+  await expect(group).toContainText("运行了命令");
   await expect(entry.locator('[data-conversation-message="assistant"]')).toHaveCount(1);
   // The compiled latest branch prunes stale commentary once a final answer exists.
   await expect(entry.getByText("下面仅用于验证连续工具活动的组件接线", {exact:false})).toHaveCount(0);

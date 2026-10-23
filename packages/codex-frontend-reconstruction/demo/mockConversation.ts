@@ -207,10 +207,13 @@ function reviewScenario(): ConversationRenderEntry[] {
     demoRawTurnEntry("review-workflow", [
       demoItem("workflow-commentary","assistant-message","下面仅用于验证连续工具活动的组件接线（模拟数据，不执行命令）。",
         {phase:"commentary",completed:true}),
-      demoItem("workflow-command-a","exec",undefined,{state:"Ready",command:"Get-Content src/conversation/AgentActivityUnitGrouping.ts",output:"// fixture read"}),
+      demoItem("workflow-command-a","exec",undefined,{state:"Ready",command:"Get-Content src/conversation/AgentActivityUnitGrouping.ts",output:"// fixture read",demoCombinedTraceKey:"review-workflow-trace"}),
       demoItem("workflow-command-b","exec",undefined,{state:"Ready",command:"git diff --check",output:"fixture: no whitespace errors"}),
       demoItem("workflow-command-c","exec",undefined,{state:"Ready",command:"npm run test:core",output:"fixture: tests passed"}),
       demoItem("workflow-patch","patch",undefined,{
+        // A genuine split boundary reaches the N model, but source ek/ok
+        // recombines it only because this fixture supplies an explicit trace.
+        startsGroup:true,
         success:true,state:"Ready",
         changes:{
           "src/conversation/AgentActivityUnitGrouping.ts":{
