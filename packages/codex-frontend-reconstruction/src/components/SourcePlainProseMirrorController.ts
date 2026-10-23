@@ -4,6 +4,7 @@ import { EditorView } from "prosemirror-view";
 import { history, undo, redo } from "prosemirror-history";
 import { keymap } from "prosemirror-keymap";
 import { splitBlock } from "prosemirror-commands";
+import { sourceComposerCodeFenceInputRule, sourceComposerLinkMarkSpec, sourceComposerSafeHref } from "./SourceComposerRichExtensions.js";
 import { resolveComposerEditorKeyAction, type ComposerEnterBehavior, type ComposerEditorKey } from "../conversation/ComposerEditorBehaviorModel.js";
 import type { ComposerControllerPort, ComposerPastedTextPayload, ComposerPastedLinkPayload } from "../conversation/ComposerControllerContract.js";
 
@@ -33,14 +34,7 @@ export const sourcePlainComposerSchema = new Schema({
     },
     text: { group: "inline" },
   },
-  marks: {
-    link: {
-      attrs: { href: { default: null } },
-      parseDOM: [{ tag: "a[href]", getAttrs: (element) =>
-        element instanceof HTMLElement ? { href: element.getAttribute("href") } : false }],
-      toDOM: (mark) => ["a", { href: mark.attrs.href }, 0] as const,
-    },
-  },
+  marks: { link: sourceComposerLinkMarkSpec },
 });
 
 function documentFromText(text: string): PMNode {
@@ -53,6 +47,10 @@ function documentFromText(text: string): PMNode {
 export interface SourcePlainComposerOptions {
   initialText?: string;
   enterBehavior?: ComposerEnterBehavior;
+  /** Source Yja fence input rule only, not the full jja plugin suite. */
+  enableSourceCodeFenceRule?: boolean;
+  /** Source rUu selected-text URL paste branch. */
+  enableSelectedTextLinks?: boolean;
   onDocumentChange?: (text: string) => void;
 }
 
@@ -69,6 +67,8 @@ export class SourcePlainProseMirrorController implements ComposerControllerPort 
   private disposed = false;
   private readonly onChange: ((text: string) => void) | undefined;
   private readonly enterBehavior: ComposerEnterBehavior;
+  private readonly enableSourceCodeFenceRule: boolean;
+  private readonly enableSelectedTextLinks: boolean;
   private submits = new Set<(timestamp?: number) => void>();
   private images = new Set<(files: readonly File[]) => void>();
   private files = new Set<(files: readonly File[], dataTransfer?: DataTransfer | null) => void>();
@@ -78,6 +78,8 @@ export class SourcePlainProseMirrorController implements ComposerControllerPort 
   constructor(options: SourcePlainComposerOptions = {}) {
     this.onChange = options.onDocumentChange;
     this.enterBehavior = options.enterBehavior ?? "enter";
+    this.enableSourceCodeFenceRule = options.enableSourceCodeFenceRule ?? false;
+    this.enableSelectedTextLinks = options.enableSelectedTextLinks ?? false;
     const owner = this;
     const events = new Plugin({
       props: {
@@ -125,6 +127,27 @@ export class SourcePlainProseMirrorController implements ComposerControllerPort 
             const payload: ComposerPastedTextPayload = { text: plain };
             for (const handler of owner.texts) if (handler(payload) === true) return true;
           }
+          // Original rUu enableSelectedTextLinks branch: preserve selected
+          // text as a link instead of replacing it with a pasted URL.
+          const href = sourceComposerSafeHref(plain);
+          const selection = view.state.selection;
+          if (owner.enableSelectedTextLinks && href != null && !selection.empty) {
+            let hasText = false;
+            let hasInlineAtom = false;
+            selection.content().content.descendants((node) => {
+              if (node.isText && node.textContent.trim() !== "") hasText = true;
+              else if (node.isInline) hasInlineAtom = true;
+            });
+            if (hasText && !hasInlineAtom) {
+              const tr = view.state.tr.addMark(
+                selection.from, selection.to,
+                view.state.schema.marks.link!.create({ href }),
+              );
+              tr.setSelection(TextSelection.near(tr.doc.resolve(selection.to), -1));
+              view.dispatch(tr);
+              return true;
+            }
+          }
           if (/^https?:\/\/\S+$/u.test(plain) && view.state.selection.empty) {
             const payload = { text: plain, html: data.getData("text/html") };
             for (const handler of owner.links) if (handler(payload) === true) return true;
@@ -151,7 +174,7 @@ export class SourcePlainProseMirrorController implements ComposerControllerPort 
       state: EditorState.create({
         schema: sourcePlainComposerSchema,
         doc: documentFromText(options.initialText ?? ""),
-        plugins: [events, keymap({ "Mod-z": undo, "Mod-y": redo, "Mod-Shift-z": redo }), history()],
+        plugins: [events, ...(this.enableSourceCodeFenceRule ? [sourceComposerCodeFenceInputRule] : []), keymap({ "Mod-z": undo, "Mod-y": redo, "Mod-Shift-z": redo }), history()],
       }),
       dispatchTransaction(transaction) {
         owner.view.updateState(owner.view.state.apply(transaction));

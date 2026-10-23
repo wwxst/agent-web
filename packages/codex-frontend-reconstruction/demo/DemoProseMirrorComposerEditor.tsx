@@ -27,6 +27,8 @@ export function DemoProseMirrorComposerEditor(props: DemoProseMirrorComposerEdit
     const instance = new SourcePlainProseMirrorController({
       initialText: props.value,
       enterBehavior: "enter",
+      enableSourceCodeFenceRule: true,
+      enableSelectedTextLinks: true,
       onDocumentChange: (text) => latest.current.onChange(text),
     });
     setController(instance);
