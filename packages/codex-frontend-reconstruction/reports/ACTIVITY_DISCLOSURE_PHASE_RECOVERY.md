@@ -46,3 +46,7 @@ node scripts/audit-repeated-disclosure-evidence.mjs /path/to/frontend/webview/as
 ```
 
 The script verifies pinned hashes and signatures; do not commit or republish compiled assets.
+
+## Additional V_ live mounting test
+
+The existing synthetic `review-repeated-mcp` historical activity turn now also includes two matching `external-event` records and a `subscriptionEnded:true` barrier. This makes the unchanged `Je` projection create one V_ subgroup and one standalone termination row. The browser test verifies the external-event label, icon contract, lazy row mounting, count, opening and completed close transitions. The source events remain fixtures, not subscriptions to Slack or any other external service.
