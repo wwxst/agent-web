@@ -272,7 +272,7 @@ function reviewScenario(): ConversationRenderEntry[] {
         grouping:"groupable",success:true,changes:{},
         visualizationActivities:[{path:"preview.tsx",kind:"create"}],
       }),
-    ]),demoForceLatestRenderMode:true},
+    ])},
     demoMessageEntry("assistant", "review-final", "**演示不会触发真实权限变更。** 与 Agent 后端接入时，需要在宿主层明确实现权限校验、授权请求和执行回调。"),
     // Real source turn.items fixture: commentary, command group, file patch,
     // and final answer share ONE virtualized row, unlike former mock turns.
