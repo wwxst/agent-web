@@ -16,6 +16,11 @@ import { groupSourceAgentActivityUnits } from "../src/conversation/AgentActivity
 import { isSourcePreGroupExecSuppressed } from "../src/conversation/SourcePreGroupExecFilter.js";
 import { getSourceExpandableGroupRows } from "../src/conversation/AgentActivityGroupVisibility.js";
 import { createSourceActivityCollapseState } from "../src/conversation/SourceActivityCollapseState.js";
+import {
+  createSourceTurnRuntimeStatusSource,
+  createSourceTurnRuntimeStatusStore,
+  type ConnectedSourceTurnRuntimeStatusSource,
+} from "../src/conversation/SourceTurnRuntimeStatusSource.js";
 import { projectSourceRepeatedActivityRows } from "../src/conversation/SourceRepeatedActivityGroups.js";
 import { partitionSourceAeonActivity } from "../src/conversation/SourceAeonActivityPartitions.js";
 import { classifyRawActivityItem } from "../src/conversation/AgentActivityRawClassifier.js";
@@ -106,6 +111,28 @@ export function makeDemoRow(notify: (message: string) => void) {
   const historyStore = createToolActivityHistoryEntityStore();
   const collapseState = createSourceActivityCollapseState();
   const historySources = new Map<string, ConnectedToolActivityHistorySource>();
+  const turnRuntimeStore=createSourceTurnRuntimeStatusStore();
+  const turnRuntimeSources=new Map<string,ConnectedSourceTurnRuntimeStatusSource>();
+  const liveHistoryQuery={
+    hostId:"demo-host",threadId:"review",entityKey:"fixture-live-turn-history",
+  };
+  const liveUpNextQuery={hostId:"demo-host",threadId:"review"};
+  function getTurnRuntimeSource(entry:import("../src/conversation/ConversationRenderEntriesModel.js").ConversationRenderEntry) {
+    if(entry.turnId!=="review-live-turn-state")return null;
+    const key=JSON.stringify([entry.conversationId,entry.turnId,entry.historyEntityKey]);
+    const existing=turnRuntimeSources.get(key);
+    if(existing!=null)return existing;
+    const source=createSourceTurnRuntimeStatusSource({
+      hostId:"demo-host",threadId:"review",
+      historyEntityKey:"fixture-live-turn-history",turnStatus:"in_progress",
+      isTerminalOrSummaryTurn:false,assistantItem:null,
+      hasInlineSubagentActivity:false,isMostRecentTurn:true,
+      hasUpNextStatusItem:true,interruptedByThisClient:false,
+    },turnRuntimeStore);
+    turnRuntimeSources.set(key,source);
+    return source;
+  }
+
   function getHistorySource(item: ConversationMessageItem, isActive: boolean) {
     // DEMO only: use the fixture's stable ID as the history item ID. A real host
     // must pass the source item ID and canonical history key from its event store.
@@ -299,6 +326,7 @@ export function makeDemoRow(notify: (message: string) => void) {
   const renderers = createConnectedConversationMessageRenderers(host);
   const RecoveredRow = createConversationLiveRow({
     getBlocks: getDemoBlocks,
+    getTurnRuntimeSource,
     getPlanOptions: (entry) => ({ isTurnInProgress: entry.turn?.status === "inProgress", includeTurnExtras: false,
       isAeonThread: entry.isAeonThread === true,
       // The turn host supplies K/Y/ar/U/rn/we/Ui. Test-only fixture below
@@ -313,8 +341,8 @@ export function makeDemoRow(notify: (message: string) => void) {
         interruptedByThisClient: false,
         hasResolvedUpNextState: false,
       } : undefined,
-      renderMode: entry.turnId === "review-source-ke-qe" ? "latest"
-        : entry.isLatestTurn ? "latest" : "all" }),
+      renderMode: entry.turnId === "review-source-ke-qe" || entry.turnId === "review-live-turn-state"
+        ? "latest" : entry.isLatestTurn ? "latest" : "all" }),
     dependencies: demoPlanDependencies,
     renderers,
   });
@@ -325,6 +353,21 @@ export function makeDemoRow(notify: (message: string) => void) {
       {typeof props.entry.timestampSeparatorAtMs === "number" && <div className="demo-time-marker">
         {new Date(props.entry.timestampSeparatorAtMs).toLocaleString("zh-CN")}
       </div>}
+      {props.entry.turnId==="review-live-turn-state" ? <div className="demo-source-turn-controls"
+        data-demo-source-turn-controls="">
+        <button type="button" data-demo-resolve-up-next=""
+          onClick={()=>turnRuntimeStore.publishUpNextReady(liveUpNextQuery,true)}>
+          模拟：后续状态就绪
+        </button>
+        <button type="button" data-demo-complete-turn=""
+          onClick={()=>turnRuntimeStore.publishHistoryStatus(liveHistoryQuery,"completed")}>
+          模拟：历史回合完成
+        </button>
+        <button type="button" data-demo-resume-turn=""
+          onClick={()=>turnRuntimeStore.publishHistoryStatus(liveHistoryQuery,"inProgress")}>
+          模拟：历史回合进行中
+        </button>
+      </div> : null}
       <RecoveredRow {...props} />
     </div>;
   };
@@ -333,6 +376,9 @@ export function makeDemoRow(notify: (message: string) => void) {
       for (const source of historySources.values()) source.dispose();
       historySources.clear();
       historyStore.dispose();
+      for(const source of turnRuntimeSources.values())source.dispose();
+      turnRuntimeSources.clear();
+      turnRuntimeStore.dispose();
       collapseState.dispose();
     },
   });
