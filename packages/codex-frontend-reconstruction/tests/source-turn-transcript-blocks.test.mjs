@@ -4,7 +4,7 @@ import { projectSourceTurnTranscriptBlocks } from "../build/SourceTurnTranscript
 const deps={
   isAutomationNamespaceTool:()=>false,parseUpNextStatus:()=>undefined,
   getCloudAutomation:()=>null,
-  getActivityMetadata:item=>item.grouping==="groupable"?{grouping:"groupable"}:null,
+  getActivityMetadata:item=>typeof item.grouping==="string"?{grouping:item.grouping}:null,
   canGroupActivityWithNext:(_item,next)=>next?.grouping==="groupable",
 };
 const item=(id,type,extra={})=>({id,type,completed:true,...extra});
@@ -14,7 +14,7 @@ test("one turn projects commentary, tools, and final response without a second v
     item("thought","assistant-message",{phase:"commentary",content:"Checking sources"}),
     item("c1","exec",{grouping:"groupable",parsedCmd:{type:"unknown",isFinished:true,cmd:"pwd"}}),
     item("p1","patch",{grouping:"groupable",success:true,changes:{"src/a.ts":{type:"update"}}}),
-    item("final","assistant-message",{phase:"final_answer",content:"Done"}),
+    item("final","assistant-message",{phase:"final_answer",content:"Done",grouping:"standalone"}),
   ]});
   assert.deepEqual(blocks.map(b=>b.type),["user-message","agent-activity","assistant-message"]);
   assert.deepEqual(blocks[1].items.map(i=>i.id),["thought","c1","p1"]);
@@ -36,7 +36,7 @@ test("source group start markers from existing split model survive projection",(
     item("comment","assistant-message",{phase:"commentary",content:"Found it"}),
     item("one","exec",{grouping:"groupable",parsedCmd:{type:"unknown",isFinished:true,cmd:"ls"}}),
     item("two","exec",{grouping:"groupable",parsedCmd:{type:"unknown",isFinished:true,cmd:"cat file"}}),
-    item("final","assistant-message",{phase:"final_answer",content:"Done"}),
+    item("final","assistant-message",{phase:"final_answer",content:"Done",grouping:"standalone"}),
   ]});
   assert.equal(blocks[0].type,"agent-activity");
   assert.ok(blocks[0].items.every(i=>i.id));

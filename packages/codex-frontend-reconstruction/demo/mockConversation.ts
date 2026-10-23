@@ -55,7 +55,8 @@ const fixtureTurnDependencies: Dependencies = {
   isAutomationNamespaceTool: () => false,
   parseUpNextStatus: () => undefined,
   getCloudAutomation: () => null,
-  getActivityMetadata: item => item.grouping === "groupable" ? { grouping: "groupable" } : null,
+  // Explicit _e host metadata also marks eligible final messages standalone.
+  getActivityMetadata: item => typeof item.grouping === "string" ? { grouping: item.grouping } : null,
   canGroupActivityWithNext: (_item, next) => next?.grouping === "groupable",
 };
 export function demoRawTurnEntry(id: string, items: TurnItem[]): ConversationRenderEntry {
@@ -248,7 +249,7 @@ function reviewScenario(): ConversationRenderEntry[] {
       }),
       
       demoItem("workflow-answer","assistant-message","模拟活动已结束。命令和文件差异共享同一条活动时间线，审批与文件操作不会写入磁盘。",
-        {phase:"final_answer",completed:true}),
+        {phase:"final_answer",completed:true,grouping:"standalone"}),
     ]),
   ];
 }

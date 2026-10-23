@@ -21,7 +21,7 @@ export interface SourceTurnBlockInput {
 /** Source ordering: user items → activity units → final assistant item. */
 export function projectSourceTurnTranscriptBlocks(input: SourceTurnBlockInput): ConversationTranscriptBlock[] {
   const groups = splitTurnItemsIntoRenderGroups(
-    [...input.items], input.status === "inProgress" ? "in_progress" : input.status,
+    [...input.items], input.status === "inProgress" ? "in_progress" : input.status === "completed" ? "complete" : input.status,
     input.mode, undefined, input.resolvedApps ?? [], input.dependencies,
   );
   const blocks: ConversationTranscriptBlock[] = [];
