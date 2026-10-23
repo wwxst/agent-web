@@ -22,13 +22,39 @@
   overscroll-behavior-y:contain;
 }
 
-/* Source Je/bg groups only repeated eligible calls within nk's existing
- * 224px scroll region. A_ native fallback; original motion runtime pending. */
+/* Source XO/V_ use shared A_ summary+icon and lazy motion body. The
+ * animation geometry is our CSS-grid substitute for the private Rt.div;
+ * its four state transitions and pointer gating follow original A_. */
 .codex-activity-group-row__repeated { min-width:0; color:var(--demo-dim,#888); }
-.codex-activity-group-row__repeated-toggle { display:flex; min-width:0; align-items:center; gap:6px; cursor:pointer; padding:3px 0; font-size:12.5px; list-style:none; }
-.codex-activity-group-row__repeated-toggle::-webkit-details-marker { display:none; }
-.codex-activity-group-row__repeated-toggle:focus-visible { outline:2px solid var(--demo-accent,#777); outline-offset:2px; }
-.codex-activity-group-row__repeated-title { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.codex-activity-group-row__repeated-chevron { flex:none; transition:transform .12s ease; }
-.codex-activity-group-row__repeated[open] .codex-activity-group-row__repeated-chevron { transform:rotate(90deg); }
-.codex-activity-group-row__repeated-body { display:flex; flex-direction:column; gap:var(--conversation-grouped-item-gap,4px); margin-inline-start:10px; padding-inline-start:8px; border-inline-start:1px solid var(--demo-border,#e7e7e7); }
+.codex-activity-group-row__repeated-header { display:flex; align-items:center; min-width:0; gap:6px; }
+.codex-activity-group-row__repeated-icon { display:inline-flex; align-items:center; flex:none; opacity:.68; }
+.codex-activity-group-row__repeated-toggle {
+  display:inline-flex; flex:1; min-width:0; align-items:center; gap:6px;
+  cursor:pointer; padding:3px 0; text-align:start; color:inherit;
+  background:transparent; border:0; font:inherit; font-size:12.5px;
+}
+.codex-activity-group-row__repeated-toggle:hover { color:var(--demo-text,#292929); }
+.codex-activity-group-row__repeated-toggle:disabled { cursor:default; }
+.codex-activity-group-row__repeated-toggle:focus-visible { outline:2px solid var(--demo-accent,#777); outline-offset:2px; border-radius:4px; }
+.codex-activity-group-row__repeated-title { min-width:0; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.codex-activity-group-row__repeated-chevron { flex:none; transform:rotate(0); transition:transform .18s ease; }
+.codex-activity-group-row__repeated[data-source-disclosure-phase="opening"] .codex-activity-group-row__repeated-chevron,
+.codex-activity-group-row__repeated[data-source-disclosure-phase="expanded"] .codex-activity-group-row__repeated-chevron { transform:rotate(90deg); }
+.codex-activity-group-row__repeated-motion {
+  display:grid; grid-template-rows:0fr; opacity:0;
+  overflow:hidden; pointer-events:none;
+  transition:grid-template-rows .18s ease,opacity .18s ease;
+}
+.codex-activity-group-row__repeated[data-source-disclosure-phase="expanded"] .codex-activity-group-row__repeated-motion {
+  grid-template-rows:1fr; opacity:1; pointer-events:auto;
+}
+.codex-activity-group-row__repeated-motion-inner { min-height:0; overflow:hidden; }
+.codex-activity-group-row__repeated-body {
+  display:flex; flex-direction:column; gap:var(--conversation-grouped-item-gap,4px);
+  margin-inline-start:10px; padding-inline-start:8px;
+  border-inline-start:1px solid var(--demo-border,#e7e7e7);
+}
+@media (prefers-reduced-motion: reduce) {
+  .codex-activity-group-row__repeated-motion,
+  .codex-activity-group-row__repeated-chevron { transition-duration: .01ms; }
+}
