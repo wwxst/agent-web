@@ -251,7 +251,7 @@ export function makeDemoRow(notify: (message: string) => void) {
       },
     },
     ActivityDetails,
-    ActivityResult: ({ result }) => <pre className="demo-activity-detail">{typeof result === "string" ? result : "模拟活动结果"}</pre>,
+    ActivityResult: ({ result }) => <pre data-demo-aeon-task-result="" className="demo-activity-detail">{typeof result === "string" ? result : result != null && typeof result === "object" && "demoLabel" in result ? String(result.demoLabel) : "模拟活动结果"}</pre>,
     GeneratedImages: () => <span className="demo-muted">图片展示尚未接通</span>,
     ThinkingStatus: ({ isVisible, showThinking }) => isVisible && showThinking
       ? <div className="demo-thinking"><span className="demo-thinking-dot"/> 正在思考（模拟）</div>
@@ -286,7 +286,7 @@ export function makeDemoRow(notify: (message: string) => void) {
   const RecoveredRow = createConversationLiveRow({
     getBlocks: getDemoBlocks,
     getPlanOptions: (entry) => ({ isTurnInProgress: entry.turn?.status === "inProgress", includeTurnExtras: false,
-      isAeonThread: entry.turn?.demoIsAeonThread === true,
+      isAeonThread: entry.isAeonThread === true,
       renderMode: entry.isLatestTurn ? "latest" : "all" }),
     dependencies: demoPlanDependencies,
     renderers,
