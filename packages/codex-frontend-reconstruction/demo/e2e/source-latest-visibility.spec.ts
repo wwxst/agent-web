@@ -21,7 +21,7 @@ test("original Ke/fr and qe filter only source-confirmed rows inside mounted lat
   await expect(groups.locator('[data-codex-source-leaf="exec-command"]')).toHaveCount(1);
   await expect(groups.locator("[data-codex-source-patch]")).toHaveCount(1);
   await expect(groups).not.toContainText("SKILL.md");
-  await expect(groups).not.toContainText("make preview");
+  await expect(groups).not.toContainText("touch visualizations/preview.html");
   await expect(latest).not.toContainText("git status");
   expect(errors).toEqual([]);
 });
