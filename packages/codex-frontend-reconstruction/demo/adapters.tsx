@@ -299,7 +299,7 @@ export function makeDemoRow(notify: (message: string) => void) {
     getBlocks: getDemoBlocks,
     getPlanOptions: (entry) => ({ isTurnInProgress: entry.turn?.status === "inProgress", includeTurnExtras: false,
       isAeonThread: entry.isAeonThread === true,
-      renderMode: entry.demoForceLatestRenderMode === true ? "latest"
+      renderMode: entry.turnId === "review-source-ke-qe" ? "latest"
         : entry.isLatestTurn ? "latest" : "all" }),
     dependencies: demoPlanDependencies,
     renderers,
