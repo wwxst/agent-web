@@ -21,7 +21,7 @@ npm run demo:preview
 # open http://127.0.0.1:4173/
 ```
 
-Recommended: Node.js 20.19+ or 22.12+. On Windows, use the same commands in PowerShell or an integrated Codex terminal. If port 5173 is occupied, edit `demo/vite.config.ts` (the dev server uses `strictPort`). Do **not** use the Electron entrypoint yet; none has been restored.
+Recommended: Node.js 20.19+ or 22.12+. On Windows, use the same commands in PowerShell or an integrated Codex terminal. If port 5173 is occupied, edit `demo/vite.config.ts` (the dev server uses `strictPort`). A separate minimal **front-end-only** Electron bootstrap now exists (see below); this is not the original Codex main process or a connected Agent.
 
 ## What is actually connected?
 

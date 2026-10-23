@@ -57,7 +57,15 @@ async function verifySmoke(win) {
       const output=process.env.AGENT_WEB_SMOKE_SCREENSHOT;
       if (output) {
         fs.mkdirSync(path.dirname(path.resolve(output)),{recursive:true});
-        fs.writeFileSync(path.resolve(output),await win.webContents.capturePage().then(image=>image.toPNG()));
+        const captured=await win.webContents.capturePage();
+        const bitmap=captured.toBitmap();
+        const colors=new Set();
+        for(let offset=0; offset+3<bitmap.length; offset+=Math.max(4,Math.floor(bitmap.length/128/4)*4)){
+          colors.add(`${bitmap[offset]}-${bitmap[offset+1]}-${bitmap[offset+2]}`);
+          if(colors.size >= 5) break;
+        }
+        if(colors.size < 5) throw new Error("Electron renderer capture appears blank");
+        fs.writeFileSync(path.resolve(output),captured.toPNG());
       }
       process.stdout.write("ELECTRON_FRONTEND_SMOKE_OK\n");
       app.exit(0);
@@ -85,7 +93,9 @@ async function bootstrap() {
 
   const win=new BrowserWindow({
     width:1352,height:760,minWidth:850,minHeight:520,
-    show:!smoke,
+    // Xvfb must actually paint for capturePage; a hidden BrowserWindow can
+    // report mounted DOM while producing a fully blank screenshot.
+    show:true,
     backgroundColor:"#ffffff",
     title:"Agent Web · Codex front-end reconstruction",
     autoHideMenuBar:true,

@@ -26,3 +26,7 @@ For development: `npm run desktop:dev`. This is an independently runnable **fron
 ## CI Linux SUID sandbox nuance
 
 GitHub hosted Ubuntu runner's Electron binary does not have a root-owned mode-4755 chrome-sandbox helper. Only the `desktop:smoke:ci` command passes `--no-sandbox` **for CI's Xvfb smoke**. Production `desktop:run` and `desktop:dev` remain sandboxed, context-isolated and without Node integration. This is an environmental test accommodation, not a production security setting or an Electron parity claim.
+
+## Painted-window verification
+
+Initial Linux Electron smoke proved the React DOM mounted but its screenshot was blank because the test window had `show:false`. The automated smoke now keeps its virtual Xvfb window visible and validates pixel variation in the real `capturePage` bitmap before exporting the screenshot. Only a painted frame plus mounted React shell/Composer passes; this does not substitute for Windows native visual acceptance.
