@@ -23,6 +23,11 @@ test("source Je/bg opens only the eligible consecutive MCP calls and keeps the b
   await expect(repeated.first().locator("[data-codex-source-repeated-body]")).toBeVisible();
   await expect(repeated.first().locator(".codex-activity-group-row__subrow")).toHaveCount(2);
   await expect(group.locator(".codex-activity-group-row__subrow")).toHaveCount(5);
+  const pending=group.locator('[data-codex-source-leaf="mcp-tool-call"]')
+    .filter({has:page.getByText("正在搜索资料",{exact:true})});
+  await expect(pending).toHaveCount(1);
+  await expect(pending).toHaveAttribute("data-codex-source-mcp-title-source","invocation");
+  await expect(pending).toHaveAttribute("data-codex-source-mcp-completed","false");
   await expect(group.locator('[data-codex-source-repeated-group="external-event"]')).toHaveCount(0);
   await repeated.first().locator("summary").click();
   await expect(repeated.first().locator("[data-codex-source-repeated-body]")).toBeHidden();

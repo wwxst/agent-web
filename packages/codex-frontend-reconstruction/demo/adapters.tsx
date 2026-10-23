@@ -25,6 +25,7 @@ import {
   CodexSourceExecReadLeaf,
   CodexSourceExecSearchLeaf,
   CodexSourcePatchLeaf,
+  CodexSourceMcpToolCallLeaf,
 } from "../src/components/CodexSourceToolActivityLeaves.js";
 import { createToolActivityHistoryEntityStore } from "../src/conversation/ToolActivityHistoryEntityStore.js";
 import { createToolActivityHistorySource, type ConnectedToolActivityHistorySource } from "../src/conversation/ToolActivityHistorySource.js";
@@ -104,6 +105,14 @@ function DemoFileDiff({ oldFile: oldVersion, newFile: newVersion, overflow }: {
 export function makeDemoRow(notify: (message: string) => void) {
   const historyStore = createToolActivityHistoryEntityStore();
   const collapseState = createSourceActivityCollapseState();
+  const demoMcpLabelHost = {
+    isFailedResult: (input:import("../src/conversation/SourceMcpToolActivityLabel.js").SourceMcpToolActivityLabelInput) =>
+      input.toolResult?.type==="error",
+    getToolDefinitionTitle: (definition:import("../src/conversation/SourceMcpToolActivityLabel.js").SourceMcpToolActivityLabelInput["toolDefinition"]) =>
+      typeof definition?.demoTitle==="string" ? definition.demoTitle : null,
+    getFallbackLabel: (input:import("../src/conversation/SourceMcpToolActivityLabel.js").SourceMcpToolActivityLabelInput) =>
+      input.toolName || null,
+  };
   const historySources = new Map<string, ConnectedToolActivityHistorySource>();
   function getHistorySource(item: ConversationMessageItem, isActive: boolean) {
     // DEMO only: use the fixture's stable ID as the history item ID. A real host
@@ -187,15 +196,7 @@ export function makeDemoRow(notify: (message: string) => void) {
           const tool=invocation != null && typeof invocation==="object" &&
             "tool" in invocation ? String(invocation.tool) : "工具";
           const label=resolveSourceMcpToolActivityLabel(
-            sourceMcpLabelInputFromActivity(header.item),{
-            // Demo fixture only; the original imported ct predicate is private.
-            isFailedResult:input=>input.toolResult?.type==="error",
-            getToolDefinitionTitle:definition=>{
-              const value=definition?.demoTitle;
-              return typeof value==="string" ? value : null;
-            },
-            getFallbackLabel:()=>tool,
-          });
+            sourceMcpLabelInputFromActivity(header.item),demoMcpLabelHost);
           return {icon,summary:`${label.text ?? tool} · ${header.count} 次调用 · 模拟`};
         },
         renderRepeatedSummary: group => {
@@ -267,7 +268,7 @@ export function makeDemoRow(notify: (message: string) => void) {
         conversationId: "demo-conversation", hostId: "demo-host", cwd: "/projects/agent-web",
         isReadOnly: false, isTurnInProgress: isActive, isTurnCancelled: false,
         threadDetailLevel: "STEPS_PROSE", summaryTone: "default", showSummaryIcon: true,
-        hideRawCommand: false,
+        hideRawCommand: false, mcpLabelHost:demoMcpLabelHost,
       }),
       leafAdapters: {
         Read: CodexSourceExecReadLeaf,
@@ -275,6 +276,7 @@ export function makeDemoRow(notify: (message: string) => void) {
         ListFiles: CodexSourceExecListFilesLeaf,
         Command: DemoCommandLeaf,
         Patch: CodexSourcePatchLeaf,
+        McpToolCall: CodexSourceMcpToolCallLeaf,
       },
     },
     ActivityDetails,

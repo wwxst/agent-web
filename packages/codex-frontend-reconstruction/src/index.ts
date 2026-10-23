@@ -102,6 +102,7 @@ export type { SourceTurnBlockInput } from "./conversation/SourceTurnTranscriptBl
 export { combineSourceActivityTrace } from "./conversation/SourceCombinedActivityTrace.js";
 export { projectSourceRepeatedActivityRows } from "./conversation/SourceRepeatedActivityGroups.js";
 export { resolveSourceMcpToolActivityLabel, sourceJsToolTitle, sourceMcpLabelInputFromActivity } from "./conversation/SourceMcpToolActivityLabel.js";
+export { CodexSourceMcpToolCallLeaf } from "./components/CodexSourceToolActivityLeaves.js";
 export type { SourceMcpToolActivityLabelInput, SourceMcpToolActivityLabelHost, SourceMcpToolActivityLabelResult } from "./conversation/SourceMcpToolActivityLabel.js";
 export { projectSourceRepeatedHeader } from "./conversation/SourceRepeatedActivityHeader.js";
 export type { SourceRepeatedHeader, SourceRecognizedMcpAction, SourceRepeatedHeaderHost } from "./conversation/SourceRepeatedActivityHeader.js";

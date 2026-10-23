@@ -79,3 +79,8 @@
 
 - Common XA precedence/phase gating, metadata strings and JS title cutoff are now recovered and wired into the existing generic repeated MCP header. All imported private formatters remain host callbacks, not mock implementations.
 - Evidence/limits: `MCP_TOOL_ACTIVITY_LABEL_XA_RECOVERY.md`. Next recover ct/et or precisely scoped Mt/gt branches, and integrate the label with standalone MCP tool leaves.
+
+## Single MCP KO title integration (2026-10-23)
+
+- The same xa model now renders standalone host-leaf MCP titles through the existing toolActivity adapter, retaining old fallback when adapter is absent. Source evidence: MCP_SINGLE_KO_LEAF_INTEGRATION.md.
+- Chromium must verify invoking state on pending MCP singleton and existing repeated success group behavior. Real app metadata and private ct/et are still missing.

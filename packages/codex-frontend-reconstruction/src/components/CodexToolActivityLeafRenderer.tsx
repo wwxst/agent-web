@@ -1,5 +1,6 @@
 import * as React from "react";
 import type { ToolItem, ToolProjection } from "../conversation/ToolActivityDetailModel.js";
+import type { SourceMcpToolActivityLabelHost } from "../conversation/SourceMcpToolActivityLabel.js";
 
 type VisibleToolProjection = Exclude<ToolProjection, {kind:"hidden"}>;
 type Component<P> = React.ComponentType<P>;
@@ -25,6 +26,7 @@ export interface ToolActivityLeafContext {
   hideRawCommand: boolean;
   toolActivityTurnKey?: string | undefined;
   onOpenFile?: (request: ToolActivityOpenFileRequest) => void;
+  mcpLabelHost?: SourceMcpToolActivityLabelHost | undefined;
 }
 export interface ExecReadLeafProps {
   summary: Record<string,unknown>;
@@ -54,6 +56,12 @@ export interface PatchLeafProps {
   hostId:string; showDiffDetails:boolean; summaryIcon?:React.ReactNode;
   onOpenFile?: (request: ToolActivityOpenFileRequest) => void;
 }
+export interface McpToolCallLeafProps {
+  item:ToolItem;
+  labelHost?:SourceMcpToolActivityLabelHost | undefined;
+  summaryIcon?:React.ReactNode | undefined;
+  renderResult?:(item:ToolItem)=>React.ReactNode;
+}
 /** xC/PT prop contracts: actual Codex visual leaves are host-supplied. */
 export interface ToolActivityLeafAdapters {
   Read?:Component<ExecReadLeafProps>;
@@ -61,6 +69,7 @@ export interface ToolActivityLeafAdapters {
   ListFiles?:Component<ExecListFilesLeafProps>;
   Command?:Component<ExecCommandLeafProps>;
   Patch?:Component<PatchLeafProps>;
+  McpToolCall?:Component<McpToolCallLeafProps>;
 }
 export function renderCodexToolActivityLeaf(
   item:ToolItem, projection:VisibleToolProjection,
@@ -100,6 +109,11 @@ export function renderCodexToolActivityLeaf(
           toolActivityTurnKey={context.toolActivityTurnKey}/>;
       }
     }
+  }
+  const McpToolCall=adapters.McpToolCall;
+  if(projection.kind==="host-leaf"&&projection.leaf==="mcp-tool-call"&&McpToolCall!=null){
+    return <McpToolCall item={item} labelHost={context.mcpLabelHost}
+      summaryIcon={context.summaryIcon}/>;
   }
   const Patch = adapters.Patch;
   if(projection.kind==="patch"&&Patch!=null){

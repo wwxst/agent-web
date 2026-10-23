@@ -225,6 +225,7 @@ function reviewScenario(): ConversationRenderEntry[] {
         invocation:{server:"fixture-files",tool:"search",arguments:{query:"pending"}},
         functionName:"files.search",appContext:{connectorId:"file-connector",linkId:"link"},
         demoSafeMcpResult:true,demoToolDisplaySignature:"Files search",
+        toolDisplay:{invoking:"正在搜索资料",title:"资料搜索"},
       }),
       demoItem("repeat-c","mcp-tool-call",undefined,{
         grouping:"groupable",completed:true,source:null,
