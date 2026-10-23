@@ -62,6 +62,14 @@ test("source N groups command and multi-file patch inside the existing transcrip
   await frame.getByRole("button",{name:"复制文件差异"}).click();
   const copied=await page.evaluate(() => navigator.clipboard.readText());
   expect(copied).toContain("AgentActivityUnitGrouping.ts");
+  // Keep a visual acceptance frame with BT's filename/copy bar on screen;
+  // the other screenshot later in this test validates the bottom scroll state.
+  await frame.locator(".codex-source-diff-frame__header").evaluate(element =>
+    element.scrollIntoView({block:"start",inline:"nearest"}));
+  await page.screenshot({
+    path:testInfo.outputPath("codex-bt-file-diff-header.png"),
+    animations:"disabled",
+  });
   await expect(diff.locator(".codex-source-tool-patch-file__diff-viewport")).toHaveCSS("max-height","240px");
   await expect.poll(()=>scroller.evaluate(el=>el.scrollHeight>el.clientHeight)).toBe(true);
   await scroller.evaluate(el=>{el.scrollTop=el.scrollHeight;});
