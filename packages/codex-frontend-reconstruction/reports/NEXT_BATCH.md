@@ -66,3 +66,11 @@
 - Recovered source-constrained, consecutive-only repeated MCP/external-event grouping and mounted it inside the existing nk group details scroller. Demo labels and safety guards are explicitly synthetic.
 - `XO/V_` source wrappers are approximated with a semantic nested disclosure, not claimed identical; private `ie`, `bm` and MCP metadata require further inverse reconstruction.
 - Evidence/tests: `REPEATED_MCP_ACTIVITY_SOURCE_RECOVERY.md`; verify the current CI before reporting success.
+
+## Source A_ / XO / V_ nested disclosure (2026-10-23)
+
+- The original `sites-end-resource` A_ four-phase state contract is restored as `SourceActivityDisclosureModel`; nested MCP and external-event groups now mount the shared `SourceActivityDisclosure` component instead of native `<details>`.
+- XO and V_ now have separate host icon slots and lazy nested children, with CSS grid as an explicit temporary substitute for the private motion runtime. The 224px nk scroller and the existing fk tool leaves are unchanged.
+- A deterministic historical-turn fixture checks consecutive external events and a subscription-ended barrier. Core tests cover interrupted closing; Chromium tests verify nested lazy lifecycle.
+- Verified original source hashes, signatures, implemented limitations and reproduction command: `reports/ACTIVITY_DISCLOSURE_PHASE_RECOVERY.md`.
+- **Next:** source exact `mv/bv` icon resolution and `_m/KO` labels, then latest-turn `Wa/hn` partition; do not replace private data with inferred mock metadata. Electron/Agent integration and pixel parity remain open.
