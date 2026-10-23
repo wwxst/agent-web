@@ -17,10 +17,12 @@ test("original Ke/fr and qe filter only source-confirmed rows inside mounted lat
   // Ke/fr filtered two redundant exec rows BEFORE original N grouping:
   // a host-confirmed loaded-tool read and a completed visual command that
   // is already represented by the following patch visualization activity.
-  await expect(groups.locator(".codex-activity-group-row__subrow")).toHaveCount(2);
+  await expect(groups.locator(".codex-activity-group-row__subrow")).toHaveCount(3);
   await expect(groups.locator('[data-codex-source-leaf="exec-command"]')).toHaveCount(1);
+  await expect(groups.locator('[data-codex-source-leaf="exec-read"]')).toHaveCount(1);
+  await expect(groups).toContainText("ordinary/SKILL.md");
   await expect(groups.locator("[data-codex-source-patch]")).toHaveCount(1);
-  await expect(groups).not.toContainText("SKILL.md");
+  await expect(groups).not.toContainText("visualize/SKILL.md");
   await expect(groups).not.toContainText("touch .codex/visualizations/preview.html");
   await expect(latest).not.toContainText("git status");
   expect(errors).toEqual([]);
