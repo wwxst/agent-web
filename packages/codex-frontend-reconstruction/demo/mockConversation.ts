@@ -201,6 +201,37 @@ function reviewScenario(): ConversationRenderEntry[] {
         parsedCmd: { type: "list_files", isFinished: true, path: "src/conversation" },
       }),
     ]),
+    // Source Je/bg repeated MCP grouping in the *existing* agent activity
+    // renderer. Eligibility is marked explicitly by this synthetic host.
+    demoActivityEntry("review-repeated-mcp", [
+      demoItem("repeat-a","mcp-tool-call",undefined,{
+        grouping:"groupable",completed:true,source:null,
+        invocation:{server:"fixture-files",tool:"search",arguments:{query:"agent"}},
+        functionName:"files.search",appContext:{connectorId:"file-connector",linkId:"link"},
+        result:{type:"success",content:[]},demoSafeMcpResult:true,
+        demoToolDisplaySignature:"Files search",
+      }),
+      demoItem("repeat-b","mcp-tool-call",undefined,{
+        grouping:"groupable",completed:true,source:null,
+        invocation:{server:"fixture-files",tool:"search",arguments:{query:"codex"}},
+        functionName:"files.search",appContext:{connectorId:"file-connector",linkId:"link"},
+        result:{type:"success",content:[]},demoSafeMcpResult:true,
+        demoToolDisplaySignature:"Files search",
+      }),
+      demoItem("repeat-barrier","mcp-tool-call",undefined,{
+        grouping:"groupable",completed:false,source:null,
+        invocation:{server:"fixture-files",tool:"search",arguments:{query:"pending"}},
+        functionName:"files.search",appContext:{connectorId:"file-connector",linkId:"link"},
+        demoSafeMcpResult:true,demoToolDisplaySignature:"Files search",
+      }),
+      demoItem("repeat-c","mcp-tool-call",undefined,{
+        grouping:"groupable",completed:true,source:null,
+        invocation:{server:"fixture-files",tool:"search",arguments:{query:"after"}},
+        functionName:"files.search",appContext:{connectorId:"file-connector",linkId:"link"},
+        result:{type:"success",content:[]},demoSafeMcpResult:true,
+        demoToolDisplaySignature:"Files search",
+      }),
+    ]),
     demoMessageEntry("assistant", "review-final", "**演示不会触发真实权限变更。** 与 Agent 后端接入时，需要在宿主层明确实现权限校验、授权请求和执行回调。"),
     // Real source turn.items fixture: commentary, command group, file patch,
     // and final answer share ONE virtualized row, unlike former mock turns.

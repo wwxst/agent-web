@@ -21,3 +21,14 @@
   scrollbar-gutter:stable;
   overscroll-behavior-y:contain;
 }
+
+/* Source Je/bg groups only repeated eligible calls within nk's existing
+ * 224px scroll region. A_ native fallback; original motion runtime pending. */
+.codex-activity-group-row__repeated { min-width:0; color:var(--demo-dim,#888); }
+.codex-activity-group-row__repeated-toggle { display:flex; min-width:0; align-items:center; gap:6px; cursor:pointer; padding:3px 0; font-size:12.5px; list-style:none; }
+.codex-activity-group-row__repeated-toggle::-webkit-details-marker { display:none; }
+.codex-activity-group-row__repeated-toggle:focus-visible { outline:2px solid var(--demo-accent,#777); outline-offset:2px; }
+.codex-activity-group-row__repeated-title { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.codex-activity-group-row__repeated-chevron { flex:none; transition:transform .12s ease; }
+.codex-activity-group-row__repeated[open] .codex-activity-group-row__repeated-chevron { transform:rotate(90deg); }
+.codex-activity-group-row__repeated-body { display:flex; flex-direction:column; gap:var(--conversation-grouped-item-gap,4px); margin-inline-start:10px; padding-inline-start:8px; border-inline-start:1px solid var(--demo-border,#e7e7e7); }

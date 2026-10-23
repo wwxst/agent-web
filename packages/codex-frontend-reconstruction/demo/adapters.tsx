@@ -15,6 +15,7 @@ import { aggregateAgentActivityUnits } from "../src/conversation/AgentActivityAg
 import { groupSourceAgentActivityUnits } from "../src/conversation/AgentActivityUnitGrouping.js";
 import { getSourceExpandableGroupRows } from "../src/conversation/AgentActivityGroupVisibility.js";
 import { createSourceActivityCollapseState } from "../src/conversation/SourceActivityCollapseState.js";
+import { projectSourceRepeatedActivityRows } from "../src/conversation/SourceRepeatedActivityGroups.js";
 import { classifyRawActivityItem } from "../src/conversation/AgentActivityRawClassifier.js";
 import type { ExecCommandLeafProps } from "../src/components/CodexToolActivityLeafRenderer.js";
 import {
@@ -160,6 +161,22 @@ export function makeDemoRow(notify: (message: string) => void) {
       }),
       renderSummary: (count) => `${count} 项工具活动 · 模拟`,
       groupHeader: {
+        // Je/bg: fixture-only private result safety and bm display signature.
+        getRepeatedRows: items => projectSourceRepeatedActivityRows(items, {
+          getGrouping: item => item.grouping==="groupable" ? "groupable" : "standalone",
+          canGroupMcpResult: item => item.demoSafeMcpResult === true,
+          getToolDisplaySignature: item => item.demoToolDisplaySignature ?? null,
+        }),
+        renderRepeatedSummary: group => {
+          const first=group.items[0];
+          const count=group.items.length;
+          if (first?.type==="external-event")
+            return `已收到来自 ${String(first.sourceLabel ?? "来源")} 的 ${count} 个事件 · 模拟`;
+          const tool=first?.invocation != null &&
+            typeof first.invocation==="object" && "tool" in first.invocation ?
+            String(first.invocation.tool) : "工具";
+          return `${tool} · ${count} 次调用 · 模拟`;
+        },
         // This is explicitly DEMO state mapping, not private Codex turn state.
         getStateContext: ({isActive, isLatestVisibleUnit, isActivitySliceClosed}) => ({
           isLatestVisibleUnit, isHeaderInProgress: isActive, isActivitySliceClosed, isExploring: false }),

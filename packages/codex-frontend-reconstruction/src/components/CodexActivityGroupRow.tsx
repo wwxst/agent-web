@@ -7,6 +7,7 @@ import {
   type ActivityGroupHeaderState,
   type ActivityGroupStateOptions,
 } from "../conversation/AgentActivityGroupPresentation.js";
+import type { SourceRepeatedActivityRow } from "../conversation/SourceRepeatedActivityGroups.js";
 import "./codexActivityGroupRow.css";
 
 export interface CodexActivityGroupRowProps<T extends GroupActivityItem>
@@ -14,6 +15,9 @@ export interface CodexActivityGroupRowProps<T extends GroupActivityItem>
   items: readonly T[];
   /** Original nk uses mk-filtered H for the child list, while the header sees all items. */
   detailItems?: readonly T[];
+  /** Original Je/bg subgroup partition, driven only by verified host fields. */
+  getRepeatedRows?: (items: readonly T[]) => readonly SourceRepeatedActivityRow<T>[];
+  renderRepeatedSummary?: (group: SourceRepeatedActivityRow<T>) => React.ReactNode;
   /** Host owns real source We/Sg completed aggregate, localization and icon metadata. */
   renderCompletedSummary(items: readonly T[]): React.ReactNode;
   renderRow(item: T, index: number): React.ReactNode;
@@ -38,6 +42,9 @@ export function CodexActivityGroupRow<T extends GroupActivityItem>(props: CodexA
   const [expanded, setExpanded] = React.useState(props.defaultExpanded ?? false);
   const contentId = React.useId();
   const state = projectActivityGroupHeader(props);
+  const visibleRows = props.detailItems ?? props.items;
+  const subgroups = props.getRepeatedRows?.(visibleRows) ??
+    visibleRows.map((item,index) => ({key:"single:"+index,kind:"single" as const,items:[item]}));
   let heading: React.ReactNode;
   if (state.kind === "summary") {
     heading = props.renderCompletedSummary(props.items);
@@ -67,10 +74,28 @@ export function CodexActivityGroupRow<T extends GroupActivityItem>(props: CodexA
     <div id={contentId} className="codex-activity-group-row__details vertical-scroll-fade-mask" data-codex-group-details=""
       data-source-group-scroll=""
       hidden={!props.canExpand || !expanded}>
-      {props.canExpand && expanded ? (props.detailItems ?? props.items).map((item, index) =>
-        <div className="codex-activity-group-row__subrow" key={typeof item.id === "string" ? item.id : `${item.type}:${index}`}>
-          {props.renderRow(item, index)}
-        </div>) : null}
+      {props.canExpand && expanded ? subgroups.map(group => {
+        const first=group.items[0];
+        if (first == null) return null;
+        const renderChild=(item:T) => <div className="codex-activity-group-row__subrow"
+          key={typeof item.id === "string" ? item.id : String(visibleRows.indexOf(item))}>
+          {props.renderRow(item,visibleRows.indexOf(item))}
+        </div>;
+        if (group.kind === "single") return <React.Fragment key={group.key}>
+          {group.items.map(renderChild)}
+        </React.Fragment>;
+        return <details key={group.key} className="codex-activity-group-row__repeated"
+          data-codex-source-repeated-group={group.kind}>
+          <summary className="codex-activity-group-row__repeated-toggle"
+            data-codex-source-repeated-toggle="">
+            <span className="codex-activity-group-row__repeated-title">{props.renderRepeatedSummary?.(group)}</span>
+            <span className="codex-activity-group-row__repeated-chevron" aria-hidden="true">›</span>
+          </summary>
+          <div className="codex-activity-group-row__repeated-body" data-codex-source-repeated-body="">
+            {group.items.map(renderChild)}
+          </div>
+        </details>;
+      }) : null}
     </div>
   </section>;
 }

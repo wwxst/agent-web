@@ -100,5 +100,7 @@ export type { SourceGroupVisibilityHost } from "./conversation/AgentActivityGrou
 export { projectSourceTurnTranscriptBlocks } from "./conversation/SourceTurnTranscriptBlocks.js";
 export type { SourceTurnBlockInput } from "./conversation/SourceTurnTranscriptBlocks.js";
 export { combineSourceActivityTrace } from "./conversation/SourceCombinedActivityTrace.js";
+export { projectSourceRepeatedActivityRows } from "./conversation/SourceRepeatedActivityGroups.js";
+export type { SourceRepeatedItem, SourceRepeatedActivityHost, SourceRepeatedActivityRow } from "./conversation/SourceRepeatedActivityGroups.js";
 export { createSourceActivityCollapseState } from "./conversation/SourceActivityCollapseState.js";
 export type { SourceActivityCollapseState } from "./conversation/SourceActivityCollapseState.js";

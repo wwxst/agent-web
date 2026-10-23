@@ -3,6 +3,7 @@ import type { ConversationMessageItem } from "../conversation/ConversationMessag
 import type { AgentActivityUnit, AgentActivityCollapseOptions } from "../conversation/AgentActivityProjection.js";
 import { CodexAgentActivity } from "./CodexAgentActivity.js";
 import { combineSourceActivityTrace } from "../conversation/SourceCombinedActivityTrace.js";
+import type { SourceRepeatedActivityRow } from "../conversation/SourceRepeatedActivityGroups.js";
 import { CodexActivityGroupRow } from "./CodexActivityGroupRow.js";
 import { CodexToolActivityItem } from "./CodexToolActivityItem.js";
 import { ConnectedCodexToolActivityItem } from "./ConnectedCodexToolActivityItem.js";
@@ -68,6 +69,9 @@ export interface ConnectedConversationRendererHost extends ConversationContentAd
       canExpand(items: readonly ConversationMessageItem[]): boolean;
       /** Original nk passes mk-filtered H to details, retaining full items for We. */
       getVisibleItems?(items: readonly ConversationMessageItem[]): readonly ConversationMessageItem[];
+      /** Original Je/bg group consecutive completed compatible MCP and events. */
+      getRepeatedRows?(items:readonly ConversationMessageItem[]): readonly SourceRepeatedActivityRow<ConversationMessageItem>[];
+      renderRepeatedSummary?(row:SourceRepeatedActivityRow<ConversationMessageItem>): React.ReactNode;
       renderCompletedSummary(items: readonly ConversationMessageItem[]): React.ReactNode;
       translateMessage(message: ActivityHeaderMessage): React.ReactNode;
       renderHostActiveLabel?(item: ConversationMessageItem): React.ReactNode;
@@ -260,7 +264,9 @@ export function createConnectedConversationMessageRenderers(host: ConnectedConve
           if (shouldDemoteCompletedSingleGroup(unit.items, state)) return unit.items.map((item,index) =>
             <div key={item.id ?? `${item.type}:${index}`}><ActivityContent item={item} isActive={props.isActive} presentation="ordinary" /></div>);
           return <CodexActivityGroupRow
-            items={unit.items} detailItems={groupHeader.getVisibleItems?.(unit.items)} {...stateContext}
+            items={unit.items} detailItems={groupHeader.getVisibleItems?.(unit.items)}
+            getRepeatedRows={groupHeader.getRepeatedRows} renderRepeatedSummary={groupHeader.renderRepeatedSummary}
+            {...stateContext}
             canExpand={groupHeader.canExpand(unit.items)}
             renderCompletedSummary={groupHeader.renderCompletedSummary}
             translateMessage={groupHeader.translateMessage}

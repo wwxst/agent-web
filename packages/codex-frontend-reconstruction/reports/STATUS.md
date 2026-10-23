@@ -181,3 +181,8 @@ Follow `reports/NEXT_BATCH.md`: add the typed controller paste-event contract an
 
 - `ek → ok` from the original sites-end-resource bundle is restored in `SourceCombinedActivityTrace`. Existing ActivityGroup conditionally combines multiple N/P units only when the host provides a combinedUnitKey. A deterministic browser fixture proves a real N split followed by an explicit trace merge in one Turn.
 - See `COMBINED_ACTIVITY_TRACE_RECOVERY.md`. CI verification for this commit is separate from prior success counts; the real private key selector, real Agent events, Electron and pixel parity are still missing.
+
+## 2026-10-23 — repeated MCP activity grouping
+
+- Source Je/bg consecutive MCP/external-event grouping integrated into existing CodexActivityGroupRow; nested MCP disclosure is fixture-backed and uses source-verified gating, not a generic adjacent same-tool heuristic.
+- Unit/browser tests added; see `REPEATED_MCP_ACTIVITY_SOURCE_RECOVERY.md`. Current CI result must be verified; real MCP host, Electron and pixel parity remain outstanding.
