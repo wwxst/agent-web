@@ -1,8 +1,10 @@
+import { isSourceMcpResultUngroupable } from "./SourceMcpResultGroupingGuard.js";
+
 /**
  * Je from inline-followup-markdown-4751fe20f26d.js (2026-10-21 bundle).
  * Repeated MCP calls and external events are grouped only when consecutive
  * and when their original eligibility and identity conditions agree.
- * The private result safety predicate (ie) and bm tool display are host-owned.
+ * The source $_/ie result guard is recovered; bm tool display identity is host-owned.
  */
 export interface SourceRepeatedItem {
   type: string;
@@ -17,7 +19,7 @@ export interface SourceRepeatedItem {
   pluginId?: string;
   appContext?: {connectorId?: string; linkId?: string};
   invocationResourceUri?: string;
-  result?: {type?: string};
+  result?: {type?: string; structuredContent?: unknown};
   automaticApprovalReviews?: readonly unknown[] | null;
   [key: string]: unknown;
 }
@@ -25,7 +27,7 @@ export interface SourceRepeatedItem {
 export interface SourceRepeatedActivityHost<T extends SourceRepeatedItem> {
   /** Host _e grouping normalization; Je is never run on unknown raw groupings. */
   getGrouping(item:T): "groupable" | "standalone";
-  /** Private ie result guard: return true only if host verified it is safe. */
+  /** Additional host result policy: true only when it is safe to show as a repeated call. */
   canGroupMcpResult(item:T): boolean;
   /** Original bm(toolDisplay + invocation + app context) signature. */
   getToolDisplaySignature(item:T): unknown;
@@ -50,6 +52,7 @@ function groupingKey<T extends SourceRepeatedItem>(
       item.source != null || item.invocation?.server === "computer-use" ||
       item.result?.type !== "success" ||
       (item.automaticApprovalReviews?.length ?? 0) > 0 ||
+      isSourceMcpResultUngroupable(item.invocation?.server, item.result) ||
       !host.canGroupMcpResult(item)) return null;
   return JSON.stringify([
     asJson(item.invocation?.server), asJson(item.invocation?.tool),
