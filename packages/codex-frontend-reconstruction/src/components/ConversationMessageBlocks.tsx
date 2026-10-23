@@ -31,6 +31,7 @@ export interface ConversationMessageRenderers {
     collapseWhenPossible: boolean;
     renderMode: "latest" | "all";
     hasFollowingFinalAnswer: boolean;
+    activityStateKey: string;
   }>;
   ActivityItem: React.ComponentType<{
     item: ConversationMessageItem;
@@ -51,6 +52,8 @@ export interface ConversationMessageRenderers {
 
 export interface ConversationMessageBlocksProps {
   blocks: readonly ConversationTranscriptBlock[];
+  /** Host- and turn-scoped identity for Rk collapse state across virtual row remounts. */
+  activityStateScope?: string;
   options: ConversationMessagePlanOptions;
   dependencies: ConversationMessagePlanDependencies;
   renderers: ConversationMessageRenderers;
@@ -65,7 +68,7 @@ const WRAPPER_CLASS = "flex flex-col gap-0 [contain-intrinsic-size:auto_240px] [
  * All Codex-specific Markdown/design-system/tool UIs are caller-provided.
  */
 export function ConversationMessageBlocks(props: ConversationMessageBlocksProps) {
-  const { blocks, options, dependencies, renderers, latestTurnFooter, latestTurnFollowContentRef } = props;
+  const { blocks, options, dependencies, renderers, latestTurnFooter, latestTurnFollowContentRef, activityStateScope } = props;
   const plan = React.useMemo(
     () => buildConversationMessageRenderPlan(blocks, options, dependencies),
     [blocks, options, dependencies],
@@ -83,7 +86,8 @@ export function ConversationMessageBlocks(props: ConversationMessageBlocksProps)
       case "activity-group":
         return <renderers.ActivityGroup items={node.items} isActive={node.isActive}
           collapseWhenPossible={node.collapseWhenPossible} renderMode={node.renderMode}
-          hasFollowingFinalAnswer={node.hasFollowingFinalAnswer} />;
+          hasFollowingFinalAnswer={node.hasFollowingFinalAnswer}
+          activityStateKey={JSON.stringify([activityStateScope ?? "host", node.key])} />;
       case "activity-item":
         return <renderers.ActivityItem item={node.item} isActive={node.isActive}
           presentation={node.presentation} />;
@@ -148,6 +152,7 @@ export function createConversationLiveRow(adapters: ConversationLiveRowAdapters)
     const blocks = adapters.getBlocks?.(entry) ?? getDirectTranscriptBlock(entry);
     return <ConversationMessageBlocks
       blocks={blocks}
+      activityStateScope={JSON.stringify([entry.conversationId ?? "host-conversation", entry.turnKey])}
       options={adapters.getPlanOptions(entry)}
       dependencies={adapters.dependencies}
       renderers={adapters.renderers}

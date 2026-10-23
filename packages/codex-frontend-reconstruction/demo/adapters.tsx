@@ -14,6 +14,7 @@ import { projectCompletedGroupHeaderParts } from "../src/conversation/AgentActiv
 import { aggregateAgentActivityUnits } from "../src/conversation/AgentActivityAggregate.js";
 import { groupSourceAgentActivityUnits } from "../src/conversation/AgentActivityUnitGrouping.js";
 import { getSourceExpandableGroupRows } from "../src/conversation/AgentActivityGroupVisibility.js";
+import { createSourceActivityCollapseState } from "../src/conversation/SourceActivityCollapseState.js";
 import { classifyRawActivityItem } from "../src/conversation/AgentActivityRawClassifier.js";
 import type { ExecCommandLeafProps } from "../src/components/CodexToolActivityLeafRenderer.js";
 import {
@@ -100,6 +101,7 @@ function DemoFileDiff({ oldFile: oldVersion, newFile: newVersion, overflow }: {
 
 export function makeDemoRow(notify: (message: string) => void) {
   const historyStore = createToolActivityHistoryEntityStore();
+  const collapseState = createSourceActivityCollapseState();
   const historySources = new Map<string, ConnectedToolActivityHistorySource>();
   function getHistorySource(item: ConversationMessageItem, isActive: boolean) {
     // DEMO only: use the fixture's stable ID as the history item ID. A real host
@@ -136,6 +138,7 @@ export function makeDemoRow(notify: (message: string) => void) {
     // Explicit DEMO Wa/Rk adapters: Codex's private unit classifier and persisted
     // collapse state are not represented by synthetic transcript records.
     agentActivity: {
+      collapseState,
       // N/P source grouping uses *explicit synthetic metadata* from fixtures.
       // The private _e classifier must be provided by a future real host.
       toUnits: (items) => groupSourceAgentActivityUnits(items, {
@@ -152,8 +155,8 @@ export function makeDemoRow(notify: (message: string) => void) {
       renderSummary: (count) => `${count} 项工具活动 · 模拟`,
       groupHeader: {
         // This is explicitly DEMO state mapping, not private Codex turn state.
-        getStateContext: ({isActive}) => ({ isLatestVisibleUnit: true,
-          isHeaderInProgress: isActive, isActivitySliceClosed: false, isExploring: false }),
+        getStateContext: ({isActive, isLatestVisibleUnit, isActivitySliceClosed}) => ({
+          isLatestVisibleUnit, isHeaderInProgress: isActive, isActivitySliceClosed, isExploring: false }),
         // mk/rk: expose only source-visible child rows, not every raw item.
         getVisibleItems: items => getSourceExpandableGroupRows(items, {
           isTurnCancelled: false,
@@ -275,6 +278,7 @@ export function makeDemoRow(notify: (message: string) => void) {
       for (const source of historySources.values()) source.dispose();
       historySources.clear();
       historyStore.dispose();
+      collapseState.dispose();
     },
   });
 }

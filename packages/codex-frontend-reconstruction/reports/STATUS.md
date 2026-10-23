@@ -170,3 +170,9 @@ Follow `reports/NEXT_BATCH.md`: add the typed controller paste-event contract an
 - Latest verified successful Actions run at implementation HEAD `699d9849`: core 333/333, demo models 4/4, React/TypeScript build and Chromium 21/21. A second parallel run was still in progress at the checkpoint.
 - New browser screenshot artifact belongs to that Actions run; it is a 1352×760 mock-only preview, not version-matched Codex visual acceptance.
 - Remaining: private `Wa/hn/Ga` complete rules, persisted historical collapse state, assistant commentary subtleties, original theme/icons/animations, real Electron IPC, real Agent events, same-build screenshot comparison. Previous historical test counts elsewhere in STATUS are snapshots, not current.
+
+## 2026-10-23 — activity collapse host integration
+
+- Added controlled historical activity disclosure by stable conversation/turn/block identity using the original Rk/Hk host contract. It survives virtual row remount and conversation switching in the demo host; reset clears in-memory state. The existing local fallback remains when no host adapter is supplied.
+- Restored ek's latest-visible-unit and isActivitySliceClosed inputs for group header projection. React interaction and core regression tests added.
+- See `ACTIVITY_COLLAPSE_AND_HEADER_RECOVERY.md`. CI results for this checkpoint must be read from the corresponding GitHub Actions run; no Electron or real Agent execution is claimed.

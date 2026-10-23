@@ -116,7 +116,9 @@ export function App() {
     if (toastTimerRef.current != null) clearTimeout(toastTimerRef.current);
     toastTimerRef.current = setTimeout(() => setToast(null), 3600);
   }, []);
-  const DemoRow = React.useMemo(() => makeDemoRow(notify), [notify]);
+  // Reset creates a new demo host lifetime. Switching conversations only
+  // remounts virtual rows, so historical Rk choices remain host-owned.
+  const DemoRow = React.useMemo(() => makeDemoRow(notify), [notify, generation]);
   React.useEffect(() => () => DemoRow.dispose(), [DemoRow]);
   const onApiChange = React.useCallback((api: VirtualizedTurnListApi | null) => { virtualizerApiRef.current = api; }, []);
   const scrollToBottom = React.useCallback(() => {

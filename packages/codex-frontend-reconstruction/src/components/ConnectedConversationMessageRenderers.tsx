@@ -43,13 +43,20 @@ export interface ConnectedConversationRendererHost extends ConversationContentAd
   /** The private Wa unit factory and turn-level Rk state must be host-provided.
    * Without them, preserve the existing ActivityGroup layout unchanged. */
   agentActivity?: {
+    /** Host-owned collapse state; null means Rk's source-observed local fallback. */
+    collapseState?: {
+      subscribe(listener: () => void): () => void;
+      getSnapshot(key: string): boolean | null;
+      setCollapsed(key: string, collapsed: boolean): void;
+    };
     toUnits(items: ConversationMessageItem[]): AgentActivityUnit<ConversationMessageItem>[];
-    getCollapseContext(context: { isActive: boolean; collapseWhenPossible: boolean; renderMode: "latest" | "all"; hasFollowingFinalAnswer: boolean }):
+    getCollapseContext(context: { isActive: boolean; collapseWhenPossible: boolean; renderMode: "latest" | "all"; hasFollowingFinalAnswer: boolean; activityStateKey: string }):
       Omit<AgentActivityCollapseOptions<ConversationMessageItem>, "units">;
     renderSummary?(count: number, workedForItem: ConversationMessageItem | null): React.ReactNode;
     /** Original nk/ak group header; We/Sg, mk/rk and icon metadata remain host-owned. */
     groupHeader?: {
-      getStateContext(context: {items: readonly ConversationMessageItem[]; isActive: boolean}): {
+      getStateContext(context: {items: readonly ConversationMessageItem[]; isActive: boolean;
+        isLatestVisibleUnit: boolean; isActivitySliceClosed: boolean}): {
         isLatestVisibleUnit: boolean;
         isHeaderInProgress: boolean;
         isActivitySliceClosed: boolean;
@@ -227,9 +234,21 @@ export function createConnectedConversationMessageRenderers(host: ConnectedConve
       const units = grouping.toUnits(props.items);
       const context = grouping.getCollapseContext(props);
       const groupHeader = grouping.groupHeader;
+      // The source Rk contract accepts controlled collapse state from the turn
+      // host; useSyncExternalStore preserves it after virtualization unmounts.
+      const collapseStore = grouping.collapseState;
+      const controlledCollapsed = React.useSyncExternalStore(
+        collapseStore?.subscribe ?? (() => () => {}),
+        () => collapseStore?.getSnapshot(props.activityStateKey) ?? null,
+        () => collapseStore?.getSnapshot(props.activityStateKey) ?? null,
+      );
       const renderUnit = (unit: (typeof units)[number]) => {
           if (unit.kind === "standalone") return <ActivityContent item={unit.item} isActive={props.isActive} presentation="ordinary" />;
-          const stateContext = groupHeader?.getStateContext({items: unit.items, isActive: props.isActive});
+          const stateContext = groupHeader?.getStateContext({
+            items: unit.items, isActive: props.isActive,
+            isLatestVisibleUnit: units[units.length - 1]?.key === unit.key,
+            isActivitySliceClosed: props.collapseWhenPossible,
+          });
           if (groupHeader == null || stateContext == null) return unit.items.map((item, index) =>
             <div key={item.id ?? `${item.type}:${index}`}><ActivityContent item={item} isActive={props.isActive} presentation="ordinary" /></div>);
           const state = projectActivityGroupHeader({items: unit.items, ...stateContext});
@@ -255,6 +274,9 @@ export function createConnectedConversationMessageRenderers(host: ConnectedConve
         </div>;
       }
       return <CodexAgentActivity {...context} units={units} renderSummary={grouping.renderSummary}
+        persistedCollapsed={collapseStore == null ? undefined : controlledCollapsed}
+        onSetCollapsed={collapseStore == null ? undefined :
+          (next) => collapseStore.setCollapsed(props.activityStateKey, next)}
         renderUnit={renderUnit} />;
     },
     ActivityItem(props) {

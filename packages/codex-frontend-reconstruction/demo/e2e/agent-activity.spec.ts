@@ -31,6 +31,18 @@ test("activity collapse state is isolated between demo conversations",async ({pa
   await expect(review).toHaveAttribute("data-agent-activity-collapsed","true");
   await review.getByRole("button",{name:/项工具活动/}).click();
   await expect(review).toHaveAttribute("data-agent-activity-collapsed","false");
+  // Switching/remounting the virtualized conversation must not silently reset
+  // host-owned Rk state (original local-conversation-turn isCollapsed prop).
+  await page.getByRole("button", {name:/恢复 Codex 会话界面/}).click();
+  await expect(page.locator("[data-recovered-agent-activity]").first())
+    .toHaveAttribute("data-agent-activity-collapsed","false");
+  await page.getByRole("button", {name:/工具调用与审批交互/}).click();
+  await expect(page.locator("[data-recovered-agent-activity]").first())
+    .toHaveAttribute("data-agent-activity-collapsed","false");
+  // A new demo host resets the controlled state, not just the visible React row.
+  await page.getByRole("button",{name:"新建演示会话"}).click();
+  await expect(page.locator("[data-recovered-agent-activity]").first())
+    .toHaveAttribute("data-agent-activity-collapsed","true");
 });
 
 

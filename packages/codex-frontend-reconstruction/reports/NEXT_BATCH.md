@@ -46,3 +46,10 @@
 - Do not claim the base plain schema is the full rich Codex editor.
 - Keep core, virtual-list, activity, FileDiff and Composer browser tests green.
 - Use the independent recovery branch, do not merge main without permission.
+
+## Activity collapse/headers batch (2026-10-23)
+
+- Implemented source Rk host-owned in-memory collapse state through the existing React row; key is scoped by conversation/turn/activity. Host reset clears, switching/remounting retains explicit user choices.
+- ek/hg header input now knows the latest visible unit and source-closed activity slices. Other original host display predicates remain injectable, not reconstructed by guesswork.
+- Source signature and scope: `ACTIVITY_COLLAPSE_AND_HEADER_RECOVERY.md`.
+- Next: recover Wa/hn group classification and nested MCP grouping, then compare exact build matching and do not conflate browser smoke with Electron verification.
