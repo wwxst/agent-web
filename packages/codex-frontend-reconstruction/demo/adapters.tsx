@@ -142,12 +142,12 @@ export function makeDemoRow(notify: (message: string) => void) {
         getGrouping: item => item.grouping === "groupable" ? "groupable" : "standalone",
         startsGroup: item => item.startsGroup === true,
       }),
-      getCollapseContext: ({ isActive, collapseWhenPossible }) => ({
+      getCollapseContext: ({ isActive, collapseWhenPossible, hasFollowingFinalAnswer }) => ({
         hasFinalAssistantStarted: !isActive,
         isTurnCancelled: false,
         allowCollapseBeforeFinal: collapseWhenPossible,
         preventAutoCollapse: false,
-        hasFollowingFinalAnswer: true,
+        hasFollowingFinalAnswer,
       }),
       renderSummary: (count) => `${count} 项工具活动 · 模拟`,
       groupHeader: {
@@ -229,7 +229,7 @@ export function makeDemoRow(notify: (message: string) => void) {
     InProgressFixedContent: () => <span className="demo-muted">执行中（模拟）</span>,
     ConversationGap: () => <div className="demo-conversation-gap" />,
     FileDiff: DemoFileDiff,
-    getText: (item) => item.type === "userMessage" || item.type === "agentMessage"
+    getText: (item) => item.type === "userMessage" || item.type === "agentMessage" || item.type === "assistant-message"
       ? typeof item.content === "string" ? item.content : null
       : null,
     getFileReview: (item) => item.type === "demo-file-review"
@@ -255,7 +255,8 @@ export function makeDemoRow(notify: (message: string) => void) {
   const renderers = createConnectedConversationMessageRenderers(host);
   const RecoveredRow = createConversationLiveRow({
     getBlocks: getDemoBlocks,
-    getPlanOptions: (entry) => ({ isTurnInProgress: entry.turn?.status === "inProgress", includeTurnExtras: false }),
+    getPlanOptions: (entry) => ({ isTurnInProgress: entry.turn?.status === "inProgress", includeTurnExtras: false,
+      renderMode: entry.isLatestTurn ? "latest" : "all" }),
     dependencies: demoPlanDependencies,
     renderers,
   });

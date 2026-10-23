@@ -6,10 +6,15 @@ test("source N groups command and multi-file patch inside the existing transcrip
   await page.getByRole("button",{name:/工具调用与审批交互/}).click();
   const entry=page.locator('[data-demo-turn-id="review-workflow"]');
   await expect(entry).toHaveCount(1);
-  const activity=entry.locator("[data-recovered-agent-activity]");
-  await activity.getByRole("button",{name:/项工具活动/}).click();
-  const group=activity.locator("[data-codex-activity-group]");
+  // Latest n=latest uses direct ga; no historical Rk outer disclosure.
+  await expect(entry.locator("[data-recovered-agent-activity]")).toHaveCount(0);
+  const directActivity=entry.locator("[data-codex-current-turn-activity]");
+  await expect(directActivity).toBeVisible();
+  const group=directActivity.locator("[data-codex-activity-group]");
   await expect(group).toBeVisible();
+  await expect(entry.locator('[data-conversation-message="assistant"]')).toHaveCount(1);
+  await expect(entry.getByText("下面仅用于验证连续工具活动的组件接线", {exact:false})).toBeVisible();
+  await expect(entry.getByText("模拟活动已结束。命令和文件差异", {exact:false})).toBeVisible();
   await expect(group.getByRole("button",{name:/编辑了文件.*运行了命令/})).toHaveCount(1);
   await group.locator(".codex-activity-group-row__toggle").click();
   const scroller=group.locator("[data-source-group-scroll]");

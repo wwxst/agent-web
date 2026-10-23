@@ -5,6 +5,8 @@
 import type { ConversationRenderEntry } from "../src/conversation/ConversationRenderEntriesModel.js";
 import type { ConversationMessageItem, ConversationTranscriptBlock } from "../src/conversation/ConversationMessageRenderPlan.js";
 import { createLiveConversationSource } from "../src/conversation/LiveConversationSource.js";
+import { projectSourceTurnTranscriptBlocks } from "../src/conversation/SourceTurnTranscriptBlocks.js";
+import type { TurnItem, Dependencies } from "../src/conversation/TurnItemRenderGroups.js";
 
 export type DemoSource = ReturnType<typeof createLiveConversationSource>;
 export type DemoConversationId = "frontend" | "review";
@@ -49,7 +51,30 @@ export function demoEntry(id: string, block: ConversationTranscriptBlock, estima
   };
 }
 
+const fixtureTurnDependencies: Dependencies = {
+  isAutomationNamespaceTool: () => false,
+  parseUpNextStatus: () => undefined,
+  getCloudAutomation: () => null,
+  getActivityMetadata: item => item.grouping === "groupable" ? { grouping: "groupable" } : null,
+  canGroupActivityWithNext: (_item, next) => next?.grouping === "groupable",
+};
+export function demoRawTurnEntry(id: string, items: TurnItem[]): ConversationRenderEntry {
+  return {
+    ...demoEntry(id, {type:"agent-activity", key:"unused:" + id, items: []}, 340),
+    turn: { items, status: "completed" },
+  };
+}
 export function getDemoBlocks(entry: ConversationRenderEntry): readonly ConversationTranscriptBlock[] {
+  const items: unknown = entry.turn?.items;
+  if (Array.isArray(items) && items.length > 0) {
+    return projectSourceTurnTranscriptBlocks({
+      turnId: entry.turnId ?? entry.turnSearchKey ?? "unknown",
+      items: items as TurnItem[],
+      status: entry.turn?.status ?? "completed",
+      mode: entry.isLatestTurn ? "latest" : "all",
+      dependencies: fixtureTurnDependencies,
+    });
+  }
   const value: unknown = entry.turn?.demoBlocks;
   return Array.isArray(value) ? value as ConversationTranscriptBlock[] : [];
 }
@@ -172,11 +197,12 @@ function reviewScenario(): ConversationRenderEntry[] {
         parsedCmd: { type: "list_files", isFinished: true, path: "src/conversation" },
       }),
     ]),
-    // Deterministic activity-continuity fixture: command -> file edits ->
-    // independent expandable FileDiff, through the EXISTING transcript path.
-    // No files are touched and no Agent events are invented as live input.
-    demoMessageEntry("assistant","workflow-intro","下面仅用于验证连续工具活动的组件接线（模拟数据，不执行命令）。"),
-    demoActivityEntry("review-workflow", [
+    demoMessageEntry("assistant", "review-final", "**演示不会触发真实权限变更。** 与 Agent 后端接入时，需要在宿主层明确实现权限校验、授权请求和执行回调。"),
+    // Real source turn.items fixture: commentary, command group, file patch,
+    // and final answer share ONE virtualized row, unlike former mock turns.
+    demoRawTurnEntry("review-workflow", [
+      demoItem("workflow-commentary","assistant-message","下面仅用于验证连续工具活动的组件接线（模拟数据，不执行命令）。",
+        {phase:"commentary",completed:true}),
       demoItem("workflow-command-a","exec",undefined,{state:"Ready",command:"Get-Content src/conversation/AgentActivityUnitGrouping.ts",output:"// fixture read"}),
       demoItem("workflow-command-b","exec",undefined,{state:"Ready",command:"git diff --check",output:"fixture: no whitespace errors"}),
       demoItem("workflow-command-c","exec",undefined,{state:"Ready",command:"npm run test:core",output:"fixture: tests passed"}),
@@ -220,9 +246,10 @@ function reviewScenario(): ConversationRenderEntry[] {
           }
         }
       }),
+      
+      demoItem("workflow-answer","assistant-message","模拟活动已结束。命令和文件差异共享同一条活动时间线，审批与文件操作不会写入磁盘。",
+        {phase:"final_answer",completed:true}),
     ]),
-    demoMessageEntry("assistant","workflow-final","模拟活动已结束。命令和文件差异共享同一条活动时间线，审批与文件操作不会写入磁盘。"),
-    demoMessageEntry("assistant", "review-final", "**演示不会触发真实权限变更。** 与 Agent 后端接入时，需要在宿主层明确实现权限校验、授权请求和执行回调。"),
   ];
 }
 

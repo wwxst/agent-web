@@ -29,6 +29,8 @@ export interface ConversationMessageRenderers {
     items: ConversationMessageItem[];
     isActive: boolean;
     collapseWhenPossible: boolean;
+    renderMode: "latest" | "all";
+    hasFollowingFinalAnswer: boolean;
   }>;
   ActivityItem: React.ComponentType<{
     item: ConversationMessageItem;
@@ -80,7 +82,8 @@ export function ConversationMessageBlocks(props: ConversationMessageBlocksProps)
           assistantCopyText={node.assistantCopyText} attachedActivityItems={node.attachedActivityItems} />;
       case "activity-group":
         return <renderers.ActivityGroup items={node.items} isActive={node.isActive}
-          collapseWhenPossible={node.collapseWhenPossible} />;
+          collapseWhenPossible={node.collapseWhenPossible} renderMode={node.renderMode}
+          hasFollowingFinalAnswer={node.hasFollowingFinalAnswer} />;
       case "activity-item":
         return <renderers.ActivityItem item={node.item} isActive={node.isActive}
           presentation={node.presentation} />;

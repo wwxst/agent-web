@@ -35,7 +35,7 @@ export interface RenderPlanBase {
 export type ConversationMessageRenderNode = RenderPlanBase & (
   | { kind: "user-message"; item: ConversationMessageItem; isFirstUserMessage: boolean; isLastUserMessage: boolean; showReadReceipt: boolean; readReceipt?: unknown | undefined }
   | { kind: "assistant-message"; item: ConversationMessageItem; attachedActivityItems?: unknown[] | undefined; assistantCopyText?: string | undefined; isLastAssistantMessage: boolean }
-  | { kind: "activity-group"; items: ConversationMessageItem[]; isActive: boolean; collapseWhenPossible: boolean }
+  | { kind: "activity-group"; items: ConversationMessageItem[]; isActive: boolean; collapseWhenPossible: boolean; renderMode: "latest" | "all"; hasFollowingFinalAnswer: boolean }
   | { kind: "activity-result"; result: unknown }
   | { kind: "activity-item"; item: ConversationMessageItem; isActive: boolean; presentation: "ordinary" | "subagent" | "activity-units" }
   | { kind: "generated-images"; images: Array<Record<string, unknown>> }
@@ -56,6 +56,8 @@ export interface ConversationMessageRenderPlan {
 
 export interface ConversationMessagePlanOptions {
   isTurnInProgress: boolean;
+  /** Original local-conversation-turn selects direct ga for latest vs Rk for all. */
+  renderMode?: "latest" | "all";
   isAeonThread?: boolean;
   isActiveAeonTurn?: boolean;
   footerStatus?: string | null;
@@ -138,7 +140,7 @@ export function buildConversationMessageRenderPlan(
     } as ConversationMessageRenderNode);
   }
 
-  for (const block of blocks) {
+  for (const [blockIndex, block] of blocks.entries()) {
     switch (block.type) {
       case "agent-activity": {
         const active = options.isTurnInProgress &&
@@ -159,6 +161,10 @@ export function buildConversationMessageRenderPlan(
             kind: "activity-group", items: part.items,
             isActive: active,
             collapseWhenPossible: block.collapseWhenPossible === true,
+            renderMode: options.renderMode ?? "all",
+            hasFollowingFinalAnswer: blocks.slice(blockIndex + 1).some(candidate =>
+              candidate.type === "assistant-message" &&
+              (candidate.item.phase === "final_answer" || candidate.item.phase == null)),
           }, key, { canFollow: false });
         }
         break;

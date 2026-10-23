@@ -44,7 +44,7 @@ export interface ConnectedConversationRendererHost extends ConversationContentAd
    * Without them, preserve the existing ActivityGroup layout unchanged. */
   agentActivity?: {
     toUnits(items: ConversationMessageItem[]): AgentActivityUnit<ConversationMessageItem>[];
-    getCollapseContext(context: { isActive: boolean; collapseWhenPossible: boolean }):
+    getCollapseContext(context: { isActive: boolean; collapseWhenPossible: boolean; renderMode: "latest" | "all"; hasFollowingFinalAnswer: boolean }):
       Omit<AgentActivityCollapseOptions<ConversationMessageItem>, "units">;
     renderSummary?(count: number, workedForItem: ConversationMessageItem | null): React.ReactNode;
     /** Original nk/ak group header; We/Sg, mk/rk and icon metadata remain host-owned. */
@@ -227,8 +227,7 @@ export function createConnectedConversationMessageRenderers(host: ConnectedConve
       const units = grouping.toUnits(props.items);
       const context = grouping.getCollapseContext(props);
       const groupHeader = grouping.groupHeader;
-      return <CodexAgentActivity {...context} units={units} renderSummary={grouping.renderSummary}
-        renderUnit={(unit) => {
+      const renderUnit = (unit: (typeof units)[number]) => {
           if (unit.kind === "standalone") return <ActivityContent item={unit.item} isActive={props.isActive} presentation="ordinary" />;
           const stateContext = groupHeader?.getStateContext({items: unit.items, isActive: props.isActive});
           if (groupHeader == null || stateContext == null) return unit.items.map((item, index) =>
@@ -247,8 +246,16 @@ export function createConnectedConversationMessageRenderers(host: ConnectedConve
             formatWebSearch={groupHeader.formatWebSearch}
             renderRow={(item) => <ActivityContent item={item} isActive={props.isActive} presentation="ordinary" />}
           />;
-        }}
-      />;
+        };
+      // Source local-conversation-turn branches on n: latest mounts ga/ek
+      // directly; historical 'all' uses Rk for prior-turn disclosure.
+      if (props.renderMode === "latest") {
+        return <div data-codex-current-turn-activity="" className="flex flex-col">
+          {units.map(unit => <React.Fragment key={unit.key}>{renderUnit(unit)}</React.Fragment>)}
+        </div>;
+      }
+      return <CodexAgentActivity {...context} units={units} renderSummary={grouping.renderSummary}
+        renderUnit={renderUnit} />;
     },
     ActivityItem(props) {
       return <div data-conversation-activity-item="">
