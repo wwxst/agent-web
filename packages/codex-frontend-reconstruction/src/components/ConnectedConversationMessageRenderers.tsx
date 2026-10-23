@@ -3,6 +3,7 @@ import type { ConversationMessageItem } from "../conversation/ConversationMessag
 import type { AgentActivityUnit, AgentActivityCollapseOptions } from "../conversation/AgentActivityProjection.js";
 import { CodexAgentActivity } from "./CodexAgentActivity.js";
 import { combineSourceActivityTrace } from "../conversation/SourceCombinedActivityTrace.js";
+import { filterSourceLatestActivityUnits } from "../conversation/SourceLatestActivityVisibility.js";
 import type { SourceRepeatedActivityRow } from "../conversation/SourceRepeatedActivityGroups.js";
 import { CodexActivityGroupRow } from "./CodexActivityGroupRow.js";
 import { CodexToolActivityItem } from "./CodexToolActivityItem.js";
@@ -54,6 +55,10 @@ export interface ConnectedConversationRendererHost extends ConversationContentAd
     toUnits(items: ConversationMessageItem[]): AgentActivityUnit<ConversationMessageItem>[];
     /** Original ek: combine into an ok trace only with an explicit host key. */
     getCombinedUnitKey?(items: readonly ConversationMessageItem[]): string | null | undefined;
+    /** Original qe's Gi flag must be evaluated by the real turn host.
+     * null = unresolved: retain existing UI without guessing Gi. */
+    allowLatestCompletedGroup?(context: {items: readonly ConversationMessageItem[];
+      isActive:boolean;collapseWhenPossible:boolean;hasFollowingFinalAnswer:boolean;}): boolean | null;
     getCollapseContext(context: { isActive: boolean; collapseWhenPossible: boolean; renderMode: "latest" | "all"; hasFollowingFinalAnswer: boolean; activityStateKey: string }):
       Omit<AgentActivityCollapseOptions<ConversationMessageItem>, "units">;
     renderSummary?(count: number, workedForItem: ConversationMessageItem | null): React.ReactNode;
@@ -243,6 +248,10 @@ export function createConnectedConversationMessageRenderers(host: ConnectedConve
       const rawUnits = grouping.toUnits(props.items);
       const units = combineSourceActivityTrace(rawUnits,
         grouping.getCombinedUnitKey?.(props.items));
+      const latestRetention = props.renderMode === "latest"
+        ? grouping.allowLatestCompletedGroup?.(props) ?? null : null;
+      const visibleUnits = latestRetention === null ? units
+        : filterSourceLatestActivityUnits(units, latestRetention);
       const context = grouping.getCollapseContext(props);
       const groupHeader = grouping.groupHeader;
       // The source Rk contract accepts controlled collapse state from the turn
@@ -257,7 +266,7 @@ export function createConnectedConversationMessageRenderers(host: ConnectedConve
           if (unit.kind === "standalone") return <ActivityContent item={unit.item} isActive={props.isActive} presentation="ordinary" />;
           const stateContext = groupHeader?.getStateContext({
             items: unit.items, isActive: props.isActive,
-            isLatestVisibleUnit: units[units.length - 1]?.key === unit.key,
+            isLatestVisibleUnit: visibleUnits[visibleUnits.length - 1]?.key === unit.key,
             isActivitySliceClosed: props.collapseWhenPossible,
           });
           if (groupHeader == null || stateContext == null) return unit.items.map((item, index) =>
@@ -284,7 +293,7 @@ export function createConnectedConversationMessageRenderers(host: ConnectedConve
       // directly; historical 'all' uses Rk for prior-turn disclosure.
       if (props.renderMode === "latest") {
         return <div data-codex-current-turn-activity="" className="flex flex-col">
-          {units.map(unit => <React.Fragment key={unit.key}>{renderUnit(unit)}</React.Fragment>)}
+          {visibleUnits.map(unit => <React.Fragment key={unit.key}>{renderUnit(unit)}</React.Fragment>)}
         </div>;
       }
       return <CodexAgentActivity {...context} units={units} renderSummary={grouping.renderSummary}
