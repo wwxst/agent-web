@@ -108,3 +108,6 @@ export { createSourceActivityCollapseState } from "./conversation/SourceActivity
 export type { SourceActivityCollapseState } from "./conversation/SourceActivityCollapseState.js";
 
 export * from "./conversation/SourceActivityDisclosureModel.js";
+
+export { partitionSourceAeonActivity } from "./conversation/SourceAeonActivityPartitions.js";
+export type { SourceAeonActivityPartitionOptions } from "./conversation/SourceAeonActivityPartitions.js";
