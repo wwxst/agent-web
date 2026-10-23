@@ -63,10 +63,12 @@ test('recovered projection hands original demo blocks through to recovered dispa
 
 test('long history adds unique keys and can be projected without duplicate rows', () => {
   const s=createDemoSource('review');
-  appendDemoEntries(s, makeLongHistory());
+  const originalCount=s.getSnapshot().entries.length;
+  const extraHistory=makeLongHistory();
+  appendDemoEntries(s, extraHistory);
   const snapshot=s.getSnapshot();
   const output=buildConversationRenderEntries({...snapshot.projection,baseEntries:[...snapshot.entries]},deps);
-  assert.equal(output.entries.length,55); // adds two synthetic skill-script background label fixtures alongside PT/IT and RC/EC/NC leaves
+  assert.equal(output.entries.length, originalCount + extraHistory.length); // no longer assumes a fixed number of synthetic scenario rows
   const keys=output.entries.map(e=>e.turnKey);
   assert.equal(new Set(keys).size,keys.length);
   assert.equal(keys.at(-1),'history-content:turn:history-45');
