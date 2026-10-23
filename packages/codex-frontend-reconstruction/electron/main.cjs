@@ -23,6 +23,9 @@ const target = resolveRendererTarget({
   devServerUrl:process.env.AGENT_WEB_DEV_SERVER_URL,
 });
 const smoke = process.argv.includes("--smoke-test");
+// CI's virtual framebuffer has no working hardware GPU. The normal desktop
+// process keeps standard Chromium rendering; only smoke uses CPU painting.
+if (smoke) app.disableHardwareAcceleration();
 const exitWithFailure = (error) => {
   process.stderr.write(`Desktop front-end startup failed: ${String(error)}\n`);
   app.exit(1);
@@ -57,14 +60,21 @@ async function verifySmoke(win) {
       const output=process.env.AGENT_WEB_SMOKE_SCREENSHOT;
       if (output) {
         fs.mkdirSync(path.dirname(path.resolve(output)),{recursive:true});
-        const captured=await win.webContents.capturePage();
-        const bitmap=captured.toBitmap();
-        const colors=new Set();
-        for(let offset=0; offset+3<bitmap.length; offset+=Math.max(4,Math.floor(bitmap.length/128/4)*4)){
-          colors.add(`${bitmap[offset]}-${bitmap[offset+1]}-${bitmap[offset+2]}`);
-          if(colors.size >= 5) break;
+        let captured=null;
+        // React can mount before Chromium paints the initial frame. Wait for
+        // a visibly varied bitmap rather than accepting a white capture.
+        for(let retry=0; retry<36; retry++){
+          await new Promise(resolve=>setTimeout(resolve,250));
+          const frame=await win.webContents.capturePage();
+          const bitmap=frame.toBitmap(), colors=new Set();
+          for(let offset=0; offset+3<bitmap.length;
+              offset+=Math.max(4,Math.floor(bitmap.length/128/4)*4)){
+            colors.add(`${bitmap[offset]}-${bitmap[offset+1]}-${bitmap[offset+2]}`);
+            if(colors.size>=5) break;
+          }
+          if(colors.size>=5){captured=frame;break;}
         }
-        if(colors.size < 5) throw new Error("Electron renderer capture appears blank");
+        if(captured==null) throw new Error("Electron renderer never painted a nonblank frame");
         fs.writeFileSync(path.resolve(output),captured.toPNG());
       }
       process.stdout.write("ELECTRON_FRONTEND_SMOKE_OK\n");

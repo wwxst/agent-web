@@ -30,3 +30,7 @@ GitHub hosted Ubuntu runner's Electron binary does not have a root-owned mode-47
 ## Painted-window verification
 
 Initial Linux Electron smoke proved the React DOM mounted but its screenshot was blank because the test window had `show:false`. The automated smoke now keeps its virtual Xvfb window visible and validates pixel variation in the real `capturePage` bitmap before exporting the screenshot. Only a painted frame plus mounted React shell/Composer passes; this does not substitute for Windows native visual acceptance.
+
+## Virtual-framebuffer paint retry
+
+Xvfb can mount React before Electron's initial compositor paint, and CI Linux has no stable GPU process. The `desktop:smoke:ci` command now uses CPU rendering switches only in CI; `main.cjs` disables acceleration only for `--smoke-test`. The screenshot path waits for an actually painted, non-uniform frame rather than failing on the first blank capture. Native Windows `desktop:run` does **not** inherit these CI flags.
