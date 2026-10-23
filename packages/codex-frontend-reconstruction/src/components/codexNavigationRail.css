@@ -1,0 +1,63 @@
+/*
+ * Verified structure from compiled app-initial dWc: nav[data-app-navigation-rail],
+ * scrollable destination stack and separate footer; `browser:w-13` = 52px
+ * at the source CSS --spacing:4px. Fallback palette/icons are authored for the
+ * browser host and are NOT claimed as original Codex assets.
+ */
+.codex-navigation-rail {
+  --codex-rail-item-size: 36px;
+  position: relative;
+  box-sizing: border-box;
+  width: calc(var(--spacing, 4px) * 13);
+  flex: 0 0 calc(var(--spacing, 4px) * 13);
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  padding: 2px 0 8px;
+  background: var(--demo-sidebar, var(--color-surface-secondary, #f5f5f5));
+  border: 0;
+}
+.codex-navigation-rail__divider {
+  pointer-events: none;
+  position: absolute;
+  inset-block: 0;
+  inset-inline-end: 0;
+  z-index: 1;
+  border-inline-end: 1px solid var(--demo-border, #e7e7e7);
+}
+.codex-navigation-rail__header { flex-shrink: 0; display: flex; justify-content: center; width: 100%; padding: 3px 0 8px; }
+.codex-navigation-rail__destinations {
+  min-height: 0;
+  flex: 1;
+  width: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 2px 4px;
+}
+.codex-navigation-rail__destinations::-webkit-scrollbar { display: none; }
+.codex-navigation-rail__footer { flex-shrink: 0; width: 100%; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.codex-navigation-rail__destination,
+.codex-navigation-rail__footer > button {
+  width: var(--codex-rail-item-size);
+  height: var(--codex-rail-item-size);
+  flex: 0 0 var(--codex-rail-item-size);
+  display: inline-grid;
+  place-items: center;
+  padding: 0;
+  border: none;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--demo-dim, #888);
+}
+.codex-navigation-rail__destination[aria-current="page"] { background: var(--demo-border, #e8e8e8); color: var(--demo-text, #242424); }
+.codex-navigation-rail__destination:hover:not(:disabled),
+.codex-navigation-rail__footer > button:hover:not(:disabled) { background: var(--demo-border, #e8e8e8); color: var(--demo-text, #242424); }
+.codex-navigation-rail__destination:disabled { opacity: .56; cursor: default; }
+.codex-navigation-rail__destination:focus-visible { outline: 2px solid #578cda; outline-offset: 1px; }

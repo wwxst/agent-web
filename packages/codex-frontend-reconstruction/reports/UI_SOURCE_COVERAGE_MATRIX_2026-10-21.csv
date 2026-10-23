@@ -1,0 +1,24 @@
+子系统,现状分类,原版依据,当前实现,未覆盖/问题,优先级
+应用 Shell / 页面嵌套,部分源码级,"app-initial-5851df3f6cb1.js: data-app-shell-frame, page-surface, main-titlebar",demo/App.tsx:195-212,真实容器布局、Electron 窗口生命周期、导航状态仍为演示实现,P0
+全局导航 Rail,原版存在，当前未实现,app-initial-5851df3f6cb1.js: navigationRailEnabled; --app-shell-navigation-rail-width,demo/App.tsx:55-79,截图可见独立窄图标栏；当前只有单层 sidebar,P0
+项目/会话侧边栏,演示自写,"app-initial JS, sidebar-* chunks; 已定位但未作完整组件映射",demo/App.tsx:47-80,项目树、状态、图标、滚动与导航操作来自示例数组,P0
+顶端菜单/窗口按钮,演示自写,app-initial JS: data-app-shell-application-menu-bar; app-shared CSS toolbar tokens,demo/App.tsx:195-201,文件菜单及窗控只是文字/SVG 示意，无 Electron native binding,P1
+标题栏/会话路径,部分结构证据,app-initial JS/CSS: data-app-shell-main-titlebar,demo/App.tsx:205-211,真实面包屑、长路径省略规则、窗口动作状态未恢复,P1
+Shell 尺寸变量,已定位变量；应用条件不全,"app-shared CSS: toolbar 46/36, sidebar clamp, thread width 48rem variants","demo/codexDesktopShell.css:9-19,46-88",原版窗口类型/主题/缩放/容器查询有多个分支；demo 强行全局化,P0
+设计系统与主题,未完整恢复,app-shared/app-initial compiled CSS: multiple theme and window selectors,demo/styles.css + demo/codexDesktopShell.css,浅绿调色、字体、图标、圆角、阴影和主题变量未按实际状态恢复,P0
+会话条目/Turn 投影,源码驱动的语义重构,local-conversation-thread-turn-entries-ed0916a7814f.js,ConversationRenderEntriesModel.ts + TranscriptEntryExpansion.ts,私有生产者函数/历史流与实际宿主接线未全覆盖,P1
+虚拟列表算法/React 包装,源码驱动，部分运行验证,thread-virtualizer-e1964ca5c039.js; virtualized-turn-list-d00a3b041bce.js,ThreadVirtualizerModel.ts + VirtualizedTurnList.tsx,核心范围、测量和 demo 滚动已跑；复杂宿主滚动恢复未验证,P1
+实时数据订阅,自建适配层，非原版订阅,local-conversation-thread-6999d2419a30.js（用于参照）,LiveConversationSource.ts + ConnectedLiveConversationTranscript.tsx,无原版 Df 等订阅还原，真实 Agent 数据未接入,P1
+消息类型分发,源码驱动的部分重构,local-conversation-turn-69783815d57d.js,ConversationMessageRenderPlan.ts + ConversationMessageBlocks.tsx,真正的条目视图需宿主 renderer，目前 demo adapter 不等同原版,P1
+AgentActivity/工具时间线,状态模型部分恢复，实际视觉未恢复,agent-activity-item-1be092f0c744.js; local-conversation-turn-69783815d57d.js,ActivityStatusPresentation.ts + demo/adapters.tsx:ActivityDetails,截图中活动摘要/工具子行/折叠状态/运行标记未按原版完整接线,P0
+活动展开状态的连续性,未完整恢复,agent-activity-item-1be092f0c744.js 中的 AgentActivity 状态组件,demo/adapters.tsx:ActivityDetails,使用本地 useState(false)，未验证原版状态消费/默认展开/异步更新,P0
+Markdown 正文,宿主演示实现,conversation-markdown-315af0a2573a.js 仅部分被分析,demo/adapters.tsx:Markdown / react-markdown,语法高亮、原版 code block/copy、布局字体和扩展未完成,P0
+完整文件 Diff,简化演示+审阅外壳,inline-file-diff-review-2b36b4184acf.js; file-diff-*,InlineFileReview.tsx + demo/adapters.tsx:DemoFileDiff,仍是旧/新文本 pre 比较，非完整原版 FileDiff 引擎,P1
+审批与操作权限,已恢复部分安全/展示模型,agent-activity-item + approval/review chunks,ActivityStatusViews.tsx + InlineFileReviewModel.ts,宿主授权校验和真实回调不存在，demo 禁止文件操作,P1
+Composer 布局槽位,源码驱动的部分重构,"app-initial JS: kcr / Pcr / Hcr, data-composer-*",CodexComposerLayout.tsx + codexComposerLayout.css,Root/Body/Input/Footer 属性有依据，但重要的 dictation/responsive/attachments 分支未实现,P0
+Composer 编辑与语音,未恢复,app-initial JS + composer-* chunks,demo/App.tsx:247-264,仍为 textarea + 模拟发送，无真正编辑器、音频、模型/权限或停机 IPC,P0
+窗口/文件/Agent IPC,未恢复,原始 Electron/host bridge chunk 尚未系统建立映射,当前重构 src 和 demo,无 Electron preload/IPC 与 Agent 后端连线,P1
+图标与字体资源,演示自制,原版 webview assets/设计 token；尚未按组件恢复映射,demo/App.tsx:Icon + demo CSS,手绘 SVG 与系统字体，不等同原始资源,P1
+源码证据审计,静态签名存在性已验证,app-shared CSS + app-initial CSS + app-initial JS (sha256 verified),scripts/audit-layout-evidence.mjs,25/25 只是字符串签名存在，不代表 25 组件或 UI 保真,P1
+浏览器集成测试,基础功能已验证，未做视觉回归,无原版渲染基准/同内容比较,demo/e2e/*.spec.ts,3/3 Chromium 测试与 UI 像素级一致性是不同标准；目标截屏宽 1090px，既有基线 1352px,P1
+项目交接记录一致性,历史记录有陈旧字段,当前 GitHub HEAD / package scripts,"reports/STATUS.md, reports/CONTINUATION_CHECKPOINT.json, README.md",旧记录仍含 87/92 和 no GitHub push，不能作为当前事实,P2

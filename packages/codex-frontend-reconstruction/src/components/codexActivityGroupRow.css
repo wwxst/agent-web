@@ -1,0 +1,34 @@
+/* Independently reconstructed from nk/ak and A_ in sites-end-resource JS.
+ * Icon assets, animations, and private We aggregates are deliberately host-provided. */
+.codex-activity-group-row { display:flex; flex-direction:column; min-width:0; gap:var(--conversation-grouped-item-gap,4px); }
+.codex-activity-group-row__header { display:flex; align-items:center; min-width:0; gap:6px; color:var(--demo-dim,#888); font-size:12.5px; }
+.codex-activity-group-row__icon { display:inline-flex; flex:none; opacity:.68; }
+.codex-activity-group-row__toggle { display:inline-flex; min-width:0; max-width:100%; align-items:center; gap:5px; border:0; padding:3px 0; text-align:start; cursor:pointer; background:transparent; color:inherit; font:inherit; }
+.codex-activity-group-row__toggle:hover { color:var(--demo-text,#292929); }
+.codex-activity-group-row__toggle:focus-visible { outline:2px solid var(--demo-accent,#777); outline-offset:2px; border-radius:4px; }
+.codex-activity-group-row__heading { min-width:0; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.codex-activity-group-row__chevron { flex:none; font-size:13px; }
+.codex-activity-group-row__details { min-width:0; display:flex; flex-direction:column; gap:var(--conversation-grouped-item-gap,4px); padding-inline-start:8px; border-inline-start:1px solid var(--demo-border,#e7e7e7); }
+.codex-activity-group-row__details[hidden] { display:none; }
+.codex-activity-group-row__subrow { min-width:0; }
+
+/* Original nk: vertical-scroll-fade-mask, max-h-56, overflow-y-auto. Group
+ * owns its own scroll, independently of the nested FileDiff viewport. */
+.codex-activity-group-row__details:not([hidden]) {
+  max-height:14rem;
+  overflow-y:auto;
+  overflow-x:hidden;
+  scrollbar-gutter:stable;
+  overscroll-behavior-y:contain;
+}
+
+/* Source Je/bg groups only repeated eligible calls within nk's existing
+ * 224px scroll region. A_ native fallback; original motion runtime pending. */
+.codex-activity-group-row__repeated { min-width:0; color:var(--demo-dim,#888); }
+.codex-activity-group-row__repeated-toggle { display:flex; min-width:0; align-items:center; gap:6px; cursor:pointer; padding:3px 0; font-size:12.5px; list-style:none; }
+.codex-activity-group-row__repeated-toggle::-webkit-details-marker { display:none; }
+.codex-activity-group-row__repeated-toggle:focus-visible { outline:2px solid var(--demo-accent,#777); outline-offset:2px; }
+.codex-activity-group-row__repeated-title { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.codex-activity-group-row__repeated-chevron { flex:none; transition:transform .12s ease; }
+.codex-activity-group-row__repeated[open] .codex-activity-group-row__repeated-chevron { transform:rotate(90deg); }
+.codex-activity-group-row__repeated-body { display:flex; flex-direction:column; gap:var(--conversation-grouped-item-gap,4px); margin-inline-start:10px; padding-inline-start:8px; border-inline-start:1px solid var(--demo-border,#e7e7e7); }

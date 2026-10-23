@@ -1,0 +1,68 @@
+{
+  "date": "2026-10-22",
+  "stage": "live transcript mount of connected tool history source",
+  "branch": "recovery/codex-frontend-through-connected-message-20261021",
+  "validated_code_head": "cfee2d640aeeedf604ffb327916583fc918148ee",
+  "new_modules": [
+    "src/conversation/ToolActivityHistorySourceTransforms.ts",
+    "src/conversation/ToolActivityHistoryHydrationModel.ts",
+    "src/components/CodexToolActivityLeafRenderer.tsx",
+    "scripts/audit-tool-history-transforms-evidence.mjs",
+    "src/conversation/ToolActivityExternalMessageConversion.ts",
+    "src/conversation/ToolActivityHistorySource.ts",
+    "src/components/ConnectedCodexToolActivityItem.tsx",
+    "src/conversation/ToolActivityHistoryEntityStore.ts",
+    "tests/tool-activity-history-entity-store.test.mjs",
+    "reports/TOOL_ACTIVITY_HISTORY_ENTITY_STORE.md",
+    "src/components/ConnectedConversationMessageRenderers.tsx",
+    "demo/adapters.tsx",
+    "demo/e2e/agent-activity.spec.ts"
+  ],
+  "test_status": {
+    "core": "275/275 pass",
+    "demo_model": "4/4 pass",
+    "production_typecheck_and_build": "pass",
+    "chromium": "9/9 pass",
+    "original_source_audits": "sites-end-resource 34/34 signatures; app-initial/app-primary/app-shared/skill-exploration-labels 30/30 signatures; pinned SHA-256 checks pass"
+  },
+  "remaining_next": [
+    "restore and visually verify the actual source-shaped CC/RC/EC/NC/PT/IT tool leaves plus complete FileDiff/MCP/approval leaves; current demo visuals remain explicitly synthetic",
+    "connect the host-side history entity store to confirmed Agent backend events and Electron IPC; the private Codex Mr/Au/Vd query runtime is not imported into the independent frontend",
+    "run version-matched original-vs-reconstruction screenshots and interaction comparisons, including loading, streaming, approvals, file diffs and scroll behavior"
+  ],
+  "no_claims": [
+    "not the original authored React/TypeScript source",
+    "not a complete independently runnable Codex frontend",
+    "history subscription host is an adapter contract and is not yet bound to Codex private query providers",
+    "demo command leaf is mock-only and does not execute tools",
+    "no Electron IPC or Agent backend integration",
+    "no pixel-level UI parity verified",
+    "ToolActivityHistoryEntityStore is a reconstructed host-side cache, not the private Codex Mr/Au/Vd runtime",
+    "the connected activity history path is not yet mounted in the live transcript with a real Agent event stream",
+    "live transcript now mounts ConnectedCodexToolActivityItem through an optional stable history-source registry, but the demo data and command leaf remain synthetic",
+    "no real Agent event stream, Electron IPC integration, complete original tool leaf visuals, or pixel-parity verification yet"
+  ],
+  "previous_checkpoint": {
+    "date": "2026-10-22",
+    "stage": "zO history entity hydration and xC/PT typed tool-leaf integration",
+    "validated_code_head": "c246bd04aebb7a45665c2457183de8576aadbfd8",
+    "test_status": {
+      "core": "235/235 pass",
+      "demo_model": "4/4 pass",
+      "production_typecheck_and_build": "pass",
+      "chromium": "9/9 pass",
+      "original_source_audit": "34/34 signatures pass"
+    },
+    "earlier_checkpoint": {
+      "date": "2026-10-21",
+      "stage": "live conversation render-entry projection and virtualized transcript composition",
+      "tests_total": 87,
+      "test_status": "pass",
+      "no_claims": [
+        "not original authored source",
+        "not complete runnable Codex frontend",
+        "no Electron or pixel parity"
+      ]
+    }
+  }
+}
