@@ -10,6 +10,7 @@ import {
 } from "../conversation/ConversationMessageRenderPlan.js";
 import type { ConversationRenderEntry } from "../conversation/ConversationRenderEntriesModel.js";
 import type { VirtualizedTurnRowProps } from "./VirtualizedTurnList.js";
+import type { SourceTurnRuntimeStatusSource, SourceTurnRuntimeStatusSnapshot } from "../conversation/SourceTurnRuntimeStatusSource.js";
 
 export interface ConversationMessageRenderers {
   UserMessage: React.ComponentType<{
@@ -143,19 +144,39 @@ export interface ConversationLiveRowAdapters {
   /** Codex's private transcript-block producer; the caller must supply it. */
   getBlocks?(entry: ConversationRenderEntry): readonly ConversationTranscriptBlock[];
   getPlanOptions(entry: ConversationRenderEntry): ConversationMessagePlanOptions;
+  /** Optional qn/Qr observable turn state, bound to canonical turn identity.
+   * No status model may initiate a host query during React render. */
+  getTurnRuntimeSource?(entry: ConversationRenderEntry): SourceTurnRuntimeStatusSource | null;
   dependencies: ConversationMessagePlanDependencies;
   renderers: ConversationMessageRenderers;
 }
+
+const noTurnRuntimeSubscription=()=>()=>{};
+const noTurnRuntimeSnapshot=()=>null as SourceTurnRuntimeStatusSnapshot|null;
 
 /** Plug this into LiveConversationTranscript.RowComponent without guessing host selectors. */
 export function createConversationLiveRow(adapters: ConversationLiveRowAdapters) {
   type RowEntry = ConversationRenderEntry & { turnKey: string };
   return function ConversationLiveRow({ entry, latestTurnFooter, latestTurnFollowContentRef }: VirtualizedTurnRowProps<RowEntry>) {
     const blocks = adapters.getBlocks?.(entry) ?? getDirectTranscriptBlock(entry);
+    const turnRuntime = adapters.getTurnRuntimeSource?.(entry) ?? null;
+    // qn/Qr callbacks can publish without a parent conversation snapshot.
+    // React must subscribe to the stable source rather than render stale Gi.
+    const turnStatus = React.useSyncExternalStore(
+      turnRuntime?.subscribe ?? noTurnRuntimeSubscription,
+      turnRuntime?.getSnapshot ?? noTurnRuntimeSnapshot,
+      turnRuntime?.getSnapshot ?? noTurnRuntimeSnapshot,
+    );
+    const baseOptions=adapters.getPlanOptions(entry);
+    const options=turnStatus==null ? baseOptions : {
+      ...baseOptions,
+      isTurnInProgress:turnStatus.isTurnInProgress,
+      latestActivityRetentionInput:turnStatus.latestActivityRetentionInput,
+    };
     return <ConversationMessageBlocks
       blocks={blocks}
       activityStateScope={JSON.stringify([entry.conversationId ?? "host-conversation", entry.turnKey])}
-      options={adapters.getPlanOptions(entry)}
+      options={options}
       dependencies={adapters.dependencies}
       renderers={adapters.renderers}
       latestTurnFooter={latestTurnFooter}
