@@ -27,7 +27,9 @@ test("uses source-confirmed shell dimensions and composer component slots", asyn
   await expect(editorHost).toHaveAttribute("data-rich-text-layout", "multiline");
   const editorDom = page.getByRole("textbox", { name: "演示消息输入" });
   await expect(editorDom).toHaveAttribute("data-virtualkeyboard", "true");
-  await expect(editorDom).toHaveAttribute("placeholder", "Work with Codex");
+  await expect(editorDom).toHaveAttribute("data-placeholder", "Work with Codex");
+  await expect(editorDom).toHaveAttribute("data-source-editor", "prosemirror-plain");
+  await expect(editorDom).toHaveAttribute("contenteditable", "true");
 
   // Retain existing demo interactions through the recovered layout slots.
   await page.getByRole("textbox", { name: "演示消息输入" }).fill("源码布局接线检查");
@@ -45,7 +47,7 @@ test("prevents Enter from submitting while the demo input is composing", async (
   await composer.evaluate((el) => el.dispatchEvent(new CompositionEvent("compositionstart", { bubbles: true })));
   await expect(composer).toHaveAttribute("data-composing", "true");
   await composer.press("Enter");
-  await expect(composer).toHaveValue("拼音输入");
+  await expect(composer).toHaveText("拼音输入");
   await expect(page.getByText("已收到你的消息", { exact: false })).toHaveCount(0);
 
   await composer.evaluate((el) => el.dispatchEvent(new CompositionEvent("compositionend", { bubbles: true })));

@@ -1,7 +1,7 @@
 import * as React from "react";
 import { CodexComposerLayout } from "../src/components/CodexComposerLayout.js";
 import { CodexSourceComposerHostForm } from "../src/components/CodexSourceComposerHostForm.js";
-import { DemoTextareaComposerEditor } from "./DemoTextareaComposerEditor.js";
+import { DemoProseMirrorComposerEditor } from "./DemoProseMirrorComposerEditor.js";
 import { CodexNavigationRail, type CodexRailDestination } from "../src/components/CodexNavigationRail.js";
 import { projectNavigationDestinations } from "../src/conversation/NavigationRailModel.js";
 import type { VirtualizedTurnListApi } from "../src/components/VirtualizedTurnList.js";
@@ -327,7 +327,7 @@ export function App() {
             density="comfortable"
             radiusVariant="default"
             surfaceVariant="default"
-            input={<DemoTextareaComposerEditor
+            input={<DemoProseMirrorComposerEditor
               value={draft}
               onChange={setDraft}
               onSubmit={sendMessage}

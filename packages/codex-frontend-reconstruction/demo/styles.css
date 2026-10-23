@@ -284,3 +284,9 @@ button:not(:disabled):hover { transition: background .15s, color .15s; }
   .codex-source-tool-patch-file__actions { width:100%; justify-content:space-between; }
 }
 .codex-source-tool-patch-file__empty { padding:8px 10px; color:#8d8d8d; font-size:11px; }
+
+/* Real source-plain ProseMirror editor. Rich Codex plugins are not yet restored. */
+.demo-composer .ProseMirror { position:relative; min-height:55px; max-height:180px; width:100%; border:0; outline:none; background:none; color:#eee; padding:15px 17px 8px; font-size:13px; line-height:1.6; white-space:pre-wrap; overflow-wrap:break-word; overflow-y:auto; }
+.demo-composer .ProseMirror p { margin:0; }
+.demo-composer .ProseMirror[data-empty='true']::before { content:attr(data-placeholder); position:absolute; pointer-events:none; color:#7f7f7f; }
+.demo-composer .ProseMirror:focus-visible { outline:none; }
