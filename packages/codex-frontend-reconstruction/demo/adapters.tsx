@@ -168,6 +168,8 @@ export function makeDemoRow(notify: (message: string) => void) {
           getToolDisplaySignature: item => typeof item.demoToolDisplaySignature === "string"
             ? item.demoToolDisplaySignature : null,
         }),
+        // DEMO-only icon. XO uses mv and V_ uses bv from the original app host.
+        renderRepeatedIcon: () => <span data-demo-repeated-icon="" aria-hidden="true">◇</span>,
         renderRepeatedSummary: group => {
           const first=group.items[0];
           const count=group.items.length;
