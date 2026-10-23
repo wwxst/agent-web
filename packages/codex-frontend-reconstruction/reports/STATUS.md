@@ -186,3 +186,11 @@ Follow `reports/NEXT_BATCH.md`: add the typed controller paste-event contract an
 
 - Source Je/bg consecutive MCP/external-event grouping integrated into existing CodexActivityGroupRow; nested MCP disclosure is fixture-backed and uses source-verified gating, not a generic adjacent same-tool heuristic.
 - Unit/browser tests added; see `REPEATED_MCP_ACTIVITY_SOURCE_RECOVERY.md`. Current CI result must be verified; real MCP host, Electron and pixel parity remain outstanding.
+
+## 2026-10-23 — nested repeated activity A_ disclosure source recovery
+
+- Continued on Draft PR #3, branch `recovery/codex-mcp-result-guard-20261023`, not merged into main.
+- Original `sites-end-resource` A_/XO/V_/nk and `inline-followup-markdown` Je are verified against the private frontend.zip, with reproducible SHA-256 signature audit; compiled proprietary assets are not committed.
+- Replaced native subgroup `<details>` inside `CodexActivityGroupRow` with four-phase state/lazy-body `SourceActivityDisclosure`, retained existing tool leaves and 224px scroller, and added host-owned repeated group icon contract.
+- Core phase model tests and Chromium MCP/external-event continuity tests added. The browser demo remains synthetic. CSS approximates the private motion transition; exact icons, localization, Electron IPC, Agent integration and same-version visual parity are not restored.
+- See `ACTIVITY_DISCLOSURE_PHASE_RECOVERY.md`. Read the GitHub Actions run for the *final* commit before claiming final-head test success.
