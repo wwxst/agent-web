@@ -288,6 +288,7 @@ function reviewScenario(): ConversationRenderEntry[] {
         state:"Ready",command:"git diff --stat",
       }),
     ]),historyEntityKey:"fixture-live-turn-history",
+       preserveServerUserMessages:true,
        turn:{items:[],status:"inProgress",demoBlocks:[{
          type:"agent-activity",key:"block:review-live-turn-state",items:[
            demoItem("live-turn-command-a","exec",undefined,{state:"Ready",command:"git status --short",startsGroup:true}),
