@@ -321,7 +321,7 @@ export function makeDemoRow(notify: (message: string) => void) {
     InProgressFixedContent: () => <span className="demo-muted">执行中（模拟）</span>,
     ConversationGap: () => <div className="demo-conversation-gap" />,
     FileDiff: DemoFileDiff,
-    getText: (item) => item.type === "userMessage" || item.type === "agentMessage" || item.type === "assistant-message"
+    getText: (item) => item.type === "userMessage" || item.type === "user-message" || item.type === "agentMessage" || item.type === "assistant-message"
       ? typeof item.content === "string" ? item.content : null
       : null,
     getFileReview: (item) => item.type === "demo-file-review"
