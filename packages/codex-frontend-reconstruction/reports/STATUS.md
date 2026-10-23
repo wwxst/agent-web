@@ -204,3 +204,7 @@ Follow `reports/NEXT_BATCH.md`: add the typed controller paste-event contract an
 ## 2026-10-23 — original default thread footer/scroll geometry
 
 - Source `thread-scroll-layout` default footer positioning and measured bottom padding now integrated into existing preview React host. Composer is absolute/sticky to thread bottom, scroll region fills the main surface and avoids overlap with last virtual row via ResizeObserver + `--thread-scroll-padding-bottom`. Long-history browser regression added. See `SOURCE_THREAD_SCROLL_FOOTER_LAYOUT.md`; original proprietary surface/fade and native Electron behaviors are not implemented.
+
+## 2026-10-23 — thread footer surface/fade source parts
+
+- Recovered source `i_i({part:'surface'|'fade'})` DOM geometry into the existing default thread browser host: real surface backing, sticky variable-height scroll end spacer, 32px fade and pb-8 transcript content. Removes the prior whole-footer demo gradient. Source and browser regression: SOURCE_THREAD_SCROLL_FOOTER_LAYOUT.md. No full theme registry, Electron IPC or Agent integration.

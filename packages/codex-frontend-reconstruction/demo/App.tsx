@@ -339,6 +339,7 @@ export function App() {
         scrollController.notifyScroll();
         shouldFollowRef.current = scrollController.getLastScrollDistanceFromBottomPx() < 120;
       }} data-testid="transcript-scroll">
+        <div className="demo-thread-scroll-content" data-source-thread-scroll-content="">
         <div className="demo-transcript-column">
           <div className="demo-conversation-intro"><h1>{DEMO_CONVERSATIONS.find((c) => c.id === active)?.title}</h1><div className="demo-worked-label">Worked for 2m 11s <Icon name="chevron" size={12}/><span> · mock</span></div></div>
           <ConnectedLiveConversationTranscript
@@ -356,9 +357,14 @@ export function App() {
           />
           <div className="demo-thread-end" aria-hidden="true"/>
         </div>
+        <div className="demo-thread-footer-clearance" data-thread-footer-clearance="" aria-hidden="true">
+          <div className="demo-thread-footer-fade" data-thread-footer-background-part="fade"/>
+        </div>
+        </div>
       </div>
       <div className="demo-composer-zone" ref={composerFooterRef}
         data-thread-scroll-footer="true" data-thread-footer-placement="bottom">
+        <div className="demo-thread-footer-surface" data-thread-footer-background-part="surface" aria-hidden="true"/>
         <CodexSourceComposerHostForm className="demo-composer-wrap"
           integratedVoiceModeActive={false} hasUploadPolicy={false}
           onSubmit={() => { if (composerAction.kind === "send") sendMessage(); }}>

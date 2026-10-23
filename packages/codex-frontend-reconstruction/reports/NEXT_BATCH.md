@@ -113,3 +113,5 @@
 
 - Aligned demo-host DOM with `thread-scroll-layout I/Wt`: Composer is now an absolute bottom footer rather than shrinking the scroll viewport; ResizeObserver provides original `--thread-scroll-padding-bottom = measured footer height + 16px` to the existing scroll controller and scroll content.
 - Browser regression checks that latest virtual row stays above footer, native PageDown still works, viewport reaches main bottom and composer is visible/interactive. Evidence and limits: `SOURCE_THREAD_SCROLL_FOOTER_LAYOUT.md`. Next recover original `surface/fade` backdrop, other presentation variants and preserve-viewport behavior without reimplementing Electron/Agent.
+
+- Footer backdrop follow-up: restored app-initial i_i surface/fade parts and original sticky end-clearance (footer CSS variable minus 16px) alongside 32px transcriptContent padding. Browser checks dynamic spacer height and non-interactive surface. Next: source-confirmed focus/selection scroll behavior and exact theme surface variable pipeline; no Agent backend work.

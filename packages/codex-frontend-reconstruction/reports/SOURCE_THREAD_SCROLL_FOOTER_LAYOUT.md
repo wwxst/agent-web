@@ -16,3 +16,13 @@ In original `I` for default presentation:
 
 ## Still missing
 Original private `surface` and `fade` renderer, exact default footer placement variants (home, compact, panel), advanced focus mode, full Composer ProseMirror plugins, Electron IPC, actual Agent data feed and same-build pixel-level acceptance. The existing preview gradient is explicitly demo CSS; no claim of identical original UI motion or native controls.
+
+## Follow-up: original footer background part and sticky end fade
+
+Pinned `app-initial-5851df3f6cb1.js` exports `i_i` as `ATn`, imported by `thread-scroll-layout-96ebbe17c836.js` as `ie`. `i_i({part:'surface'})` mounts `_background_106nk_2 _surface_106nk_2` with `bg-surface`; `i_i({part:'fade'})` mounts `_background_106nk_2 _fade_106nk_2` with a `from-surface` to-top gradient. In `app-initial-e7c27dd40beb.css`, the fade height is `calc(var(--spacing) * 8)` (32px), while surface background uses an 8-unit negative top with compensating margin.
+
+The original default scroll root places a `pointer-events-none sticky bottom-0 z-10 mt-auto ...` end-clearance with `height:calc(var(--thread-scroll-padding-bottom) - var(--spacing)*4)` and fade part, separately from the footer's `surface` part. The outer transcriptContent has `pb-8`.
+
+The recovered active demo thread now uses the **same existing** virtualizer and scroll controller but gives the transcript normal 32px end padding and a sticky end-clearance sibling, with a 32px fading surface at its lower edge. The absolute Composer Footer has a separate, non-interactive surface layer behind the existing form; the previous whole-footer fake gradient was removed. Chromium now checks actual CSS dimensions, overlay pointer behavior, and that dynamic footer height changes resize the sticky clearance, while preserving keyboard and scroll-to-latest tests.
+
+This restores source-backed DOM roles and geometry, not the original private icon/theme/runtime or all compact/home/panel presentation variants. The hosted preview's effective `--color-surface` fallback is not a full Codex theme implementation.

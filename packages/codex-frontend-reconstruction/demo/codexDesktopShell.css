@@ -99,6 +99,33 @@ button:focus-visible, textarea:focus-visible { outline: 2px solid #578cda; outli
   scroll-padding-bottom:var(--thread-scroll-padding-bottom,0px);
   overflow-anchor:none;
 }
+/* Original default thread-scroll-layout wraps content and its sticky footer
+ * clearance within one min-h-full flex column. */
+.demo-thread-scroll-content {
+  display:flex;
+  flex-direction:column;
+  min-height:100%;
+  min-width:0;
+}
+.demo-thread-footer-clearance {
+  position:sticky;
+  bottom:0;
+  z-index:10;
+  flex-shrink:0;
+  margin-top:auto;
+  pointer-events:none;
+  width:100%;
+  height:max(0px,calc(var(--thread-scroll-padding-bottom,0px) - var(--spacing,4px) * 4));
+}
+.demo-thread-footer-fade {
+  position:absolute;
+  inset-inline:0;
+  bottom:0;
+  height:calc(var(--spacing,4px) * 8);
+  pointer-events:none;
+  /* Original i_i part=fade uses from-surface and a to-top gradient. */
+  background:linear-gradient(to top,var(--color-surface,#fff),transparent);
+}
 /* Original thread-scroll-layout: outline-none + focus-visible:ring-2 inset. */
 .demo-scroll-region:focus-visible {
   outline:2px solid var(--color-ring,#578cda);
@@ -106,8 +133,9 @@ button:focus-visible, textarea:focus-visible { outline: 2px solid #578cda; outli
 }
 .demo-transcript-column {
   width:min(100% - 64px,var(--thread-content-max-width));
-  /* The real scroll-content bottom clearance tracks the overlay footer. */
-  padding-bottom:calc(var(--thread-scroll-padding-bottom,0px) + 8px);
+  /* Source transcriptContent has pb-8; footer clearance is its own sticky
+   * sibling, not an additional padding on each transcript row. */
+  padding-bottom:calc(var(--spacing,4px) * 8);
 }
 .demo-conversation-intro {padding:24px 0 12px;}
 /* The thread title belongs to the real header surface, not an extra hero block. */
@@ -154,9 +182,23 @@ button:focus-visible, textarea:focus-visible { outline: 2px solid #578cda; outli
   z-index:20;
   pointer-events:none;
   padding:8px 30px 15px;
-  background:linear-gradient(0deg,#fff 91%,#fffc);
+  background:transparent;
 }
-.demo-composer-zone > * { pointer-events:auto; }
+.demo-thread-footer-surface {
+  position:absolute;
+  inset-inline:0;
+  bottom:0;
+  top:calc(var(--spacing,4px) * -8);
+  margin-top:calc(var(--spacing,4px) * 8);
+  z-index:0;
+  pointer-events:none;
+  background:var(--color-surface,#fff);
+}
+.demo-composer-zone > .demo-composer-wrap {
+  position:relative;
+  z-index:10;
+  pointer-events:auto;
+}
 
 .demo-composer-wrap {width:min(100%,var(--thread-content-max-width));}
 .demo-composer {background:var(--color-surface-elevated-secondary);border:1px solid #e9e9e9;box-shadow:0 3px 16px #00000008;border-radius:var(--composer-radius);min-height:98px;}

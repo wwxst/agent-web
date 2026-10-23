@@ -46,6 +46,31 @@ test("mounts recovered transcript components and handles mock-only interactions"
   expect(Math.abs(footerGeometry.scrollBottom-footerGeometry.mainBottom)).toBeLessThan(1);
   expect(Math.abs(footerGeometry.padding-footerGeometry.footerHeight-16)).toBeLessThan(2);
   expect(parseFloat(footerGeometry.scrollPadding)).toBeGreaterThan(footerGeometry.footerHeight);
+  // The original i_i surface/fade parts are siblings of the actual composer
+  // and transcript, not a gradient painted across the entire footer.
+  const sourceLayers=await page.evaluate(()=>{
+    const viewport=document.querySelector<HTMLElement>("[data-thread-scroll-viewport]")!;
+    const footer=document.querySelector<HTMLElement>("[data-thread-scroll-footer]")!;
+    const spacer=viewport.querySelector<HTMLElement>("[data-thread-footer-clearance]")!;
+    const fade=spacer.querySelector<HTMLElement>('[data-thread-footer-background-part="fade"]')!;
+    const surface=footer.querySelector<HTMLElement>('[data-thread-footer-background-part="surface"]')!;
+    const style=getComputedStyle(spacer);
+    return {
+      spacerPosition:style.position,
+      spacerHeight:spacer.getBoundingClientRect().height,
+      measuredPadding:parseFloat(viewport.style.getPropertyValue("--thread-scroll-padding-bottom")),
+      fadeHeight:fade.getBoundingClientRect().height,
+      fadeBackground:getComputedStyle(fade).backgroundImage,
+      surfacePointerEvents:getComputedStyle(surface).pointerEvents,
+      footerBackground:getComputedStyle(footer).backgroundImage,
+    };
+  });
+  expect(sourceLayers.spacerPosition).toBe("sticky");
+  expect(Math.abs(sourceLayers.spacerHeight-(sourceLayers.measuredPadding-16))).toBeLessThan(2);
+  expect(sourceLayers.fadeHeight).toBe(32);
+  expect(sourceLayers.fadeBackground).toContain("linear-gradient");
+  expect(sourceLayers.surfacePointerEvents).toBe("none");
+  expect(sourceLayers.footerBackground).toBe("none");
   const composerRoot = page.locator('.codex-composer-layout');
   await expect(composerRoot).toHaveAttribute('data-composer-layout', 'multiline');
   await expect(composerRoot).toHaveAttribute('data-composer-density', 'comfortable');
@@ -119,6 +144,8 @@ test("mounts recovered transcript components and handles mock-only interactions"
   await expect.poll(()=>conversationViewport.evaluate(el =>
     parseFloat(el.style.getPropertyValue("--thread-scroll-padding-bottom"))
   )).toBeGreaterThan(initialFooterPadding+40);
+  await expect.poll(()=>page.locator("[data-thread-footer-clearance]").evaluate(el =>
+    el.getBoundingClientRect().height)).toBeGreaterThan(initialFooterPadding+20);
   await expect.poll(()=>conversationViewport.evaluate(el =>
     Math.max(0,el.scrollHeight-el.clientHeight-el.scrollTop)
   )).toBeLessThan(3);
