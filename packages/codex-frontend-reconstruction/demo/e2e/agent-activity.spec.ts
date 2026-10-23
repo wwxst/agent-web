@@ -45,7 +45,8 @@ test("source-derived group row toggles its real subrows independently",async ({p
   const group=groupActivity.locator("[data-codex-activity-group]");
   await expect(group).toBeVisible();
   await expect(group).toHaveAttribute("data-codex-group-state","summary");
-  const toggle=group.getByRole("button",{name:/2 项命令/});
+  const toggle=group.locator(".codex-activity-group-row__toggle");
+  await expect(toggle).toContainText("运行了命令");
   await expect(toggle).toHaveAttribute("aria-expanded","false");
   await expect(group.locator("[data-codex-group-details]")).toBeHidden();
   await toggle.click();
@@ -65,7 +66,7 @@ test("fk/SO source detail entry delegates real exec leaves without changing grou
   await page.goto("/");
   const group=page.locator("[data-recovered-agent-activity]").nth(1);
   await group.getByRole("button",{name:/2 项工具活动/}).click();
-  await group.locator("[data-codex-activity-group]").getByRole("button",{name:/2 项命令/}).click();
+  await group.locator("[data-codex-activity-group] .codex-activity-group-row__toggle").click();
   const leaves=group.locator("[data-codex-tool-activity-item]");
   await expect(leaves).toHaveCount(2);
   const connectedHistory = group.locator("[data-codex-tool-history-connected]");
@@ -98,7 +99,7 @@ test("WC/ZC skill-script summaries show the source-specific background labels", 
   await runningActivity.getByRole("button", {name:/项工具活动/}).click();
   const runningGroup = runningActivity.locator("[data-codex-activity-group]");
   await expect(runningGroup).toBeVisible();
-  await runningGroup.getByRole("button", {name:/项命令/}).click();
+  await runningGroup.locator(".codex-activity-group-row__toggle").click();
   await expect(runningActivity.locator("[data-codex-source-command-toggle]"))
     .toContainText("已启动后台终端，运行来自 Repo Audit 技能的 check.py");
 
@@ -124,7 +125,7 @@ test("source-shaped PT/IT leaf shows patch status and expands unified diff witho
   await expect(patchActivity).toHaveCount(1);
   await patchActivity.getByRole("button", {name:/项工具活动/}).click();
   // The reconstructed host nests the one-item activity disclosure inside the outer section.
-  const patchDetailToggle = patchActivity.getByRole("button", {name:/项活动/});
+  const patchDetailToggle = patchActivity.locator("[data-codex-activity-group] .codex-activity-group-row__toggle");
   await patchDetailToggle.click();
   const patch = patchActivity.locator("[data-codex-source-patch]");
   await expect(patch).toBeVisible();
@@ -170,7 +171,7 @@ test("source-shaped RC/EC/NC leaves route read search and file-list summaries", 
   await activity.getByRole("button", {name:/项工具活动/}).click();
   const group = activity.locator("[data-codex-activity-group]");
   await expect(group).toBeVisible();
-  await group.getByRole("button", {name:/3 项命令/}).click();
+  await group.locator(".codex-activity-group-row__toggle").click();
   await expect(activity.locator('[data-codex-source-leaf="exec-read"]')).toHaveCount(1);
   await expect(activity.locator('[data-codex-source-leaf="exec-search"]')).toHaveCount(1);
   await expect(activity.locator('[data-codex-source-leaf="exec-list-files"]')).toHaveCount(1);
