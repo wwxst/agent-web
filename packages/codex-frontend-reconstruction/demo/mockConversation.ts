@@ -144,6 +144,9 @@ export function getDemoHistoryTurnItems(): TurnItem[] {
   demoItem("history-visible-command","exec",undefined,{
    command:"git status --porcelain",state:"Ready",
   }),
+  demoItem("history-visible-command-b","exec",undefined,{
+   command:"git diff --stat",state:"Ready",
+  }),
   demoItem("history-visible-answer","assistant-message",
    "历史正文已通过订阅恢复（模拟事件）",{
     phase:"final_answer",completed:true,
