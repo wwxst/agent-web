@@ -39,3 +39,6 @@ export type { ToolActivityLeafAdapters, ToolActivityLeafContext, ExecReadLeafPro
 
 export { ConnectedCodexToolActivityItem } from "./components/ConnectedCodexToolActivityItem.js";
 export type { ConnectedCodexToolActivityItemProps } from "./components/ConnectedCodexToolActivityItem.js";
+
+export { SourceActivityDisclosure } from "./components/SourceActivityDisclosure.js";
+export type { SourceActivityDisclosureProps } from "./components/SourceActivityDisclosure.js";
