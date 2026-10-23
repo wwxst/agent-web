@@ -135,6 +135,22 @@ function frontendScenario(): ConversationRenderEntry[] {
   ];
 }
 
+/** Explicit synthetic turn history payload; identical IDs in the Y base
+ * turn and the subscription. Production reads history from a host query. */
+export function getDemoHistoryTurnItems(): TurnItem[] {
+ return [
+  demoItem("history-visible-user","userMessage",
+   "这是历史记录的用户消息（模拟），不是内联 turn 内容"),
+  demoItem("history-visible-command","exec",undefined,{
+   command:"git status --porcelain",state:"Ready",
+  }),
+  demoItem("history-visible-answer","assistant-message",
+   "历史正文已通过订阅恢复（模拟事件）",{
+    phase:"final_answer",completed:true,
+  }),
+ ];
+}
+
 function reviewScenario(): ConversationRenderEntry[] {
   return [
     demoMessageEntry("user", "review-intro", "我想核对工具状态、文件差异和权限审批是否分开展示。"),
@@ -314,17 +330,7 @@ function reviewScenario(): ConversationRenderEntry[] {
        }]}},
     // Original Y history-summary path: its turn content is *removed* from
     // the projected virtual row. A host subscription restores these same items.
-    {...demoRawTurnEntry("review-history-hydration",[
-      demoItem("history-visible-user","userMessage",
-        "这是历史记录的用户消息（模拟），不是内联 turn 内容"),
-      demoItem("history-visible-command","exec",undefined,{
-        command:"git status --porcelain",state:"Ready",
-      }),
-      demoItem("history-visible-answer","assistant-message",
-        "历史正文已通过订阅恢复（模拟事件）",{
-          phase:"final_answer",completed:true,
-        }),
-    ]),historyEntityKey:"fixture-history-content"},
+    {...demoRawTurnEntry("review-history-hydration",getDemoHistoryTurnItems()),historyEntityKey:"fixture-history-content"},
     demoMessageEntry("assistant", "review-final", "**演示不会触发真实权限变更。** 与 Agent 后端接入时，需要在宿主层明确实现权限校验、授权请求和执行回调。"),
     // Real source turn.items fixture: commentary, command group, file patch,
     // and final answer share ONE virtualized row, unlike former mock turns.
