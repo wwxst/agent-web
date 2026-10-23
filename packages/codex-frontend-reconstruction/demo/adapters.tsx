@@ -13,6 +13,7 @@ import { getDemoBlocks } from "./mockConversation.js";
 import { projectCompletedGroupHeaderParts } from "../src/conversation/AgentActivityGroupPresentation.js";
 import { aggregateAgentActivityUnits } from "../src/conversation/AgentActivityAggregate.js";
 import { groupSourceAgentActivityUnits } from "../src/conversation/AgentActivityUnitGrouping.js";
+import { isSourcePreGroupExecSuppressed } from "../src/conversation/SourcePreGroupExecFilter.js";
 import { getSourceExpandableGroupRows } from "../src/conversation/AgentActivityGroupVisibility.js";
 import { createSourceActivityCollapseState } from "../src/conversation/SourceActivityCollapseState.js";
 import { projectSourceRepeatedActivityRows } from "../src/conversation/SourceRepeatedActivityGroups.js";
@@ -152,7 +153,18 @@ export function makeDemoRow(notify: (message: string) => void) {
       toUnits: (items) => groupSourceAgentActivityUnits(items, {
         getGrouping: item => item.grouping === "groupable" ? "groupable" : "standalone",
         startsGroup: item => item.startsGroup === true,
+        // Only fixture-verified private fr outcomes; never assume all reads
+        // or successful commands are skippable in a real conversation.
+        shouldSkipBeforeGrouping: (item,next) => isSourcePreGroupExecSuppressed(item,next,{
+          isSuccessfulExecution: item => item.demoSuccessfulExecution === true,
+          classifyVisualizationCommand: item => item.demoVisualizationKind ?? null,
+          isLoadedToolRead: item => item.demoLoadedToolRead === true,
+        }),
       }),
+      // Source qe uses Gi from private turn state. Only opt-in test fixtures
+      // supply it; other demo turns keep their previously verified behavior.
+      allowLatestCompletedGroup: ({items,isActive}) =>
+        items.some(item=>item.demoLatestSourceVisibility === true) ? isActive : null,
       getCollapseContext: ({ isActive, collapseWhenPossible, hasFollowingFinalAnswer }) => ({
         hasFinalAssistantStarted: !isActive,
         isTurnCancelled: false,
