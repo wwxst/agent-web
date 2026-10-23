@@ -53,7 +53,8 @@ test("xa delegates definition title and unresolved final fallback to actual host
  assert.deepEqual(title(x),{text:"工具定义标题",source:"definition-title"});
  assert.deepEqual(title(x,{isFailedResult:()=>false}),{text:null,source:"unavailable"});
 });
-\ntest("host raw MCP fields are type-guarded before xa title projection",()=>{
+
+test("host raw MCP fields are type-guarded before xa title projection",()=>{
  const safe=sourceMcpLabelInputFromActivity({completed:true,invocation:{server:"files",tool:"search",arguments:{q:"a"}},
   result:{type:"success"},toolDisplay:{invoked:"已搜索"},toolDefinition:{_meta:{}}});
  assert.equal(safe.toolName,"search");
