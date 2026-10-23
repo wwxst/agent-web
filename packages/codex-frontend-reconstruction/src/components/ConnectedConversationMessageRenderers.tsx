@@ -246,12 +246,15 @@ export function createConnectedConversationMessageRenderers(host: ConnectedConve
         </div>)}
       </div>;
       const rawUnits = grouping.toUnits(props.items);
-      const units = combineSourceActivityTrace(rawUnits,
-        grouping.getCombinedUnitKey?.(props.items));
       const latestRetention = props.renderMode === "latest"
         ? grouping.allowLatestCompletedGroup?.(props) ?? null : null;
-      const visibleUnits = latestRetention === null ? units
-        : filterSourceLatestActivityUnits(units, latestRetention);
+      // Original local turn: Wa -> Ga/qe -> ga/ek's optional combined trace.
+      // Filtering after ek would silently promote stale completed units.
+      const sourceVisibleUnits = latestRetention === null ? rawUnits
+        : filterSourceLatestActivityUnits(rawUnits, latestRetention);
+      const units = combineSourceActivityTrace(sourceVisibleUnits,
+        grouping.getCombinedUnitKey?.(props.items));
+      const visibleUnits = units;
       const context = grouping.getCollapseContext(props);
       const groupHeader = grouping.groupHeader;
       // The source Rk contract accepts controlled collapse state from the turn
