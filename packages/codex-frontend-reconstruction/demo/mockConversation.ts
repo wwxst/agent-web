@@ -226,7 +226,16 @@ function reviewScenario(): ConversationRenderEntry[] {
       }),
       demoItem("repeat-c","mcp-tool-call",undefined,{
         grouping:"groupable",completed:true,source:null,
+        demoRecognizedActionLabel:"已搜索文件",
         invocation:{server:"fixture-files",tool:"search",arguments:{query:"after"}},
+        functionName:"files.search",appContext:{connectorId:"file-connector",linkId:"link"},
+        result:{type:"success",content:[]},demoSafeMcpResult:true,
+        demoToolDisplaySignature:"Files search",
+      }),
+      demoItem("repeat-d","mcp-tool-call",undefined,{
+        grouping:"groupable",completed:true,source:null,
+        demoRecognizedActionLabel:"已搜索文件",
+        invocation:{server:"fixture-files",tool:"search",arguments:{query:"next"}},
         functionName:"files.search",appContext:{connectorId:"file-connector",linkId:"link"},
         result:{type:"success",content:[]},demoSafeMcpResult:true,
         demoToolDisplaySignature:"Files search",

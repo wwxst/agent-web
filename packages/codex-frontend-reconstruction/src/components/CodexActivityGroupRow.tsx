@@ -8,6 +8,7 @@ import {
   type ActivityGroupStateOptions,
 } from "../conversation/AgentActivityGroupPresentation.js";
 import type { SourceRepeatedActivityRow } from "../conversation/SourceRepeatedActivityGroups.js";
+import { projectSourceRepeatedHeader, type SourceRepeatedHeader, type SourceRecognizedMcpAction } from "../conversation/SourceRepeatedActivityHeader.js";
 import "./codexActivityGroupRow.css";
 
 export interface CodexActivityGroupRowProps<T extends GroupActivityItem>
@@ -18,6 +19,11 @@ export interface CodexActivityGroupRowProps<T extends GroupActivityItem>
   /** Original Je/bg subgroup partition, driven only by verified host fields. */
   getRepeatedRows?: (items: readonly T[]) => readonly SourceRepeatedActivityRow<T>[];
   renderRepeatedSummary?: (group: SourceRepeatedActivityRow<T>) => React.ReactNode;
+  /** XO's private _m action matcher; null invokes the source KO generic branch. */
+  getRecognizedRepeatedAction?: (item:T) => SourceRecognizedMcpAction | null | undefined;
+  /** Host-owned intl/KO/MCP icon rendering; source chooses the header variant. */
+  renderRepeatedHeader?: (header:SourceRepeatedHeader<T>) =>
+    {summary:React.ReactNode; icon?:React.ReactNode} | undefined;
   /** Host owns real source We/Sg completed aggregate, localization and icon metadata. */
   renderCompletedSummary(items: readonly T[]): React.ReactNode;
   renderRow(item: T, index: number): React.ReactNode;
@@ -84,11 +90,16 @@ export function CodexActivityGroupRow<T extends GroupActivityItem>(props: CodexA
         if (group.kind === "single") return <React.Fragment key={group.key}>
           {group.items.map(renderChild)}
         </React.Fragment>;
+        const header=projectSourceRepeatedHeader(group,{getRecognizedAction:props.getRecognizedRepeatedAction});
+        const presentation=header == null ? undefined : props.renderRepeatedHeader?.(header);
         return <details key={group.key} className="codex-activity-group-row__repeated"
-          data-codex-source-repeated-group={group.kind}>
+          data-codex-source-repeated-group={group.kind}
+          data-codex-source-repeated-header-variant={header?.variant}>
           <summary className="codex-activity-group-row__repeated-toggle"
             data-codex-source-repeated-toggle="">
-            <span className="codex-activity-group-row__repeated-title">{props.renderRepeatedSummary?.(group)}</span>
+            {presentation?.icon != null ? <span className="codex-activity-group-row__repeated-icon"
+              aria-hidden="true">{presentation.icon}</span> : null}
+            <span className="codex-activity-group-row__repeated-title">{presentation?.summary ?? props.renderRepeatedSummary?.(group)}</span>
             <span className="codex-activity-group-row__repeated-chevron" aria-hidden="true">›</span>
           </summary>
           <div className="codex-activity-group-row__repeated-body" data-codex-source-repeated-body="">

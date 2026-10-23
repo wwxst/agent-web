@@ -32,3 +32,6 @@
 .codex-activity-group-row__repeated-chevron { flex:none; transition:transform .12s ease; }
 .codex-activity-group-row__repeated[open] .codex-activity-group-row__repeated-chevron { transform:rotate(90deg); }
 .codex-activity-group-row__repeated-body { display:flex; flex-direction:column; gap:var(--conversation-grouped-item-gap,4px); margin-inline-start:10px; padding-inline-start:8px; border-inline-start:1px solid var(--demo-border,#e7e7e7); }
+
+/* XO/V_ icon is supplied by the host's genuine MCP/connector renderer. */
+.codex-activity-group-row__repeated-icon { display:inline-flex; flex:none; align-items:center; }

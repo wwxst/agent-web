@@ -186,3 +186,8 @@ Follow `reports/NEXT_BATCH.md`: add the typed controller paste-event contract an
 
 - Source Je/bg consecutive MCP/external-event grouping integrated into existing CodexActivityGroupRow; nested MCP disclosure is fixture-backed and uses source-verified gating, not a generic adjacent same-tool heuristic.
 - Unit/browser tests added; see `REPEATED_MCP_ACTIVITY_SOURCE_RECOVERY.md`. Current CI result must be verified; real MCP host, Electron and pixel parity remain outstanding.
+
+## 2026-10-23 — source XO/V_ repeated subgroup headers
+
+- A source-tested header projection now distinguishes XO generic KO-based labels from recognized _m Codex action messages and V_ connector events. It is wired into CodexActivityGroupRow, without replacing the message timeline. Test fixture includes recognized and generic adjacent MCP call pairs.
+- See `REPEATED_MCP_HEADER_SOURCE_RECOVERY.md`. Original bm rich metadata and Electron/Agent are not implemented; CI verification must be read for this commit.

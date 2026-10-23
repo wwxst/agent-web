@@ -167,6 +167,26 @@ export function makeDemoRow(notify: (message: string) => void) {
           canGroupMcpResult: item => item.demoSafeMcpResult === true,
           getToolDisplaySignature: item => item.demoToolDisplaySignature ?? null,
         }),
+        getRecognizedRepeatedAction: item => {
+          const name=item.demoRecognizedActionLabel;
+          return typeof name === "string" ? {
+            message:{id:"demo.mcp.recognizedAction",defaultMessage:name},
+            iconKey:"demo-mcp-recognized",
+          } : null;
+        },
+        // XO: recognized action and generic tool name use different content
+        // paths; V_: external events have their own singular/plural label.
+        renderRepeatedHeader: header => {
+          if(header.variant==="external-event")
+            return {summary:`已收到来自 ${header.sourceLabel || "未知来源"} 的 ${header.count} 个事件 · 模拟`};
+          const icon=<span data-demo-repeated-mcp-icon="" aria-hidden="true">◇</span>;
+          if(header.variant==="codex-action")
+            return {icon,summary:`${header.action.message.defaultMessage} · ${header.count} 次调用 · 模拟`};
+          const invocation=header.item.invocation;
+          const tool=invocation != null && typeof invocation==="object" &&
+            "tool" in invocation ? String(invocation.tool) : "工具";
+          return {icon,summary:`${tool} · ${header.count} 次调用 · 模拟`};
+        },
         renderRepeatedSummary: group => {
           const first=group.items[0];
           const count=group.items.length;

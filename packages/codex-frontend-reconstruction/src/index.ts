@@ -101,6 +101,8 @@ export { projectSourceTurnTranscriptBlocks } from "./conversation/SourceTurnTran
 export type { SourceTurnBlockInput } from "./conversation/SourceTurnTranscriptBlocks.js";
 export { combineSourceActivityTrace } from "./conversation/SourceCombinedActivityTrace.js";
 export { projectSourceRepeatedActivityRows } from "./conversation/SourceRepeatedActivityGroups.js";
+export { projectSourceRepeatedHeader } from "./conversation/SourceRepeatedActivityHeader.js";
+export type { SourceRepeatedHeader, SourceRecognizedMcpAction, SourceRepeatedHeaderHost } from "./conversation/SourceRepeatedActivityHeader.js";
 export type { SourceRepeatedItem, SourceRepeatedActivityHost, SourceRepeatedActivityRow } from "./conversation/SourceRepeatedActivityGroups.js";
 export { createSourceActivityCollapseState } from "./conversation/SourceActivityCollapseState.js";
 export type { SourceActivityCollapseState } from "./conversation/SourceActivityCollapseState.js";
