@@ -247,7 +247,7 @@ export function createConnectedConversationMessageRenderers(host: ConnectedConve
       </div>;
       const rawUnits = grouping.toUnits(props.items);
       const latestRetention = props.renderMode === "latest"
-        ? grouping.allowLatestCompletedGroup?.(props) ?? null : null;
+        ? props.allowLatestCompletedGroup ?? grouping.allowLatestCompletedGroup?.(props) ?? null : null;
       // Original local turn: Wa -> Ga/qe -> ga/ek's optional combined trace.
       // Filtering after ek would silently promote stale completed units.
       const sourceVisibleUnits = latestRetention === null ? rawUnits
