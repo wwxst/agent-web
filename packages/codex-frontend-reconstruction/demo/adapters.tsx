@@ -16,6 +16,7 @@ import { groupSourceAgentActivityUnits } from "../src/conversation/AgentActivity
 import { getSourceExpandableGroupRows } from "../src/conversation/AgentActivityGroupVisibility.js";
 import { createSourceActivityCollapseState } from "../src/conversation/SourceActivityCollapseState.js";
 import { projectSourceRepeatedActivityRows } from "../src/conversation/SourceRepeatedActivityGroups.js";
+import { partitionSourceAeonActivity } from "../src/conversation/SourceAeonActivityPartitions.js";
 import { classifyRawActivityItem } from "../src/conversation/AgentActivityRawClassifier.js";
 import type { ExecCommandLeafProps } from "../src/components/CodexToolActivityLeafRenderer.js";
 import {
@@ -39,7 +40,7 @@ export const demoProjectionDependencies: ConversationRenderProjectionDependencie
 };
 
 export const demoPlanDependencies: ConversationMessagePlanDependencies = {
-  partitionActivities: (items) => [{ type: "activity", items }],
+  partitionActivities: (items,{isAeonThread}) => partitionSourceAeonActivity({items,isAeonThread,resolveMcpTask:item=>item.demoAeonTaskResult ?? null}),
   getSpecialActivityResult: () => null,
   hasPersistentActivity: () => true,
   hasRenderableActivity: (items) => items.length > 0,
@@ -285,6 +286,7 @@ export function makeDemoRow(notify: (message: string) => void) {
   const RecoveredRow = createConversationLiveRow({
     getBlocks: getDemoBlocks,
     getPlanOptions: (entry) => ({ isTurnInProgress: entry.turn?.status === "inProgress", includeTurnExtras: false,
+      isAeonThread: entry.turn?.demoIsAeonThread === true,
       renderMode: entry.isLatestTurn ? "latest" : "all" }),
     dependencies: demoPlanDependencies,
     renderers,
