@@ -20,3 +20,11 @@
 1. Trace source `bm`, `_m`, `of`, and `KO` into the precise original asset that exports them; recover validated interface/metadata adapters.
 2. Verify `Je` normalized rows, keys, and dynamic status transitions before claiming actual streaming behavior.
 3. Compare source-version-matched screenshots, including XO/V_ expanded states and real tool metadata.
+
+## Follow-up: `bm` implementation located, not reimplemented
+
+The KO component imports `bm` from the bundled `mcp-tool-activity-label-220d2d98d4ad.js`, where the corresponding exported formatter is `xa`. The original `xa` accepts `appContext`, `completed`, `intl`, `serverName`, `matchingApp`, `nativeDesktopAppMetadata`, `platform`, `source`, `toolArguments`, `toolResult`, `toolName`, `toolDisplay`, and `toolDefinition`.
+
+Observed fallback order: resolved specialized tool action → JavaScript title argument → connector-specific action formatter → tool display `invoking/invoked` or tool-definition metadata (guarded by success/failure) → tool title/tool definition → browser-use or generic named tool action. The precise private parsers and connector handlers (`Pt/Mt/wa/mt/gt/ct/et/Ea/Ta`) need independent implementation evidence; this batch intentionally **does not** claim that the entire formatter is restored.
+
+The Playwright subgroup test additionally captures a screenshot with both XO header variants expanded inside the real transcript. The image remains a synthetic host fixture, not a source-version matched visual acceptance.

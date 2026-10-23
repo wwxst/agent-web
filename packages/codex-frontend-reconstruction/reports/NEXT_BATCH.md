@@ -72,3 +72,5 @@
 - Implemented source XO/V_ generic tool, recognized action and external event header mode selection on the existing nested MCP disclosure. Host owns private _m action lookup, KO tool names and icons. Test labels are explicitly mock-only.
 - Core and Chromium tests cover two real nested groups separated by an unfinished call. Original A_ motion, real App metadata, toolDefinition and actual bm result formatting remain unimplemented.
 - See `REPEATED_MCP_HEADER_SOURCE_RECOVERY.md`. Verify CI for the branch before accepting test claims.
+
+- Source `KO → bm` now traced to exported `xa` in `mcp-tool-activity-label-220d2d98d4ad.js`; next recover its fallbacks in source order and verify against connector metadata. Do not infer the original name/icon from demo strings.

@@ -1,6 +1,6 @@
 import {test,expect} from "@playwright/test";
 
-test("source Je/bg opens only the eligible consecutive MCP calls and keeps the barrier separate",async ({page})=>{
+test("source Je/bg opens only the eligible consecutive MCP calls and keeps the barrier separate",async ({page},testInfo)=>{
   const errors:string[]=[];page.on("pageerror",error=>errors.push(error.message));
   await page.goto("/");
   await page.getByRole("button",{name:/工具调用与审批交互/}).click();
@@ -28,5 +28,7 @@ test("source Je/bg opens only the eligible consecutive MCP calls and keeps the b
   await expect(repeated.first().locator("[data-codex-source-repeated-body]")).toBeHidden();
   await repeated.nth(1).locator("summary").click();
   await expect(repeated.nth(1).locator("[data-codex-source-repeated-body]")).toBeVisible();
+  await repeated.nth(1).scrollIntoViewIfNeeded();
+  await page.screenshot({path:testInfo.outputPath("codex-repeated-mcp-headers.png"),animations:"disabled"});
   expect(errors).toEqual([]);
 });
