@@ -29,8 +29,8 @@ export interface SourceRepeatedActivityHost<T extends SourceRepeatedItem> {
   getGrouping(item:T): "groupable" | "standalone";
   /** Additional host result policy: true only when it is safe to show as a repeated call. */
   canGroupMcpResult(item:T): boolean;
-  /** Original bm(toolDisplay + invocation + app context) signature. */
-  getToolDisplaySignature(item:T): unknown;
+  /** Original bm calls xa: source-specific, localized tool label including app context/result. */
+  getToolDisplaySignature(item:T): string | null | undefined;
 }
 
 export interface SourceRepeatedActivityRow<T extends SourceRepeatedItem> {
