@@ -231,6 +231,20 @@ function reviewScenario(): ConversationRenderEntry[] {
         result:{type:"success",content:[]},demoSafeMcpResult:true,
         demoToolDisplaySignature:"Files search",
       }),
+      // Source V_ fixture: two adjacent incoming events, then subscription
+      // closure which Je must keep outside the repeated disclosure.
+      demoItem("external-a","external-event",undefined,{
+        grouping:"groupable",sourceKey:"fixture-slack",sourceLabel:"Slack",
+        subscriptionEnded:false,heading:"收到事件 A",state:"Ready",
+      }),
+      demoItem("external-b","external-event",undefined,{
+        grouping:"groupable",sourceKey:"fixture-slack",sourceLabel:"Slack",
+        subscriptionEnded:false,heading:"收到事件 B",state:"Ready",
+      }),
+      demoItem("external-ended","external-event",undefined,{
+        grouping:"groupable",sourceKey:"fixture-slack",sourceLabel:"Slack",
+        subscriptionEnded:true,heading:"订阅结束",state:"Ready",
+      }),
     ]),
     demoMessageEntry("assistant", "review-final", "**演示不会触发真实权限变更。** 与 Agent 后端接入时，需要在宿主层明确实现权限校验、授权请求和执行回调。"),
     // Real source turn.items fixture: commentary, command group, file patch,
