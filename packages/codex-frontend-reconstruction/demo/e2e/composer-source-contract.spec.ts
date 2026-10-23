@@ -105,8 +105,10 @@ test("mounted ProseMirror plain editor supports multiline transactions and histo
   await editor.type("第二行");
   await expect(editor.locator("p")).toHaveCount(2);
   await expect(editor).toContainText("第二行");
+  const beforeUndo = await editor.innerText();
   await editor.press("Control+z");
-  await expect.poll(() => editor.locator("p").count()).toBeGreaterThanOrEqual(1);
+  await expect.poll(() => editor.innerText()).not.toBe(beforeUndo);
+  await editor.fill("撤销后重新输入");
   await expect(page.getByTestId("send-button")).toBeEnabled();
   expect(errors).toEqual([]);
 });
