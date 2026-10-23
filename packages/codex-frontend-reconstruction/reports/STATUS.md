@@ -195,3 +195,8 @@ Follow `reports/NEXT_BATCH.md`: add the typed controller paste-event contract an
 ## 2026-10-23 — source app-shared scroll mask on real activity details
 
 - Mounted the original source-confirmed scrolling fade on the existing CodexActivityGroupRow via a shared CSS module; this replaces a previously inert class. Chromium test added for computed style, overflow and nested FileDiff independence. See SOURCE_ACTIVITY_SCROLL_FADE.md for scope and limits. No backend or MCP protocol work.
+
+## 2026-10-23 — source-normal transcript gap and font tokens
+
+- Source `conversation-gap` item/group variants (16px/4px) are now reflected in existing virtualized React transcript geometry; previously hardcoded 22px item gap removed. Shared app-shared chat and code font tokens feed the existing light shell typography.
+- Tests and source caveats: `SOURCE_CONVERSATION_DENSITY_INTEGRATION.md`. No backend changes, Electron IPC or visual parity claim.

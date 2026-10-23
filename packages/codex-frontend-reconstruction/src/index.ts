@@ -108,4 +108,10 @@ export { projectSourceRepeatedHeader } from "./conversation/SourceRepeatedActivi
 export type { SourceRepeatedHeader, SourceRecognizedMcpAction, SourceRepeatedHeaderHost } from "./conversation/SourceRepeatedActivityHeader.js";
 export type { SourceRepeatedItem, SourceRepeatedActivityHost, SourceRepeatedActivityRow } from "./conversation/SourceRepeatedActivityGroups.js";
 export { createSourceActivityCollapseState } from "./conversation/SourceActivityCollapseState.js";
+export {
+  SOURCE_CONVERSATION_ITEM_GAP_PX,
+  SOURCE_CONVERSATION_GROUPED_ITEM_GAP_PX,
+  SOURCE_DEFAULT_CHAT_FONT_SIZE_PX,
+  SOURCE_DEFAULT_CODE_FONT_SIZE_PX,
+} from "./conversation/SourceConversationLayoutTokens.js";
 export type { SourceActivityCollapseState } from "./conversation/SourceActivityCollapseState.js";

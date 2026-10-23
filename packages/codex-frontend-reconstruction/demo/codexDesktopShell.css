@@ -12,6 +12,13 @@
   --height-toolbar-sm: 36px;
   --height-titlebar: calc(var(--spacing) * 11);
   --thread-content-max-width: 48rem;
+  /* app-shared root and original conversation-gap item/grouped variants. */
+  --font-ui-size: 13px;
+  --font-code-size: 12px;
+  --codex-chat-font-size: var(--font-ui-size);
+  --codex-chat-code-font-size: var(--font-code-size);
+  --conversation-item-gap: 16px;
+  --conversation-grouped-item-gap: 4px;
   --spacing-token-sidebar: clamp(240px, var(--codex-sidebar-preferred-width, 275px), min(520px, calc(100vw - 320px)));
   --composer-radius: calc(var(--spacing) * 5.5);
   --color-surface-elevated-secondary: #fff;
@@ -91,14 +98,14 @@ button:focus-visible, textarea:focus-visible { outline: 2px solid #578cda; outli
 .demo-conversation-intro h1 {position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;}
 .demo-worked-label {display:flex;align-items:center;gap:5px;color:#989898;font-size:12.5px;padding:0 0 8px;border-bottom:1px solid #e9e9e9;}
 .demo-worked-label span{font-size:10px;color:#b1b1b1;}
-.demo-row{font-size:13px;line-height:1.65;}
+.demo-row{font-size:var(--codex-chat-font-size);line-height:1.65;}
 .demo-row--user > div:not(.demo-time-marker){max-width:84%;}
 [data-conversation-message="user"] {background:#f2f2f2;color:#323232;padding:10px 14px;border-radius:15px;}
 .demo-row--assistant {padding:1px 0 2px;}
-.demo-markdown,.demo-markdown--user {font-size:13.5px;line-height:1.75;color:#292929;}
+.demo-markdown,.demo-markdown--user {font-size:var(--codex-chat-font-size);line-height:1.75;color:#292929;}
 .demo-markdown strong {color:#242424;}
 .demo-markdown p {margin-bottom:11px;}
-.demo-markdown code{background:#eeeeee;color:#454545;font-size:12px;border-radius:4px;padding:2px 5px;}
+.demo-markdown code{background:#eeeeee;color:#454545;font-size:var(--codex-chat-code-font-size);border-radius:4px;padding:2px 5px;}
 .demo-markdown pre{background:#f8f8f8;border:1px solid #e7e7e7;color:#303030;}
 .demo-markdown blockquote{color:#777;border-color:#dddddd;}
 .demo-markdown a{color:#2464a4;}

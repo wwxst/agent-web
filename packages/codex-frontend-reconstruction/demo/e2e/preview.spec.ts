@@ -48,6 +48,24 @@ test("mounts recovered transcript components and handles mock-only interactions"
   await expect(page.getByRole("button", { name: /添加 45 条历史/ })).toBeDisabled();
   await page.getByRole("button", { name: /跳到开头/ }).click();
   await expect(page.locator('[data-turn-key="history-content:turn:intro"]')).toBeAttached();
+  // The source conversation-gap item variant uses 16px, not the previous
+  // hardcoded 22px preview virtualizer gap. Check real mounted row geometry.
+  const conversationTokens=await page.evaluate(()=>{
+    const css=getComputedStyle(document.documentElement);
+    const rows=[...document.querySelectorAll("[data-turn-key]")];
+    return {
+      item:css.getPropertyValue("--conversation-item-gap").trim(),
+      grouped:css.getPropertyValue("--conversation-grouped-item-gap").trim(),
+      chat:css.getPropertyValue("--codex-chat-font-size").trim(),
+      mountedMargins:rows.map(el=>
+        getComputedStyle(el.parentElement!).marginTop),
+    };
+  });
+  expect(conversationTokens.item).toBe("16px");
+  expect(conversationTokens.grouped).toBe("4px");
+  expect(conversationTokens.mountedMargins).toContain("16px");
+  // Different message and code leaves now share app-shared text tokens.
+  await expect(page.locator(".demo-markdown").first()).toHaveCSS("font-size","13px");
   await page.getByRole("button", { name: /跳到最新/ }).click();
   const lastRow = page.locator('[data-turn-key="history-content:turn:history-45"]');
   await expect(lastRow).toBeInViewport({ ratio: 0.1 });

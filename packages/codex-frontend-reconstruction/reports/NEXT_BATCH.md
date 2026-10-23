@@ -100,3 +100,9 @@
 
 - Exact nk details metrics aligned: max-h-56 (224px), -ms-2 / ps-2 offsets, 1.5rem scroll fade, no invented vertical border. BT frame font size and rounded/ghost tokens now reference pinned app-shared stylesheet semantics.
 - Geometry and CSS assertions added to existing Chromium activity-continuity test. See SOURCE_ACTIVITY_ROW_VISUAL_ALIGNMENT.md. Still need original icon/typography runtime and same-build screenshot parity.
+
+## Source-normal conversation density (2026-10-23)
+
+- The active React virtualized transcript now uses the pinned original `conversation-gap` item gap of 16px instead of demo-only 22px; grouped gap remains 4px. Markdown and inline code use shared app-shared chat font tokens (13px/12px fallback).
+- Browser checks real rendered margins/tokens and keeps the existing long-history and scroll-to-latest tests. Evidence: `SOURCE_CONVERSATION_DENSITY_INTEGRATION.md`.
+- Next: original app-shell + thread-scroll-layout composer placement/scroll masking; then typography/icon visual review at identical build, viewport and state. Keep the browser host demo distinct from full Electron completion.

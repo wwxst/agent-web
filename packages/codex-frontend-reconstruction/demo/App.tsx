@@ -8,6 +8,7 @@ import type { VirtualizedTurnListApi } from "../src/components/VirtualizedTurnLi
 import { ConnectedLiveConversationTranscript } from "../src/components/ConnectedLiveConversationTranscript.js";
 import { resolveComposerSubmitDecision } from "../src/conversation/ComposerInteractionModel.js";
 import { resolveComposerPrimaryAction } from "../src/conversation/ComposerPrimaryActionModel.js";
+import { SOURCE_CONVERSATION_ITEM_GAP_PX } from "../src/conversation/SourceConversationLayoutTokens.js";
 import { BrowserScrollController } from "./browserScrollController.js";
 import { makeDemoRow, demoProjectionDependencies } from "./adapters.js";
 import {
@@ -309,7 +310,7 @@ export function App() {
             projectionDependencies={demoProjectionDependencies}
             RowComponent={DemoRow}
             scrollController={scrollController}
-            gapPx={22}
+            gapPx={SOURCE_CONVERSATION_ITEM_GAP_PX}
             overscanCount={4}
             onApiChange={onApiChange}
             onVisibleContentReady={onVisibleContentReady}
