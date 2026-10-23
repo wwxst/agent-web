@@ -91,7 +91,12 @@ button:focus-visible, textarea:focus-visible { outline: 2px solid #578cda; outli
 .demo-toolbar {padding:0;border:0;gap:6px;justify-content:flex-start;}
 .demo-toolbar button{background:#f8f8f8;color:#454545;border:1px solid #e8e8e8;padding:6px 9px;font-size:11px;}
 .demo-toolbar button:not(:disabled):hover{background:#ededed;color:#272727;}
-.demo-scroll-region {scrollbar-color:#d7d7d7 transparent;scrollbar-width:thin;}
+.demo-scroll-region {scrollbar-color:#d7d7d7 transparent;scrollbar-width:thin;outline:none;}
+/* Original thread-scroll-layout: outline-none + focus-visible:ring-2 inset. */
+.demo-scroll-region:focus-visible {
+  outline:2px solid var(--color-ring,#578cda);
+  outline-offset:-2px;
+}
 .demo-transcript-column {width:min(100% - 64px,var(--thread-content-max-width));padding-bottom:10px;}
 .demo-conversation-intro {padding:24px 0 12px;}
 /* The thread title belongs to the real header surface, not an extra hero block. */

@@ -298,7 +298,10 @@ export function App() {
           <button type="button" onClick={reset}><Icon name="refresh" size={15}/> 重置</button>
         </div>
       </div>}
-      <div className="demo-scroll-region" ref={scrollElementRef} onScroll={() => {
+      <div className="demo-scroll-region" ref={scrollElementRef}
+        role="region" tabIndex={0} aria-label="对话"
+        data-thread-scroll-viewport=""
+        onScroll={() => {
         scrollController.notifyScroll();
         shouldFollowRef.current = scrollController.getLastScrollDistanceFromBottomPx() < 120;
       }} data-testid="transcript-scroll">

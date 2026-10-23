@@ -4,6 +4,9 @@ test("mounts recovered transcript components and handles mock-only interactions"
   const uncaughtErrors: string[] = [];
   page.on("pageerror", (error) => uncaughtErrors.push(error.message));
   await page.goto("/");
+  const conversationViewport=page.getByRole("region",{name:"对话"});
+  await expect(conversationViewport).toHaveAttribute("tabindex","0");
+  await expect(conversationViewport).toHaveAttribute("data-thread-scroll-viewport","");
   await expect(page.locator(".demo-header-location strong")).toHaveText("恢复 Codex 会话界面");
   await expect(page.locator("[data-demo-role='assistant']").first()).toBeVisible();
   await expect(page.getByRole("button", { name: "打开演示工具" })).toBeVisible();
@@ -48,6 +51,13 @@ test("mounts recovered transcript components and handles mock-only interactions"
   await expect(page.getByRole("button", { name: /添加 45 条历史/ })).toBeDisabled();
   await page.getByRole("button", { name: /跳到开头/ }).click();
   await expect(page.locator('[data-turn-key="history-content:turn:intro"]')).toBeAttached();
+  // Source thread-scroll-layout active viewport is keyboard focusable. Native
+  // browser keyboard scrolling must work without bypassing the virtualizer.
+  await conversationViewport.focus();
+  await expect(conversationViewport).toBeFocused();
+  await page.keyboard.press("PageDown");
+  await expect.poll(()=>conversationViewport.evaluate(el=>el.scrollTop)).toBeGreaterThan(0);
+  await expect(conversationViewport).toHaveCSS("outline-style","solid");
   // The source conversation-gap item variant uses 16px, not the previous
   // hardcoded 22px preview virtualizer gap. Check real mounted row geometry.
   const conversationTokens=await page.evaluate(()=>{

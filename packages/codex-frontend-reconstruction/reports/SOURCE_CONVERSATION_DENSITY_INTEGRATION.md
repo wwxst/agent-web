@@ -12,3 +12,7 @@
 
 ## Known limits
 The original can override these tokens by active theme, platform and presentation variant. The fixture uses default light-shell values, not a full implementation of the original token/theme resolver. The mock `Worked for` marker and all fake timeline data remain clearly demo-only. This batch does not implement Electron IPC, Agent events, file operations, permissions or pixel-parity against a different original-build screenshot.
+
+## Original thread viewport accessibility and native keyboard navigation
+
+The compiled `thread-scroll-layout-96ebbe17c836.js` mounts the active viewport with `tabIndex:0`, `role:'region'`, a localized `threadScrollLayout.conversationLabel` and source focus-visible inset ring styling; in pinned `zh-CN-7ba80cbb133d.js` that label is `对话`. The reconstructed shell now sets those attributes on the **existing** scroll controller DOM node and provides a keyboard focus-visible outline, rather than adding a second scroll viewport. Chromium exercises PageDown with 45 mock history rows before returning to the latest message. This verifies browser keyboard scrolling only, not unimplemented original custom `onKeyDown` navigation callbacks.
