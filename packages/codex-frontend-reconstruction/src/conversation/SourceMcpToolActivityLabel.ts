@@ -63,9 +63,10 @@ export function sourceMcpLabelInputFromActivity(
   const definition=asRecord(item.toolDefinition);
   const stringOrNull=(value:unknown):value is string|null =>
     value===null || typeof value==="string";
+  const serverName=optionalString(invocation?.server);
   return {
     completed:item.completed===true,
-    serverName:optionalString(invocation?.server),
+    ...(serverName !== undefined ? {serverName} : {}),
     toolName:typeof invocation?.tool==="string" ? invocation.tool : "",
     toolArguments:invocation?.arguments,
     toolResult:toolResult==null?null:{
