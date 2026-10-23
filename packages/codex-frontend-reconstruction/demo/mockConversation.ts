@@ -246,6 +246,33 @@ function reviewScenario(): ConversationRenderEntry[] {
         subscriptionEnded:true,heading:"订阅结束",state:"Ready",
       }),
     ]),
+    // DEMO-only source Ke/fr + qe visibility case. It is forced through the
+    // latest renderer without changing the existing actual latest review turn.
+    {...demoActivityEntry("review-source-ke-qe",[
+      demoItem("source-old-finished","exec",undefined,{
+        grouping:"groupable",state:"Ready",command:"git status",
+        demoLatestSourceVisibility:true,
+      }),
+      demoItem("source-divider","assistant-message"," ",{
+        grouping:"standalone",completed:false,
+      }),
+      demoItem("source-running-command","exec",undefined,{
+        grouping:"groupable",state:"Working",command:"npm run build",
+        heading:"运行中（模拟）",
+      }),
+      demoItem("source-hidden-loaded-read","exec",undefined,{
+        grouping:"groupable",parsedCmd:{type:"read",path:"SKILL.md",isFinished:true},
+        demoLoadedToolRead:true,
+      }),
+      demoItem("source-hidden-visualization-command","exec",undefined,{
+        grouping:"groupable",state:"Ready",command:"make preview",
+        demoSuccessfulExecution:true,demoVisualizationKind:"create",
+      }),
+      demoItem("source-patch-with-visualization","patch",undefined,{
+        grouping:"groupable",success:true,changes:{},
+        visualizationActivities:[{path:"preview.tsx",kind:"create"}],
+      }),
+    ]),demoForceLatestRenderMode:true},
     demoMessageEntry("assistant", "review-final", "**演示不会触发真实权限变更。** 与 Agent 后端接入时，需要在宿主层明确实现权限校验、授权请求和执行回调。"),
     // Real source turn.items fixture: commentary, command group, file patch,
     // and final answer share ONE virtualized row, unlike former mock turns.
