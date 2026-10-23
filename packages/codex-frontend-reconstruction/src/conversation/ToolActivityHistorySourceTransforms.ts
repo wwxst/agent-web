@@ -287,8 +287,8 @@ export function resolveSourceSkillDefinitionFromRead(item:HistoryToolItem): Sour
  const candidate=normalizeSkillLookupPath(path);
  const full=cwd==null?candidate:isAbsoluteSkillLookupPath(candidate)
   ?normalizeJoinedSkillPath(candidate)
-  :normalizeJoinedSkillPath(normalizeSkillLookupPath(cwd).replace(/\\/+$/,"")+"/"+candidate);
- const segments=full.replace(/\\/+$/,"").split("/").filter(Boolean);
+  :normalizeJoinedSkillPath(normalizeSkillLookupPath(cwd).replace(/\/+$/,"")+"/"+candidate);
+ const segments=full.replace(/\/+$/,"").split("/").filter(Boolean);
  for(let i=0;i<segments.length;i++){
   const section=segments[i]?.toLowerCase();
   if((section!==".codex"&&section!==".agents")||segments[i+1]?.toLowerCase()!=="skills")continue;
