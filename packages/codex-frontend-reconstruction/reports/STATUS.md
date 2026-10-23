@@ -202,3 +202,11 @@ Follow `reports/NEXT_BATCH.md`: add the typed controller paste-event contract an
 - `SourcePreGroupExecFilter` refuses to drop commands when private host classifiers are unavailable; `SourceLatestActivityVisibility` uses existing recovered group unfinished state. Host-derived `Gi` must be provided explicitly.
 - The demo uses synthetic host metadata only in a marked test row. Node and Chromium tests are included; private `Jt/Kt/qt/Zt` and `Gi` remain host boundaries.
 - Full evidence and audit: `LATEST_ACTIVITY_KE_QE_SOURCE_RECOVERY.md` and `scripts/audit-latest-activity-evidence.mjs`. This is not an Electron or original screenshot parity claim. Check final commit's CI before reporting test success.
+
+## 2026-10-23 — original Gi/Jt/Kt/qt recovered and integrated
+
+- Continued on Draft PR #3, branch `recovery/codex-mcp-result-guard-20261023`; no merge to main.
+- Exact private frontend archive source confirmed Jt/Kt/qt/fr semantics and the local turn's Gi flag: `K&&!ai&&!Wi`. Implemented source command/path predicates in existing Ke pre-group filter, source status gate in render plan, and React forwarding to Ga/qe.
+- Correction to earlier wording: fr excludes **visualize Skill definitions**, not every SKILL.md read. The original command status/regex and skill metadata are tested directly; visual commands are only elided when followed by a visualization-bearing patch.
+- Included focused Node tests, mounted Chromium case with a retained ordinary skill, source evidence report and 19-signature audit. No compiled proprietary bundles are committed.
+- Remaining gaps: real K/Ui query adapters, private task result cards, Electron lifecycle/IPC, Agent event stream and exact Codex theme/pixel parity. GitHub Actions must be checked at the *final* commit before stating success.
