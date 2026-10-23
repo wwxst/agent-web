@@ -219,3 +219,11 @@ Follow `reports/NEXT_BATCH.md`: add the typed controller paste-event contract an
 - Demo fixture uses `preserveServerUserMessages:true` to traverse existing historical summary projection without dropping its inline transcript. Explicit demo controls publish simulated query events; Playwright verifies actual mounted subgroup count changes.
 - Real Codex qn/Qr storage transport, Electron bridge and Agent event stream not implemented. Source report and auditor: `TURN_RUNTIME_STATUS_SUBSCRIPTIONS.md`.
 - Do not claim final-head green CI until GitHub Actions checks for latest commit succeed.
+
+## 2026-10-24 — source Y history turn hydration integrated
+
+- Draft PR #3 branch `recovery/codex-mcp-result-guard-20261023`, not merged.
+- The original Y history summary projection's loss of inline turn content is now bridged through `SourceHistoricalTurnContentSource` into the existing virtual React row. Ordinary and historical inline scenarios retain their own original projection decisions.
+- Source item keys/order are enforced, and a host-owned event cache replays/invalidates snapshots without reloading the conversation. The DEMO is clearly synthetic and exercises the same history path plus existing Markdown, user-message and historical tool Rk/nk components.
+- Original SHA and seven signatures pinned in `HISTORICAL_TURN_HYDRATION_SOURCE_RECOVERY.md`, with Node and Playwright regressions.
+- **Limits:** private original history query engine and real host transport are not installed; full Electron runtime, Agent stream, original icon assets and pixel parity remain outstanding. Only claim final CI after reading the latest Actions head.
