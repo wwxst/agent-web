@@ -235,7 +235,8 @@ button:focus-visible, textarea:focus-visible { outline: 2px solid #578cda; outli
 /* Real Electron's native framed window owns title-bar controls. The browser
  * preview keeps its explicit fake 36px window-menu fixture; do not stack both. */
 :root[data-desktop-shell="true"] .demo-window-menu { display:none; }
-\n/* Pinned thread-app-shell-chrome Ps/Fs: a separate main-focus toolbar
+
+/* Pinned thread-app-shell-chrome Ps/Fs: a separate main-focus toolbar
  * contains the thread title and header actions. Do not add a second toolbar. */
 .demo-titlebar-toolbar {
   display:flex;

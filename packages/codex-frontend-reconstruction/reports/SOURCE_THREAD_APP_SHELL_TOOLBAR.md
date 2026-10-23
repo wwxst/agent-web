@@ -13,3 +13,7 @@
 ## Unfinished
 - Original Codex window route variants, tab-strip integration, keyboard navigation/shortcut focus manager, theme/icons and same-build Windows pixel parity are not restored.
 - Synthetic navigation and conversation data remain fixture-only.
+
+## Visual regression caught by CI screenshot review
+
+Initial commit `25a9a6a` introduced an escaped literal backslash-n before the new titlebar flex rule. React/DOM tests and Electron interaction passed, but both generated screenshots showed the actions wrapped below the title. This follow-up corrects the stylesheet escape and requires Chromium bounding-box checks of title/action vertical centers, flex display and non-overlap in addition to the semantic toolbar assertions. Previous smoke success must not be interpreted as visual success until this new screenshot is checked.

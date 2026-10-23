@@ -12,6 +12,23 @@ test("source-derived rail stays mounted when content sidebar is collapsed", asyn
   await expect(toolbar).toHaveAttribute("data-app-shell-focus-area","main");
   await expect(toolbar.locator("[data-app-shell-titlebar-content]")).toHaveCount(1);
   await expect(toolbar.getByRole("button",{name:"收起侧边栏"})).toBeVisible();
+  // The original Ps HeaderToolbar keeps the title and actions in one row.
+  // Avoid a regression where the container loses display:flex while all
+  // accessible controls continue to pass functional-only smoke tests.
+  const headerGeometry=await toolbar.evaluate(element=>{
+    const title=element.querySelector("[data-app-shell-titlebar-content]")!;
+    const actions=element.querySelector(".demo-header-actions")!;
+    const a=title.getBoundingClientRect(),b=actions.getBoundingClientRect();
+    return {display:getComputedStyle(element).display,
+      centerDelta:Math.abs((a.top+a.bottom)/2-(b.top+b.bottom)/2),
+      actionsRight:b.right,toolbarRight:element.getBoundingClientRect().right,
+      titleRight:a.right,actionsLeft:b.left};
+  });
+  expect(headerGeometry.display).toBe("flex");
+  expect(headerGeometry.centerDelta).toBeLessThan(3);
+  expect(headerGeometry.actionsRight).toBeLessThanOrEqual(headerGeometry.toolbarRight+1);
+  expect(headerGeometry.titleRight).toBeLessThanOrEqual(headerGeometry.actionsLeft);
+
   await expect(page.locator("[data-app-shell-frame]")).toHaveAttribute("data-app-shell-sidebar-open", "true");
   await expect(page.locator("[data-app-shell-frame]")).toHaveCSS("--app-shell-navigation-rail-width", "52px");
   await page.getByRole("button", { name: "收起侧边栏" }).last().click();
