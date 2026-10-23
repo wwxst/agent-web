@@ -111,6 +111,14 @@ export function App() {
     window.addEventListener("resize",update);
     return ()=>window.removeEventListener("resize",update);
   },[]);
+  // Source JFu/YFu writes the preference to documentElement: the original
+  // --spacing-token-sidebar is defined on :root and evaluated there.
+  // Overriding only an App descendant leaves the inherited width stale.
+  React.useLayoutEffect(()=>{
+    const root=document.documentElement;
+    root.style.setProperty("--codex-sidebar-preferred-width",`${sidebarWidth}px`);
+    return ()=>root.style.removeProperty("--codex-sidebar-preferred-width");
+  },[sidebarWidth]);
   const [measuredRailWidth, setMeasuredRailWidth] = React.useState(52);
   const [draft, setDraft] = React.useState("");
   const [playing, setPlaying] = React.useState(false);
@@ -311,7 +319,6 @@ export function App() {
 
   return <div className="demo-desktop" data-app-shell-frame="true" data-app-shell-feature-navigation={navigationRailEnabled} data-app-shell-sidebar-open={!collapsed} data-app-shell-application-menu-bar="true" style={{
       "--app-shell-navigation-rail-width": navigationRailEnabled ? `${measuredRailWidth}px` : "0px",
-      "--codex-sidebar-preferred-width": `${sidebarWidth}px`,
     } as React.CSSProperties}>
     <div className="demo-window-menu" aria-label="桌面窗口示意（浏览器内，不是原生 Electron）">
       <span className="demo-menubar-back" aria-hidden="true">‹</span><span className="demo-menubar-back" aria-hidden="true">›</span>
