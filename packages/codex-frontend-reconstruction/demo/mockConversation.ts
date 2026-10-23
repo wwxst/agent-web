@@ -6,6 +6,10 @@ import type { ConversationRenderEntry } from "../src/conversation/ConversationRe
 import type { ConversationMessageItem, ConversationTranscriptBlock } from "../src/conversation/ConversationMessageRenderPlan.js";
 import { createLiveConversationSource } from "../src/conversation/LiveConversationSource.js";
 import { projectSourceTurnTranscriptBlocks } from "../src/conversation/SourceTurnTranscriptBlocks.js";
+import {
+ selectSourceHistoricalTurnItems,
+ type SourceHistoricalTurnSnapshot,
+} from "../src/conversation/SourceHistoricalTurnContentSource.js";
 import type { TurnItem, Dependencies } from "../src/conversation/TurnItemRenderGroups.js";
 
 export type DemoSource = ReturnType<typeof createLiveConversationSource>;
@@ -68,7 +72,20 @@ export function demoRawTurnEntry(id: string, items: TurnItem[]): ConversationRen
     turn: { items, status: "completed" },
   };
 }
-export function getDemoBlocks(entry: ConversationRenderEntry): readonly ConversationTranscriptBlock[] {
+export function getDemoBlocks(
+ entry:ConversationRenderEntry,
+ historical?:SourceHistoricalTurnSnapshot<ConversationMessageItem>|null,
+):readonly ConversationTranscriptBlock[] {
+ if(entry.turn == null && historical?.loaded === true && entry.historyEntityKey != null){
+   const items=selectSourceHistoricalTurnItems(historical,entry.turnItemIds);
+   return projectSourceTurnTranscriptBlocks({
+     turnId:entry.turnId??entry.turnSearchKey??"history",
+     items:items as TurnItem[],
+     status:historical.status??"completed",
+     mode:entry.isLatestTurn?"latest":"all",
+     dependencies:fixtureTurnDependencies,
+   });
+ }
   const items: unknown = entry.turn?.items;
   if (Array.isArray(items) && items.length > 0) {
     return projectSourceTurnTranscriptBlocks({
@@ -295,6 +312,19 @@ function reviewScenario(): ConversationRenderEntry[] {
            demoItem("live-turn-command-b","exec",undefined,{state:"Ready",command:"git diff --stat"}),
          ],
        }]}},
+    // Original Y history-summary path: its turn content is *removed* from
+    // the projected virtual row. A host subscription restores these same items.
+    {...demoRawTurnEntry("review-history-hydration",[
+      demoItem("history-visible-user","userMessage",
+        "这是历史记录的用户消息（模拟），不是内联 turn 内容"),
+      demoItem("history-visible-command","exec",undefined,{
+        command:"git status --porcelain",state:"Ready",
+      }),
+      demoItem("history-visible-answer","assistant-message",
+        "历史正文已通过订阅恢复（模拟事件）",{
+          phase:"final_answer",completed:true,
+        }),
+    ]),historyEntityKey:"fixture-history-content"},
     demoMessageEntry("assistant", "review-final", "**演示不会触发真实权限变更。** 与 Agent 后端接入时，需要在宿主层明确实现权限校验、授权请求和执行回调。"),
     // Real source turn.items fixture: commentary, command group, file patch,
     // and final answer share ONE virtualized row, unlike former mock turns.
@@ -369,7 +399,7 @@ export function createDemoSource(id: DemoConversationId): DemoSource {
     entries: initialDemoEntries(id),
     connectionState: "connected",
     loadingHistory: false,
-    projection: { conversationId: id, cwd: "/projects/agent-web", showFullTranscript: true },
+    projection: { conversationId: id, hostId: "demo-host", cwd: "/projects/agent-web", showFullTranscript: true },
   });
 }
 
