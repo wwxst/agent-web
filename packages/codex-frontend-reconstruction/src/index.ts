@@ -106,3 +106,5 @@ export type { SourceMcpResult } from "./conversation/SourceMcpResultGroupingGuar
 export type { SourceRepeatedItem, SourceRepeatedActivityHost, SourceRepeatedActivityRow } from "./conversation/SourceRepeatedActivityGroups.js";
 export { createSourceActivityCollapseState } from "./conversation/SourceActivityCollapseState.js";
 export type { SourceActivityCollapseState } from "./conversation/SourceActivityCollapseState.js";
+
+export * from "./conversation/SourceActivityDisclosureModel.js";
