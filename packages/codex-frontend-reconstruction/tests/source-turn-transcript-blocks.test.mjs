@@ -17,7 +17,8 @@ test("one turn projects commentary, tools, and final response without a second v
     item("final","assistant-message",{phase:"final_answer",content:"Done",grouping:"standalone"}),
   ]});
   assert.deepEqual(blocks.map(b=>b.type),["user-message","agent-activity","assistant-message"]);
-  assert.deepEqual(blocks[1].items.map(i=>i.id),["thought","c1","p1"]);
+  // Source latest-mode suppresses old commentary after a final answer starts.
+  assert.deepEqual(blocks[1].items.map(i=>i.id),["c1","p1"]);
   assert.equal(blocks[2].item.id,"final");
   assert.equal(blocks[1].key,"t1:agent-activity");
 });

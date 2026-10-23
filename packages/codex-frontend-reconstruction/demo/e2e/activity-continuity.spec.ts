@@ -13,7 +13,8 @@ test("source N groups command and multi-file patch inside the existing transcrip
   const group=directActivity.locator("[data-codex-activity-group]");
   await expect(group).toBeVisible();
   await expect(entry.locator('[data-conversation-message="assistant"]')).toHaveCount(1);
-  await expect(entry.getByText("下面仅用于验证连续工具活动的组件接线", {exact:false})).toBeVisible();
+  // The compiled latest branch prunes stale commentary once a final answer exists.
+  await expect(entry.getByText("下面仅用于验证连续工具活动的组件接线", {exact:false})).toHaveCount(0);
   await expect(entry.getByText("模拟活动已结束。命令和文件差异", {exact:false})).toBeVisible();
   await expect(group.getByRole("button",{name:/编辑了文件.*运行了命令/})).toHaveCount(1);
   await group.locator(".codex-activity-group-row__toggle").click();
