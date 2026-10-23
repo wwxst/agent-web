@@ -156,9 +156,11 @@ export function makeDemoRow(notify: (message: string) => void) {
         // Only fixture-verified private fr outcomes; never assume all reads
         // or successful commands are skippable in a real conversation.
         shouldSkipBeforeGrouping: (item,next) => isSourcePreGroupExecSuppressed(item,next,{
-          isSuccessfulExecution: item => item.demoSuccessfulExecution === true,
-          classifyVisualizationCommand: item => item.demoVisualizationKind ?? null,
-          isLoadedToolRead: item => item.demoLoadedToolRead === true,
+          // Undefined lets source Jt/Kt/qt run; explicit fixture outcomes
+          // may override but no broad "any SKILL.md" classification is used.
+          isSuccessfulExecution: item => item.demoSuccessfulExecution === true ? true : undefined,
+          classifyVisualizationCommand: item => item.demoVisualizationKind ?? undefined,
+          isVisualizationSkillRead: item => item.demoVisualizeSkillRead === true ? true : undefined,
         }),
       }),
       // Source qe uses Gi from private turn state. Only opt-in test fixtures
