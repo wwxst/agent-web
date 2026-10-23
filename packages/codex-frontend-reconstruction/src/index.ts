@@ -111,3 +111,7 @@ export * from "./conversation/SourceActivityDisclosureModel.js";
 
 export { partitionSourceAeonActivity } from "./conversation/SourceAeonActivityPartitions.js";
 export type { SourceAeonActivityPartitionOptions } from "./conversation/SourceAeonActivityPartitions.js";
+
+export { isSourceMeaningfulAssistant, filterSourceLatestActivityUnits } from "./conversation/SourceLatestActivityVisibility.js";
+export { isSourcePreGroupExecSuppressed } from "./conversation/SourcePreGroupExecFilter.js";
+export type { SourceExecFilterHost, SourceExecFilterItem } from "./conversation/SourcePreGroupExecFilter.js";
