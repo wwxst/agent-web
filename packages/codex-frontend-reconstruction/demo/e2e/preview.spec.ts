@@ -107,6 +107,22 @@ test("mounts recovered transcript components and handles mock-only interactions"
     return footer.getBoundingClientRect().top-row.getBoundingClientRect().bottom;
   });
   expect(clearance).toBeGreaterThanOrEqual(-1);
+  // Wt/Gt: live ResizeObserver must update the source CSS variable as the
+  // Composer footer grows and keep the pinned-bottom viewport stable.
+  const initialFooterPadding=await conversationViewport.evaluate(el =>
+    parseFloat(el.style.getPropertyValue("--thread-scroll-padding-bottom")));
+  const footer=page.locator('[data-thread-scroll-footer="true"]');
+  await footer.evaluate(el => {(el as HTMLElement).style.paddingBottom="75px";});
+  await expect.poll(()=>conversationViewport.evaluate(el =>
+    parseFloat(el.style.getPropertyValue("--thread-scroll-padding-bottom"))
+  )).toBeGreaterThan(initialFooterPadding+40);
+  await expect.poll(()=>conversationViewport.evaluate(el =>
+    Math.max(0,el.scrollHeight-el.clientHeight-el.scrollTop)
+  )).toBeLessThan(3);
+  await footer.evaluate(el => {(el as HTMLElement).style.removeProperty("padding-bottom");});
+  await expect.poll(()=>conversationViewport.evaluate(el =>
+    parseFloat(el.style.getPropertyValue("--thread-scroll-padding-bottom"))
+  )).toBeLessThan(initialFooterPadding+2);
   const geometry = await page.evaluate(() => {
     const scroll = document.querySelector('[data-testid="transcript-scroll"]');
     const rows = [...document.querySelectorAll('[data-turn-key]')];
