@@ -57,7 +57,10 @@ const fixtureTurnDependencies: Dependencies = {
   getCloudAutomation: () => null,
   // Explicit _e host metadata also marks eligible final messages standalone.
   getActivityMetadata: item => typeof item.grouping === "string" ? { grouping: item.grouping } : null,
-  canGroupActivityWithNext: (_item, next) => next?.grouping === "groupable",
+  // The original canGroupActivityWithNext is private. This fixture deliberately
+  // marks the boundary once at the first command after commentary, then N
+  // groups the subsequent commands+patch together. It is NOT a host rule.
+  canGroupActivityWithNext: () => false,
 };
 export function demoRawTurnEntry(id: string, items: TurnItem[]): ConversationRenderEntry {
   return {
