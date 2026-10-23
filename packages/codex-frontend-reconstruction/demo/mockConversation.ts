@@ -264,7 +264,7 @@ function reviewScenario(): ConversationRenderEntry[] {
         grouping:"groupable",parsedCmd:{type:"read",path:".codex/skills/visualize/SKILL.md",isFinished:true},
       }),
       demoItem("source-hidden-visualization-command","exec",undefined,{
-        grouping:"groupable",state:"Ready",command:"touch visualizations/preview.html",
+        grouping:"groupable",state:"Ready",command:"touch .codex/visualizations/preview.html",
         demoSuccessfulExecution:true,
       }),
       demoItem("source-patch-with-visualization","patch",undefined,{
