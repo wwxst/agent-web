@@ -336,6 +336,12 @@ function PatchFileRow(props: {
             : unified
               ? <CodexSourcePatchDiffPreview patch={diff} path={props.path} change={props.change}
                   isShortView={props.status === "pending"}
+                  frame={{
+                    path: props.path,
+                    added: counts?.added ?? 0,
+                    removed: counts?.removed ?? 0,
+                    ...(props.onOpenFile ? {onOpenFile:openFile} : {}),
+                  }}
                   header={<ApprovalReviewDetails reviews={props.automaticApprovalReviews}
                     isDeclined={props.status === "auto-review-declined"} />} />
               : <>

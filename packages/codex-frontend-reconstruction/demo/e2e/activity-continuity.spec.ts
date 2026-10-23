@@ -51,6 +51,17 @@ test("source N groups command and multi-file patch inside the existing transcrip
   await patch.locator("[data-codex-source-patch-toggle]").first().click();
   const diff=patch.locator("[data-codex-source-diff-engine='pierre']").first();
   await expect(diff).toBeVisible();
+  const frame=diff.locator("[data-codex-source-diff-frame]");
+  await expect(frame).toBeVisible();
+  await expect(frame.locator(".codex-source-diff-frame__path"))
+    .toHaveText("AgentActivityUnitGrouping.ts");
+  await expect(frame.locator(".codex-source-diff-frame__stats")).toContainText("+");
+  await expect(frame.locator(".codex-source-diff-frame__stats")).toContainText("−");
+  await expect(frame).toHaveCSS("border-top-style","solid");
+  await page.context().grantPermissions(["clipboard-read","clipboard-write"]);
+  await frame.getByRole("button",{name:"复制文件差异"}).click();
+  const copied=await page.evaluate(() => navigator.clipboard.readText());
+  expect(copied).toContain("AgentActivityUnitGrouping.ts");
   await expect(diff.locator(".codex-source-tool-patch-file__diff-viewport")).toHaveCSS("max-height","240px");
   await expect.poll(()=>scroller.evaluate(el=>el.scrollHeight>el.clientHeight)).toBe(true);
   await scroller.evaluate(el=>{el.scrollTop=el.scrollHeight;});

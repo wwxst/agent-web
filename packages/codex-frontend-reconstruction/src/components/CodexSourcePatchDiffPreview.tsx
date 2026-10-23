@@ -1,6 +1,7 @@
 import * as React from "react";
 import { parsePatchFiles } from "@pierre/diffs";
 import { FileDiff } from "@pierre/diffs/react";
+import "./codexPatchDiffFrame.css";
 
 const FILE_DIFF_OPTIONS = {
   diffStyle: "unified",
@@ -47,6 +48,13 @@ export function CodexSourcePatchDiffPreview(props: {
   path: string;
   change: unknown;
   header?: React.ReactNode;
+  /** Source BT container: file name, counts, open callback and unified diff copy. */
+  frame?: {
+    path:string;
+    added:number;
+    removed:number;
+    onOpenFile?:()=>void;
+  };
   /** IT passes true only for pending file changes (original max-h-25). */
   isShortView?: boolean;
 }) {
@@ -67,10 +75,7 @@ export function CodexSourcePatchDiffPreview(props: {
     [props.path, props.change],
   );
 
-  return (
-    <div data-codex-source-diff-engine="pierre">
-      {props.header}
-      {fileDiff != null
+  const body = fileDiff != null
         ? <FileDiff
             fileDiff={fileDiff}
             options={FILE_DIFF_OPTIONS}
@@ -88,7 +93,50 @@ export function CodexSourcePatchDiffPreview(props: {
                 data-codex-source-patch-fallback=""
                 data-language={fallback.language}
               >{fallback.content}</pre>
-            : null}
-    </div>
-  );
+            : null;
+
+  // Original BT supplies this frame around VT, not an inner FileDiff header.
+  // Keep the old body when no frame metadata is available from a host.
+  return <div data-codex-source-diff-engine="pierre">
+    {props.header}
+    {props.frame == null ? body : <div className="codex-source-diff-frame"
+      data-codex-source-diff-frame="">
+      <div className="codex-source-diff-frame__header">
+        <div className="codex-source-diff-frame__file">
+          {props.frame.onOpenFile
+            ? <button type="button" className="codex-source-diff-frame__path"
+                onClick={props.frame.onOpenFile} title={props.frame.path}
+                data-codex-source-diff-open-file="">
+                {props.frame.path.replace(/\\/g,"/").split("/").pop() ?? props.frame.path}
+              </button>
+            : <span className="codex-source-diff-frame__path" title={props.frame.path}>
+                {props.frame.path.replace(/\\/g,"/").split("/").pop() ?? props.frame.path}
+              </span>}
+          <span className="codex-source-diff-frame__stats"
+            aria-label={`增加 ${props.frame.added} 行，删除 ${props.frame.removed} 行`}>
+            <span className="is-added">+{props.frame.added}</span>
+            <span className="is-removed">−{props.frame.removed}</span>
+          </span>
+        </div>
+        <button type="button" className="codex-source-diff-frame__copy"
+          title="复制文件差异" aria-label="复制文件差异"
+          data-codex-source-diff-copy=""
+          onClick={() => {
+            if(navigator.clipboard?.writeText == null) return;
+            void navigator.clipboard.writeText(props.patch).catch(() => {
+              // The original Or clipboard service is host-owned. Clipboard
+              // permissions may be absent in a standalone web preview.
+            });
+          }}>
+          <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"
+            fill="none" stroke="currentColor" strokeWidth="1.7"
+            strokeLinecap="round" strokeLinejoin="round">
+            <rect x="8" y="8" width="12" height="12" rx="2" />
+            <path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2" />
+          </svg>
+        </button>
+      </div>
+      <div className="codex-source-diff-frame__body">{body}</div>
+    </div>}
+  </div>;
 }

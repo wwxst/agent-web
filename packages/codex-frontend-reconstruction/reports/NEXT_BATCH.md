@@ -90,3 +90,8 @@
 - Recovered app-shared vertical-scroll-fade-mask and edge-fade scroll-timeline behavior in the existing nk activity detail scroller; the original class was present but had no supporting CSS in the recovered UI.
 - Updated Chromium tests verify 224px scroll height, CSS mask/animation support and independent FileDiff scroll. See SOURCE_ACTIVITY_SCROLL_FADE.md.
 - Next: source-verify status row typography/icon spacing and FileDiff header/theme tokens against the pinned app-shared CSS and original IT/BT class list, rather than screenshot guesses. Continue React/Electron front-end integration only.
+
+## BT outer FileDiff frame (2026-10-23)
+
+- Restored the missing original BT frame on actual expanded PT/IT unified file-diff rows: filename/tooltip, counts, copy unified patch, original border/surface geometry and existing nested FileDiff. Preserves independent 100/240px viewport heights.
+- Playwright now validates clipboard copy and frame/scroll separation. See SOURCE_PATCH_DIFF_BT_FRAME.md; exact private Or icon, theme and Electron host remain pending.
