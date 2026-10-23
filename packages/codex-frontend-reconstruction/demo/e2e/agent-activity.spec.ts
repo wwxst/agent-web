@@ -21,28 +21,42 @@ test("source-derived AgentActivity section mounts and toggles without backend ef
   expect(errors).toEqual([]);
 });
 
-test("activity collapse state is isolated between demo conversations",async ({page})=>{
+test("activity collapse state is isolated and restored by stable Turn identity",async ({page})=>{
   await page.goto("/");
-  const first = page.locator("[data-recovered-agent-activity]").first();
+  const viewport=page.getByTestId("transcript-scroll");
+  const showBeginning=async () => {
+    await viewport.evaluate((el) => {el.scrollTop=0;});
+  };
+  await showBeginning();
+  const first=page.locator('[data-demo-turn-id="batch-tools"] [data-recovered-agent-activity]');
+  await expect(first).toBeVisible();
+  await expect(first).toHaveAttribute("data-agent-activity-collapsed","true");
   await first.getByRole("button",{name:/项工具活动/}).click();
   await expect(first).toHaveAttribute("data-agent-activity-collapsed","false");
-  await page.getByRole("button", {name:/工具调用与审批交互/}).click();
-  const review = page.locator("[data-recovered-agent-activity]").first();
+
+  await page.getByRole("button",{name:/工具调用与审批交互/}).click();
+  await showBeginning();
+  const review=page.locator('[data-demo-turn-id="review-exec"] [data-recovered-agent-activity]');
+  await expect(review).toBeVisible();
   await expect(review).toHaveAttribute("data-agent-activity-collapsed","true");
   await review.getByRole("button",{name:/项工具活动/}).click();
   await expect(review).toHaveAttribute("data-agent-activity-collapsed","false");
-  // Switching/remounting the virtualized conversation must not silently reset
-  // host-owned Rk state (original local-conversation-turn isCollapsed prop).
-  await page.getByRole("button", {name:/恢复 Codex 会话界面/}).click();
-  await expect(page.locator("[data-recovered-agent-activity]").first())
-    .toHaveAttribute("data-agent-activity-collapsed","false");
-  await page.getByRole("button", {name:/工具调用与审批交互/}).click();
-  await expect(page.locator("[data-recovered-agent-activity]").first())
-    .toHaveAttribute("data-agent-activity-collapsed","false");
-  // A new demo host resets the controlled state, not just the visible React row.
+
+  // The source identity, not the first *virtualized visible* activity, must
+  // survive switching conversations and unmounting the current row.
+  await page.getByRole("button",{name:/恢复 Codex 会话界面/}).click();
+  await showBeginning();
+  await expect(first).toBeVisible();
+  await expect(first).toHaveAttribute("data-agent-activity-collapsed","false");
+  await page.getByRole("button",{name:/工具调用与审批交互/}).click();
+  await showBeginning();
+  await expect(review).toBeVisible();
+  await expect(review).toHaveAttribute("data-agent-activity-collapsed","false");
+
+  // A new preview host lifetime does not reuse the old explicit choice.
   await page.getByRole("button",{name:"新建演示会话"}).click();
-  await expect(page.locator("[data-recovered-agent-activity]").first())
-    .toHaveAttribute("data-agent-activity-collapsed","true");
+  await showBeginning();
+  await expect(review).toHaveAttribute("data-agent-activity-collapsed","true");
 });
 
 
