@@ -160,3 +160,13 @@ Follow `reports/NEXT_BATCH.md`: add the typed controller paste-event contract an
 - CI for implementation plus browser undo assertion fix: GitHub Actions 39885831086 passed 322/322 core tests, 4/4 demo model tests, strict TypeScript/Vite build, 16/16 Chromium tests.
 - The demo host is still synthetic, and the current editor is only the source-backed plain subset. Real Electron, live Agent streaming, rich Markdown/mentions/attachments and version-matched pixel parity remain unimplemented.
 - See reports/PROSEMIRROR_PLAIN_MODE.md and the current NEXT_BATCH.md for evidence and next tasks.
+
+## Latest checkpoint — one-turn activity continuity (2026-10-23)
+
+- Recovery branch: `recovery/codex-frontend-through-connected-message-20261021`; Draft PR #1, not merged.
+- Real compiled evidence: `local-conversation-turn-69783815d57d.js` chooses `n === "latest"` direct `ga` rendering versus historical `n === "all"` wrapper `za/Rk`; `split-items-into-render-groups` locates the final assistant separately.
+- `SourceTurnTranscriptBlocks.ts` now reuses the existing `splitTurnItemsIntoRenderGroups` model to project raw `turn.items` into existing `ConversationMessageBlocks`, retaining a single virtualized row; it requires explicit host metadata for the final assistant and grouping boundaries.
+- Existing `ConnectedConversationMessageRenderers` distinguishes latest direct activity from historical `CodexAgentActivity` collapse. The deterministic review fixture exercises three commands, a two-file patch, separate final assistant content, and the real nested `FileDiff` component inside one Turn. The source's latest-mode filter removes stale commentary after a final response starts.
+- Latest verified successful Actions run at implementation HEAD `699d9849`: core 333/333, demo models 4/4, React/TypeScript build and Chromium 21/21. A second parallel run was still in progress at the checkpoint.
+- New browser screenshot artifact belongs to that Actions run; it is a 1352×760 mock-only preview, not version-matched Codex visual acceptance.
+- Remaining: private `Wa/hn/Ga` complete rules, persisted historical collapse state, assistant commentary subtleties, original theme/icons/animations, real Electron IPC, real Agent events, same-build screenshot comparison. Previous historical test counts elsewhere in STATUS are snapshots, not current.

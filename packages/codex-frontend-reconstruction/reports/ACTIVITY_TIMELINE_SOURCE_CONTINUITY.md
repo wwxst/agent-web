@@ -23,3 +23,9 @@
 2. Restore real `Sg` completed header localization/icons, `mk/rk` private guards and `bg` MCP subgroups.
 3. Compare the exact original-build screenshot at identical viewport/theme/state before CSS claims.
 4. Then continue ProseMirror jja/Dja and real Electron integration.
+
+## Follow-up: actual Turn-mode renderer
+
+The source `local-conversation-turn-69783815d57d.js` branches `n===latest` to `ga` directly, while `n===all` wraps older activity in `za` (the `Rk/Hk` collapse family). `SourceTurnTranscriptBlocks` now reuses previously recovered `TurnItemRenderGroups` and the existing `ConversationMessageRenderPlan`, instead of constructing separate test Turn rows for every commentary, tool and final-answer item. `ConnectedConversationMessageRenderers` receives the mode through the same block renderer. A generated raw-turn scenario exercises command+patch+final answer in one virtualized Turn, without an extra historical Rk disclosure.
+
+The synthetic host explicitly provides `_e`-shaped metadata for the final assistant and a commentary-to-command group boundary; it does not infer Codex private predicates. The latest-mode commentary filter is respected even when that differs from a reference screenshot with multiple turns. In the verified CI run at `699d9849`, core 333/333, model 4/4, build and 21/21 Chromium passed. The connected app still does not ingest real Agent/Electron events or claim pixel parity.

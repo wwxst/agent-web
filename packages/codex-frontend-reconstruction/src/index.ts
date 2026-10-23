@@ -92,3 +92,10 @@ export * from "./conversation/ToolActivityExternalMessageConversion.js";
 export * from "./conversation/ToolActivityHistorySource.js";
 
 export * from "./conversation/ToolActivityHistoryEntityStore.js";
+
+export { groupSourceAgentActivityUnits } from "./conversation/AgentActivityUnitGrouping.js";
+export type { SourceActivityGroupingHost } from "./conversation/AgentActivityUnitGrouping.js";
+export { isSourceGroupRowVisible, getSourceExpandableGroupRows } from "./conversation/AgentActivityGroupVisibility.js";
+export type { SourceGroupVisibilityHost } from "./conversation/AgentActivityGroupVisibility.js";
+export { projectSourceTurnTranscriptBlocks } from "./conversation/SourceTurnTranscriptBlocks.js";
+export type { SourceTurnBlockInput } from "./conversation/SourceTurnTranscriptBlocks.js";
