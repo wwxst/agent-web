@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {resolveSourceMcpToolActivityLabel,sourceJsToolTitle} from "../build/SourceMcpToolActivityLabel.js";
+import {resolveSourceMcpToolActivityLabel,sourceJsToolTitle,sourceMcpLabelInputFromActivity} from "../build/SourceMcpToolActivityLabel.js";
 const mk=(extra={})=>({completed:true,toolName:"search",toolArguments:{},
   toolResult:{type:"success"},toolDisplay:{invoked:"已搜索",invoking:"正在搜索",title:"搜索文件"},...extra});
 const host={isFailedResult:input=>input.toolResult?.type==="error",
@@ -52,4 +52,17 @@ test("xa delegates definition title and unresolved final fallback to actual host
  const x=mk({toolDisplay:null,toolDefinition:null});
  assert.deepEqual(title(x),{text:"工具定义标题",source:"definition-title"});
  assert.deepEqual(title(x,{isFailedResult:()=>false}),{text:null,source:"unavailable"});
+});
+\ntest("host raw MCP fields are type-guarded before xa title projection",()=>{
+ const safe=sourceMcpLabelInputFromActivity({completed:true,invocation:{server:"files",tool:"search",arguments:{q:"a"}},
+  result:{type:"success"},toolDisplay:{invoked:"已搜索"},toolDefinition:{_meta:{}}});
+ assert.equal(safe.toolName,"search");
+ assert.deepEqual(title(safe),{text:"已搜索",source:"invocation"});
+ const malformed=sourceMcpLabelInputFromActivity({completed:"true",invocation:"not-an-object",result:42,
+  toolDisplay:{invoked:42,title:{x:1}},toolDefinition:["not-a-definition"]});
+ assert.equal(malformed.completed,false);
+ assert.equal(malformed.toolName,"");
+ assert.equal(malformed.toolResult,null);
+ assert.equal(malformed.toolDisplay?.invoked,undefined);
+ assert.equal(malformed.toolDefinition,null);
 });

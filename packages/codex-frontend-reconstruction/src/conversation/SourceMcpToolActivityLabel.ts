@@ -39,6 +39,44 @@ export interface SourceMcpToolActivityLabelHost {
   /** Final Ea/Ta + browser use + ja host-specific fallback. */
   getFallbackLabel?(input: SourceMcpToolActivityLabelInput): string | null | undefined;
 }
+/** Source tool records arrive as unknown host JSON; validate before modeling. */
+export interface SourceMcpActivityRecord {
+  completed?: unknown;
+  invocation?: unknown;
+  result?: unknown;
+  toolDisplay?: unknown;
+  toolDefinition?: unknown;
+}
+const asRecord=(value:unknown):Record<string,unknown>|null=>
+  value != null && typeof value === "object" && !Array.isArray(value)
+    ? value as Record<string,unknown> : null;
+const optionalString=(value:unknown):string|null|undefined=>
+  typeof value==="string" ? value : value===null ? null : undefined;
+
+/** Never trust an unvalidated backend/MCP payload as a typed title object. */
+export function sourceMcpLabelInputFromActivity(
+  item:SourceMcpActivityRecord,
+):SourceMcpToolActivityLabelInput {
+  const invocation=asRecord(item.invocation);
+  const toolDisplay=asRecord(item.toolDisplay);
+  const toolResult=asRecord(item.result);
+  const definition=asRecord(item.toolDefinition);
+  return {
+    completed:item.completed===true,
+    serverName:optionalString(invocation?.server),
+    toolName:typeof invocation?.tool==="string" ? invocation.tool : "",
+    toolArguments:invocation?.arguments,
+    toolResult:toolResult==null?null:{
+      type:typeof toolResult.type==="string"?toolResult.type:undefined,
+    },
+    toolDisplay:toolDisplay==null?null:{
+      invoking:optionalString(toolDisplay.invoking),
+      invoked:optionalString(toolDisplay.invoked),
+      title:optionalString(toolDisplay.title),
+    },
+    toolDefinition:definition,
+  };
+}
 const nonBlank = (value: unknown): value is string =>
   typeof value === "string" && value.trim().length > 0;
 const result = (text: string | null, source: SourceMcpToolActivityLabelSource):

@@ -101,7 +101,7 @@ export { projectSourceTurnTranscriptBlocks } from "./conversation/SourceTurnTran
 export type { SourceTurnBlockInput } from "./conversation/SourceTurnTranscriptBlocks.js";
 export { combineSourceActivityTrace } from "./conversation/SourceCombinedActivityTrace.js";
 export { projectSourceRepeatedActivityRows } from "./conversation/SourceRepeatedActivityGroups.js";
-export { resolveSourceMcpToolActivityLabel, sourceJsToolTitle } from "./conversation/SourceMcpToolActivityLabel.js";
+export { resolveSourceMcpToolActivityLabel, sourceJsToolTitle, sourceMcpLabelInputFromActivity } from "./conversation/SourceMcpToolActivityLabel.js";
 export type { SourceMcpToolActivityLabelInput, SourceMcpToolActivityLabelHost, SourceMcpToolActivityLabelResult } from "./conversation/SourceMcpToolActivityLabel.js";
 export { projectSourceRepeatedHeader } from "./conversation/SourceRepeatedActivityHeader.js";
 export type { SourceRepeatedHeader, SourceRecognizedMcpAction, SourceRepeatedHeaderHost } from "./conversation/SourceRepeatedActivityHeader.js";
