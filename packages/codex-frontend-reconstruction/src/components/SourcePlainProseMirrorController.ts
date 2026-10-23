@@ -1,7 +1,8 @@
 import { Schema, type Node as PMNode } from "prosemirror-model";
 import { EditorState, Plugin, TextSelection } from "prosemirror-state";
 import { EditorView } from "prosemirror-view";
-import { history } from "prosemirror-history";
+import { history, undo, redo } from "prosemirror-history";
+import { keymap } from "prosemirror-keymap";
 import { splitBlock } from "prosemirror-commands";
 import { resolveComposerEditorKeyAction, type ComposerEnterBehavior, type ComposerEditorKey } from "../conversation/ComposerEditorBehaviorModel.js";
 import type { ComposerControllerPort, ComposerPastedTextPayload, ComposerPastedLinkPayload } from "../conversation/ComposerControllerContract.js";
@@ -150,7 +151,7 @@ export class SourcePlainProseMirrorController implements ComposerControllerPort 
       state: EditorState.create({
         schema: sourcePlainComposerSchema,
         doc: documentFromText(options.initialText ?? ""),
-        plugins: [events, history()],
+        plugins: [events, keymap({ "Mod-z": undo, "Mod-y": redo, "Mod-Shift-z": redo }), history()],
       }),
       dispatchTransaction(transaction) {
         owner.view.updateState(owner.view.state.apply(transaction));

@@ -92,3 +92,21 @@ test("outer YMt host form submits once and captures normal transfers without blo
   await expect(page.getByText("验证来源表单只提交一次", {exact: true})).toHaveCount(1);
   await expect(page.getByTestId("send-button")).toHaveAttribute("data-composer-action", "stop");
 });
+
+
+test("mounted ProseMirror plain editor supports multiline transactions and history", async ({page}) => {
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  await page.goto("/");
+  const editor = page.getByRole("textbox", {name:"演示消息输入"});
+  await expect(editor).toHaveClass(/ProseMirror/);
+  await editor.fill("第一行");
+  await editor.press("Shift+Enter");
+  await editor.type("第二行");
+  await expect(editor.locator("p")).toHaveCount(2);
+  await expect(editor).toContainText("第二行");
+  await editor.press("Control+z");
+  await expect.poll(() => editor.locator("p").count()).toBeGreaterThanOrEqual(1);
+  await expect(page.getByTestId("send-button")).toBeEnabled();
+  expect(errors).toEqual([]);
+});
