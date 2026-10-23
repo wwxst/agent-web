@@ -59,6 +59,7 @@ export interface ConversationMessagePlanOptions {
   /** Original local-conversation-turn selects direct ga for latest vs Rk for all. */
   renderMode?: "latest" | "all";
   isAeonThread?: boolean;
+  hostId?: string | undefined;
   isActiveAeonTurn?: boolean;
   footerStatus?: string | null;
   showReadReceipts?: boolean;
@@ -77,7 +78,7 @@ export interface ConversationMessagePlanOptions {
 
 export interface ConversationMessagePlanDependencies {
   /** The compiled `hn` partitions activity blocks into activity/results. */
-  partitionActivities(items: ConversationMessageItem[], context: {isAeonThread:boolean}): ConversationActivityPart[];
+  partitionActivities(items: ConversationMessageItem[], context: {isAeonThread:boolean;hostId:string|undefined}): ConversationActivityPart[];
   /** A private external-surface / automation result predicate. */
   getSpecialActivityResult(item: ConversationMessageItem): unknown | null;
   /** Private `as` predicate for activity that is not a reasoning-only update. */
@@ -148,7 +149,7 @@ export function buildConversationMessageRenderPlan(
           !block.collapseWhenPossible &&
           options.footerStatus !== "sleeping" &&
           (!hasFooter || block.items.some(dependencies.hasPersistentActivity));
-        const parts = dependencies.partitionActivities(block.items, {isAeonThread:isAeon});
+        const parts = dependencies.partitionActivities(block.items, {isAeonThread:isAeon,hostId:options.hostId});
         for (const [index, part] of parts.entries()) {
           const key = parts.length === 1 ? block.key : `${block.key}:${index}`;
           if (part.type === "result") {
