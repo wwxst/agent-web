@@ -72,6 +72,8 @@ export interface ConnectedConversationRendererHost extends ConversationContentAd
       /** Original Je/bg group consecutive completed compatible MCP and events. */
       getRepeatedRows?(items:readonly ConversationMessageItem[]): readonly SourceRepeatedActivityRow<ConversationMessageItem>[];
       renderRepeatedSummary?(row:SourceRepeatedActivityRow<ConversationMessageItem>): React.ReactNode;
+      /** Original XO/V_ icon slots resolved by mv/bv from real host metadata. */
+      renderRepeatedIcon?(row:SourceRepeatedActivityRow<ConversationMessageItem>): React.ReactNode;
       renderCompletedSummary(items: readonly ConversationMessageItem[]): React.ReactNode;
       translateMessage(message: ActivityHeaderMessage): React.ReactNode;
       renderHostActiveLabel?(item: ConversationMessageItem): React.ReactNode;
@@ -266,6 +268,7 @@ export function createConnectedConversationMessageRenderers(host: ConnectedConve
           return <CodexActivityGroupRow
             items={unit.items} detailItems={groupHeader.getVisibleItems?.(unit.items)}
             getRepeatedRows={groupHeader.getRepeatedRows} renderRepeatedSummary={groupHeader.renderRepeatedSummary}
+            renderRepeatedIcon={groupHeader.renderRepeatedIcon}
             {...stateContext}
             canExpand={groupHeader.canExpand(unit.items)}
             renderCompletedSummary={groupHeader.renderCompletedSummary}
