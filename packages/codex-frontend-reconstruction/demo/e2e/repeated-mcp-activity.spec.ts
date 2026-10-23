@@ -24,8 +24,19 @@ test("source Je/bg uses A_ phase disclosure with XO icon and keeps ineligible MC
   await expect(repeated).toHaveAttribute("data-source-disclosure-phase","expanded");
   await expect(repeated.locator("[data-codex-source-repeated-body]")).toBeVisible();
   await expect(repeated.locator(".codex-activity-group-row__subrow")).toHaveCount(2);
-  await expect(group.locator(".codex-activity-group-row__subrow")).toHaveCount(4);
-  await expect(group.locator('[data-codex-source-repeated-group="external-event"]')).toHaveCount(0);
+  await expect(group.locator(".codex-activity-group-row__subrow")).toHaveCount(7);
+  const external=group.locator('[data-codex-source-repeated-group="external-event"]');
+  await expect(external).toHaveCount(1);
+  const externalToggle=external.locator("[data-codex-source-repeated-toggle]");
+  await expect(externalToggle).toContainText("Slack");
+  await expect(externalToggle).toContainText("2 个事件");
+  await expect(external).toHaveAttribute("data-source-disclosure-phase","collapsed");
+  await expect(external.locator("[data-codex-source-repeated-body]")).toHaveCount(0);
+  await externalToggle.click();
+  await expect(external).toHaveAttribute("data-source-disclosure-phase","expanded");
+  await expect(external.locator(".codex-activity-group-row__subrow")).toHaveCount(2);
+  await externalToggle.click();
+  await expect(external).toHaveAttribute("data-source-disclosure-phase","collapsed");
   await toggle.click();
   await expect(toggle).toHaveAttribute("aria-expanded","false");
   // A_ deliberately preserves children through closing; it unmounts after motion.
