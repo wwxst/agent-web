@@ -90,3 +90,12 @@
 - Restored the original `Gi=K&&!ai&&!Wi` as `SourceLatestActivityRetentionGate.ts`, preserving terminal status, assistant content/phase, inline subagent commentary, most-recent up-next item and query readiness. The existing `ConversationMessageRenderPlan -> ConversationMessageBlocks -> ConnectedConversationMessageRenderers` path now passes the computed gate to `Ga/qe` before the existing `ek` trace merge.
 - Browser fixture confirms a normal Skill read remains in the displayed activity while the visualize-Skill read and its paired visualization command are excluded. Targeted tests cover Jt/Kt/qt and Gi truth-table boundaries; source evidence is pinned in `reports/GI_VISUALIZATION_SOURCE_RECOVERY.md` (19 exact signatures / 4 hashes).
 - **Next:** resolve real K from tool history subscription and real Qr/Ui up-next query in a turn-level host adapter, then complete source-specific task result cards and visual parity. No Agent backend change has been performed.
+
+## 2026-10-23 — qn/Qr turn runtime reactive integration
+
+- Directly audited original Fc's `We/Ge/K/Bi/Vi/Ui/Wi/Gi` query activation and fallback against `frontend.zip` with nine pinned signatures. See `TURN_RUNTIME_STATUS_SUBSCRIPTIONS.md` and `scripts/audit-turn-status-subscribers-evidence.mjs`.
+- Added a source-bound turn runtime store and a query-driven snapshot source with current-value replay, cleanup, stale callback rejection, query-identity rebinding, and status/up-next inputs. Uses exactly the original history and up-next query keys; host must bridge them to real qn/Qr runtime events.
+- Existing `createConversationLiveRow` now subscribes with `useSyncExternalStore` and forwards fresh `K` and `Gi` into the already integrated React activity plan. The tool history store and Agent backend remain untouched.
+- A labeled React demo turn publishes simulated Qr and qn events via buttons. This proves the *frontend* updates without parent transcript reload; it does not imply actual Codex query engine or Agent stream.
+- Browser test covers pending Qr → Qr ready → qn completed → qn inProgress, plus mounted command leaves; Node tests cover identity/cleanup/fallback.
+- **Next:** connect a real host event adapter once its schema is confirmed; investigate SourceTurnTranscriptBlocks' history summary/in-progress turn variants and verify independent Electron startup/visual parity. Test counts must be read from the latest Actions head.
