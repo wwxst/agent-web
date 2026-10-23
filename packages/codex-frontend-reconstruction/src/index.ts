@@ -143,3 +143,20 @@ export type {
   ConnectedSourceTurnRuntimeStatusSource,
   SourceTurnRuntimeStatusStore,
 } from "./conversation/SourceTurnRuntimeStatusSource.js";
+
+export {
+  sourceHistoricalTurnQuery,
+  selectSourceHistoricalTurnItems,
+  createSourceHistoricalTurnContentSource,
+  createSourceHistoricalTurnStore,
+} from "./conversation/SourceHistoricalTurnContentSource.js";
+export type {
+  SourceHistoricalTurnQuery,
+  SourceHistoricalTurnPayload,
+  SourceHistoricalTurnContentHost,
+  SourceHistoricalTurnSnapshot,
+  SourceHistoricalTurnSource,
+  ConnectedSourceHistoricalTurnSource,
+  SourceHistoricalTurnEntry,
+  SourceHistoricalTurnStore,
+} from "./conversation/SourceHistoricalTurnContentSource.js";
