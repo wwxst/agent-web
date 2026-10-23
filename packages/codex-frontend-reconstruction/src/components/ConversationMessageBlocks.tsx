@@ -11,6 +11,7 @@ import {
 import type { ConversationRenderEntry } from "../conversation/ConversationRenderEntriesModel.js";
 import type { VirtualizedTurnRowProps } from "./VirtualizedTurnList.js";
 import type { SourceTurnRuntimeStatusSource, SourceTurnRuntimeStatusSnapshot } from "../conversation/SourceTurnRuntimeStatusSource.js";
+import type {SourceHistoricalTurnSource,SourceHistoricalTurnSnapshot} from "../conversation/SourceHistoricalTurnContentSource.js";
 
 export interface ConversationMessageRenderers {
   UserMessage: React.ComponentType<{
@@ -142,23 +143,32 @@ export function ConversationMessageBlocks(props: ConversationMessageBlocksProps)
 
 export interface ConversationLiveRowAdapters {
   /** Codex's private transcript-block producer; the caller must supply it. */
-  getBlocks?(entry: ConversationRenderEntry): readonly ConversationTranscriptBlock[];
+  getBlocks?(entry: ConversationRenderEntry, history?:SourceHistoricalTurnSnapshot<ConversationMessageItem>|null): readonly ConversationTranscriptBlock[];
   getPlanOptions(entry: ConversationRenderEntry): ConversationMessagePlanOptions;
   /** Optional qn/Qr observable turn state, bound to canonical turn identity.
    * No status model may initiate a host query during React render. */
   getTurnRuntimeSource?(entry: ConversationRenderEntry): SourceTurnRuntimeStatusSource | null;
+  /** Source Y strips historical turn.items but preserves identity for this host query. */
+  getHistoricalTurnSource?(entry:ConversationRenderEntry):SourceHistoricalTurnSource<ConversationMessageItem>|null;
   dependencies: ConversationMessagePlanDependencies;
   renderers: ConversationMessageRenderers;
 }
 
 const noTurnRuntimeSubscription=()=>()=>{};
 const noTurnRuntimeSnapshot=()=>null as SourceTurnRuntimeStatusSnapshot|null;
+const noHistoricalTurnSnapshot=()=>null as SourceHistoricalTurnSnapshot<ConversationMessageItem>|null;
 
 /** Plug this into LiveConversationTranscript.RowComponent without guessing host selectors. */
 export function createConversationLiveRow(adapters: ConversationLiveRowAdapters) {
   type RowEntry = ConversationRenderEntry & { turnKey: string };
   return function ConversationLiveRow({ entry, latestTurnFooter, latestTurnFollowContentRef }: VirtualizedTurnRowProps<RowEntry>) {
-    const blocks = adapters.getBlocks?.(entry) ?? getDirectTranscriptBlock(entry);
+    const historicalSource=adapters.getHistoricalTurnSource?.(entry) ?? null;
+    const historicalSnapshot=React.useSyncExternalStore(
+      historicalSource?.subscribe ?? noTurnRuntimeSubscription,
+      historicalSource?.getSnapshot ?? noHistoricalTurnSnapshot,
+      historicalSource?.getSnapshot ?? noHistoricalTurnSnapshot,
+    );
+    const blocks = adapters.getBlocks?.(entry,historicalSnapshot) ?? getDirectTranscriptBlock(entry);
     const turnRuntime = adapters.getTurnRuntimeSource?.(entry) ?? null;
     // qn/Qr callbacks can publish without a parent conversation snapshot.
     // React must subscribe to the stable source rather than render stale Gi.
