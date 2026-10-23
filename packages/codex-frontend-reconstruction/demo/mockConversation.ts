@@ -139,7 +139,7 @@ function frontendScenario(): ConversationRenderEntry[] {
  * turn and the subscription. Production reads history from a host query. */
 export function getDemoHistoryTurnItems(): TurnItem[] {
  return [
-  demoItem("history-visible-user","userMessage",
+  demoItem("history-visible-user","user-message",
    "这是历史记录的用户消息（模拟），不是内联 turn 内容"),
   demoItem("history-visible-command","exec",undefined,{
    command:"git status --porcelain",state:"Ready",
