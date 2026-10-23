@@ -117,7 +117,7 @@ export function App() {
   React.useLayoutEffect(()=>{
     const root=document.documentElement;
     root.style.setProperty("--codex-sidebar-preferred-width",`${sidebarWidth}px`);
-    return ()=>root.style.removeProperty("--codex-sidebar-preferred-width");
+    return ()=>{root.style.removeProperty("--codex-sidebar-preferred-width");};
   },[sidebarWidth]);
   const [measuredRailWidth, setMeasuredRailWidth] = React.useState(52);
   const [draft, setDraft] = React.useState("");
