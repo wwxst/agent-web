@@ -10,6 +10,8 @@ import type { AgentActivityItem, AgentActivityUnit } from "./AgentActivityProjec
 export interface SourceActivityGroupingHost<T extends AgentActivityItem> {
   getGrouping(item: T, index: number): "groupable" | "standalone";
   startsGroup?(item: T, index: number): boolean;
+  /** Ke invokes fr(item,next) before _e, without changing source indices. */
+  shouldSkipBeforeGrouping?(item: T, next: T | undefined, index: number): boolean;
   groupAcrossSubagentActivity?: boolean;
 }
 
@@ -43,6 +45,7 @@ export function groupSourceAgentActivityUnits<T extends AgentActivityItem>(
   };
   for (let index=0; index<items.length; index++) {
     const item=items[index]!;
+    if (host.shouldSkipBeforeGrouping?.(item,items[index+1],index) === true) continue;
     if (host.startsGroup?.(item,index) === true) {flush();activeGroup=null;}
     if (host.getGrouping(item,index) === "groupable") {
       if (buffered.length === 0) bufferStart=index;
