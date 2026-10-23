@@ -107,3 +107,11 @@ The read-only audit now checks the `rUu` schema/plugin/keymap/paste/drop signatu
 - Added `connectComposerControllerClipboardEvents` plus `CodexSourceComposerHostEvents`. The bridge lives at the host boundary, not inside the layout component; paired subscriptions are removed on cleanup and the pasted-link subscription uses its returned unsubscribe function.
 - The visible textarea demo controller implements the contract only so React mount/cleanup is testable. It does not synthesize paste events or perform uploads. Demo callbacks explicitly report that image/file upload is not integrated; large pasted text returns `false` so the editor's normal paste path is not consumed.
 - Added source audit signatures for all four controller event APIs. This adapter alone is not a claim that ProseMirror paste/drop behavior is restored.
+
+## Main Composer primary action state — YMt / Ti / wi / Ci (2026-10-23)
+
+- The original main host computes the primary button mode as `Ti`, its stop pending/loading state as `wi`, and its send loading state as `Ci`. The exact expressions are now included in `audit-composer-evidence.mjs` for the pinned `app-primary` asset.
+- `src/conversation/ComposerPrimaryActionModel.ts` ports the source's boolean precedence, including upload-wait, submission-in-progress, streaming, host stop signal, steering/native queue eligibility and host disable states.
+- The existing demo React send/stop button consumes the model instead of directly branching on `playing`. The mock host explicitly maps `playing` to a synthetic streaming state; it still cannot send or stop a real Agent request.
+- Unit tests and a rendered browser test guard the source-derived stop/send distinction and prevent a regression in demo action availability.
+- The real host selectors `cj`, `Yg`, `p0`, `mSe`, disabled policies, and full file-upload/status changes are intentionally injected rather than guessed. No Electron IPC or real submission/stop handler is connected.

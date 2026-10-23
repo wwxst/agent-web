@@ -53,3 +53,21 @@ test("prevents Enter from submitting while the demo input is composing", async (
   await composer.press("Enter");
   await expect(page.getByText("已收到你的消息", { exact: false })).toBeVisible();
 });
+
+test("source YMt primary action switches send to stop for a synthetic stream", async ({ page }) => {
+  await page.goto("/");
+  const button = page.getByTestId("send-button");
+  await expect(button).toHaveAttribute("data-composer-action", "send");
+  await expect(button).toHaveAttribute("type", "submit");
+  await expect(button).toBeDisabled();
+  await page.getByRole("textbox", {name: "演示消息输入"}).fill("检查停止与发送状态");
+  await expect(button).toBeEnabled();
+  await button.click();
+  await expect(button).toHaveAttribute("data-composer-action", "stop");
+  await expect(button).toHaveAttribute("type", "button");
+  await expect(button).toHaveAttribute("aria-busy", "false");
+  await button.click();
+  await expect(button).toHaveAttribute("data-composer-action", "send");
+  await expect(button).toBeDisabled();
+  await expect(page.getByText("模拟执行已停止", {exact: false})).toBeVisible();
+});

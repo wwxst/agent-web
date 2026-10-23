@@ -31,6 +31,11 @@ const checks = [
       "if(Ka){Vi&&!vn&&Ha(`send`)",
       "workHomePolicyAcceptance",
       "onPasteCapture:pd,onDropCapture:hd,onSubmit:gd",
+      "Ti=!Xt&&qn==null&&(An&&Zt||bi&&(vi===`streaming`||Yn||Si&&!Jt||!Kt&&!Jt||!qr&&!_i))",
+      "Ci=Xt||An&&!Jt||Sn&&(qr||_i)",
+      "wi=Yt||An&&!Xt&&!Zt",
+      "type:Ti?`button`:`submit`",
+      "onClick:jl},Ti?`stop`:`send`",
     ],
   },
   {

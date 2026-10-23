@@ -6,6 +6,7 @@ import { projectNavigationDestinations } from "../src/conversation/NavigationRai
 import type { VirtualizedTurnListApi } from "../src/components/VirtualizedTurnList.js";
 import { ConnectedLiveConversationTranscript } from "../src/components/ConnectedLiveConversationTranscript.js";
 import { resolveComposerSubmitDecision } from "../src/conversation/ComposerInteractionModel.js";
+import { resolveComposerPrimaryAction } from "../src/conversation/ComposerPrimaryActionModel.js";
 import { BrowserScrollController } from "./browserScrollController.js";
 import { makeDemoRow, demoProjectionDependencies } from "./adapters.js";
 import {
@@ -146,6 +147,26 @@ export function App() {
     }, delay);
   }
   function markFollow() { shouldFollowRef.current = scrollController.getLastScrollDistanceFromBottomPx() < 120; }
+
+  // Source YMt Ti/wi/Ci presentation. These values are supplied by this
+  // synthetic browser host only; no backend stop/send state is inferred.
+  const composerAction = resolveComposerPrimaryAction({
+    isStopping: false,
+    isSubmitting: false,
+    hasSubmissionMarker: false,
+    isWaitingForFileUploads: false,
+    canStopWhileSubmitting: false,
+    isStreaming: playing,
+    streamState: playing ? "streaming" : "ready",
+    hasHostStopSignal: false,
+    isSteeringEnabled: false,
+    canQueueNativeAnswerSubmission: false,
+    hasUploadPolicy: false,
+    hasText: draft.trim().length > 0,
+    hasAttachments: false,
+    hostSendDisabled: draft.trim().length === 0,
+    submitLoading: false,
+  });
 
   function sendMessage() {
     const message = draft.trim();
@@ -317,7 +338,7 @@ export function App() {
             </div>}
             trailingControls={<div className="demo-composer-right">
               <span className="demo-composer-model">Demo Agent <span>Medium</span> <Icon name="chevron" size={12}/></span>
-              <button type="button" data-testid="send-button" aria-label={playing ? "停止模拟" : "发送模拟消息"} title={playing ? "停止模拟" : "发送模拟消息"} className="demo-send-button" disabled={!playing && !draft.trim()} onClick={playing ? stopSample : sendMessage}><Icon name={playing ? "stop" : "up"} size={16}/></button>
+              <button type={composerAction.type} data-testid="send-button" data-composer-action={composerAction.kind} aria-busy={composerAction.loading} aria-label={composerAction.kind === "stop" ? "停止模拟" : "发送模拟消息"} title={composerAction.kind === "stop" ? "停止模拟" : "发送模拟消息"} className="demo-send-button" disabled={composerAction.disabled} onClick={composerAction.kind === "stop" ? stopSample : sendMessage}><Icon name={composerAction.kind === "stop" ? "stop" : "up"} size={16}/></button>
             </div>}
           />
         </div>
