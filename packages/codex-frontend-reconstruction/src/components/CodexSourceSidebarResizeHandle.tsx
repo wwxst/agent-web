@@ -59,14 +59,14 @@ export function CodexSourceSidebarResizeHandle({
         if(event.button!==0)return;
         event.preventDefault();
         drag.current={pointerId:event.pointerId,startX:event.clientX,startWidth:width};
-        event.currentTarget.setPointerCapture(event.pointerId);
         setResizing(true);
+        // Global pointer listeners are the source sbi's authoritative drag
+        // path. Pointer capture is best-effort, not required for activation.
+        try {event.currentTarget.setPointerCapture(event.pointerId);}
+        catch { /* Linux compositor/WebView fallback uses window listeners. */ }
       }}
       onPointerUp={event=>finish(event.pointerId)}
       onPointerCancel={event=>finish(event.pointerId)}
-      onLostPointerCapture={event=>{
-        if(drag.current?.pointerId===event.pointerId){drag.current=null;setResizing(false);}
-      }}
       onKeyDown={event=>{
         const next=sourceSidebarWidthFromKey(width,event.key,availableWidth);
         if(next===null)return;
