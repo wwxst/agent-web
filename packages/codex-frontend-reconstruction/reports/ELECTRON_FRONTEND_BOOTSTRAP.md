@@ -22,3 +22,7 @@ For development: `npm run desktop:dev`. This is an independently runnable **fron
 - Original titlebar/window frame/tray behavior, icons, theme registry and rich Composer plugins.
 - Verified Electron preload protocol/IPC boundaries, real Agent event adapter, approval/file operations and desktop packaging.
 - All host capabilities must be recovered from the original compiled resources before implementing; do not silently expose Node APIs to renderer.
+
+## CI Linux SUID sandbox nuance
+
+GitHub hosted Ubuntu runner's Electron binary does not have a root-owned mode-4755 chrome-sandbox helper. Only the `desktop:smoke:ci` command passes `--no-sandbox` **for CI's Xvfb smoke**. Production `desktop:run` and `desktop:dev` remain sandboxed, context-isolated and without Node integration. This is an environmental test accommodation, not a production security setting or an Electron parity claim.

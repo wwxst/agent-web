@@ -15,7 +15,8 @@
     "demo:test:e2e": "playwright test --config demo/playwright.config.ts",
     "desktop:dev": "concurrently -k -s first \"npm:demo:dev\" \"wait-on http://127.0.0.1:5173 && cross-env AGENT_WEB_DEV_SERVER_URL=http://127.0.0.1:5173 electron .\"",
     "desktop:run": "npm run demo:build && electron .",
-    "desktop:smoke": "electron . --smoke-test"
+    "desktop:smoke": "electron . --smoke-test",
+    "desktop:smoke:ci": "electron --no-sandbox . --smoke-test"
   },
   "devDependencies": {
     "typescript": "^5.8.3",

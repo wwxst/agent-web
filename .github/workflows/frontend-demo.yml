@@ -33,7 +33,7 @@ jobs:
       - name: Browser smoke tests
         run: npm run demo:test:e2e
       - name: Electron desktop frontend smoke (Linux Xvfb)
-        run: xvfb-run -a timeout 90s npm run desktop:smoke
+        run: xvfb-run -a timeout 90s npm run desktop:smoke:ci
         env:
           AGENT_WEB_SMOKE_SCREENSHOT: demo/test-results/electron-desktop-smoke.png
       - name: Upload browser preview screenshot
