@@ -271,6 +271,51 @@ function skillDefinitionPathResult(segments:string[]):boolean|null {
  }
  return null;
 }
+/** Minimal metadata returned by the original app-initial $9l/teu/neu/reu skill-path parser.
+ * Caller must separately require a skill definition; scripts and partial
+ * plugin paths are not visualization-skill reads. */
+export interface SourceSkillDefinitionMetadata {
+ skillId:string;
+ pluginId:string|null;
+ isSkillDefinitionFile:boolean;
+}
+export function resolveSourceSkillDefinitionFromRead(item:HistoryToolItem): SourceSkillDefinitionMetadata|null {
+ if(item.type!=="exec"||!record(item.parsedCmd)||item.parsedCmd.type!=="read")return null;
+ const path=item.parsedCmd.path??item.parsedCmd.name;
+ if(typeof path!=="string"||path.trim().length===0)return null;
+ const cwd=typeof item.cwd==="string"&&item.cwd.length>0?item.cwd:null;
+ const candidate=normalizeSkillLookupPath(path);
+ const full=cwd==null?candidate:isAbsoluteSkillLookupPath(candidate)
+  ?normalizeJoinedSkillPath(candidate)
+  :normalizeJoinedSkillPath(normalizeSkillLookupPath(cwd).replace(/\\/+$/,"")+"/"+candidate);
+ const segments=full.replace(/\\/+$/,"").split("/").filter(Boolean);
+ for(let i=0;i<segments.length;i++){
+  const section=segments[i]?.toLowerCase();
+  if((section!==".codex"&&section!==".agents")||segments[i+1]?.toLowerCase()!=="skills")continue;
+  const third=segments[i+2]?.toLowerCase();
+  const skillIndex=i+(third==="_import"||third===".system"?3:2);
+  const skillId=segments[skillIndex];
+  if(skillId!=null&&skillId.length>0)
+   return {skillId,pluginId:null,isSkillDefinitionFile:
+    segments.length===skillIndex+2&&segments[skillIndex+1]?.toLowerCase()==="skill.md"};
+ }
+ for(let i=0;i<segments.length;i++){
+  if(segments[i]?.toLowerCase()!=="plugins")continue;
+  const cached=segments[i+1]?.toLowerCase()==="cache";
+  const pluginIndex=i+(cached?3:1),pluginId=segments[pluginIndex];
+  if(pluginId==null)continue;
+  const after=pluginIndex+(cached?1:0);
+  const skills=segments.findIndex((part,index)=>index>after&&part.toLowerCase()==="skills");
+  const skillIndex=skills<0?after:skills+1;
+  const skillId=skills<0?pluginId:segments[skillIndex];
+  if(skillId==null)continue;
+  const remaining=segments.slice(skillIndex+1);
+  if(skills<0&&!(remaining.length===1&&remaining[0]?.toLowerCase()==="skill.md"))continue;
+  return {skillId,pluginId,isSkillDefinitionFile:
+   remaining.length===1&&remaining[0]?.toLowerCase()==="skill.md"};
+ }
+ return null;
+}
 /** Source skill-exploration-labels N/P/F/I: meaningful read means a skill-definition file. */
 export function isMeaningfulReadToolActivity(item:HistoryToolItem):boolean {
  if(item.type!=="exec"||!record(item.parsedCmd)||item.parsedCmd.type!=="read")return false;
