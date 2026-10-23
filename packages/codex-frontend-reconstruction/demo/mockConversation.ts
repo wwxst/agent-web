@@ -277,6 +277,23 @@ function reviewScenario(): ConversationRenderEntry[] {
         visualizationActivities:[{path:"preview.tsx",kind:"create"}],
       }),
     ])},
+    // Explicit qn/Qr **frontend subscription** fixture, not a live Agent.
+    // This historical turn has the same query identities as Fc. Both tool
+    // leaves are completed; only the turn status/up-next stream controls qe.
+    {...demoActivityEntry("review-live-turn-state",[
+      demoItem("live-turn-command-a","exec",undefined,{
+        state:"Ready",command:"git status --short",startsGroup:true,
+      }),
+      demoItem("live-turn-command-b","exec",undefined,{
+        state:"Ready",command:"git diff --stat",
+      }),
+    ]),historyEntityKey:"fixture-live-turn-history",
+       turn:{items:[],status:"inProgress",demoBlocks:[{
+         type:"agent-activity",key:"block:review-live-turn-state",items:[
+           demoItem("live-turn-command-a","exec",undefined,{state:"Ready",command:"git status --short",startsGroup:true}),
+           demoItem("live-turn-command-b","exec",undefined,{state:"Ready",command:"git diff --stat"}),
+         ],
+       }]}},
     demoMessageEntry("assistant", "review-final", "**演示不会触发真实权限变更。** 与 Agent 后端接入时，需要在宿主层明确实现权限校验、授权请求和执行回调。"),
     // Real source turn.items fixture: commentary, command group, file patch,
     // and final answer share ONE virtualized row, unlike former mock turns.
