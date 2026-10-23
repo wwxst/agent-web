@@ -16,6 +16,8 @@ test("source Y history summary loads through keyed store into the same virtual R
  await expect(outer).toHaveCount(1);
  await outer.locator(".codex-agent-activity__toggle").click();
  await expect(row.locator("[data-codex-activity-group]")).toHaveCount(1);
+ await row.locator(".codex-activity-group-row__toggle").click();
+ await expect(row.locator('[data-codex-source-leaf="exec-command"]')).toHaveCount(2);
  // Read/write event does not change the identity of the virtualized row.
  await expect(row).toHaveCount(1);
  await row.locator("[data-demo-clear-history]").click();
