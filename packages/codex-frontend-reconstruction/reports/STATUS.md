@@ -194,3 +194,11 @@ Follow `reports/NEXT_BATCH.md`: add the typed controller paste-event contract an
 - Replaced native subgroup `<details>` inside `CodexActivityGroupRow` with four-phase state/lazy-body `SourceActivityDisclosure`, retained existing tool leaves and 224px scroller, and added host-owned repeated group icon contract.
 - Core phase model tests and Chromium MCP/external-event continuity tests added. The browser demo remains synthetic. CSS approximates the private motion transition; exact icons, localization, Electron IPC, Agent integration and same-version visual parity are not restored.
 - See `ACTIVITY_DISCLOSURE_PHASE_RECOVERY.md`. Read the GitHub Actions run for the *final* commit before claiming final-head test success.
+
+## 2026-10-23 — Ke/fr source filtering and qe latest group integration
+
+- Continued on Draft PR #3, branch `recovery/codex-mcp-result-guard-20261023`; no main merge or Agent backend change.
+- Directly verified `Ke`, `fr`, `qe`, `Q` and `F$n` in the uploaded private `frontend.zip`. Restored the pre-group suppression and latest-activity visibility predicates in the existing React timeline.
+- `SourcePreGroupExecFilter` refuses to drop commands when private host classifiers are unavailable; `SourceLatestActivityVisibility` uses existing recovered group unfinished state. Host-derived `Gi` must be provided explicitly.
+- The demo uses synthetic host metadata only in a marked test row. Node and Chromium tests are included; private `Jt/Kt/qt/Zt` and `Gi` remain host boundaries.
+- Full evidence and audit: `LATEST_ACTIVITY_KE_QE_SOURCE_RECOVERY.md` and `scripts/audit-latest-activity-evidence.mjs`. This is not an Electron or original screenshot parity claim. Check final commit's CI before reporting test success.
