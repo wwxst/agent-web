@@ -74,3 +74,11 @@
 - A deterministic historical-turn fixture checks consecutive external events and a subscription-ended barrier. Core tests cover interrupted closing; Chromium tests verify nested lazy lifecycle.
 - Verified original source hashes, signatures, implemented limitations and reproduction command: `reports/ACTIVITY_DISCLOSURE_PHASE_RECOVERY.md`.
 - **Next:** source exact `mv/bv` icon resolution and `_m/KO` labels, then latest-turn `Wa/hn` partition; do not replace private data with inferred mock metadata. Electron/Agent integration and pixel parity remain open.
+
+## 2026-10-23 — source Ke/fr + qe live-turn visibility checkpoint
+
+- From the supplied original compiled bundle, verified `Ke -> fr -> _e -> N` and `qe/Ga` latest-group filtering, plus the original `F$n` meaningful assistant predicate. SHA-256 evidence and code links: `LATEST_ACTIVITY_KE_QE_SOURCE_RECOVERY.md`.
+- Added `SourcePreGroupExecFilter` into the **existing** `AgentActivityUnitGrouping` before classification. No guessed private skill/visualization detection: only host-confirmed redundant execs are skipped.
+- Added `SourceLatestActivityVisibility` to the real connected React latest-turn `ga` path. The private `Gi` turn flag remains an explicit host-owned boolean; unresolved host state leaves the verified UI intact. Activity group header now uses post-filter latest visible units.
+- Unit tests validate completed/running/interrupted groups, trailing commentary, structured output, redundant reads/visualization command, and unchanged input identity. One marked DEMO-only Chromium test validates actual mounted React rows and absence of the source-suppressed tool calls.
+- **Next:** restore real `Gi` host gating from `local-conversation-turn` and the exact `Jt/Kt/qt/Zt` predicates without synthetic evidence, then source-version visual comparison and Electron lifecycle integration. Do not wire Agent backend prematurely.
