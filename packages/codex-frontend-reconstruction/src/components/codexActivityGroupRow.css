@@ -11,3 +11,13 @@
 .codex-activity-group-row__details { min-width:0; display:flex; flex-direction:column; gap:var(--conversation-grouped-item-gap,4px); padding-inline-start:8px; border-inline-start:1px solid var(--demo-border,#e7e7e7); }
 .codex-activity-group-row__details[hidden] { display:none; }
 .codex-activity-group-row__subrow { min-width:0; }
+
+/* Original nk: vertical-scroll-fade-mask, max-h-56, overflow-y-auto. Group
+ * owns its own scroll, independently of the nested FileDiff viewport. */
+.codex-activity-group-row__details:not([hidden]) {
+  max-height:14rem;
+  overflow-y:auto;
+  overflow-x:hidden;
+  scrollbar-gutter:stable;
+  overscroll-behavior-y:contain;
+}

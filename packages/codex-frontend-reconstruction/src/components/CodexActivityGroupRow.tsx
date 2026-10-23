@@ -62,7 +62,8 @@ export function CodexActivityGroupRow<T extends GroupActivityItem>(props: CodexA
         <span aria-hidden="true" className="codex-activity-group-row__chevron">{expanded ? "⌄" : "›"}</span>
       </button> : <span className="codex-activity-group-row__heading">{heading}</span>}
     </div>
-    <div id={contentId} className="codex-activity-group-row__details" data-codex-group-details=""
+    <div id={contentId} className="codex-activity-group-row__details vertical-scroll-fade-mask" data-codex-group-details=""
+      data-source-group-scroll=""
       hidden={!props.canExpand || !expanded}>
       {props.canExpand && expanded ? props.items.map((item, index) =>
         <div className="codex-activity-group-row__subrow" key={typeof item.id === "string" ? item.id : `${item.type}:${index}`}>

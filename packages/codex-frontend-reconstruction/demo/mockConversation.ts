@@ -22,6 +22,8 @@ export function demoItem(id: string, type: string, content?: string, extra: Reco
     type: "unknown", isFinished: extra.state !== "Working",
   } : {};
   return { id, type, ...(content == null ? {} : { content }), completed: true,
+    // Synthetic _e normalization, explicit at fixture construction time.
+    ...(["exec","patch"].includes(type) ? {grouping:"groupable"} : {grouping:"standalone"}),
     ...(type === "exec" && extra.parsedCmd == null ? {parsedCmd} : {}), ...extra };
 }
 
@@ -170,6 +172,56 @@ function reviewScenario(): ConversationRenderEntry[] {
         parsedCmd: { type: "list_files", isFinished: true, path: "src/conversation" },
       }),
     ]),
+    // Deterministic activity-continuity fixture: command -> file edits ->
+    // independent expandable FileDiff, through the EXISTING transcript path.
+    // No files are touched and no Agent events are invented as live input.
+    demoMessageEntry("assistant","workflow-intro","下面仅用于验证连续工具活动的组件接线（模拟数据，不执行命令）。"),
+    demoActivityEntry("review-workflow", [
+      demoItem("workflow-command-a","exec",undefined,{state:"Ready",command:"Get-Content src/conversation/AgentActivityUnitGrouping.ts",output:"// fixture read"}),
+      demoItem("workflow-command-b","exec",undefined,{state:"Ready",command:"git diff --check",output:"fixture: no whitespace errors"}),
+      demoItem("workflow-command-c","exec",undefined,{state:"Ready",command:"npm run test:core",output:"fixture: tests passed"}),
+      demoItem("workflow-patch","patch",undefined,{
+        success:true,state:"Ready",
+        changes:{
+          "src/conversation/AgentActivityUnitGrouping.ts":{
+            type:"update",
+            unified_diff:[
+              "--- a/src/conversation/AgentActivityUnitGrouping.ts",
+              "+++ b/src/conversation/AgentActivityUnitGrouping.ts",
+              "@@ -1,3 +1,17 @@",
+              " export const grouping = 'original';",
+              "-export const expanded = false;",
+              "+export const expanded = true;",
+              "+// Source N preserves a contiguous group across compatible items.",
+              "+export const line01 = 1;",
+              "+export const line02 = 2;",
+              "+export const line03 = 3;",
+              "+export const line04 = 4;",
+              "+export const line05 = 5;",
+              "+export const line06 = 6;",
+              "+export const line07 = 7;",
+              "+export const line08 = 8;",
+              "+export const line09 = 9;",
+              "+export const line10 = 10;",
+              "+export const line11 = 11;",
+            ].join("\n"),
+          },
+          "src/components/CodexActivityGroupRow.tsx":{
+            type:"update",
+            unified_diff:[
+              "--- a/src/components/CodexActivityGroupRow.tsx",
+              "+++ b/src/components/CodexActivityGroupRow.tsx",
+              "@@ -1,3 +1,3 @@",
+              " const oldHeight = 120;",
+              "-const overflow = 'visible';",
+              "+const overflow = 'auto';",
+              " const keepNestedScroll = true;",
+            ].join("\n"),
+          }
+        }
+      }),
+    ]),
+    demoMessageEntry("assistant","workflow-final","模拟活动已结束。命令和文件差异共享同一条活动时间线，审批与文件操作不会写入磁盘。"),
     demoMessageEntry("assistant", "review-final", "**演示不会触发真实权限变更。** 与 Agent 后端接入时，需要在宿主层明确实现权限校验、授权请求和执行回调。"),
   ];
 }

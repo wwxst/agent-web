@@ -1,0 +1,34 @@
+import {test,expect} from "@playwright/test";
+
+test("source N groups command and multi-file patch inside the existing transcript",async ({page},testInfo)=>{
+  const errors:string[]=[];page.on("pageerror",e=>errors.push(e.message));
+  await page.goto("/");
+  await page.getByRole("button",{name:/工具调用与审批交互/}).click();
+  const entry=page.locator('[data-demo-turn-id="review-workflow"]');
+  await expect(entry).toHaveCount(1);
+  const activity=entry.locator("[data-recovered-agent-activity]");
+  await activity.getByRole("button",{name:/项工具活动/}).click();
+  const group=activity.locator("[data-codex-activity-group]");
+  await expect(group).toBeVisible();
+  await expect(group.getByRole("button",{name:/编辑了文件.*运行了命令/})).toHaveCount(1);
+  await group.locator(".codex-activity-group-row__toggle").click();
+  const scroller=group.locator("[data-source-group-scroll]");
+  await expect(scroller).toBeVisible();
+  await expect(scroller).toHaveCSS("max-height","224px");
+  await expect(scroller).toHaveCSS("overflow-y","auto");
+  await expect(group.locator(".codex-activity-group-row__subrow")).toHaveCount(4);
+  await expect(group.locator('[data-codex-source-leaf="exec-command"]')).toHaveCount(3);
+  const patch=group.locator("[data-codex-source-patch]");
+  await expect(patch).toHaveAttribute("data-patch-status","applied");
+  await expect(patch.locator("[data-codex-source-patch-file]")).toHaveCount(2);
+  await patch.locator("[data-codex-source-patch-toggle]").first().click();
+  const diff=patch.locator("[data-codex-source-diff-engine='pierre']").first();
+  await expect(diff).toBeVisible();
+  await expect(diff.locator(".codex-source-tool-patch-file__diff-viewport")).toHaveCSS("max-height","240px");
+  await expect.poll(()=>scroller.evaluate(el=>el.scrollHeight>el.clientHeight)).toBe(true);
+  await scroller.evaluate(el=>{el.scrollTop=el.scrollHeight;});
+  await expect.poll(()=>scroller.evaluate(el=>el.scrollTop)).toBeGreaterThan(0);
+  await expect(group.getByRole("button",{name:/编辑了文件.*运行了命令/})).toHaveAttribute("aria-expanded","true");
+  await page.screenshot({path:testInfo.outputPath("codex-contiguous-command-patch.png"),animations:"disabled"});
+  expect(errors).toEqual([]);
+});

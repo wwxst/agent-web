@@ -12,6 +12,8 @@ import type { InlineFileReviewAction, InlineReviewFile } from "../src/conversati
 import { getDemoBlocks } from "./mockConversation.js";
 import { projectCompletedGroupHeaderParts } from "../src/conversation/AgentActivityGroupPresentation.js";
 import { aggregateAgentActivityUnits } from "../src/conversation/AgentActivityAggregate.js";
+import { groupSourceAgentActivityUnits } from "../src/conversation/AgentActivityUnitGrouping.js";
+import { getSourceExpandableGroupRows } from "../src/conversation/AgentActivityGroupVisibility.js";
 import { classifyRawActivityItem } from "../src/conversation/AgentActivityRawClassifier.js";
 import type { ExecCommandLeafProps } from "../src/components/CodexToolActivityLeafRenderer.js";
 import {
@@ -134,13 +136,12 @@ export function makeDemoRow(notify: (message: string) => void) {
     // Explicit DEMO Wa/Rk adapters: Codex's private unit classifier and persisted
     // collapse state are not represented by synthetic transcript records.
     agentActivity: {
-      // DEMO group factory for Wa: the fixture explicitly models adjacent
-      // activities as one grouped unit. The source classifier is NOT bypassed
-      // in production; a real host must supply Wa's actual unit partition.
-      toUnits: (items) => items.length === 0 ? [] : [{
-        key: `demo-activity-group:${items.map((item, index) => item.id ?? `${item.type}-${index}`).join("|")}`,
-        kind: "group" as const, items,
-      }],
+      // N/P source grouping uses *explicit synthetic metadata* from fixtures.
+      // The private _e classifier must be provided by a future real host.
+      toUnits: (items) => groupSourceAgentActivityUnits(items, {
+        getGrouping: item => item.grouping === "groupable" ? "groupable" : "standalone",
+        startsGroup: item => item.startsGroup === true,
+      }),
       getCollapseContext: ({ isActive, collapseWhenPossible }) => ({
         hasFinalAssistantStarted: !isActive,
         isTurnCancelled: false,
@@ -153,7 +154,15 @@ export function makeDemoRow(notify: (message: string) => void) {
         // This is explicitly DEMO state mapping, not private Codex turn state.
         getStateContext: ({isActive}) => ({ isLatestVisibleUnit: true,
           isHeaderInProgress: isActive, isActivitySliceClosed: false, isExploring: false }),
-        canExpand: () => true, // DEMO: real mk/rk and tool visibility stay host-owned.
+        // mk/rk: hide unfinished search/list, require explicit meaningful-read
+        // evidence and avoid inventing unseen dynamic-tool behavior.
+        canExpand: items => getSourceExpandableGroupRows(items, {
+          isTurnCancelled: false,
+          isMeaningfulRead: item => item.meaningfulRead === true,
+          hasRenderableVisualization: item => Array.isArray(item.visualizationActivities) &&
+            item.visualizationActivities.length > 0,
+          isHiddenDynamicTool: item => item.hiddenDynamicTool === true,
+        }).length > 0,
         renderCompletedSummary: (items) => {
           // DEMO-only normalization. The original private xe classifier remains
           // a separate host boundary; the Le/Be/Ve counter aggregation is recovered.
@@ -163,8 +172,16 @@ export function makeDemoRow(notify: (message: string) => void) {
           const normalized = items.map(item => classifyRawActivityItem(item));
           const aggregate = aggregateAgentActivityUnits(normalized);
           const parts=projectCompletedGroupHeaderParts(aggregate,[]);
-          const count=parts.find(part=>part.kind==="commands");
-          return count?.kind==="commands" ? `${count.count} 项命令 · 模拟` : `${items.length} 项活动 · 模拟`;
+          // Literal Chinese summaries come from the pinned zh-CN bundle
+          // ("...editedFiles.leading" / "...commands"), not guessed counts.
+          // This is still a fixture-driven summary, not the private host i18n.
+          const labels=parts.flatMap(part => {
+            if (part.kind==="file-changes") return [part.count===1 ? "编辑了一个文件" : "编辑了文件"];
+            if (part.kind==="commands") return ["运行了命令"];
+            if (part.kind==="exploration") return ["读取文件"];
+            return [];
+          });
+          return labels.length ? `${labels.join(" · ")} · 模拟` : `${items.length} 项活动 · 模拟`;
         },
         translateMessage: message => message.defaultMessage.replace(/\{([a-zA-Z]+)\}/g,
           (_,key:string)=>String(message.values?.[key] ?? "")),
