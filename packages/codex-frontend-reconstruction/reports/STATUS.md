@@ -191,3 +191,7 @@ Follow `reports/NEXT_BATCH.md`: add the typed controller paste-event contract an
 
 - A source-tested header projection now distinguishes XO generic KO-based labels from recognized _m Codex action messages and V_ connector events. It is wired into CodexActivityGroupRow, without replacing the message timeline. Test fixture includes recognized and generic adjacent MCP call pairs.
 - See `REPEATED_MCP_HEADER_SOURCE_RECOVERY.md`. Original bm rich metadata and Electron/Agent are not implemented; CI verification must be read for this commit.
+
+## 2026-10-23 — source app-shared scroll mask on real activity details
+
+- Mounted the original source-confirmed scrolling fade on the existing CodexActivityGroupRow via a shared CSS module; this replaces a previously inert class. Chromium test added for computed style, overflow and nested FileDiff independence. See SOURCE_ACTIVITY_SCROLL_FADE.md for scope and limits. No backend or MCP protocol work.

@@ -84,3 +84,9 @@
 
 - The same xa model now renders standalone host-leaf MCP titles through the existing toolActivity adapter, retaining old fallback when adapter is absent. Source evidence: MCP_SINGLE_KO_LEAF_INTEGRATION.md.
 - Chromium must verify invoking state on pending MCP singleton and existing repeated success group behavior. Real app metadata and private ct/et are still missing.
+
+## Visual fidelity: source scroll-edge mask (2026-10-23)
+
+- Recovered app-shared vertical-scroll-fade-mask and edge-fade scroll-timeline behavior in the existing nk activity detail scroller; the original class was present but had no supporting CSS in the recovered UI.
+- Updated Chromium tests verify 224px scroll height, CSS mask/animation support and independent FileDiff scroll. See SOURCE_ACTIVITY_SCROLL_FADE.md.
+- Next: source-verify status row typography/icon spacing and FileDiff header/theme tokens against the pinned app-shared CSS and original IT/BT class list, rather than screenshot guesses. Continue React/Electron front-end integration only.

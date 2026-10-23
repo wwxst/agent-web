@@ -1,0 +1,47 @@
+/*
+ * Recovered from the pinned Codex app-shared vertical-scroll-fade-mask.
+ * The original animates --top-fade/--bottom-fade using scroll(self y).
+ * Unlike a permanently painted shadow, no fade is shown where the list
+ * cannot scroll. This stylesheet is shared by the existing activity scroller
+ * and other source-marked front-end scroll surfaces.
+ */
+@property --codex-scroll-top-fade {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+@property --codex-scroll-bottom-fade {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+
+@keyframes codex-source-vertical-edge-fade {
+  0%, 1% {
+    --codex-scroll-top-fade: 0px;
+    --codex-scroll-bottom-fade: var(--edge-fade-distance, 1rem);
+  }
+  99%, 100% {
+    --codex-scroll-top-fade: var(--edge-fade-distance, 1rem);
+    --codex-scroll-bottom-fade: 0px;
+  }
+}
+
+/* The compiled resource gates this behavior behind animation-timeline
+ * support; browsers without it must preserve fully visible content. */
+@supports (animation-timeline: scroll(self y)) {
+  .vertical-scroll-fade-mask {
+    mask-image: linear-gradient(
+      to bottom,
+      transparent,
+      #000 var(--codex-scroll-top-fade)
+        calc(100% - var(--codex-scroll-bottom-fade)),
+      transparent
+    );
+    animation-name: codex-source-vertical-edge-fade;
+    animation-duration: 1s;
+    animation-timing-function: linear;
+    animation-fill-mode: both;
+    animation-timeline: scroll(self y);
+  }
+}

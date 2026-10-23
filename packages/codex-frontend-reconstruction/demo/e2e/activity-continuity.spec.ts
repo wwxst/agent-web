@@ -27,6 +27,22 @@ test("source N groups command and multi-file patch inside the existing transcrip
   await expect(scroller).toBeVisible();
   await expect(scroller).toHaveCSS("max-height","224px");
   await expect(scroller).toHaveCSS("overflow-y","auto");
+  // Original app-shared adds a scroll-driven edge mask; a permanent bottom
+  // shadow would be a different behavior and obscures rows without overflow.
+  const sourceFade=await scroller.evaluate(element => {
+    const css=getComputedStyle(element);
+    return {
+      supported:CSS.supports("animation-timeline","scroll(self y)"),
+      mask:css.maskImage,
+      animation:css.animationName,
+      timeline:css.animationTimeline,
+    };
+  });
+  if(sourceFade.supported) {
+    expect(sourceFade.mask).toContain("linear-gradient");
+    expect(sourceFade.animation).toContain("codex-source-vertical-edge-fade");
+    expect(sourceFade.timeline).toContain("scroll(self y)");
+  }
   await expect(group.locator(".codex-activity-group-row__subrow")).toHaveCount(4);
   await expect(group.locator('[data-codex-source-leaf="exec-command"]')).toHaveCount(3);
   const patch=group.locator("[data-codex-source-patch]");
@@ -39,6 +55,11 @@ test("source N groups command and multi-file patch inside the existing transcrip
   await expect.poll(()=>scroller.evaluate(el=>el.scrollHeight>el.clientHeight)).toBe(true);
   await scroller.evaluate(el=>{el.scrollTop=el.scrollHeight;});
   await expect.poll(()=>scroller.evaluate(el=>el.scrollTop)).toBeGreaterThan(0);
+  if(sourceFade.supported)
+    await expect(scroller).not.toHaveCSS("mask-image","none");
+  // The FileDiff viewport has its own scroll region, unaffected by the mask.
+  await expect(diff.locator(".codex-source-tool-patch-file__diff-viewport"))
+    .toHaveCSS("overflow-y","auto");
   await expect(group.getByRole("button",{name:/编辑了文件.*运行了命令/})).toHaveAttribute("aria-expanded","true");
   await page.screenshot({path:testInfo.outputPath("codex-contiguous-command-patch.png"),animations:"disabled"});
   expect(errors).toEqual([]);
