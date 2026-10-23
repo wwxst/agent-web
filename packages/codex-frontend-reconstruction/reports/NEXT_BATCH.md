@@ -1,35 +1,25 @@
-# Next reconstruction batch — Composer clipboard host bridge and stop state
+# Next reconstruction batch — Real Composer editor and host integration
 
-## Verified base
+## Verified base (2026-10-23)
 
-- Latest branch head: `d6240f005e382437c14dce1662bd73d332ea7889`; draft PR #1 remains open.
-- `ComposerEditorBehaviorModel.ts` now ports the source-confirmed keyboard routing from `rUu`; the demo uses it for Enter routing but still uses a textarea.
-- The exact `app-initial` asset audit passes 40/40 signatures for the editor/controller factory, keymap, plugin order, paste/drop and clipboard serialization. `app-primary` passes 9/9; the controller hook passes 4/4.
-- Successful implementation CI at parent `154fbb6`: 309/309 core tests, 4/4 demo integration tests, strict React/TypeScript build, 13/13 Chromium tests. A follow-up commit corrected only one case-sensitive audit signature; its GitHub Actions status is still pending.
+- Branch: `recovery/codex-frontend-through-connected-message-20261021`. Latest implementation commit: `3d2a3db104812160636a3c6a5b2e796df9cca139`, draft PR #1 still open.
+- Controller clipboards: `ComposerControllerContract.ts`, `ComposerControllerClipboardEvents.ts` and `CodexSourceComposerHostEvents.tsx` support the original paired listener APIs. They do not upload files.
+- Editor layout: `CodexComposerLayout.tsx` + `CodexSourceComposerEditorMount.tsx` use source-derived wrapper DOM and mounted controller lifecycle. The demo still supplies a *native textarea*, not ProseMirror.
+- Main action: `ComposerPrimaryActionModel.ts` now owns the source `YMt/Ti/wi/Ci` visual state, with all private host selectors supplied as typed state.
+- Form: `CodexSourceComposerHostForm.tsx` now owns `YMt/pd/hd/gd` form, paste/drop capture and submitter metadata, integrated with the same browser demo. Real file intake is disabled.
+- Verified CI: 322/322 core, 4/4 demo model, TypeScript/Vite and 15/15 Chromium at `3d2a3db` (run `39881222988`). Proprietary assets are not in Git history.
 
-## Next implementation gate — controller clipboard events
+## Highest priority — original ProseMirror controller instead of the demo textarea
 
-The original `EUu` controller exposes these source-confirmed event methods:
+1. Inspect `app-initial-5851df3f6cb1.js` `SUu -> rUu -> EUu` and the actual `YMt -> XWu` main-thread call site. Recover the schema, plugin ordering and controller factory **from source semantics**, not a hand-authored `contenteditable` clone.
+2. Inventory which source-owned editor dependencies can be represented by upstream ProseMirror packages and which remain private. Keep a traceable gap matrix for the original Markdown, mentions, suggestion, link and code-block extensions.
+3. Introduce a source-derived controller factory behind `ComposerControllerPort`; mount it through the existing `CodexSourceComposerEditorMount`, not a second UI shell. Prove Enter variants, IME, focus, initial text, paste, history, and controller dispose in browser tests.
+4. Only after a real controller is running, wire verified host file intake and approval/permission states through explicit callbacks and source-shaped IPC contracts. Do not invent upload outcomes, Electron messages or Agent responses.
+5. Compare pixel and interaction results with the *same original Codex build* and viewport. Confirm source-owned themes, resize behavior, suggestions and attachment tray.
 
-- `addPastedImagesHandler` / `removePastedImagesHandler`
-- `addPastedFilesHandler` / `removePastedFilesHandler`
-- `addPastedTextHandler` / `removePastedTextHandler`
-- `subscribePastedLink`, which returns an unsubscribe callback
+## Source and acceptance gates
 
-The main host (`YMt` in `app-primary-fe8a450b3b04.js`) registers the image/file handlers and routes them to host file selection; it registers the large-paste handler only when its feature/policy gate is enabled. The outer form also owns `onPasteCapture`, `onDropCapture`, and `onSubmit`; the drop/paste overlay helper is a separate host concern. These event handlers belong at the main Composer host boundary, not in the layout-only `CodexComposerLayout`.
-
-Implement next:
-
-1. Extend the typed controller contract with payloads for pasted images, files plus their `DataTransfer`, large-paste text (`text`, optional `markdown` and `codeBlockLanguage`), and pasted-link text/HTML.
-2. Add a small host event bridge that registers and removes the source controller handlers as the controller or callbacks change. Preserve the source distinction between paired add/remove methods and the unsubscribe-returning pasted-link subscription.
-3. Add lifecycle tests using a fake controller port: handlers register once, current callbacks are used, all listeners are removed on controller replacement/unmount, and a large-paste handler's `false` result is preserved.
-4. Trace the exact outer `pd/hd` paste/drop helpers and their source callback conditions before wiring any actual file selection. Keep uploads disabled in the demo until a real host callback exists; tests must not report mock file events as successful uploads.
-5. Then recover the source stop/send control states (`Ti/wi/Ci`, `onStop`, streaming, pending uploads, disabled/loading states) and connect them to the current button only through an explicit host-neutral state model.
-
-## Acceptance
-
-- Run `scripts/audit-composer-evidence.mjs` against the user's exact private assets.
-- Run core tests, demo integration tests, strict React/TypeScript build and the complete Chromium suite.
-- No raw compiled assets are committed.
-- No real upload, message send or stop action is claimed until an actual host callback is connected.
-- Do not claim the ProseMirror editor or complete Composer has been restored until the original controller/schema/plugins are mounted and compared against the matching Codex build.
+- Local user asset: `frontend.zip`; main JS hashes: `app-primary=2a05e25229bd7a38c12c55d90f82fb07087e80b4e16070116b215484498478f2`, `app-initial=c70d95da34ba7e5962a559dbf68d0102d10b4b47b877f5d9933629bb5a1f3a10`, controller hook `e39ff89c1c226141bc5f0af4f6ca70cc09e98b26561ff28fd4ab4b17a9becbef`.
+- Preserve green tests for Composer, virtual list, tool activity and FileDiff while integrating the real controller.
+- Confirm UI with browser/Electron; do not call the textarea preview the final frontend.
+- Keep commits isolated in the recovery branch; do not merge PR #1 without approval.

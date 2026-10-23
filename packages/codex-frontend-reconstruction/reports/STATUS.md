@@ -141,3 +141,12 @@ See `reports/NEXT_BATCH.md`: trace the actual main conversation Composer call si
 ## Next gate
 
 Follow `reports/NEXT_BATCH.md`: add the typed controller paste-event contract and host-level event bridge from the observed `addPastedImagesHandler`, `addPastedFilesHandler`, `addPastedTextHandler`, and `subscribePastedLink` APIs; trace and test the outer Composer's paste/drop routing before enabling any upload UI.
+
+## Verified checkpoint — main Composer action and outer form (2026-10-23)
+
+- The previously completed clipboard event bridge is preserved; it was not reimplemented. The main action and outer form paths were recovered from the exact private `app-primary-fe8a450b3b04.js` (`YMt`).
+- Added `ComposerPrimaryActionModel.ts`: source `Ti/wi/Ci` stop/send, disabled and loading precedence. Real host predicates are injected; `demo/App.tsx` now consumes this model for the visible button rather than a direct `playing` branch.
+- Added `ComposerOuterFormModel.ts` and `CodexSourceComposerHostForm.tsx`: actual `form` submission and source `pd/hd` capture-phase transfer gates. Clicking Send submits through the form only once; Enter from the controller retains its separate source route; Stop is a non-submit button.
+- The source audit pins additional exact `app-primary` signatures for `Ti/wi/Ci`, the primary action JSX, `pd/hd`, and `gd`. The original three asset hashes were confirmed against the uploaded `frontend.zip`; no compiled asset is committed.
+- Commits `115cf416e45b7eda24e1b4616ff0e8d211c4a72c` and `3d2a3db104812160636a3c6a5b2e796df9cca139` succeeded in CI. Latest full run: 322/322 core tests, 4/4 demo model integration tests, strict TypeScript/Vite build and 15/15 Chromium tests (run `39881222988`).
+- **Still not restored:** original ProseMirror editor schema/plugins; actual controller-backed file uploads; integrated voice input and browser-drop host handling; real action transactions, Electron IPC and Agent backend streaming. Current browser preview remains explicit mock state.

@@ -142,3 +142,7 @@ The browser preview remains synthetic/demo-only. Inline patch details now follow
 ## Tool activity history entity store
 
 ToolActivityHistoryEntityStore.ts implements a host-side history entity cache with separate canonical-entity and assistant-message-presence channels, matching the observed Mr(Au/Vd) call shape. ConnectedConversationMessageRenderers can now mount ConnectedCodexToolActivityItem in the live transcript through a stable host-supplied source registry; the browser demo exercises this path using explicitly synthetic entities. This is an independent frontend implementation, not a direct import of Codex's private query runtime or a real Agent backend connection. See reports/TOOL_ACTIVITY_HISTORY_ENTITY_STORE.md for the source audit and remaining integration boundary.
+## Source-derived main Composer action and form (2026-10-23)
+
+The main Composer now uses `ComposerPrimaryActionModel.ts` for the original `YMt/Ti/wi/Ci` button state and `CodexSourceComposerHostForm.tsx` for the source `pd/hd/gd` capture and submit boundary. These components are connected to the existing demo layout; send/stop still operate only on synthetic browser content. `reports/COMPOSER_SOURCE_RECOVERY.md`, `reports/STATUS.md` and `reports/NEXT_BATCH.md` record evidence and the next gate: replacing the demo textarea with a source-derived ProseMirror controller.
+
