@@ -263,6 +263,11 @@ function reviewScenario(): ConversationRenderEntry[] {
       demoItem("source-hidden-visualize-read","exec",undefined,{
         grouping:"groupable",parsedCmd:{type:"read",path:".codex/skills/visualize/SKILL.md",isFinished:true},
       }),
+      // Ordinary skill reads must remain; qt only recognizes visualize.
+      demoItem("source-ordinary-skill-read","exec",undefined,{
+        grouping:"groupable",state:"Ready",
+        parsedCmd:{type:"read",path:".codex/skills/ordinary/SKILL.md",isFinished:true},
+      }),
       demoItem("source-hidden-visualization-command","exec",undefined,{
         grouping:"groupable",state:"Ready",command:"touch .codex/visualizations/preview.html",
         demoSuccessfulExecution:true,
