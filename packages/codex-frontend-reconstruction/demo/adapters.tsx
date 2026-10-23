@@ -16,6 +16,7 @@ import { groupSourceAgentActivityUnits } from "../src/conversation/AgentActivity
 import { getSourceExpandableGroupRows } from "../src/conversation/AgentActivityGroupVisibility.js";
 import { createSourceActivityCollapseState } from "../src/conversation/SourceActivityCollapseState.js";
 import { projectSourceRepeatedActivityRows } from "../src/conversation/SourceRepeatedActivityGroups.js";
+import { resolveSourceMcpToolActivityLabel } from "../src/conversation/SourceMcpToolActivityLabel.js";
 import { classifyRawActivityItem } from "../src/conversation/AgentActivityRawClassifier.js";
 import type { ExecCommandLeafProps } from "../src/components/CodexToolActivityLeafRenderer.js";
 import {
@@ -185,7 +186,24 @@ export function makeDemoRow(notify: (message: string) => void) {
           const invocation=header.item.invocation;
           const tool=invocation != null && typeof invocation==="object" &&
             "tool" in invocation ? String(invocation.tool) : "工具";
-          return {icon,summary:`${tool} · ${header.count} 次调用 · 模拟`};
+          const label=resolveSourceMcpToolActivityLabel({
+            completed:header.item.completed === true,
+            serverName:invocation?.server,
+            toolName:tool,
+            toolArguments:invocation?.arguments,
+            toolResult:header.item.result,
+            toolDisplay:header.item.toolDisplay,
+            toolDefinition:header.item.toolDefinition,
+          },{
+            // Demo fixture only; the original imported ct predicate is private.
+            isFailedResult:input=>input.toolResult?.type==="error",
+            getToolDefinitionTitle:definition=>{
+              const value=definition?.demoTitle;
+              return typeof value==="string" ? value : null;
+            },
+            getFallbackLabel:()=>tool,
+          });
+          return {icon,summary:`${label.text ?? tool} · ${header.count} 次调用 · 模拟`};
         },
         renderRepeatedSummary: group => {
           const first=group.items[0];

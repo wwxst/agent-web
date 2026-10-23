@@ -210,6 +210,7 @@ function reviewScenario(): ConversationRenderEntry[] {
         functionName:"files.search",appContext:{connectorId:"file-connector",linkId:"link"},
         result:{type:"success",content:[]},demoSafeMcpResult:true,
         demoToolDisplaySignature:"Files search",
+        toolDisplay:{invoked:"已搜索资料",invoking:"正在搜索资料",title:"资料搜索"},
       }),
       demoItem("repeat-b","mcp-tool-call",undefined,{
         grouping:"groupable",completed:true,source:null,
@@ -217,6 +218,7 @@ function reviewScenario(): ConversationRenderEntry[] {
         functionName:"files.search",appContext:{connectorId:"file-connector",linkId:"link"},
         result:{type:"success",content:[]},demoSafeMcpResult:true,
         demoToolDisplaySignature:"Files search",
+        toolDisplay:{invoked:"已搜索资料",invoking:"正在搜索资料",title:"资料搜索"},
       }),
       demoItem("repeat-barrier","mcp-tool-call",undefined,{
         grouping:"groupable",completed:false,source:null,

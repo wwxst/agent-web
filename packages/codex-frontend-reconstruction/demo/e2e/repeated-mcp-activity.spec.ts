@@ -17,7 +17,7 @@ test("source Je/bg opens only the eligible consecutive MCP calls and keeps the b
   await expect(repeated.nth(1)).toHaveAttribute("data-codex-source-repeated-header-variant","codex-action");
   await expect(repeated.nth(1).locator("summary")).toContainText("已搜索文件 · 2 次调用");
   await expect(repeated.locator("[data-demo-repeated-mcp-icon]")).toHaveCount(2);
-  await expect(repeated.first().locator("summary")).toContainText("search · 2 次调用");
+  await expect(repeated.first().locator("summary")).toContainText("已搜索资料 · 2 次调用");
   await expect(repeated.first().locator("[data-codex-source-repeated-body]")).toBeHidden();
   await repeated.first().locator("summary").click();
   await expect(repeated.first().locator("[data-codex-source-repeated-body]")).toBeVisible();

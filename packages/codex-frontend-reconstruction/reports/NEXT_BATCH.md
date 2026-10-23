@@ -74,3 +74,8 @@
 - See `REPEATED_MCP_HEADER_SOURCE_RECOVERY.md`. Verify CI for the branch before accepting test claims.
 
 - Source `KO → bm` now traced to exported `xa` in `mcp-tool-activity-label-220d2d98d4ad.js`; next recover its fallbacks in source order and verify against connector metadata. Do not infer the original name/icon from demo strings.
+
+## MCP xa common label branches (2026-10-23)
+
+- Common XA precedence/phase gating, metadata strings and JS title cutoff are now recovered and wired into the existing generic repeated MCP header. All imported private formatters remain host callbacks, not mock implementations.
+- Evidence/limits: `MCP_TOOL_ACTIVITY_LABEL_XA_RECOVERY.md`. Next recover ct/et or precisely scoped Mt/gt branches, and integrate the label with standalone MCP tool leaves.
