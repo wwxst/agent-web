@@ -77,8 +77,17 @@ test("original sbi separator supports keyboard, reset and pointer drag without m
   await expect(handle).toHaveAttribute("aria-valuenow","340");
   const rect=await handle.boundingBox();
   expect(rect).not.toBeNull();
-  await page.mouse.move(rect!.x+rect!.width/2,rect!.y+Math.min(70,rect!.height/2));
+  const dragX=rect!.x+rect!.width/2;
+  const dragY=rect!.y+Math.min(70,rect!.height/2);
+  const hit=await page.evaluate(({x,y})=>{
+    const element=document.elementFromPoint(x,y);
+    return {role:element?.getAttribute("role"),className:element?.className};
+  },{x:dragX,y:dragY});
+  expect(hit,JSON.stringify(hit)).toHaveProperty("role","separator");
+  await page.mouse.move(dragX,dragY);
   await page.mouse.down();
+  await expect(page.locator("[data-source-sidebar-resizer]"))
+    .toHaveAttribute("data-resizing","true");
   await page.mouse.move(rect!.x+rect!.width/2+60,rect!.y+Math.min(70,rect!.height/2),{steps:5});
   await page.mouse.up();
   await expect(handle).toHaveAttribute("aria-valuenow","400");
