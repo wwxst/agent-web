@@ -33,7 +33,9 @@ function preventExternalNavigation(win) {
   win.webContents.on("will-navigate", (event,url) => {
     try {
       const actual = new URL(url);
-      if (actual.origin === target.allowedOrigin) return;
+      if (target.kind==="bundled"
+          ? actual.protocol === APP_SCHEME + ":" && actual.host === "local"
+          : actual.origin === target.allowedOrigin) return;
     } catch {}
     event.preventDefault();
   });

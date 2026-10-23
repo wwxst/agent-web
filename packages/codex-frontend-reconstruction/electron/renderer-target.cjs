@@ -34,11 +34,19 @@ function resolveRendererTarget({ packageRoot, devServerUrl } = {}) {
 /** Map only resources below the built Vite output root; no filesystem bridge. */
 function resolveBundledResource(distRoot, requestUrl) {
   const url = new URL(requestUrl);
-  if (url.origin !== APP_ORIGIN || url.username || url.password) {
+  // Node's WHATWG URL reports origin="null" for custom protocols; test
+  // scheme + host explicitly rather than treating all opaque origins as equal.
+  if (url.protocol !== APP_SCHEME + ":" || url.host !== "local" ||
+      url.username || url.password) {
     throw new Error("Untrusted renderer origin");
   }
-  const pathname = decodeURIComponent(url.pathname);
-  if (pathname.includes("\0")) throw new Error("Invalid resource path");
+  // Reject traversal *before* URL normalizes encoded dot segments.
+  const rawPath = requestUrl.slice(APP_ORIGIN.length).split(/[?#]/,1)[0];
+  const pathname = decodeURIComponent(rawPath);
+  if (pathname.includes("\0") || pathname.includes("\\") ||
+      pathname.split("/").some(segment=>segment===".." || segment===".")) {
+    throw new Error("Invalid resource path");
+  }
   const relativePath = pathname === "/" ? "index.html" : pathname.replace(/^\/+/, "");
   const absolute = path.resolve(distRoot, relativePath);
   const relative = path.relative(distRoot, absolute);
