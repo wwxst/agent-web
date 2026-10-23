@@ -1,3 +1,5 @@
+import {deriveSourceLatestActivityRetention,
+ type SourceLatestActivityRetentionInput} from "./SourceLatestActivityRetentionGate.js";
 /**
  * Semantic reconstruction of the block-to-render-node dispatch in
  * `local-conversation-turn-69783815d57d.js` (compiled `rs` / `ls`).
@@ -35,7 +37,7 @@ export interface RenderPlanBase {
 export type ConversationMessageRenderNode = RenderPlanBase & (
   | { kind: "user-message"; item: ConversationMessageItem; isFirstUserMessage: boolean; isLastUserMessage: boolean; showReadReceipt: boolean; readReceipt?: unknown | undefined }
   | { kind: "assistant-message"; item: ConversationMessageItem; attachedActivityItems?: unknown[] | undefined; assistantCopyText?: string | undefined; isLastAssistantMessage: boolean }
-  | { kind: "activity-group"; items: ConversationMessageItem[]; isActive: boolean; collapseWhenPossible: boolean; renderMode: "latest" | "all"; hasFollowingFinalAnswer: boolean }
+  | { kind: "activity-group"; items: ConversationMessageItem[]; isActive: boolean; collapseWhenPossible: boolean; renderMode: "latest" | "all"; hasFollowingFinalAnswer: boolean; allowLatestCompletedGroup: boolean | null }
   | { kind: "activity-result"; result: unknown }
   | { kind: "activity-item"; item: ConversationMessageItem; isActive: boolean; presentation: "ordinary" | "subagent" | "activity-units" }
   | { kind: "generated-images"; images: Array<Record<string, unknown>> }
@@ -60,6 +62,8 @@ export interface ConversationMessagePlanOptions {
   renderMode?: "latest" | "all";
   isAeonThread?: boolean;
   hostId?: string | undefined;
+  /** Resolved Fc Gi inputs from real turn/historical status and Qr query. */
+  latestActivityRetentionInput?: SourceLatestActivityRetentionInput;
   isActiveAeonTurn?: boolean;
   footerStatus?: string | null;
   showReadReceipts?: boolean;
@@ -123,6 +127,8 @@ export function buildConversationMessageRenderPlan(
   let firstResponseBoundaryPending = options.hasFirstResponseBoundary === true;
   const hasFooter = options.footerStatus != null;
   const isAeon = options.isAeonThread === true;
+  const latestRetention = options.latestActivityRetentionInput == null ? null
+    : deriveSourceLatestActivityRetention(options.latestActivityRetentionInput);
 
   function pushNode(
     node: WithoutRenderBase<ConversationMessageRenderNode>,
@@ -163,6 +169,7 @@ export function buildConversationMessageRenderPlan(
             isActive: active,
             collapseWhenPossible: block.collapseWhenPossible === true,
             renderMode: options.renderMode ?? "all",
+            allowLatestCompletedGroup: latestRetention,
             hasFollowingFinalAnswer: blocks.slice(blockIndex + 1).some(candidate =>
               candidate.type === "assistant-message" &&
               (candidate.item.phase === "final_answer" || candidate.item.phase == null)),
