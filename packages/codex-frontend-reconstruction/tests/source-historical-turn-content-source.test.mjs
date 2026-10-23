@@ -38,6 +38,9 @@ test("host history event hydrates a stable snapshot and turnItemIds exclude unre
  assert.equal(snap.loaded,true);
  assert.equal(snap.status,"completed");
  assert.deepEqual(selectSourceHistoricalTurnItems(snap,entry.turnItemIds).map(x=>x.id),["a","b"]);
+ // Original Y keeps turnItemIds in source order, even if the host history
+ // subscription replays its values in a different insertion order.
+ assert.deepEqual(selectSourceHistoricalTurnItems(snap,["b","a"]).map(x=>x.id),["b","a"]);
  assert.deepEqual(selectSourceHistoricalTurnItems(snap,undefined).map(x=>x.id),["a","b","other"]);
  assert.notEqual(snap,initial);
  assert.equal(source.getSnapshot(),snap);
