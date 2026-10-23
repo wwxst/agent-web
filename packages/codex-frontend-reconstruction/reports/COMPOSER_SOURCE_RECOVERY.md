@@ -122,3 +122,10 @@ The read-only audit now checks the `rUu` schema/plugin/keymap/paste/drop signatu
 - `CodexSourceComposerHostForm.tsx` restores that real DOM form and event guard, forwarding native submit timestamp plus submitter presence without creating any host upload.
 - In the demo, clicking the send button now submits through the form once; the controller's Enter-submit handler still uses its distinct controller-to-host path. The Stop action remains a button and does not create a form submission.
 - Core/browser tests enforce transfer gating, form existence, and single dispatch. Real host `getText()`, upload policy, and Agent submission remain explicit missing integrations.
+
+## Real plain-mode ProseMirror controller — 2026-10-23
+
+- Replaced the mounted textarea in demo/App.tsx with DemoProseMirrorComposerEditor, backed by actual ProseMirror EditorView/EditorState in SourcePlainProseMirrorController.ts.
+- Source base schema from app-initial kja and rUu transaction/clipboard/keymap signatures is pinned in audit-composer-evidence.mjs. The eight new signatures were checked against the supplied bundle.
+- The existing XWu-like DOM mount, clipboard host adapter, outer YMt form and send/stop state model are reused, not duplicated.
+- This is the plain-mode subset; the jja Markdown rich schema, Dja mention atoms, KCa link provenance, suggestion plugins and private host remain missing. See PROSEMIRROR_PLAIN_MODE.md.

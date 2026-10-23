@@ -150,3 +150,13 @@ Follow `reports/NEXT_BATCH.md`: add the typed controller paste-event contract an
 - The source audit pins additional exact `app-primary` signatures for `Ti/wi/Ci`, the primary action JSX, `pd/hd`, and `gd`. The original three asset hashes were confirmed against the uploaded `frontend.zip`; no compiled asset is committed.
 - Commits `115cf416e45b7eda24e1b4616ff0e8d211c4a72c` and `3d2a3db104812160636a3c6a5b2e796df9cca139` succeeded in CI. Latest full run: 322/322 core tests, 4/4 demo model integration tests, strict TypeScript/Vite build and 15/15 Chromium tests (run `39881222988`).
 - **Still not restored:** original ProseMirror editor schema/plugins; actual controller-backed file uploads; integrated voice input and browser-drop host handling; real action transactions, Electron IPC and Agent backend streaming. Current browser preview remains explicit mock state.
+
+## Verified checkpoint — real plain ProseMirror Composer (2026-10-23)
+
+- Source audit extended with eight exact kja/rUu factory/keyboard/clipboard signatures from the user-provided app-initial bundle; no proprietary code/assets committed.
+- A real upstream ProseMirror EditorState and EditorView now replace the demo textarea in the visible conversation Composer, using SourcePlainProseMirrorController and the already restored controller DOM mount/host-event bridge.
+- The source-shaped plain schema covers doc, paragraph, code_block, text and a reduced link mark. It does not include private Markdown, Dja mentions, rich links or suggestion plugins.
+- The controller supports transaction-driven text changes, enter-key routing via ComposerEditorBehaviorModel, input composition state, history, basic paste/drop host events, get/set text, focus and disposal.
+- CI for implementation plus browser undo assertion fix: GitHub Actions 39885831086 passed 322/322 core tests, 4/4 demo model tests, strict TypeScript/Vite build, 16/16 Chromium tests.
+- The demo host is still synthetic, and the current editor is only the source-backed plain subset. Real Electron, live Agent streaming, rich Markdown/mentions/attachments and version-matched pixel parity remain unimplemented.
+- See reports/PROSEMIRROR_PLAIN_MODE.md and the current NEXT_BATCH.md for evidence and next tasks.
