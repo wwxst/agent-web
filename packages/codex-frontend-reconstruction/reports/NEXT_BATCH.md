@@ -99,3 +99,12 @@
 - A labeled React demo turn publishes simulated Qr and qn events via buttons. This proves the *frontend* updates without parent transcript reload; it does not imply actual Codex query engine or Agent stream.
 - Browser test covers pending Qr → Qr ready → qn completed → qn inProgress, plus mounted command leaves; Node tests cover identity/cleanup/fallback.
 - **Next:** connect a real host event adapter once its schema is confirmed; investigate SourceTurnTranscriptBlocks' history summary/in-progress turn variants and verify independent Electron startup/visual parity. Test counts must be read from the latest Actions head.
+
+## 2026-10-24 — historical Y turn-content restoration (existing virtualized React row)
+
+- Original `local-conversation-thread-turn-entries-ed0916a7814f.js` Y deliberately removes inline `turn` for non-Aeon, non-preserved, history-backed rows, retaining `turnItemIds` and `turnStatus`. The reconstructed `ConversationRenderEntriesModel` already replicated that branch, but `createConversationLiveRow` had no history-content subscription, yielding blank rows.
+- Added `SourceHistoricalTurnContentSource` with per-host/thread/entity keyed subscriptions, stable immutable snapshots, current-value replay, invalidation, per-thread clear, source item ID whitelist **with Y ordering**, identity rebind, and stale subscription cleanup. The original private query runtime remains a host-owned boundary.
+- Integrated a second unconditional `useSyncExternalStore` into the **existing** `ConversationMessageBlocks/createConversationLiveRow` path; host `getBlocks(entry,historySnapshot)` feeds the already recovered source turn splitter, existing Markdown, Rk historical disclosure and nk tool activity group.
+- Deterministic DEMO turn is truly Y history-projected (no `preserveServerUserMessages` shortcut); preview buttons publish or clear simulated historical items, including a user message, two commands and final assistant. Core tests verify cache/identity/stale safety, and Chromium regression verifies actual mounted row hydration, nested tool expansion, invalidation and replay.
+- Source audit: `reports/HISTORICAL_TURN_HYDRATION_SOURCE_RECOVERY.md` and `scripts/audit-historical-turn-hydration-evidence.mjs` (seven exact strings + full original SHA-256).
+- **Next:** bind the historical turn store to a verified real host/Electron event transport, then test remount/navigation with durable history and compare exact Codex build visuals. No backend rework or main merge.
