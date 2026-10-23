@@ -115,3 +115,14 @@ export type { SourceAeonActivityPartitionOptions } from "./conversation/SourceAe
 export { isSourceMeaningfulAssistant, filterSourceLatestActivityUnits } from "./conversation/SourceLatestActivityVisibility.js";
 export { isSourcePreGroupExecSuppressed } from "./conversation/SourcePreGroupExecFilter.js";
 export type { SourceExecFilterHost, SourceExecFilterItem } from "./conversation/SourcePreGroupExecFilter.js";
+
+export {deriveSourceLatestActivityRetention} from "./conversation/SourceLatestActivityRetentionGate.js";
+export type {SourceLatestActivityRetentionInput} from "./conversation/SourceLatestActivityRetentionGate.js";
+export {
+  isSourceVisualizationExecutionStatus,
+  classifySourceVisualizationCommand,
+  isSourceVisualizationSkillRead,
+} from "./conversation/SourceVisualizationActivityPredicates.js";
+export type {SourceVisualizationKind} from "./conversation/SourceVisualizationActivityPredicates.js";
+export {resolveSourceSkillDefinitionFromRead} from "./conversation/ToolActivityHistorySourceTransforms.js";
+export type {SourceSkillDefinitionMetadata} from "./conversation/ToolActivityHistorySourceTransforms.js";
