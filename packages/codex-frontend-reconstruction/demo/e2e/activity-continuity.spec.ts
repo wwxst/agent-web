@@ -35,7 +35,7 @@ test("source N groups command and multi-file patch inside the existing transcrip
       supported:CSS.supports("animation-timeline","scroll(self y)"),
       mask:css.maskImage,
       animation:css.animationName,
-      timeline:css.animationTimeline,
+      timeline:css.getPropertyValue("animation-timeline"),
     };
   });
   if(sourceFade.supported) {
