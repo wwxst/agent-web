@@ -61,18 +61,20 @@ export function sourceMcpLabelInputFromActivity(
   const toolDisplay=asRecord(item.toolDisplay);
   const toolResult=asRecord(item.result);
   const definition=asRecord(item.toolDefinition);
+  const stringOrNull=(value:unknown):value is string|null =>
+    value===null || typeof value==="string";
   return {
     completed:item.completed===true,
     serverName:optionalString(invocation?.server),
     toolName:typeof invocation?.tool==="string" ? invocation.tool : "",
     toolArguments:invocation?.arguments,
     toolResult:toolResult==null?null:{
-      type:typeof toolResult.type==="string"?toolResult.type:undefined,
+      ...(typeof toolResult.type==="string" ? {type:toolResult.type} : {}),
     },
     toolDisplay:toolDisplay==null?null:{
-      invoking:optionalString(toolDisplay.invoking),
-      invoked:optionalString(toolDisplay.invoked),
-      title:optionalString(toolDisplay.title),
+      ...(stringOrNull(toolDisplay.invoking) ? {invoking:toolDisplay.invoking} : {}),
+      ...(stringOrNull(toolDisplay.invoked) ? {invoked:toolDisplay.invoked} : {}),
+      ...(stringOrNull(toolDisplay.title) ? {title:toolDisplay.title} : {}),
     },
     toolDefinition:definition,
   };
