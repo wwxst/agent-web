@@ -126,3 +126,20 @@ export {
 export type {SourceVisualizationKind} from "./conversation/SourceVisualizationActivityPredicates.js";
 export {resolveSourceSkillDefinitionFromRead} from "./conversation/ToolActivityHistorySourceTransforms.js";
 export type {SourceSkillDefinitionMetadata} from "./conversation/ToolActivityHistorySourceTransforms.js";
+
+export {
+  sourceTurnHistoryQuery,
+  sourceTurnUpNextQuery,
+  createSourceTurnRuntimeStatusSource,
+  createSourceTurnRuntimeStatusStore,
+} from "./conversation/SourceTurnRuntimeStatusSource.js";
+export type {
+  SourceTurnRuntimeStatusInput,
+  SourceTurnHistoryStatusQuery,
+  SourceTurnUpNextQuery,
+  SourceTurnRuntimeStatusHost,
+  SourceTurnRuntimeStatusSource,
+  SourceTurnRuntimeStatusSnapshot,
+  ConnectedSourceTurnRuntimeStatusSource,
+  SourceTurnRuntimeStatusStore,
+} from "./conversation/SourceTurnRuntimeStatusSource.js";
