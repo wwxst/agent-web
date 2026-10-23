@@ -212,3 +212,7 @@ Follow `reports/NEXT_BATCH.md`: add the typed controller paste-event contract an
 ## 2026-10-23 — independent Electron front-end host
 
 - The existing connected React demo can now be launched through a dedicated, secure Electron BrowserWindow against a locally bundled app:// origin. Host has no preload, privileged IPC, MCP server or Agent operations. Simulated data remains labeled. See ELECTRON_FRONTEND_BOOTSTRAP.md. Linux CI smoke and Windows runtime remain separate acceptance levels.
+
+## 2026-10-23 — main toolbar and Electron interactive shell
+
+- Source Ps/Fs titlebar semantics connected to existing React header and actual Electron smoke exercises sidebar collapse/restore rather than only rendering a screenshot. Source/limitations: SOURCE_THREAD_APP_SHELL_TOOLBAR.md. This does not certify Windows Codex visual parity.

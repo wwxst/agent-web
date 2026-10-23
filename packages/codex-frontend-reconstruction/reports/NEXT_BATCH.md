@@ -120,3 +120,8 @@
 
 - Created a real isolated Electron BrowserWindow entry for the existing Vite/React frontend. Secure local app scheme, blocked external navigation/new windows/webviews/downloads, no preload/IPC/Agent backend; browser mock menubar removed only in native window.
 - Added desktop:run/desktop:dev and CI xvfb smoke that checks mounted React transcript/Composer. Source and host limitations: ELECTRON_FRONTEND_BOOTSTRAP.md. Next verify native Windows behavior, Electron preload contracts from the bundled source and original app-shell icon/theme details. Do not claim full Codex desktop parity from Linux CI.
+
+## Main app-shell titlebar integration (2026-10-23)
+
+- Restored the source Ps/Fs accessible Chat toolbar and title-content focus-area structure in the actual conversation header; Chromium verifies it. Electron smoke now clicks the sidebar hide/reveal buttons inside the real window and confirms transcript layout stays mounted. Evidence: SOURCE_THREAD_APP_SHELL_TOOLBAR.md.
+- Next: trace real window route/tab variants and original icon/theme tokens, then run Windows native acceptance. No backend or private IPC change.

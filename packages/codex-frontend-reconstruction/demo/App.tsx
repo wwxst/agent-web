@@ -315,11 +315,15 @@ export function App() {
     <div className="demo-main" data-app-shell-main-surface="default"
       data-thread-scroll-layout="default">
       <header className="demo-header" data-app-shell-main-titlebar="true">
-        <div className="demo-header-location"><span className="demo-header-folder"><Icon name="folder" size={17}/></span><strong>{DEMO_CONVERSATIONS.find((c) => c.id === active)?.title}</strong></div>
+        <div className="demo-titlebar-toolbar" role="toolbar" aria-label="聊天工具栏"
+          data-app-shell-focus-area="main">
+        <div className="demo-header-location" data-app-shell-titlebar-content="true">
+          <span className="demo-header-folder"><Icon name="folder" size={17}/></span><strong>{DEMO_CONVERSATIONS.find((c) => c.id === active)?.title}</strong></div>
         <div className="demo-header-actions">
           <span className="demo-header-static" title="原版桌面按钮布局参考，暂未接通功能"><Icon name="dots" size={17}/></span>
           <button type="button" className="demo-icon-button" title={showDemoTools ? "收起演示工具" : "打开演示工具"} aria-label={showDemoTools ? "收起演示工具" : "打开演示工具"} aria-expanded={showDemoTools} onClick={() => setShowDemoTools((value) => !value)}><Icon name="sliders" size={17}/></button>
           <button type="button" className="demo-icon-button demo-collapse-toggle" aria-label={collapsed ? "展开侧边栏" : "收起侧边栏"} onClick={() => setCollapsed((value) => !value)}><Icon name="panel" size={17}/></button>
+        </div>
         </div>
       </header>
       {showDemoTools && <div className="demo-tools-popover" data-testid="demo-tools">

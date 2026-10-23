@@ -8,6 +8,10 @@ test("source-derived rail stays mounted when content sidebar is collapsed", asyn
   const panel = page.getByRole("complementary", { name: "演示会话导航" });
   await expect(rail).toBeVisible();
   await expect(panel).toBeVisible();
+  const toolbar=page.getByRole("toolbar",{name:"聊天工具栏"});
+  await expect(toolbar).toHaveAttribute("data-app-shell-focus-area","main");
+  await expect(toolbar.locator("[data-app-shell-titlebar-content]")).toHaveCount(1);
+  await expect(toolbar.getByRole("button",{name:"收起侧边栏"})).toBeVisible();
   await expect(page.locator("[data-app-shell-frame]")).toHaveAttribute("data-app-shell-sidebar-open", "true");
   await expect(page.locator("[data-app-shell-frame]")).toHaveCSS("--app-shell-navigation-rail-width", "52px");
   await page.getByRole("button", { name: "收起侧边栏" }).last().click();

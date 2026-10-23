@@ -57,6 +57,28 @@ async function verifySmoke(win) {
         getComputedStyle(fakeMenu).display === 'none');
     })()`,true);
     if (ready) {
+      // Exercise real renderer event handlers inside Electron, not just
+      // Chromium/Playwright DOM mounting. Never use Node APIs in the renderer.
+      const interaction=await win.webContents.executeJavaScript(`(async () => {
+        const frame=document.querySelector('[data-app-shell-frame]');
+        const toolbar=document.querySelector('[role="toolbar"][data-app-shell-focus-area="main"]');
+        const title=toolbar?.querySelector('[data-app-shell-titlebar-content]');
+        const btn=toolbar?.querySelector('button[aria-label="收起侧边栏"]');
+        if(!frame||!title||!btn||frame.getAttribute('data-app-shell-sidebar-open')!=='true')
+          return {stage:'initial',passed:false};
+        btn.click();
+        await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+        const collapsed=frame.getAttribute('data-app-shell-sidebar-open')==='false';
+        const expand=toolbar.querySelector('button[aria-label="展开侧边栏"]');
+        if (!collapsed||!expand) return {stage:'collapse',passed:false};
+        expand.click();
+        await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+        const restored=frame.getAttribute('data-app-shell-sidebar-open')==='true';
+        const transcript=document.querySelector('[data-thread-scroll-viewport]');
+        return {stage:'restored',passed:restored&&Boolean(transcript?.getBoundingClientRect().width)};
+      })()`,true);
+      if(!interaction.passed) throw new Error(
+        `Native window sidebar/toolbar interaction failed at ${interaction.stage}`);
       const output=process.env.AGENT_WEB_SMOKE_SCREENSHOT;
       if (output) {
         fs.mkdirSync(path.dirname(path.resolve(output)),{recursive:true});
