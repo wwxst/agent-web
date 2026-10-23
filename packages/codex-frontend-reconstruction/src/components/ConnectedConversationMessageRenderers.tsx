@@ -56,6 +56,8 @@ export interface ConnectedConversationRendererHost extends ConversationContentAd
         isExploring: boolean;
       };
       canExpand(items: readonly ConversationMessageItem[]): boolean;
+      /** Original nk passes mk-filtered H to details, retaining full items for We. */
+      getVisibleItems?(items: readonly ConversationMessageItem[]): readonly ConversationMessageItem[];
       renderCompletedSummary(items: readonly ConversationMessageItem[]): React.ReactNode;
       translateMessage(message: ActivityHeaderMessage): React.ReactNode;
       renderHostActiveLabel?(item: ConversationMessageItem): React.ReactNode;
@@ -235,7 +237,7 @@ export function createConnectedConversationMessageRenderers(host: ConnectedConve
           if (shouldDemoteCompletedSingleGroup(unit.items, state)) return unit.items.map((item,index) =>
             <div key={item.id ?? `${item.type}:${index}`}><ActivityContent item={item} isActive={props.isActive} presentation="ordinary" /></div>);
           return <CodexActivityGroupRow
-            items={unit.items} {...stateContext}
+            items={unit.items} detailItems={groupHeader.getVisibleItems?.(unit.items)} {...stateContext}
             canExpand={groupHeader.canExpand(unit.items)}
             renderCompletedSummary={groupHeader.renderCompletedSummary}
             translateMessage={groupHeader.translateMessage}

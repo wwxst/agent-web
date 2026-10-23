@@ -14,7 +14,7 @@
 ## Current connected implementation
 - `AgentActivityUnitGrouping.ts` and `AgentActivityGroupVisibility.ts` are reusable host-neutral pure modules.
 - `demo/adapters.tsx` now calls them in the existing `ConnectedConversationMessageRenderers` path, rather than unconditional one-group and unconditional expandability.
-- `CodexActivityGroupRow` adds the original group's independent capped scroller; no replacement transcript or standalone showcase was added.
+- `CodexActivityGroupRow` adds the original group's independent capped scroller and now receives the `mk`-filtered detail rows separately from the full header items; no replacement transcript or standalone showcase was added.
 - `demo/mockConversation.ts` contains a **synthetic** multi-command/multi-patch continuity case. `demo/e2e/activity-continuity.spec.ts` verifies actual browser expansion, child order and nested FileDiff scrolling.
 - No Electron IPC, Agent backend, real command execution, approval mutation, private icons/theme, or same-build pixel parity is claimed. The supplied reference screenshots may be from a different build.
 

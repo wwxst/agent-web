@@ -154,8 +154,14 @@ export function makeDemoRow(notify: (message: string) => void) {
         // This is explicitly DEMO state mapping, not private Codex turn state.
         getStateContext: ({isActive}) => ({ isLatestVisibleUnit: true,
           isHeaderInProgress: isActive, isActivitySliceClosed: false, isExploring: false }),
-        // mk/rk: hide unfinished search/list, require explicit meaningful-read
-        // evidence and avoid inventing unseen dynamic-tool behavior.
+        // mk/rk: expose only source-visible child rows, not every raw item.
+        getVisibleItems: items => getSourceExpandableGroupRows(items, {
+          isTurnCancelled: false,
+          isMeaningfulRead: item => item.meaningfulRead === true,
+          hasRenderableVisualization: item => Array.isArray(item.visualizationActivities) &&
+            item.visualizationActivities.length > 0,
+          isHiddenDynamicTool: item => item.hiddenDynamicTool === true,
+        }),
         canExpand: items => getSourceExpandableGroupRows(items, {
           isTurnCancelled: false,
           isMeaningfulRead: item => item.meaningfulRead === true,

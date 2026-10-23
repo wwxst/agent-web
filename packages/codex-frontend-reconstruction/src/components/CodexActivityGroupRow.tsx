@@ -12,6 +12,8 @@ import "./codexActivityGroupRow.css";
 export interface CodexActivityGroupRowProps<T extends GroupActivityItem>
   extends Omit<ActivityGroupStateOptions<T>, "items"> {
   items: readonly T[];
+  /** Original nk uses mk-filtered H for the child list, while the header sees all items. */
+  detailItems?: readonly T[];
   /** Host owns real source We/Sg completed aggregate, localization and icon metadata. */
   renderCompletedSummary(items: readonly T[]): React.ReactNode;
   renderRow(item: T, index: number): React.ReactNode;
@@ -65,7 +67,7 @@ export function CodexActivityGroupRow<T extends GroupActivityItem>(props: CodexA
     <div id={contentId} className="codex-activity-group-row__details vertical-scroll-fade-mask" data-codex-group-details=""
       data-source-group-scroll=""
       hidden={!props.canExpand || !expanded}>
-      {props.canExpand && expanded ? props.items.map((item, index) =>
+      {props.canExpand && expanded ? (props.detailItems ?? props.items).map((item, index) =>
         <div className="codex-activity-group-row__subrow" key={typeof item.id === "string" ? item.id : `${item.type}:${index}`}>
           {props.renderRow(item, index)}
         </div>) : null}
