@@ -96,3 +96,14 @@ The connected renderer now supports host-resolved zO history hydration before ch
 ## Source-transform provenance
 
 The history hydration layer now uses source-derived helpers for assistant content/heartbeat normalization, reasoning summaries, file-change mapping, image-generation failure records, Codex Apps action classification, MCP result normalization, visualization activity kind, declined-review detection, skill-definition reads, and recognized external delivery. `ToolActivityHistorySource` binds query plans to two injected subscription functions and `ConnectedCodexToolActivityItem` consumes its immutable snapshots. The subscription functions still need binding to the actual private Codex query provider; no live Codex runtime is connected. To verify the pinned original helper chunks, run `node scripts/audit-tool-history-transforms-evidence.mjs <app-initial.js> <app-primary.js> <app-shared.js> <skill-exploration-labels.js>`.
+
+## Electron front-end (first bootstrap)
+
+The browser frontend can also run in an isolated, native Electron window without connecting to an Agent. On Windows:
+
+```powershell
+npm install
+npm run desktop:run
+```
+
+For live front-end development: `npm run desktop:dev`. The private Codex preload, IPC, settings, native titlebar and backend do not exist in this bootstrap; mock conversations and actions are unchanged. A Linux CI `desktop:smoke` check exercises real Electron rendering, but does not substitute for Windows run/pixel-fidelity acceptance.

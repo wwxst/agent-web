@@ -208,3 +208,7 @@ Follow `reports/NEXT_BATCH.md`: add the typed controller paste-event contract an
 ## 2026-10-23 — thread footer surface/fade source parts
 
 - Recovered source `i_i({part:'surface'|'fade'})` DOM geometry into the existing default thread browser host: real surface backing, sticky variable-height scroll end spacer, 32px fade and pb-8 transcript content. Removes the prior whole-footer demo gradient. Source and browser regression: SOURCE_THREAD_SCROLL_FOOTER_LAYOUT.md. No full theme registry, Electron IPC or Agent integration.
+
+## 2026-10-23 — independent Electron front-end host
+
+- The existing connected React demo can now be launched through a dedicated, secure Electron BrowserWindow against a locally bundled app:// origin. Host has no preload, privileged IPC, MCP server or Agent operations. Simulated data remains labeled. See ELECTRON_FRONTEND_BOOTSTRAP.md. Linux CI smoke and Windows runtime remain separate acceptance levels.

@@ -231,3 +231,7 @@ button:focus-visible, textarea:focus-visible { outline: 2px solid #578cda; outli
 @media (max-width:600px) {
   [data-app-shell-feature-navigation="true"] .demo-sidebar:not(.demo-sidebar--collapsed) { width: var(--spacing-token-sidebar); min-width: var(--spacing-token-sidebar); }
 }
+
+/* Real Electron's native framed window owns title-bar controls. The browser
+ * preview keeps its explicit fake 36px window-menu fixture; do not stack both. */
+:root[data-desktop-shell="true"] .demo-window-menu { display:none; }

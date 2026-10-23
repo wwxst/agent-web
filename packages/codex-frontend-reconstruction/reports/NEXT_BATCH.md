@@ -115,3 +115,8 @@
 - Browser regression checks that latest virtual row stays above footer, native PageDown still works, viewport reaches main bottom and composer is visible/interactive. Evidence and limits: `SOURCE_THREAD_SCROLL_FOOTER_LAYOUT.md`. Next recover original `surface/fade` backdrop, other presentation variants and preserve-viewport behavior without reimplementing Electron/Agent.
 
 - Footer backdrop follow-up: restored app-initial i_i surface/fade parts and original sticky end-clearance (footer CSS variable minus 16px) alongside 32px transcriptContent padding. Browser checks dynamic spacer height and non-interactive surface. Next: source-confirmed focus/selection scroll behavior and exact theme surface variable pipeline; no Agent backend work.
+
+## Electron front-end host bootstrap (2026-10-23)
+
+- Created a real isolated Electron BrowserWindow entry for the existing Vite/React frontend. Secure local app scheme, blocked external navigation/new windows/webviews/downloads, no preload/IPC/Agent backend; browser mock menubar removed only in native window.
+- Added desktop:run/desktop:dev and CI xvfb smoke that checks mounted React transcript/Composer. Source and host limitations: ELECTRON_FRONTEND_BOOTSTRAP.md. Next verify native Windows behavior, Electron preload contracts from the bundled source and original app-shell icon/theme details. Do not claim full Codex desktop parity from Linux CI.
