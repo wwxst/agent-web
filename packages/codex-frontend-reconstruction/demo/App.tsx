@@ -3,6 +3,8 @@ import { CodexComposerLayout } from "../src/components/CodexComposerLayout.js";
 import { CodexSourceComposerHostForm } from "../src/components/CodexSourceComposerHostForm.js";
 import { DemoProseMirrorComposerEditor } from "./DemoProseMirrorComposerEditor.js";
 import { CodexNavigationRail, type CodexRailDestination } from "../src/components/CodexNavigationRail.js";
+import { CodexSourceSidebarResizeHandle } from "../src/components/CodexSourceSidebarResizeHandle.js";
+import { clampSourceSidebarWidth } from "../src/conversation/SourceSidebarResizeModel.js";
 import { projectNavigationDestinations } from "../src/conversation/NavigationRailModel.js";
 import type { VirtualizedTurnListApi } from "../src/components/VirtualizedTurnList.js";
 import { ConnectedLiveConversationTranscript } from "../src/components/ConnectedLiveConversationTranscript.js";
@@ -97,6 +99,18 @@ export function App() {
   // to exercise the independently reconstructed original navigation layout.
   const navigationRailEnabled = true;
   const [collapsed, setCollapsed] = React.useState(false);
+  const [sidebarWidth,setSidebarWidth]=React.useState(275);
+  const [availableWidth,setAvailableWidth]=React.useState(()=>
+    typeof window==="undefined"?1352:window.innerWidth);
+  React.useEffect(()=>{
+    const update=()=>{
+      const width=window.innerWidth;
+      setAvailableWidth(width);
+      setSidebarWidth(current=>clampSourceSidebarWidth(current,width));
+    };
+    window.addEventListener("resize",update);
+    return ()=>window.removeEventListener("resize",update);
+  },[]);
   const [measuredRailWidth, setMeasuredRailWidth] = React.useState(52);
   const [draft, setDraft] = React.useState("");
   const [playing, setPlaying] = React.useState(false);
@@ -295,7 +309,10 @@ export function App() {
     availableRailDestinations.find((candidate) => candidate.id === item.id)!,
   );
 
-  return <div className="demo-desktop" data-app-shell-frame="true" data-app-shell-feature-navigation={navigationRailEnabled} data-app-shell-sidebar-open={!collapsed} data-app-shell-application-menu-bar="true" style={{ "--app-shell-navigation-rail-width": navigationRailEnabled ? `${measuredRailWidth}px` : "0px" } as React.CSSProperties}>
+  return <div className="demo-desktop" data-app-shell-frame="true" data-app-shell-feature-navigation={navigationRailEnabled} data-app-shell-sidebar-open={!collapsed} data-app-shell-application-menu-bar="true" style={{
+      "--app-shell-navigation-rail-width": navigationRailEnabled ? `${measuredRailWidth}px` : "0px",
+      "--codex-sidebar-preferred-width": `${sidebarWidth}px`,
+    } as React.CSSProperties}>
     <div className="demo-window-menu" aria-label="桌面窗口示意（浏览器内，不是原生 Electron）">
       <span className="demo-menubar-back" aria-hidden="true">‹</span><span className="demo-menubar-back" aria-hidden="true">›</span>
       <span className="demo-menubar-panel" aria-hidden="true"><Icon name="panel" size={15}/></span>
@@ -312,6 +329,9 @@ export function App() {
       </>}
     />}
     <ConversationSidebar active={active} collapsed={collapsed} navigationRailEnabled={navigationRailEnabled} onToggle={() => setCollapsed((v) => !v)} onSelect={switchConversation} onReset={reset}/>
+    {!collapsed && <CodexSourceSidebarResizeHandle
+      width={sidebarWidth} availableWidth={availableWidth}
+      onWidthChange={setSidebarWidth}/>}
     <div className="demo-main" data-app-shell-main-surface="default"
       data-thread-scroll-layout="default">
       <header className="demo-header" data-app-shell-main-titlebar="true">

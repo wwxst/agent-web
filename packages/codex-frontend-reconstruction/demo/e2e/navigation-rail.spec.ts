@@ -56,3 +56,39 @@ test("rail only navigates where mock host provides a handler", async ({ page }) 
   await expect(page.locator(".demo-header-location strong")).toHaveText("恢复 Codex 会话界面");
   await expect(page.getByRole("button", {name: "Library"})).toBeDisabled();
 });
+
+test("original sbi separator supports keyboard, reset and pointer drag without moving the rail",async ({page})=>{
+  const errors:string[]=[];
+  page.on("pageerror",error=>errors.push(error.message));
+  await page.goto("/");
+  const rail=page.getByRole("navigation",{name:"App navigation"});
+  const sidebar=page.getByRole("complementary",{name:"演示会话导航"});
+  const handle=page.getByRole("separator",{name:"调整会话侧边栏宽度"});
+  await expect(handle).toHaveAttribute("aria-valuenow","275");
+  await handle.focus();
+  await page.keyboard.press("ArrowRight");
+  await expect(handle).toHaveAttribute("aria-valuenow","285");
+  await expect(sidebar).toHaveCSS("width","285px");
+  await page.keyboard.press("Home");
+  await expect(handle).toHaveAttribute("aria-valuenow","240");
+  await page.keyboard.press("End");
+  await expect(handle).toHaveAttribute("aria-valuenow","520");
+  await handle.dblclick();
+  await expect(handle).toHaveAttribute("aria-valuenow","340");
+  const rect=await handle.boundingBox();
+  expect(rect).not.toBeNull();
+  await page.mouse.move(rect!.x+rect!.width/2,rect!.y+Math.min(70,rect!.height/2));
+  await page.mouse.down();
+  await page.mouse.move(rect!.x+rect!.width/2+60,rect!.y+Math.min(70,rect!.height/2),{steps:5});
+  await page.mouse.up();
+  await expect(handle).toHaveAttribute("aria-valuenow","400");
+  await expect(sidebar).toHaveCSS("width","400px");
+  await expect(rail).toHaveCSS("width","52px");
+  await page.getByRole("button",{name:"收起侧边栏"}).last().click();
+  await expect(handle).toHaveCount(0);
+  await expect(page.locator(".demo-main")).toBeVisible();
+  await page.getByRole("button",{name:"展开侧边栏"}).last().click();
+  await expect(page.getByRole("separator",{name:"调整会话侧边栏宽度"}))
+    .toHaveAttribute("aria-valuenow","400");
+  await expect(errors).toEqual([]);
+});

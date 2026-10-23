@@ -216,3 +216,7 @@ Follow `reports/NEXT_BATCH.md`: add the typed controller paste-event contract an
 ## 2026-10-23 — main toolbar and Electron interactive shell
 
 - Source Ps/Fs titlebar semantics connected to existing React header and actual Electron smoke exercises sidebar collapse/restore rather than only rendering a screenshot. Source/limitations: SOURCE_THREAD_APP_SHELL_TOOLBAR.md. This does not certify Windows Codex visual parity.
+
+## 2026-10-23 — original left-panel resize behavior
+
+- Restored front-end sidebar drag separator and keyboard arrow/Home/End/reset using source app-initial `uUa → sbi/cbi/lbi → tb` width rules. Kept navigation rail separate and main conversation interactive, no backend IPC or original preference persistence. Browser tests and source report: SOURCE_SIDEBAR_RESIZE_RECOVERY.md.

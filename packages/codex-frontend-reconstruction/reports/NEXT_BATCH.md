@@ -125,3 +125,8 @@
 
 - Restored the source Ps/Fs accessible Chat toolbar and title-content focus-area structure in the actual conversation header; Chromium verifies it. Electron smoke now clicks the sidebar hide/reveal buttons inside the real window and confirms transcript layout stays mounted. Evidence: SOURCE_THREAD_APP_SHELL_TOOLBAR.md.
 - Next: trace real window route/tab variants and original icon/theme tokens, then run Windows native acceptance. No backend or private IPC change.
+
+## Source left sidebar resizing (2026-10-23)
+
+- Added actual pointer/keyboard sidebar width control with original 240–520 clamp, 240px main-surface reserve, 10px keys and 340px reset. Chromium covers pointer, keyboard and panel collapse/restore, independent rail. Evidence: SOURCE_SIDEBAR_RESIZE_RECOVERY.md.
+- Next: source-confirmed width persistence bridge (BYt) only when host contract exists; app theme/icon recovery and native Windows visual checks remain higher priority than demo-only features.

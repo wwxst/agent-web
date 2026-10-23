@@ -67,6 +67,8 @@ export * from "./conversation/ActivityStatusPresentation.js";
 export * from "./conversation/ConversationPresentationAdapterModel.js";
 
 export { projectNavigationDestinations } from "./conversation/NavigationRailModel.js";
+export { clampSourceSidebarWidth,sourceSidebarMaxWidth,sourceSidebarWidthFromKey } from "./conversation/SourceSidebarResizeModel.js";
+export { CodexSourceSidebarResizeHandle } from "./components/CodexSourceSidebarResizeHandle.js";
 export type { NavigationDestination, NavigationProjection, NavigationProjectionOptions } from "./conversation/NavigationRailModel.js";
 
 export { getAgentActivityCollapseEligibility, projectAgentActivityCollapse } from "./conversation/AgentActivityProjection.js";
