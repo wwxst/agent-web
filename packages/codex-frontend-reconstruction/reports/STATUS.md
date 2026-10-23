@@ -210,3 +210,12 @@ Follow `reports/NEXT_BATCH.md`: add the typed controller paste-event contract an
 - Correction to earlier wording: fr excludes **visualize Skill definitions**, not every SKILL.md read. The original command status/regex and skill metadata are tested directly; visual commands are only elided when followed by a visualization-bearing patch.
 - Included focused Node tests, mounted Chromium case with a retained ordinary skill, source evidence report and 19-signature audit. No compiled proprietary bundles are committed.
 - Remaining gaps: real K/Ui query adapters, private task result cards, Electron lifecycle/IPC, Agent event stream and exact Codex theme/pixel parity. GitHub Actions must be checked at the *final* commit before stating success.
+
+## 2026-10-23 — qn/Qr observable turn status in actual React virtual row
+
+- Branch `recovery/codex-mcp-result-guard-20261023`, Draft PR #3; no main merge.
+- Verified original Fc's exact two host subscription keys: qn status under `{hostId,threadId,entityKey}` only for raw `in_progress` history turns, and Qr up-next under `{hostId,threadId}` only for most-recent pending up-next (not interrupted).
+- Added `SourceTurnRuntimeStatusSource` and immutable query event store, integrated into `ConversationMessageBlocks/createConversationLiveRow` via `React.useSyncExternalStore` to recompute `K` and `Gi` live.
+- Demo fixture uses `preserveServerUserMessages:true` to traverse existing historical summary projection without dropping its inline transcript. Explicit demo controls publish simulated query events; Playwright verifies actual mounted subgroup count changes.
+- Real Codex qn/Qr storage transport, Electron bridge and Agent event stream not implemented. Source report and auditor: `TURN_RUNTIME_STATUS_SUBSCRIPTIONS.md`.
+- Do not claim final-head green CI until GitHub Actions checks for latest commit succeed.
