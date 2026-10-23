@@ -26,6 +26,20 @@ test("source N groups command and multi-file patch inside the existing transcrip
   const scroller=group.locator("[data-source-group-scroll]");
   await expect(scroller).toBeVisible();
   await expect(scroller).toHaveCSS("max-height","224px");
+  // Exact original nk details utilities from pinned sites-end-resource:
+  // -ms-2 / ps-2, no left rule, 1.5rem scroll-fade distance.
+  const groupGeometry=await scroller.evaluate(element=>{
+    const css=getComputedStyle(element);
+    return {marginInlineStart:css.marginInlineStart,
+      paddingInlineStart:css.paddingInlineStart,
+      borderInlineStartWidth:css.borderInlineStartWidth,
+      edgeDistance:css.getPropertyValue("--edge-fade-distance").trim(),
+    };
+  });
+  expect(groupGeometry.marginInlineStart).toBe("-8px");
+  expect(groupGeometry.paddingInlineStart).toBe("8px");
+  expect(groupGeometry.borderInlineStartWidth).toBe("0px");
+  expect(groupGeometry.edgeDistance).toBe("1.5rem");
   await expect(scroller).toHaveCSS("overflow-y","auto");
   // Original app-shared adds a scroll-driven edge mask; a permanent bottom
   // shadow would be a different behavior and obscures rows without overflow.
@@ -58,6 +72,7 @@ test("source N groups command and multi-file patch inside the existing transcrip
   await expect(frame.locator(".codex-source-diff-frame__stats")).toContainText("+");
   await expect(frame.locator(".codex-source-diff-frame__stats")).toContainText("−");
   await expect(frame).toHaveCSS("border-top-style","solid");
+  await expect(frame.locator(".codex-source-diff-frame__header")).toHaveCSS("font-size","12px");
   await page.context().grantPermissions(["clipboard-read","clipboard-write"]);
   await frame.getByRole("button",{name:"复制文件差异"}).click();
   const copied=await page.evaluate(() => navigator.clipboard.readText());

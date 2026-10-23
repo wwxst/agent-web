@@ -95,3 +95,8 @@
 
 - Restored the missing original BT frame on actual expanded PT/IT unified file-diff rows: filename/tooltip, counts, copy unified patch, original border/surface geometry and existing nested FileDiff. Preserves independent 100/240px viewport heights.
 - Playwright now validates clipboard copy and frame/scroll separation. See SOURCE_PATCH_DIFF_BT_FRAME.md; exact private Or icon, theme and Electron host remain pending.
+
+## Source-backed activity row measurements (2026-10-23)
+
+- Exact nk details metrics aligned: max-h-56 (224px), -ms-2 / ps-2 offsets, 1.5rem scroll fade, no invented vertical border. BT frame font size and rounded/ghost tokens now reference pinned app-shared stylesheet semantics.
+- Geometry and CSS assertions added to existing Chromium activity-continuity test. See SOURCE_ACTIVITY_ROW_VISUAL_ALIGNMENT.md. Still need original icon/typography runtime and same-build screenshot parity.

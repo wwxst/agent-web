@@ -8,7 +8,18 @@
 .codex-activity-group-row__toggle:focus-visible { outline:2px solid var(--demo-accent,#777); outline-offset:2px; border-radius:4px; }
 .codex-activity-group-row__heading { min-width:0; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .codex-activity-group-row__chevron { flex:none; font-size:13px; }
-.codex-activity-group-row__details { min-width:0; display:flex; flex-direction:column; gap:var(--conversation-grouped-item-gap,4px); padding-inline-start:8px; border-inline-start:1px solid var(--demo-border,#e7e7e7); }
+/* Original nk: -ms-2 ps-2, no vertical border. The negative margin
+ * neutralizes the inner padding so content stays aligned with its header. */
+.codex-activity-group-row__details {
+  min-width:0;
+  display:flex;
+  flex-direction:column;
+  gap:var(--conversation-grouped-item-gap,4px);
+  margin-inline-start:calc(var(--spacing,4px) * -2);
+  padding-inline-start:calc(var(--spacing,4px) * 2);
+  border-inline-start:0;
+  --edge-fade-distance:1.5rem;
+}
 .codex-activity-group-row__details[hidden] { display:none; }
 .codex-activity-group-row__subrow { min-width:0; }
 
@@ -18,7 +29,6 @@
   max-height:14rem;
   overflow-y:auto;
   overflow-x:hidden;
-  scrollbar-gutter:stable;
   overscroll-behavior-y:contain;
 }
 
