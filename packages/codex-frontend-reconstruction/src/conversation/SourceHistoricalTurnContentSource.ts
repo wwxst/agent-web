@@ -116,8 +116,14 @@ export function selectSourceHistoricalTurnItems<T extends {id?:string;type:strin
 ):T[]{
   if(!snapshot.loaded)return [];
   if(turnItemIds===undefined)return [...snapshot.items];
-  const allowed=new Set(turnItemIds);
-  return snapshot.items.filter(item=>item.id!=null&&allowed.has(item.id));
+  // Y carries the canonical per-turn item ordering even after dropping turn.
+  // A host history cache may replay entities out of order; do not reorder the UI.
+  const byId=new Map(snapshot.items.filter(item=>item.id!=null)
+    .map(item=>[item.id!,item] as const));
+  return turnItemIds.flatMap(id=>{
+    const item=byId.get(id);
+    return item==null?[]:[item];
+  });
 }
 
 export interface SourceHistoricalTurnStore<T extends {id?:string;type:string}> extends
