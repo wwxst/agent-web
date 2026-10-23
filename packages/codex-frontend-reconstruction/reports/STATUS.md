@@ -200,3 +200,7 @@ Follow `reports/NEXT_BATCH.md`: add the typed controller paste-event contract an
 
 - Source `conversation-gap` item/group variants (16px/4px) are now reflected in existing virtualized React transcript geometry; previously hardcoded 22px item gap removed. Shared app-shared chat and code font tokens feed the existing light shell typography.
 - Tests and source caveats: `SOURCE_CONVERSATION_DENSITY_INTEGRATION.md`. No backend changes, Electron IPC or visual parity claim.
+
+## 2026-10-23 — original default thread footer/scroll geometry
+
+- Source `thread-scroll-layout` default footer positioning and measured bottom padding now integrated into existing preview React host. Composer is absolute/sticky to thread bottom, scroll region fills the main surface and avoids overlap with last virtual row via ResizeObserver + `--thread-scroll-padding-bottom`. Long-history browser regression added. See `SOURCE_THREAD_SCROLL_FOOTER_LAYOUT.md`; original proprietary surface/fade and native Electron behaviors are not implemented.

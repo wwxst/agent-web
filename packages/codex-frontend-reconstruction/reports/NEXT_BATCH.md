@@ -108,3 +108,8 @@
 - Next: original app-shell + thread-scroll-layout composer placement/scroll masking; then typography/icon visual review at identical build, viewport and state. Keep the browser host demo distinct from full Electron completion.
 
 - Thread-scroll-layout active viewport semantics connected: keyboard-focusable localized “对话” region using the same transcript-scroll element and native PageDown behavior. Original proprietary keyboard listeners and Electron host integration are still pending.
+
+## Real source default footer / transcript scroll geometry (2026-10-23)
+
+- Aligned demo-host DOM with `thread-scroll-layout I/Wt`: Composer is now an absolute bottom footer rather than shrinking the scroll viewport; ResizeObserver provides original `--thread-scroll-padding-bottom = measured footer height + 16px` to the existing scroll controller and scroll content.
+- Browser regression checks that latest virtual row stays above footer, native PageDown still works, viewport reaches main bottom and composer is visible/interactive. Evidence and limits: `SOURCE_THREAD_SCROLL_FOOTER_LAYOUT.md`. Next recover original `surface/fade` backdrop, other presentation variants and preserve-viewport behavior without reimplementing Electron/Agent.

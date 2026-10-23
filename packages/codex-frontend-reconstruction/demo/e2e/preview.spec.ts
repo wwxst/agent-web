@@ -27,6 +27,25 @@ test("mounts recovered transcript components and handles mock-only interactions"
   expect(layout.menubar?.height).toBe(36);
   expect(layout.header?.height).toBe(46); // app-shared --height-toolbar
   expect(layout.composer?.width).toBeGreaterThan(650);
+  const footerGeometry=await page.evaluate(()=>{
+    const main=document.querySelector(".demo-main")!;
+    const footer=document.querySelector("[data-thread-scroll-footer='true']")!;
+    const viewport=document.querySelector<HTMLElement>("[data-testid='transcript-scroll']")!;
+    const outer=main.getBoundingClientRect(),bar=footer.getBoundingClientRect();
+    return {
+      footerPosition:getComputedStyle(footer).position,
+      footerBottom:bar.bottom,mainBottom:outer.bottom,
+      padding:parseFloat(getComputedStyle(viewport).getPropertyValue("--thread-scroll-padding-bottom")),
+      footerHeight:bar.height,
+      scrollPadding:getComputedStyle(viewport).scrollPaddingBottom,
+      scrollBottom:viewport.getBoundingClientRect().bottom,
+    };
+  });
+  expect(footerGeometry.footerPosition).toBe("absolute");
+  expect(Math.abs(footerGeometry.footerBottom-footerGeometry.mainBottom)).toBeLessThan(1);
+  expect(Math.abs(footerGeometry.scrollBottom-footerGeometry.mainBottom)).toBeLessThan(1);
+  expect(Math.abs(footerGeometry.padding-footerGeometry.footerHeight-16)).toBeLessThan(2);
+  expect(parseFloat(footerGeometry.scrollPadding)).toBeGreaterThan(footerGeometry.footerHeight);
   const composerRoot = page.locator('.codex-composer-layout');
   await expect(composerRoot).toHaveAttribute('data-composer-layout', 'multiline');
   await expect(composerRoot).toHaveAttribute('data-composer-density', 'comfortable');
@@ -79,6 +98,15 @@ test("mounts recovered transcript components and handles mock-only interactions"
   await page.getByRole("button", { name: /跳到最新/ }).click();
   const lastRow = page.locator('[data-turn-key="history-content:turn:history-45"]');
   await expect(lastRow).toBeInViewport({ ratio: 0.1 });
+  // Unlike the earlier sibling-footer preview, the scroll viewport now
+  // extends behind the composer. Measured content clearance must ensure
+  // the latest message never sits under the absolute footer.
+  const clearance=await page.evaluate(()=>{
+    const row=document.querySelector('[data-turn-key="history-content:turn:history-45"]')!;
+    const footer=document.querySelector('[data-thread-scroll-footer="true"]')!;
+    return footer.getBoundingClientRect().top-row.getBoundingClientRect().bottom;
+  });
+  expect(clearance).toBeGreaterThanOrEqual(-1);
   const geometry = await page.evaluate(() => {
     const scroll = document.querySelector('[data-testid="transcript-scroll"]');
     const rows = [...document.querySelectorAll('[data-turn-key]')];

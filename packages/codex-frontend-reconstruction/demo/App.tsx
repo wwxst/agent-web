@@ -104,6 +104,7 @@ export function App() {
   const [historyAdded, setHistoryAdded] = React.useState(false);
   const [showDemoTools, setShowDemoTools] = React.useState(false);
   const scrollElementRef = React.useRef<HTMLDivElement | null>(null);
+  const composerFooterRef = React.useRef<HTMLDivElement | null>(null);
   const virtualizerApiRef = React.useRef<VirtualizedTurnListApi | null>(null);
   const timerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   const toastTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -125,6 +126,38 @@ export function App() {
   const scrollToBottom = React.useCallback(() => {
     shouldFollowRef.current = true;
     scrollController.scrollToDistanceFromBottomPx(0, "instant");
+  }, [scrollController]);
+  // Original thread-scroll-layout (Wt/Gt) measures the default footer and
+  // writes its real height + 16px onto the active scroll container.
+  // Preserve the existing BrowserScrollController and virtualizer; do not
+  // introduce a second scroll host or imitate a fake Electron footer.
+  React.useLayoutEffect(() => {
+    const footer = composerFooterRef.current;
+    const scroll = scrollElementRef.current;
+    if (footer == null || scroll == null) return;
+    let frame: number | null = null;
+    const update = () => {
+      const height = footer.getBoundingClientRect().height;
+      const next = `${height + 16}px`;
+      if (scroll.style.getPropertyValue("--thread-scroll-padding-bottom") === next) return;
+      const wasFollowing = shouldFollowRef.current;
+      scroll.style.setProperty("--thread-scroll-padding-bottom", next);
+      // The source preserves bottom-following on Footer resize. The
+      // browser-only host exposes a synchronous equivalent controller.
+      if (wasFollowing) {
+        if (frame != null) window.cancelAnimationFrame(frame);
+        frame = window.requestAnimationFrame(() =>
+          scrollController.scrollToDistanceFromBottomPx(0, "instant"));
+      }
+    };
+    const observer = new ResizeObserver(update);
+    observer.observe(footer);
+    update();
+    return () => {
+      observer.disconnect();
+      if (frame != null) window.cancelAnimationFrame(frame);
+      scroll.style.removeProperty("--thread-scroll-padding-bottom");
+    };
   }, [scrollController]);
   const onVisibleContentReady = React.useCallback(() => {
     if (shouldFollowRef.current) scrollToBottom();
@@ -279,7 +312,8 @@ export function App() {
       </>}
     />}
     <ConversationSidebar active={active} collapsed={collapsed} navigationRailEnabled={navigationRailEnabled} onToggle={() => setCollapsed((v) => !v)} onSelect={switchConversation} onReset={reset}/>
-    <div className="demo-main" data-app-shell-main-surface="default">
+    <div className="demo-main" data-app-shell-main-surface="default"
+      data-thread-scroll-layout="default">
       <header className="demo-header" data-app-shell-main-titlebar="true">
         <div className="demo-header-location"><span className="demo-header-folder"><Icon name="folder" size={17}/></span><strong>{DEMO_CONVERSATIONS.find((c) => c.id === active)?.title}</strong></div>
         <div className="demo-header-actions">
@@ -323,7 +357,8 @@ export function App() {
           <div className="demo-thread-end" aria-hidden="true"/>
         </div>
       </div>
-      <div className="demo-composer-zone">
+      <div className="demo-composer-zone" ref={composerFooterRef}
+        data-thread-scroll-footer="true" data-thread-footer-placement="bottom">
         <CodexSourceComposerHostForm className="demo-composer-wrap"
           integratedVoiceModeActive={false} hasUploadPolicy={false}
           onSubmit={() => { if (composerAction.kind === "send") sendMessage(); }}>
