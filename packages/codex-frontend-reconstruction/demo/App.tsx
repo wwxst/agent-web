@@ -1,5 +1,6 @@
 import * as React from "react";
 import { CodexComposerLayout } from "../src/components/CodexComposerLayout.js";
+import { CodexSourceComposerHostForm } from "../src/components/CodexSourceComposerHostForm.js";
 import { DemoTextareaComposerEditor } from "./DemoTextareaComposerEditor.js";
 import { CodexNavigationRail, type CodexRailDestination } from "../src/components/CodexNavigationRail.js";
 import { projectNavigationDestinations } from "../src/conversation/NavigationRailModel.js";
@@ -317,7 +318,9 @@ export function App() {
         </div>
       </div>
       <div className="demo-composer-zone">
-        <div className="demo-composer-wrap">
+        <CodexSourceComposerHostForm className="demo-composer-wrap"
+          integratedVoiceModeActive={false} hasUploadPolicy={false}
+          onSubmit={() => { if (composerAction.kind === "send") sendMessage(); }}>
           <CodexComposerLayout
             className="demo-composer"
             layout="multiline"
@@ -338,10 +341,10 @@ export function App() {
             </div>}
             trailingControls={<div className="demo-composer-right">
               <span className="demo-composer-model">Demo Agent <span>Medium</span> <Icon name="chevron" size={12}/></span>
-              <button type={composerAction.type} data-testid="send-button" data-composer-action={composerAction.kind} aria-busy={composerAction.loading} aria-label={composerAction.kind === "stop" ? "停止模拟" : "发送模拟消息"} title={composerAction.kind === "stop" ? "停止模拟" : "发送模拟消息"} className="demo-send-button" disabled={composerAction.disabled} onClick={composerAction.kind === "stop" ? stopSample : sendMessage}><Icon name={composerAction.kind === "stop" ? "stop" : "up"} size={16}/></button>
+              <button type={composerAction.type} data-testid="send-button" data-composer-action={composerAction.kind} aria-busy={composerAction.loading} aria-label={composerAction.kind === "stop" ? "停止模拟" : "发送模拟消息"} title={composerAction.kind === "stop" ? "停止模拟" : "发送模拟消息"} className="demo-send-button" disabled={composerAction.disabled} onClick={composerAction.kind === "stop" ? stopSample : undefined}><Icon name={composerAction.kind === "stop" ? "stop" : "up"} size={16}/></button>
             </div>}
           />
-        </div>
+        </CodexSourceComposerHostForm>
       </div>
     </div>
     {toast && <div className="demo-toast" role="status"><Icon name="check" size={17}/>{toast}</div>}

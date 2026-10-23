@@ -115,3 +115,10 @@ The read-only audit now checks the `rUu` schema/plugin/keymap/paste/drop signatu
 - The existing demo React send/stop button consumes the model instead of directly branching on `playing`. The mock host explicitly maps `playing` to a synthetic streaming state; it still cannot send or stop a real Agent request.
 - Unit tests and a rendered browser test guard the source-derived stop/send distinction and prevent a regression in demo action availability.
 - The real host selectors `cj`, `Yg`, `p0`, `mSe`, disabled policies, and full file-upload/status changes are intentionally injected rather than guessed. No Electron IPC or real submission/stop handler is connected.
+
+## Outer Composer form and native event boundary — YMt / pd / hd / gd (2026-10-23)
+
+- The source form wraps `CodexComposerLayout`, and uses capture-phase `onPasteCapture` / `onDropCapture`. Both block the event only for integrated voice mode with a missing `p0` policy.
+- `CodexSourceComposerHostForm.tsx` restores that real DOM form and event guard, forwarding native submit timestamp plus submitter presence without creating any host upload.
+- In the demo, clicking the send button now submits through the form once; the controller's Enter-submit handler still uses its distinct controller-to-host path. The Stop action remains a button and does not create a form submission.
+- Core/browser tests enforce transfer gating, form existence, and single dispatch. Real host `getText()`, upload policy, and Agent submission remain explicit missing integrations.

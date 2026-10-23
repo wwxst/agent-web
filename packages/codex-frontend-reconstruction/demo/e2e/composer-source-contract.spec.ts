@@ -71,3 +71,22 @@ test("source YMt primary action switches send to stop for a synthetic stream", a
   await expect(button).toBeDisabled();
   await expect(page.getByText("模拟执行已停止", {exact: false})).toBeVisible();
 });
+
+test("outer YMt host form submits once and captures normal transfers without blocking", async ({ page }) => {
+  await page.goto("/");
+  const form = page.locator("[data-codex-source-composer-form]");
+  await expect(form).toHaveCount(1);
+  const textbox = page.getByRole("textbox", {name: "演示消息输入"});
+  const unblocked = await textbox.evaluate((el) => {
+    const paste = new Event("paste", { bubbles: true, cancelable: true });
+    const drop = new Event("drop", { bubbles: true, cancelable: true });
+    el.dispatchEvent(paste);
+    el.dispatchEvent(drop);
+    return { paste: paste.defaultPrevented, drop: drop.defaultPrevented };
+  });
+  expect(unblocked).toEqual({ paste: false, drop: false });
+  await textbox.fill("验证来源表单只提交一次");
+  await page.getByRole("button", {name: "发送模拟消息"}).click();
+  await expect(page.getByText("验证来源表单只提交一次", {exact: true})).toHaveCount(1);
+  await expect(page.getByTestId("send-button")).toHaveAttribute("data-composer-action", "stop");
+});

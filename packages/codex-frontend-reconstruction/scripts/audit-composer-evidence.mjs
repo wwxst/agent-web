@@ -36,6 +36,9 @@ const checks = [
       "wi=Yt||An&&!Xt&&!Zt",
       "type:Ti?`button`:`submit`",
       "onClick:jl},Ti?`stop`:`send`",
+      "pd=e=>{Vn&&qn==null&&(e.preventDefault(),e.stopPropagation())}",
+      "hd=e=>{Vn&&qn==null&&(e.preventDefault(),e.stopPropagation())}",
+      "gd=e=>{e.preventDefault(),to(v.getText(),e.timeStamp,e.nativeEvent instanceof SubmitEvent&&e.nativeEvent.submitter!=null)}",
     ],
   },
   {
