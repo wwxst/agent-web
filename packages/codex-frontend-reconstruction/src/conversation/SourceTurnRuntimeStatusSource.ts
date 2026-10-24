@@ -211,26 +211,28 @@ export function createSourceTurnRuntimeStatusSource(
 export interface SourceTurnRuntimeStatusStore extends SourceTurnRuntimeStatusHost {
   publishHistoryStatus(query:SourceTurnHistoryStatusQuery,status:string|null|undefined):void;
   publishUpNextReady(query:SourceTurnUpNextQuery,ready:boolean|null|undefined):void;
+  /** Reset both cached channels for a host/thread without touching other conversations. */
+  clearThread(hostId:string,threadId:string):void;
   dispose():void;
 }
 export function createSourceTurnRuntimeStatusStore():SourceTurnRuntimeStatusStore {
-  type Entry<T>={value:T|undefined;published:boolean;listeners:Set<(value:T|undefined)=>void>};
+  type Entry<T>={query:{hostId:string;threadId:string};value:T|undefined;published:boolean;listeners:Set<(value:T|undefined)=>void>};
   const histories=new Map<string,Entry<string|null>>();
   const upNext=new Map<string,Entry<boolean|null>>();
   let closed=false;
-  function subscribe<T>(map:Map<string,Entry<T>>,query:object,cb:(value:T|undefined)=>void){
+  function subscribe<T>(map:Map<string,Entry<T>>,query:{hostId:string;threadId:string},cb:(value:T|undefined)=>void){
     if(closed)return ()=>{};
     const key=JSON.stringify(Object.values(query));
     let entry=map.get(key);
     if(entry==null){
-      entry={value:undefined,published:false,listeners:new Set()};
+      entry={query:{hostId:query.hostId,threadId:query.threadId},value:undefined,published:false,listeners:new Set()};
       map.set(key,entry);
     }
     entry.listeners.add(cb);
     if(entry.published)cb(entry.value);
     return ()=>entry?.listeners.delete(cb);
   }
-  function put<T>(map:Map<string,Entry<T>>,query:object,value:T|undefined){
+  function put<T>(map:Map<string,Entry<T>>,query:{hostId:string;threadId:string},value:T|undefined){
     if(closed)return;
     const key=JSON.stringify(Object.values(query));
     let entry=map.get(key);
@@ -244,6 +246,18 @@ export function createSourceTurnRuntimeStatusStore():SourceTurnRuntimeStatusStor
     subscribeUpNextReady:(q,cb)=>subscribe(upNext,q,cb),
     publishHistoryStatus:(q,v)=>put(histories,q,v),
     publishUpNextReady:(q,v)=>put(upNext,q,v),
+    clearThread(hostId,threadId){
+      if(closed)return;
+      // No global clearing: other tabs/threads share this frontend host.
+      for(const map of [histories,upNext]){
+        for(const entry of map.values()){
+          if(entry.query.hostId!==hostId||entry.query.threadId!==threadId)continue;
+          if(!entry.published)continue;
+          entry.published=false;entry.value=undefined;
+          for(const listener of [...entry.listeners])listener(undefined);
+        }
+      }
+    },
     dispose(){closed=true;histories.clear();upNext.clear();},
   };
 }
