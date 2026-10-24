@@ -45,6 +45,31 @@ test("independent Electron file renderer starts, isolates preload and routes Fc 
   assert.equal(prefs.nodeIntegration,false);
   assert.equal(prefs.contextIsolation,true);
   assert.equal(prefs.sandbox,true);
+  // Original Codex source i3e uses native titleBarOverlay for win32/linux,
+  // hiddenInset for darwin, and primary minimum size 480x600.
+  const nativeWindow=await app.evaluate(({BrowserWindow})=>{
+    const win=BrowserWindow.getAllWindows()[0];
+    return {minimum:win.getMinimumSize(),bounds:win.getBounds()};
+  });
+  assert.deepEqual(nativeWindow.minimum,[480,600]);
+  assert.ok(nativeWindow.bounds.width>=480&&nativeWindow.bounds.height>=600);
+  const windowChrome=await page.evaluate(()=>{
+    const root=document.querySelector(".demo-desktop");
+    const titlebar=document.querySelector(".demo-window-menu");
+    const duplicate=document.querySelector(".demo-window-buttons");
+    return {
+      electron:root?.getAttribute("data-independent-electron"),
+      title:titlebar?.getAttribute("aria-label"),
+      drag:titlebar==null?null:getComputedStyle(titlebar).getPropertyValue("-webkit-app-region"),
+      titlebarHeight:titlebar?.getBoundingClientRect().height,
+      duplicateCaptionDisplay:duplicate==null?null:getComputedStyle(duplicate).display,
+    };
+  });
+  assert.equal(windowChrome.electron,"true");
+  assert.equal(windowChrome.title,"Electron 原生标题栏拖拽区域");
+  assert.equal(windowChrome.titlebarHeight,36);
+  assert.equal(windowChrome.duplicateCaptionDisplay,"none");
+  assert.equal(windowChrome.drag,"drag");
   const location=await page.evaluate(()=>window.location.protocol);
   assert.equal(location,"file:");
   await page.getByRole("button",{name:/工具调用与审批交互/}).click();
