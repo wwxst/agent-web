@@ -145,6 +145,13 @@ export function makeDemoRow(notify: (message: string) => void) {
     historicalTurnSources.set(key,source);
     return source;
   }
+  // One canonical Y subscription is shared by the virtualized historical row
+  // and Find-in-Thread. It exists independently of virtual row mount state.
+  // This is a DEMO host query, not the private persisted search service.
+  const findHistorySource=createSourceHistoricalTurnContentSource(historyTurnQuery,historyTurnStore);
+  historicalTurnSources.set(JSON.stringify([
+    historyTurnQuery.hostId,historyTurnQuery.threadId,historyTurnQuery.entityKey,
+  ]),findHistorySource);
   const turnRuntimeStore=eventBridge.turnRuntime;
   const turnRuntimeSources=new Map<string,ConnectedSourceTurnRuntimeStatusSource>();
   const liveHistoryQuery={
@@ -439,6 +446,7 @@ export function makeDemoRow(notify: (message: string) => void) {
     </div>;
   };
   return Object.assign(DemoRow, {
+    findHistory: {source: findHistorySource, query: historyTurnQuery},
     dispose() {
       for (const source of historySources.values()) source.dispose();
       historySources.clear();
