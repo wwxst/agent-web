@@ -204,6 +204,21 @@ export function App() {
   // BrowserScrollController/VirtualizedTurnList rather than adding a scroller.
   const threadViewportDistanceRef=React.useRef(new Map<DemoConversationId,number>());
   const pendingViewportRestoreRef=React.useRef<{id:DemoConversationId;distance:number}|null>(null);
+  const viewportSettleTimeoutRef=React.useRef<ReturnType<typeof setTimeout>|null>(null);
+  const finishViewportRestore=React.useCallback((pending:{id:DemoConversationId;distance:number})=>{
+    if(viewportSettleTimeoutRef.current!=null)clearTimeout(viewportSettleTimeoutRef.current);
+    viewportSettleTimeoutRef.current=setTimeout(()=>{
+      if(pendingViewportRestoreRef.current!==pending)return;
+      // Allow the mounted source virtualizer to finish its height corrections.
+      scrollElementRef.current?.scrollTo({
+        top:Math.max(0,(scrollElementRef.current?.scrollHeight??0)-
+          (scrollElementRef.current?.clientHeight??0)-pending.distance),behavior:"instant",
+      });
+      pendingViewportRestoreRef.current=null;
+      viewportSettleTimeoutRef.current=null;
+    },250);
+  },[]);
+  React.useEffect(()=>()=>{if(viewportSettleTimeoutRef.current!=null)clearTimeout(viewportSettleTimeoutRef.current);},[]);
   const nextIdRef = React.useRef(0);
 
   const source = React.useMemo(() => {
@@ -347,10 +362,11 @@ export function App() {
     const pending=pendingViewportRestoreRef.current;
     if(pending?.id===active){
       scrollController.scrollToDistanceFromBottomPx(pending.distance,"instant");
+      finishViewportRestore(pending);
       return;
     }
     if (shouldFollowRef.current) scrollToBottom();
-  }, [active,scrollController,scrollToBottom]);
+  }, [active,scrollController,scrollToBottom,finishViewportRestore]);
 
   React.useEffect(() => {
     const pending=pendingViewportRestoreRef.current;
@@ -364,7 +380,7 @@ export function App() {
       secondFrame=requestAnimationFrame(()=>{
         if(pending?.id===active){
           scrollController.scrollToDistanceFromBottomPx(requested,"instant");
-          if(pendingViewportRestoreRef.current===pending)pendingViewportRestoreRef.current=null;
+          finishViewportRestore(pending);
         }else scrollToBottom();
       });
     });
@@ -373,7 +389,7 @@ export function App() {
       if(secondFrame!=null)cancelAnimationFrame(secondFrame);
       if (timerRef.current != null) clearTimeout(timerRef.current);
     };
-  }, [active,scrollController,scrollToBottom,source]);
+  }, [active,scrollController,scrollToBottom,source,finishViewportRestore]);
   React.useEffect(() => () => {
     if (toastTimerRef.current != null) clearTimeout(toastTimerRef.current);
   }, []);
