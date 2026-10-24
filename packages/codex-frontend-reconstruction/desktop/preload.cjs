@@ -9,6 +9,9 @@ const HOST_INFO_CHANNEL="agent-web:host-info";
 const HOST_EVENT_CHANNEL="agent-web:host-event";
 const OPEN_MENU_CHANNEL="agent-web:open-menu";
 const UI_COMMAND_CHANNEL="agent-web:ui-command";
+const READ_DRAFTS_CHANNEL="agent-web:composer-drafts-read";
+const WRITE_DRAFT_CHANNEL="agent-web:composer-draft-write";
+const draftThreadIds=new Set(["frontend","review"]);
 const allowedUiCommands=new Set([
   "toggle-sidebar","previous-thread","next-thread",
   "find-in-thread","find-next-in-thread","find-previous-in-thread",
@@ -27,6 +30,13 @@ ipcRenderer.on(HOST_EVENT_CHANNEL,(_event,payload)=>{
 });
 contextBridge.exposeInMainWorld("agentWebDesktopHost",Object.freeze({
   getHostInfo:()=>ipcRenderer.invoke(HOST_INFO_CHANNEL),
+  getComposerDrafts:()=>ipcRenderer.invoke(READ_DRAFTS_CHANNEL),
+  setComposerDraft(threadId,text){
+    if(!draftThreadIds.has(threadId)||typeof text!=="string"||text.length>65536){
+      return Promise.resolve(false);
+    }
+    return ipcRenderer.invoke(WRITE_DRAFT_CHANNEL,threadId,text);
+  },
   openMenu(id,anchor){
     // Real native menu contents stay owned by the main process; the renderer
     // can request only one of the four fixed top-level source menu sections.
