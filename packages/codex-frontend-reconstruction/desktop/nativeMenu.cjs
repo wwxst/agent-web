@@ -31,6 +31,14 @@ function buildSourceNativeMenus({platform="win32",actions}){
       click:actions.quit},
   ];
   const view=[
+    // Original D0e: Ne dispatches toggle-sidebar; st/lt dispatch
+    // run-command previousThread/nextThread through its dynamic keymap.
+    // The user's keymap is not available, so never invent accelerators.
+    {label:"Toggle Sidebar",id:"toggleSidebar",click:actions.toggleSidebar},
+    {type:"separator"},
+    {label:"Previous Thread",id:"previousThread",click:actions.previousThread},
+    {label:"Next Thread",id:"nextThread",click:actions.nextThread},
+    {type:"separator"},
     {label:"Zoom In",id:"zoomIn",accelerator:"CmdOrCtrl+Plus",
       click:actions.zoomIn},
     // Original D0e includes this Windows-only Ctrl+= hidden accelerator.
