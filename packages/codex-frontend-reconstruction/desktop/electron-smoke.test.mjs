@@ -70,6 +70,44 @@ test("independent Electron file renderer starts, isolates preload and routes Fc 
   assert.equal(windowChrome.titlebarHeight,36);
   assert.equal(windowChrome.duplicateCaptionDisplay,"none");
   assert.equal(windowChrome.drag,"drag");
+  // Source w0e/D0e menus are real Electron MenuItems. They use native
+  // edit roles and View accelerators; private Codex commands are excluded.
+  const nativeMenus=await app.evaluate(({Menu})=>{
+    const menu=Menu.getApplicationMenu();
+    return {
+      labels:menu.items.filter(entry=>["File","Edit","View","Help"].includes(entry.label))
+        .map(entry=>entry.label),
+      close:menu.getMenuItemById("closeWindow")?.accelerator,
+      in:menu.getMenuItemById("zoomIn")?.accelerator,
+      out:menu.getMenuItemById("zoomOut")?.accelerator,
+      actual:menu.getMenuItemById("actualSize")?.accelerator,
+      fullscreen:menu.getMenuItemById("toggleFullScreen")?.accelerator,
+    };
+  });
+  assert.deepEqual(nativeMenus.labels,["File","Edit","View","Help"]);
+  assert.equal(nativeMenus.close,"Ctrl+W");
+  assert.equal(nativeMenus.in,"CmdOrCtrl+Plus");
+  assert.equal(nativeMenus.out,"CmdOrCtrl+-");
+  assert.equal(nativeMenus.actual,"CmdOrCtrl+0");
+  assert.equal(nativeMenus.fullscreen,"F11");
+  assert.equal(await page.locator('[data-desktop-menu]').count(),4);
+  assert.equal(await page.locator('[data-desktop-menu="view"]').evaluate(
+    el=>getComputedStyle(el).getPropertyValue("-webkit-app-region")),"no-drag");
+  // The renderer cannot call arbitrary host menu actions through preload.
+  assert.equal(await page.evaluate(()=>window.agentWebDesktopHost?.openMenu(
+    "newTask",{x:12,y:14})),false);
+  // Click actual application menu items in the main process; zoom updates
+  // this *real* WebContents, not a fake React numeric model.
+  const zooms=await app.evaluate(({Menu,BrowserWindow})=>{
+    const win=BrowserWindow.getAllWindows()[0],menu=Menu.getApplicationMenu();
+    const before=win.webContents.getZoomLevel();
+    menu.getMenuItemById("zoomIn").click();
+    const zoomed=win.webContents.getZoomLevel();
+    menu.getMenuItemById("actualSize").click();
+    return {before,zoomed,reset:win.webContents.getZoomLevel()};
+  });
+  assert.ok(zooms.zoomed>zooms.before);
+  assert.equal(zooms.reset,0);
   const location=await page.evaluate(()=>window.location.protocol);
   assert.equal(location,"file:");
   await page.getByRole("button",{name:/工具调用与审批交互/}).click();
