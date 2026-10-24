@@ -244,6 +244,28 @@ export function App() {
     setActive(id);
   }
 
+  // Original D0e routes native Toggle Sidebar / previousThread / nextThread
+  // through renderer commands. Our standalone host maps only these proven
+  // commands onto EXISTING sidebar/conversation state (demo routes, not
+  // the private Codex navigation/history store).
+  React.useEffect(() => {
+    const host=window.agentWebDesktopHost;
+    if(host==null)return;
+    return host.subscribeUiCommands(command=>{
+      if(command==="toggle-sidebar"){
+        setCollapsed(value=>!value);
+        return;
+      }
+      const index=DEMO_CONVERSATIONS.findIndex(entry=>entry.id===active);
+      if(index<0)return;
+      const destination=command==="previous-thread"?index-1:index+1;
+      if(destination>=0&&destination<DEMO_CONVERSATIONS.length){
+        const id=DEMO_CONVERSATIONS[destination]?.id;
+        if(id!=null)switchConversation(id);
+      }
+    });
+  },[active]);
+
   // The direct/more identity projection is sourced from original GZc/QZc;
   // routing/feature flags are supplied explicitly by this mock host.
   const availableRailDestinations: CodexRailDestination[] = [
