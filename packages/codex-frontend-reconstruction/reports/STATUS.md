@@ -227,3 +227,12 @@ Follow `reports/NEXT_BATCH.md`: add the typed controller paste-event contract an
 - Source item keys/order are enforced, and a host-owned event cache replays/invalidates snapshots without reloading the conversation. The DEMO is clearly synthetic and exercises the same history path plus existing Markdown, user-message and historical tool Rk/nk components.
 - Original SHA and seven signatures pinned in `HISTORICAL_TURN_HYDRATION_SOURCE_RECOVERY.md`, with Node and Playwright regressions.
 - **Limits:** private original history query engine and real host transport are not installed; full Electron runtime, Agent stream, original icon assets and pixel parity remain outstanding. Only claim final CI after reading the latest Actions head.
+
+## 2026-10-24 — unified frontend event host, no Agent backend changes
+
+- Continued on Draft PR #3, independent branch `recovery/codex-mcp-result-guard-20261023`.
+- `SourceConversationHostEventBridge` now owns and dispatches to the **already restored** three history/turn/tool stores using five typed event kinds plus thread-scoped clear. This is **our independently defined host event contract**, not an invented claim about the original Codex Electron IPC format.
+- Existing `demo/adapters.tsx` mounts this one ingress for Y history content, Fc qn/Qr state, and LO Au/Vd tool history; the React timeline, Markdown, Rk/nk groups and xC/PT leaves are unchanged. Demo events remain clearly synthetic.
+- New core tests verify source-channel fanout, isolation across host/thread identifiers, event replay, clearing, stale transport callbacks and disposal. Chromium browser test exercises a single clear event invalidating both a loaded history row and the displayed qn/Qr group. Check the final commit's CI, not intermediate runs.
+- Source hashes and host schema distinction: `reports/UNIFIED_FRONTEND_HOST_EVENTS.md`.
+- Real Electron preload/IPC host event mapping and actual Agent history-event schema are still unimplemented; no main merge, backend changes, or pixel-parity claim.
