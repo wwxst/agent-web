@@ -1,10 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  createDemoSource, getDemoBlocks, demoMessageEntry,
+  createDemoSource, getDemoBlocks, getDemoHistoryTurnItems, demoMessageEntry,
   makeLongHistory, appendDemoEntries,
 } from '../../demo-model-build/demo/mockConversation.js';
 import { buildConversationRenderEntries } from '../../demo-model-build/src/conversation/ConversationRenderEntriesModel.js';
+import { projectDemoThreadFindRows } from '../../demo-model-build/demo/threadFindProjection.js';
+import { findSourceThreadLiteralMatches } from '../../demo-model-build/src/conversation/SourceThreadFindModel.js';
+import { createSourceHistoricalTurnContentSource, createSourceHistoricalTurnStore, sourceHistoricalTurnQuery } from '../../demo-model-build/src/conversation/SourceHistoricalTurnContentSource.js';
 import { buildConversationMessageRenderPlan } from '../../demo-model-build/src/conversation/ConversationMessageRenderPlan.js';
 
 const deps = { isSpecialEntry: () => false, expandPreservedTurn: ({ baseTurnEntry }) => [baseTurnEntry] };
@@ -76,4 +79,47 @@ test('long history adds unique keys and can be projected without duplicate rows'
   assert.equal(new Set(keys).size,keys.length);
   assert.equal(keys.at(-1),'history-content:turn:history-45');
   s.dispose();
+});
+
+test('find indexes only Y hydrated canonical history and clears matches after host invalidation', () => {
+  const live=createDemoSource('review');
+  const current=live.getSnapshot();
+  const projected=buildConversationRenderEntries({
+    ...current.projection,baseEntries:[...current.entries],
+  },deps).entries;
+  const entry=projected.find(item=>item.turnId==='review-history-hydration');
+  assert.ok(entry);
+  assert.equal(entry.turn == null,true); // Y uses undefined to strip raw demo items
+  const query=sourceHistoricalTurnQuery(entry);
+  assert.deepEqual(query,{
+    hostId:'demo-host',threadId:'review',entityKey:'fixture-history-content',
+  });
+  const host=createSourceHistoricalTurnStore();
+  const hydrated=createSourceHistoricalTurnContentSource(query,host);
+  let updates=0;
+  const unsubscribe=hydrated.subscribe(()=>updates++);
+  const project=()=>projectDemoThreadFindRows(projected,item=>{
+    const key=sourceHistoricalTurnQuery(item);
+    return key?.hostId===query.hostId&&key?.threadId===query.threadId&&
+      key?.entityKey===query.entityKey?hydrated.getSnapshot():null;
+  });
+  const phrase='历史正文已通过订阅恢复';
+  assert.equal(findSourceThreadLiteralMatches(project(),phrase).length,0);
+  assert.equal(project().some(row=>row.turnKey==='history-content:turn:review-history-hydration'),false);
+  // The same source store drives Y's mounted React historical row.
+  host.publish(query,{status:'completed',items:getDemoHistoryTurnItems()});
+  assert.equal(updates,1);
+  let matches=findSourceThreadLiteralMatches(project(),phrase);
+  assert.deepEqual(matches.map(match=>match.turnKey),['history-content:turn:review-history-hydration']);
+  const loaded=project().find(row=>row.turnKey==='history-content:turn:review-history-hydration');
+  assert.match(loaded.text,/这是历史记录的用户消息/);
+  host.clearThread('demo-host','review');
+  assert.equal(updates,2);
+  assert.equal(findSourceThreadLiteralMatches(project(),phrase).length,0);
+  // Replay hydration with the same canonical entity, without remounting.
+  host.publish(query,{status:'completed',items:getDemoHistoryTurnItems()});
+  assert.equal(updates,3);
+  assert.equal(findSourceThreadLiteralMatches(project(),phrase).length,1);
+  unsubscribe();
+  hydrated.dispose();host.dispose();live.dispose();
 });

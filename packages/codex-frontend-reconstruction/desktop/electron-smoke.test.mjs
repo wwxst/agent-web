@@ -149,13 +149,36 @@ test("independent Electron file renderer starts, isolates preload and routes Fc 
     .waitFor({state:"attached",timeout:10000});
   await page.waitForFunction(()=>document.querySelector(".demo-header-location strong")
     ?.textContent?.includes("工具调用与审批交互")===true);
-  // D0e View find-in-thread now crosses the SAME native menu, isolated
-  // preload and mounted React transcript. Only its conversation-text domain
-  // is implemented; the private regex worker and other domains are excluded.
+  // Y history content is a host-keyed subscription, not the raw demo turn.
+  // Find must reflect hydration and clear-thread while using the SAME
+  // mounted virtual row (no separate search/transcript renderer).
+  const historyRow=page.locator('[data-demo-turn-id="review-history-hydration"]');
+  await historyRow.waitFor({state:"attached",timeout:10000});
   await app.evaluate(({Menu})=>{
     Menu.getApplicationMenu().getMenuItemById("findInThread").click();
   });
   const findInput=page.getByRole("searchbox",{name:"Find in chat"});
+  await findInput.waitFor({timeout:10000});
+  await findInput.fill("历史正文已通过订阅恢复");
+  await page.waitForFunction(()=>document.querySelector(".demo-find-results")?.textContent==="0 results");
+  await historyRow.locator("[data-demo-load-history]").click();
+  await page.waitForFunction(()=>document.querySelector(".demo-find-results")?.textContent==="1 / 1 results");
+  await page.waitForFunction(()=>Array.from(CSS.highlights?.get("demo-thread-find-active")??[])
+    .some(range=>range.toString()==="历史正文已通过订阅恢复"&&
+      range.startContainer.parentElement?.closest('[data-demo-turn-id="review-history-hydration"]')!=null));
+  await historyRow.locator("[data-demo-clear-history]").click();
+  await page.waitForFunction(()=>document.querySelector(".demo-find-results")?.textContent==="0 results");
+  await page.waitForFunction(()=>!CSS.highlights?.has("demo-thread-find-active"));
+  await findInput.press("Escape");
+  await findInput.waitFor({state:"detached",timeout:10000});
+
+  // D0e View find-in-thread now crosses the SAME native menu, isolated
+  // preload and mounted React transcript. The original private regex worker
+  // and diff/page/browser domains remain outside this frontend slice.
+  await app.evaluate(({Menu})=>{
+    Menu.getApplicationMenu().getMenuItemById("findInThread").click();
+  });
+  await findInput.waitFor({timeout:10000});
   await findInput.waitFor({timeout:10000});
   await findInput.fill("does-not-occur-in-fixture-12345");
   await page.waitForFunction(()=>document.querySelector(".demo-find-results")?.textContent==="0 results");

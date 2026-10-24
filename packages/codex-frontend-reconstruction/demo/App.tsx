@@ -14,6 +14,8 @@ import { SOURCE_CONVERSATION_ITEM_GAP_PX } from "../src/conversation/SourceConve
 import { BrowserScrollController } from "./browserScrollController.js";
 import { findSourceThreadLiteralMatches, wrapSourceThreadFindOrdinal } from "../src/conversation/SourceThreadFindModel.js";
 import { projectDemoThreadFindRows } from "./threadFindProjection.js";
+import { buildConversationRenderEntries } from "../src/conversation/ConversationRenderEntriesModel.js";
+import { sourceHistoricalTurnQuery } from "../src/conversation/SourceHistoricalTurnContentSource.js";
 import { clearDemoThreadFindHighlight, highlightRenderedDemoThreadFindMatch } from "./threadFindRenderedHighlight.js";
 import { makeDemoRow, demoProjectionDependencies } from "./adapters.js";
 import {
@@ -143,11 +145,33 @@ export function App() {
   const nextIdRef = React.useRef(0);
 
   const source = React.useMemo(() => createDemoSource(active), [active, generation]);
-  // Search the same immutable conversation snapshot used by the mounted
-  // virtualizer. This standalone literal adapter excludes unloaded history,
-  // private regex-worker modes, browser pages, diff and file search.
+  const notify = React.useCallback((message: string) => {
+      setToast(message);
+      if (toastTimerRef.current != null) clearTimeout(toastTimerRef.current);
+      toastTimerRef.current = setTimeout(() => setToast(null), 3600);
+    }, []);
+  // Reset creates a new demo host lifetime. Switching conversations only
+    // remounts virtual rows, so historical Rk choices remain host-owned.
+    const DemoRow = React.useMemo(() => makeDemoRow(notify), [notify, generation]);
+    React.useEffect(() => () => DemoRow.dispose(), [DemoRow]);
+  // Search the SAME source-Y-projected entries as the mounted virtualizer.
+  // The canonical historical-turn source belongs to DemoRow's existing host
+  // event bridge; its subscription survives virtual row unmount and clears
+  // results after a real source cache invalidation.
   const findSnapshot=React.useSyncExternalStore(source.subscribe,source.getSnapshot,source.getSnapshot);
-  const findRows=React.useMemo(()=>projectDemoThreadFindRows(findSnapshot.entries),[findSnapshot.entries]);
+  const findHistory=DemoRow.findHistory;
+  const findHistorySnapshot=React.useSyncExternalStore(
+    findHistory.source.subscribe,findHistory.source.getSnapshot,findHistory.source.getSnapshot,
+  );
+  const findEntries=React.useMemo(()=>buildConversationRenderEntries({
+    ...findSnapshot.projection,baseEntries:[...findSnapshot.entries],
+  },demoProjectionDependencies).entries,[findSnapshot]);
+  const findRows=React.useMemo(()=>projectDemoThreadFindRows(findEntries,entry=>{
+    const query=sourceHistoricalTurnQuery(entry);
+    return query!=null&&query.hostId===findHistory.query.hostId&&
+      query.threadId===findHistory.query.threadId&&query.entityKey===findHistory.query.entityKey
+      ?findHistorySnapshot:null;
+  }),[findEntries,findHistory,findHistorySnapshot]);
   const findMatches=React.useMemo(()=>findSourceThreadLiteralMatches(findRows,findQuery),[findRows,findQuery]);
   const currentFindOrdinal=Math.min(findOrdinal,Math.max(0,findMatches.length-1));
   React.useEffect(()=>{
@@ -207,15 +231,7 @@ export function App() {
     setFindOrdinal(index=>wrapSourceThreadFindOrdinal(index,findMatches.length,direction));
   }
   const scrollController = React.useMemo(() => new BrowserScrollController(() => scrollElementRef.current), []);
-  const notify = React.useCallback((message: string) => {
-    setToast(message);
-    if (toastTimerRef.current != null) clearTimeout(toastTimerRef.current);
-    toastTimerRef.current = setTimeout(() => setToast(null), 3600);
-  }, []);
-  // Reset creates a new demo host lifetime. Switching conversations only
-  // remounts virtual rows, so historical Rk choices remain host-owned.
-  const DemoRow = React.useMemo(() => makeDemoRow(notify), [notify, generation]);
-  React.useEffect(() => () => DemoRow.dispose(), [DemoRow]);
+
   const onApiChange = React.useCallback((api: VirtualizedTurnListApi | null) => { virtualizerApiRef.current = api; }, []);
   const scrollToBottom = React.useCallback(() => {
     shouldFollowRef.current = true;
