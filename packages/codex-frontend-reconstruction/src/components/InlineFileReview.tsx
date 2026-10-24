@@ -1,4 +1,5 @@
 import * as React from "react";
+import { MultiFileDiff } from "@pierre/diffs/react";
 import {
   canExecuteInlineReviewAction,
   chooseInlineFileReviewDisplay,
@@ -14,7 +15,7 @@ export interface InlineFileReviewProps {
   canAccept?: boolean | undefined;
   onAction: (action: InlineFileReviewAction) => void;
   onViewportReady?: ((element: HTMLElement) => void) | undefined;
-  /** Diff is the original Codex FileDiff visual primitive; it is not reconstructed yet. */
+  /** Source O/k full-view renderer; optional host override for private implementations. */
   Diff?: React.ComponentType<{
     oldFile: InlineReviewFile;
     newFile: InlineReviewFile;
@@ -30,6 +31,67 @@ export interface InlineFileReviewProps {
     className?: string | undefined;
     "aria-label"?: string | undefined;
   }> | undefined;
+}
+
+/**
+ * Original inline-file-diff-review O -> k calls w(oldFile,newFile) to derive
+ * complete file metadata, then file-diff D with a unified, expanded layout,
+ * simple hunk separators and wrap/scroll state. The same @pierre/diffs
+ * dependency already renders the recovered IT/VT patch preview in this app.
+ *
+ * MultiFileDiff computes that complete metadata from the two real FileContents
+ * inputs; unlike the old demo's two <pre> elements, it displays actual changed
+ * lines and context. No file read/write or review permission is implied.
+ */
+const SOURCE_INLINE_DIFF_OPTIONS = {
+  diffStyle: "unified" as const,
+  expandUnchanged: true,
+  hunkSeparators: "simple" as const,
+  disableFileHeader: true,
+  theme: { light: "pierre-light", dark: "pierre-dark" },
+};
+
+function SourceInlineFileReviewDiff(props: {
+  oldFile: InlineReviewFile;
+  newFile: InlineReviewFile;
+  overflow: "wrap" | "scroll";
+  onViewportReady?: ((element: HTMLElement) => void) | undefined;
+}) {
+  const containerRef = React.useRef<HTMLDivElement>(null);
+  React.useEffect(() => {
+    if (!props.onViewportReady) return;
+    const container = containerRef.current;
+    if (!container) return;
+    let delivered = false;
+    // The source k callback waits for the actual [data-diff] shadow content.
+    // Observe the known full-diff wrapper rather than claiming a React mount
+    // proves Pierre has completed its first render.
+    const check = () => {
+      if (delivered) return;
+      const diffHost = Array.from(container.querySelectorAll<HTMLElement>("*"))
+        .find(element => element.shadowRoot?.querySelector("[data-diff]") != null);
+      if (diffHost == null) return;
+      const viewport = container.closest<HTMLElement>("[data-inline-file-diff-review-viewport]");
+      if (viewport == null) return;
+      delivered = true;
+      props.onViewportReady?.(viewport);
+    };
+    const observer = new MutationObserver(check);
+    observer.observe(container, {childList: true, subtree: true});
+    const frame = requestAnimationFrame(check);
+    return () => {
+      cancelAnimationFrame(frame);
+      observer.disconnect();
+    };
+  }, [props.oldFile, props.newFile, props.onViewportReady]);
+  return <div ref={containerRef} data-source-inline-file-diff-engine="pierre">
+    <MultiFileDiff
+      oldFile={props.oldFile}
+      newFile={props.newFile}
+      className="relative overflow-clip [contain:content] [--codex-diffs-surface:var(--color-surface)] [--diffs-min-number-column-width:1ch]"
+      options={{ ...SOURCE_INLINE_DIFF_OPTIONS, overflow: props.overflow }}
+    />
+  </div>;
 }
 
 const messages = {
@@ -99,12 +161,15 @@ export function InlineFileReview(props: InlineFileReviewProps) {
     </div>;
   }
 
-  // The original full diff renderer depends on its private web-component,
-  // worker pool, CSS and syntax parser. Do not substitute a fake diff here.
+  // Source O -> k full view now uses the same real Pierre diff engine as
+  // the already integrated IT/VT patch view. Host rendering overrides remain
+  // explicit; this never accepts/rejects or writes the file itself.
   return <div className="relative flex h-full min-h-0 flex-col">
     <div className="min-h-0 flex-1 overflow-y-auto pe-4 pt-4 pb-4" data-inline-file-diff-review-viewport="">
       {Diff ? <Diff oldFile={oldFile} newFile={newFile}
-        overflow={wrapLines ? "wrap" : "scroll"} onViewportReady={onViewportReady} /> : null}
+        overflow={wrapLines ? "wrap" : "scroll"} onViewportReady={onViewportReady} />
+        : <SourceInlineFileReviewDiff oldFile={oldFile} newFile={newFile}
+          overflow={wrapLines ? "wrap" : "scroll"} onViewportReady={onViewportReady} />}
     </div>
     <div className="flex shrink-0 justify-end border-t border-default bg-surface px-4 py-2">{controls}</div>
   </div>;
