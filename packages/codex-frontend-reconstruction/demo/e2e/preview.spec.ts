@@ -214,13 +214,25 @@ test("thread navigation restores its own virtualized scroll distance without for
     return Math.max(0,total-el.scrollTop);
   });
   expect(before).toBeGreaterThan(300);
+  // The source virtualizer measures rendered rows asynchronously. Test a
+  // settled user viewport, not a scrollTop set in the middle of a reflow.
+  await page.waitForTimeout(350);
+  const settledBefore=await viewport.evaluate(el=>Math.max(0,el.scrollHeight-el.clientHeight-el.scrollTop));
+  console.log("SOURCE_VIEWPORT_BEFORE",{before,settledBefore});
   await page.getByRole("button",{name:/工具调用与审批交互/}).click();
   await expect(page.locator(".demo-header-location strong")).toHaveText("工具调用与审批交互");
   await page.getByRole("button",{name:/恢复 Codex 会话界面/}).click();
   await expect(page.locator(".demo-header-location strong")).toHaveText("恢复 Codex 会话界面");
+  await page.waitForTimeout(500);
+  const afterDiagnostics=await viewport.evaluate(el=>({
+    distance:Math.max(0,el.scrollHeight-el.clientHeight-el.scrollTop),
+    scrollTop:el.scrollTop,scrollHeight:el.scrollHeight,clientHeight:el.clientHeight,
+    rowKeys:[...el.querySelectorAll("[data-turn-key]")].map(n=>n.getAttribute("data-turn-key")).slice(0,12),
+  }));
+  console.log("SOURCE_VIEWPORT_AFTER",{settledBefore,afterDiagnostics});
   await expect.poll(async()=>{
     const after=await viewport.evaluate(el=>Math.max(0,el.scrollHeight-el.clientHeight-el.scrollTop));
-    return Math.abs(after-before);
+    return Math.abs(after-settledBefore);
   },{timeout:12000}).toBeLessThan(170);
   // Restore an actual scroll position without discarding the same source data.
   await expect(page.getByRole("button",{name:"添加 45 条历史"})).toBeDisabled();
