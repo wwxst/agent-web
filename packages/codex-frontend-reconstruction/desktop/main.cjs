@@ -18,6 +18,7 @@ const {buildSourceNativeMenus,isAllowedMenuId,sanitizeMenuAnchor}=require("./nat
 
 const HOST_INFO_CHANNEL = "agent-web:host-info";
 const HOST_EVENT_CHANNEL = "agent-web:host-event";
+const UI_COMMAND_CHANNEL = "agent-web:ui-command";
 const OPEN_MENU_CHANNEL = "agent-web:open-menu";
 const devUrl=process.env.AGENT_WEB_DEV_URL || "";
 const devMode=devUrl.length>0;
@@ -95,8 +96,21 @@ function focusedWindow(){
   const win=BrowserWindow.getFocusedWindow()??mainWindow;
   return win!=null&&!win.isDestroyed()?win:null;
 }
+// Source D0e sends these messages to the focused primary webview. The
+// standalone host sends a narrow, independently authored command envelope
+// rather than claiming compatibility with private codex_desktop IPC.
+function sendSourceUiCommand(type){
+  const win=focusedWindow();
+  if(win==null||win.webContents.isDestroyed()||win.webContents.isLoading())return false;
+  if(!isAllowedNavigation(win.webContents.getURL()))return false;
+  win.webContents.send(UI_COMMAND_CHANNEL,{type});
+  return true;
+}
 function installNativeMenu(){
   const actions={
+    toggleSidebar:()=>sendSourceUiCommand("toggle-sidebar"),
+    previousThread:()=>sendSourceUiCommand("previous-thread"),
+    nextThread:()=>sendSourceUiCommand("next-thread"),
     closeWindow:()=>focusedWindow()?.close(),
     quit:()=>app.quit(),
     // Original native menu forwards step-window-zoom/reset-window-zoom to
