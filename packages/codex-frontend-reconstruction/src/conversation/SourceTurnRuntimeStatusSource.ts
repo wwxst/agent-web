@@ -74,7 +74,10 @@ export function sourceTurnUpNextQuery(input:SourceTurnRuntimeStatusInput):
     ? {hostId:input.hostId,threadId:input.threadId} : null;
 }
 function queryKey(query:SourceTurnHistoryStatusQuery|SourceTurnUpNextQuery|null):string {
-  return query==null?"":JSON.stringify(Object.values(query));
+  if(query==null)return "";
+  return "entityKey" in query
+    ? JSON.stringify([query.hostId,query.threadId,query.entityKey])
+    : JSON.stringify([query.hostId,query.threadId]);
 }
 /** Stable immutable snapshots, cancellation tokens and synchronous-subscription safety. */
 export function createSourceTurnRuntimeStatusSource(
@@ -222,7 +225,7 @@ export function createSourceTurnRuntimeStatusStore():SourceTurnRuntimeStatusStor
   let closed=false;
   function subscribe<T>(map:Map<string,Entry<T>>,query:{hostId:string;threadId:string},cb:(value:T|undefined)=>void){
     if(closed)return ()=>{};
-    const key=JSON.stringify(Object.values(query));
+    const key=queryKey(query);
     let entry=map.get(key);
     if(entry==null){
       entry={query:{hostId:query.hostId,threadId:query.threadId},value:undefined,published:false,listeners:new Set()};
@@ -234,7 +237,7 @@ export function createSourceTurnRuntimeStatusStore():SourceTurnRuntimeStatusStor
   }
   function put<T>(map:Map<string,Entry<T>>,query:{hostId:string;threadId:string},value:T|undefined){
     if(closed)return;
-    const key=JSON.stringify(Object.values(query));
+    const key=queryKey(query);
     let entry=map.get(key);
     if(entry==null){entry={query:{hostId:query.hostId,threadId:query.threadId},value:undefined,published:false,listeners:new Set()};map.set(key,entry);}
     if(entry.published&&Object.is(entry.value,value))return;
