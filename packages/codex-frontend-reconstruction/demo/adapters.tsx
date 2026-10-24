@@ -76,9 +76,9 @@ function MarkdownSourceCodeBlock({children,...preProps}:React.ComponentProps<"pr
       React.isValidElement(node)&&node.type==="code",
   );
   const code=element?.props;
-  const language=/\\blanguage-([\\w.+-]+)/.exec(code?.className??"")?.[1]??null;
+  const language=/\blanguage-([\w.+-]+)/.exec(code?.className??"")?.[1]??null;
   const raw=markdownCodeText(code?.children??children);
-  const copyContent=raw.replace(/\\n$/,"");
+  const copyContent=raw.replace(/\n$/,"");
   const [copyState,setCopyState]=React.useState<"idle"|"copied"|"error">("idle");
   const copyTimeout=React.useRef<ReturnType<typeof setTimeout>|null>(null);
   React.useEffect(()=>()=>{if(copyTimeout.current!=null)clearTimeout(copyTimeout.current);},[]);
