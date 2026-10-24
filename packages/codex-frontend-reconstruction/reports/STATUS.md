@@ -186,3 +186,108 @@ Follow `reports/NEXT_BATCH.md`: add the typed controller paste-event contract an
 
 - Source Je/bg consecutive MCP/external-event grouping integrated into existing CodexActivityGroupRow; nested MCP disclosure is fixture-backed and uses source-verified gating, not a generic adjacent same-tool heuristic.
 - Unit/browser tests added; see `REPEATED_MCP_ACTIVITY_SOURCE_RECOVERY.md`. Current CI result must be verified; real MCP host, Electron and pixel parity remain outstanding.
+
+## 2026-10-23 — nested repeated activity A_ disclosure source recovery
+
+- Continued on Draft PR #3, branch `recovery/codex-mcp-result-guard-20261023`, not merged into main.
+- Original `sites-end-resource` A_/XO/V_/nk and `inline-followup-markdown` Je are verified against the private frontend.zip, with reproducible SHA-256 signature audit; compiled proprietary assets are not committed.
+- Replaced native subgroup `<details>` inside `CodexActivityGroupRow` with four-phase state/lazy-body `SourceActivityDisclosure`, retained existing tool leaves and 224px scroller, and added host-owned repeated group icon contract.
+- Core phase model tests and Chromium MCP/external-event continuity tests added. The browser demo remains synthetic. CSS approximates the private motion transition; exact icons, localization, Electron IPC, Agent integration and same-version visual parity are not restored.
+- See `ACTIVITY_DISCLOSURE_PHASE_RECOVERY.md`. Read the GitHub Actions run for the *final* commit before claiming final-head test success.
+
+## 2026-10-23 — Ke/fr source filtering and qe latest group integration
+
+- Continued on Draft PR #3, branch `recovery/codex-mcp-result-guard-20261023`; no main merge or Agent backend change.
+- Directly verified `Ke`, `fr`, `qe`, `Q` and `F$n` in the uploaded private `frontend.zip`. Restored the pre-group suppression and latest-activity visibility predicates in the existing React timeline.
+- `SourcePreGroupExecFilter` refuses to drop commands when private host classifiers are unavailable; `SourceLatestActivityVisibility` uses existing recovered group unfinished state. Host-derived `Gi` must be provided explicitly.
+- The demo uses synthetic host metadata only in a marked test row. Node and Chromium tests are included; private `Jt/Kt/qt/Zt` and `Gi` remain host boundaries.
+- Full evidence and audit: `LATEST_ACTIVITY_KE_QE_SOURCE_RECOVERY.md` and `scripts/audit-latest-activity-evidence.mjs`. This is not an Electron or original screenshot parity claim. Check final commit's CI before reporting test success.
+
+## 2026-10-23 — original Gi/Jt/Kt/qt recovered and integrated
+
+- Continued on Draft PR #3, branch `recovery/codex-mcp-result-guard-20261023`; no merge to main.
+- Exact private frontend archive source confirmed Jt/Kt/qt/fr semantics and the local turn's Gi flag: `K&&!ai&&!Wi`. Implemented source command/path predicates in existing Ke pre-group filter, source status gate in render plan, and React forwarding to Ga/qe.
+- Correction to earlier wording: fr excludes **visualize Skill definitions**, not every SKILL.md read. The original command status/regex and skill metadata are tested directly; visual commands are only elided when followed by a visualization-bearing patch.
+- Included focused Node tests, mounted Chromium case with a retained ordinary skill, source evidence report and 19-signature audit. No compiled proprietary bundles are committed.
+- Remaining gaps: real K/Ui query adapters, private task result cards, Electron lifecycle/IPC, Agent event stream and exact Codex theme/pixel parity. GitHub Actions must be checked at the *final* commit before stating success.
+
+## 2026-10-23 — qn/Qr observable turn status in actual React virtual row
+
+- Branch `recovery/codex-mcp-result-guard-20261023`, Draft PR #3; no main merge.
+- Verified original Fc's exact two host subscription keys: qn status under `{hostId,threadId,entityKey}` only for raw `in_progress` history turns, and Qr up-next under `{hostId,threadId}` only for most-recent pending up-next (not interrupted).
+- Added `SourceTurnRuntimeStatusSource` and immutable query event store, integrated into `ConversationMessageBlocks/createConversationLiveRow` via `React.useSyncExternalStore` to recompute `K` and `Gi` live.
+- Demo fixture uses `preserveServerUserMessages:true` to traverse existing historical summary projection without dropping its inline transcript. Explicit demo controls publish simulated query events; Playwright verifies actual mounted subgroup count changes.
+- Real Codex qn/Qr storage transport, Electron bridge and Agent event stream not implemented. Source report and auditor: `TURN_RUNTIME_STATUS_SUBSCRIPTIONS.md`.
+- Do not claim final-head green CI until GitHub Actions checks for latest commit succeed.
+
+## 2026-10-24 — source Y history turn hydration integrated
+
+- Draft PR #3 branch `recovery/codex-mcp-result-guard-20261023`, not merged.
+- The original Y history summary projection's loss of inline turn content is now bridged through `SourceHistoricalTurnContentSource` into the existing virtual React row. Ordinary and historical inline scenarios retain their own original projection decisions.
+- Source item keys/order are enforced, and a host-owned event cache replays/invalidates snapshots without reloading the conversation. The DEMO is clearly synthetic and exercises the same history path plus existing Markdown, user-message and historical tool Rk/nk components.
+- Original SHA and seven signatures pinned in `HISTORICAL_TURN_HYDRATION_SOURCE_RECOVERY.md`, with Node and Playwright regressions.
+- **Limits:** private original history query engine and real host transport are not installed; full Electron runtime, Agent stream, original icon assets and pixel parity remain outstanding. Only claim final CI after reading the latest Actions head.
+
+## 2026-10-24 — unified frontend event host, no Agent backend changes
+
+- Continued on Draft PR #3, independent branch `recovery/codex-mcp-result-guard-20261023`.
+- `SourceConversationHostEventBridge` now owns and dispatches to the **already restored** three history/turn/tool stores using five typed event kinds plus thread-scoped clear. This is **our independently defined host event contract**, not an invented claim about the original Codex Electron IPC format.
+- Existing `demo/adapters.tsx` mounts this one ingress for Y history content, Fc qn/Qr state, and LO Au/Vd tool history; the React timeline, Markdown, Rk/nk groups and xC/PT leaves are unchanged. Demo events remain clearly synthetic.
+- New core tests verify source-channel fanout, isolation across host/thread identifiers, event replay, clearing, stale transport callbacks and disposal. Chromium browser test exercises a single clear event invalidating both a loaded history row and the displayed qn/Qr group. Check the final commit's CI, not intermediate runs.
+- Source hashes and host schema distinction: `reports/UNIFIED_FRONTEND_HOST_EVENTS.md`.
+- Real Electron preload/IPC host event mapping and actual Agent history-event schema are still unimplemented; no main merge, backend changes, or pixel-parity claim.
+
+## 2026-10-24 — independent Electron executable startup (first real desktop smoke)
+
+- Original Windows `frontend/.vite/build/preload.js` was inspected directly from the uploaded `frontend.zip` (full SHA-256 `a3e622f8d80a83e58fb3cfcc640fa7e14e6461cccdae9ef7d7b0c821dde256b7`). The source's private `electronBridge`, worker channels and `codex_desktop:message-*` are documented, **not impersonated**. Audit `scripts/audit-electron-preload-evidence.mjs` pins eight exact signatures.
+- Added real independent `desktop/main.cjs`, `desktop/preload.cjs`, dev launcher, Electron package entrypoint and relative Vite renderer assets. It opens the existing React reconstruction under `file://`; isolated preload only exposes bounded read-only `agentWebDesktopHost` info and host event subscription. No shell/Node/privileged IPC exposed to renderer.
+- Existing `SourceConversationHostEventBridge` now subscribes to actual Electron preload events via `demo/desktopHost.ts`. No second timeline. The same Y history and Fc qn/Qr and LO tool stores/React leaves remain in use.
+- CI `xvfb-run -a npm run desktop:test:smoke` uses Playwright's actual Electron driver. **Validated implementation CI** [run 40046994355](https://github.com/wwxst/agent-web/actions/runs/40046994355) passed 395 core, 4 demo, 26 Chromium and **1 real Electron smoke**. Electron smoke checked `file://`, preload isolation, `BrowserWindow` flags and main-process -> preload -> mounted Ga/qe reaction, and saved a screenshot artifact.
+- Electron npm installation on GitHub initially skipped the executable; the workflow now checks `node_modules/electron/dist/electron` and invokes the official install script when necessary. CI concurrency cancels superseded recovery heads. Reverify final docs head separately.
+- **Not completed:** private original Codex Electron IPC, real Agent backend, installer/code signing, exact theme/icons, actual UI pixel parity and production security review. See `reports/ELECTRON_DESKTOP_HOST_STARTUP.md`.
+
+## 2026-10-24 — original primary-window chrome / native lifecycle recovery
+
+- Continued Draft PR #3 source-first against supplied original `frontend/.vite/build/main-C4DYk222.js` (SHA-256 `c8a2af504b21314fa6a64ad1b4ec83dbad80033ede902caf9978fd9c74a2c175`; nine pinned source signatures). No screenshot-guided redesign.
+- Recovered `z9/A9/k9`: native Windows/Linux transparent hidden titlebar overlay of source 36px height and OS-responsive caption symbol colors; macOS `hiddenInset` + traffic light position. Original primary minimum window size 480×600 now enforced by the real Electron main.
+- React demo uses the real native caption only in Electron; source-backed 36px draggable app titlebar hides the earlier *duplicate fake* window buttons. The browser demonstration retains its own clearly labeled illustrative titlebar; inert File/Edit/View/Help menu commands still require source recovery.
+- `i3e` primary window normal bounds/isMaximized save-restore, min bounds clamp and display-workarea intersection now wired to Electron close/startup. The independent storage is atomic JSON under `app.userData`, not an imitation of private Codex globalState.
+- Six new pure Node desktop tests plus the prior actual Electron Playwright test verify chrome and window lifecycle. One completed execution showed 395 core/4 demo/26 Chromium/7 desktop tests passing; verify final-head CI after handoff commits before reporting green.
+- Full evidence, limitations and source auditor: `reports/PRIMARY_WINDOW_CHROME_SOURCE_RECOVERY.md`, `scripts/audit-original-primary-window-chrome.mjs`. Real Windows GUI/installer and matching-build screenshot parity remain outstanding; Agent backend unchanged, main unmerged.
+
+## 2026-10-24 — native application menu source recovery and Windows desktop CI
+
+- Continued source-first from final green `2896c08`: inspected user-supplied original `frontend/.vite/build/main-C4DYk222.js` `w0e/D0e` native Electron menu builder (full SHA-256 `c8a2af504b21314fa6a64ad1b4ec83dbad80033ede902caf9978fd9c74a2c175` and 17 pinned signatures).
+- Added `desktop/nativeMenu.cjs`, real Electron application `Menu` and bounded popup IPC with valid caller, finite native anchor and fixed File/Edit/View/Help allowlist. The existing `demo/App.tsx` titlebar now triggers real native menus under Electron; browser preview still displays its non-interactive caption.
+- Restored source-confirmed native Edit roles (Undo/Redo/Cut/Copy/Paste/Delete/Select All, macOS paste-style), and a functional standalone subset of File Close/Quit, View Zoom±/Actual Size/Full Screen, Help Documentation. Codex private New Task/New Project/Search commands deliberately omitted, not faked.
+- Electron smoke now inspects actual `Menu.getApplicationMenu()`, shortcut accelerators and WebContents zoom execution, while rejecting unrecognized renderer menu requests. Node tests cover roles, shortcuts, platform variants, allowed identifiers and anchor validation.
+- Added a Windows-latest CI job to build and actually launch Electron.exe, on top of existing Linux Xvfb Electron and Chromium checks; changed `desktop:test:smoke` to explicit cross-platform paths. Check **final branch head** CI before claiming Windows validated.
+- Source evidence and remaining gaps: `reports/NATIVE_MENU_SOURCE_RECOVERY.md` and `scripts/audit-original-native-menu.mjs`. Real Codex private command bus, Agent event transport, Windows packaged installer and pixel-match remain missing. Backend untouched and main unmerged.
+
+## 2026-10-24 — D0e native sidebar / previous-next thread commands are connected
+
+- Rechecked the original user-supplied `frontend/.vite/build/main-C4DYk222.js` (`D0e`, pinned SHA-256 `c8a2af504b21314fa6a64ad1b4ec83dbad80033ede902caf9978fd9c74a2c175`). Original `toggleSidebar` dispatches `toggle-sidebar`, while `previousThread/nextThread` dispatch `run-command` to the focused webview. Original accelerators come from dynamic `commandKeymapState` and cannot be safely hardcoded.
+- Added those three **functional native menu items** in the existing View menu, with no invented shortcuts. The independent main process sends a bounded `agent-web:ui-command` envelope to its focused loaded renderer; the sandboxed preload exposes a filtered `subscribeUiCommands` event interface without general IPC.
+- Connected `demo/App.tsx` directly to its already present `setCollapsed` and `switchConversation` functions. This changes the actual mounted navigation/sidebar and existing virtualized transcript; it is not a new mock UI. Previous/next traversal uses only the **two known demo conversation entries** and is not the original private Codex tab/history model.
+- Extended native menu unit tests and both Linux/Windows **actual Electron** smoke to execute the native menu and check React sidebar state and previous/next conversation DOM. The earlier native qn/Qr IPC, zoom and history checks remain.
+- Source audit and limitations: `scripts/audit-original-sidebar-thread-menu.mjs`, `reports/NATIVE_SIDEBAR_THREAD_COMMANDS.md`. Last-head CI result must be confirmed separately. No backend edits or main merge.
+
+## 2026-10-24 — Windows sidebar menu regression fixed at guarded file:// entry
+
+- Native D0e Toggle Sidebar and Previous/Next Thread are routed via the
+  isolated preload to **existing React App state**, not another demo.
+  Source auditors: `audit-original-sidebar-thread-menu.mjs` (original
+  main bundle SHA + 8 signatures).
+- Initial Linux passed, Windows failed because menu-driven React state did
+  not change. Root cause was host renderer permission check for Windows
+  `file://` URL vs application file path; replaced manual string stripping
+  with platform-aware `fileURLToPath` + normalized path/case comparison.
+  Security restriction remains intact; arbitrary external pages denied.
+- Added 3 desktop policy tests; actual Windows Electron 14/14 and Linux
+  Electron 14/14 passed on implementation commit `c7d8f8ee`, along with
+  Chromium 26/26 and existing core. Final-head status should be read again.
+- Screenshot artifacts and exact tests are linked from PR #3.
+  Remaining scope: original dynamic command keymap, native Find in Thread,
+  full original history/tab navigation, real Agent host event protocol,
+  Windows installer and version-specific visual parity. Backend and main
+  unchanged.

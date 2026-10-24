@@ -9,13 +9,26 @@ import { createConversationLiveRow } from "../src/components/ConversationMessage
 import type { ConversationMessageItem, ConversationMessagePlanDependencies } from "../src/conversation/ConversationMessageRenderPlan.js";
 import type { ConversationRenderProjectionDependencies } from "../src/conversation/ConversationRenderEntriesModel.js";
 import type { InlineFileReviewAction, InlineReviewFile } from "../src/conversation/InlineFileReviewModel.js";
-import { getDemoBlocks } from "./mockConversation.js";
+import { getDemoBlocks, getDemoHistoryTurnItems } from "./mockConversation.js";
+import {connectDesktopHostEventBridge} from "./desktopHost.js";
 import { projectCompletedGroupHeaderParts } from "../src/conversation/AgentActivityGroupPresentation.js";
 import { aggregateAgentActivityUnits } from "../src/conversation/AgentActivityAggregate.js";
 import { groupSourceAgentActivityUnits } from "../src/conversation/AgentActivityUnitGrouping.js";
+import { isSourcePreGroupExecSuppressed } from "../src/conversation/SourcePreGroupExecFilter.js";
 import { getSourceExpandableGroupRows } from "../src/conversation/AgentActivityGroupVisibility.js";
 import { createSourceActivityCollapseState } from "../src/conversation/SourceActivityCollapseState.js";
+import {
+  createSourceTurnRuntimeStatusSource,
+  type ConnectedSourceTurnRuntimeStatusSource,
+} from "../src/conversation/SourceTurnRuntimeStatusSource.js";
+import {
+ createSourceHistoricalTurnContentSource,
+ sourceHistoricalTurnQuery,
+ type ConnectedSourceHistoricalTurnSource,
+} from "../src/conversation/SourceHistoricalTurnContentSource.js";
 import { projectSourceRepeatedActivityRows } from "../src/conversation/SourceRepeatedActivityGroups.js";
+import {resolveSourceMcpToolActivityLabel,sourceMcpLabelInputFromActivity} from "../src/conversation/SourceMcpToolActivityLabel.js";
+import { partitionSourceAeonActivity } from "../src/conversation/SourceAeonActivityPartitions.js";
 import { classifyRawActivityItem } from "../src/conversation/AgentActivityRawClassifier.js";
 import type { ExecCommandLeafProps } from "../src/components/CodexToolActivityLeafRenderer.js";
 import {
@@ -24,8 +37,9 @@ import {
   CodexSourceExecReadLeaf,
   CodexSourceExecSearchLeaf,
   CodexSourcePatchLeaf,
+  CodexSourceMcpToolCallLeaf,
 } from "../src/components/CodexSourceToolActivityLeaves.js";
-import { createToolActivityHistoryEntityStore } from "../src/conversation/ToolActivityHistoryEntityStore.js";
+import {createSourceConversationHostEventBridge} from "../src/conversation/SourceConversationHostEventBridge.js";
 import { createToolActivityHistorySource, type ConnectedToolActivityHistorySource } from "../src/conversation/ToolActivityHistorySource.js";
 import type { ToolItem } from "../src/conversation/ToolActivityDetailModel.js";
 
@@ -39,7 +53,7 @@ export const demoProjectionDependencies: ConversationRenderProjectionDependencie
 };
 
 export const demoPlanDependencies: ConversationMessagePlanDependencies = {
-  partitionActivities: (items) => [{ type: "activity", items }],
+  partitionActivities: (items,{isAeonThread}) => partitionSourceAeonActivity({items,isAeonThread,resolveMcpTask:item=>item.demoAeonTaskResult ?? null}),
   getSpecialActivityResult: () => null,
   hasPersistentActivity: () => true,
   hasRenderableActivity: (items) => items.length > 0,
@@ -101,9 +115,58 @@ function DemoFileDiff({ oldFile: oldVersion, newFile: newVersion, overflow }: {
 }
 
 export function makeDemoRow(notify: (message: string) => void) {
-  const historyStore = createToolActivityHistoryEntityStore();
+  const eventBridge=createSourceConversationHostEventBridge();
+  // Subscribe to the independent Electron preload when available, or leave
+  // the synthetic browser preview on its existing deterministic event feed.
+  connectDesktopHostEventBridge(eventBridge);
+  const historyStore=eventBridge.toolHistory;
   const collapseState = createSourceActivityCollapseState();
+  const demoMcpLabelHost = {
+    isFailedResult: (input:import("../src/conversation/SourceMcpToolActivityLabel.js").SourceMcpToolActivityLabelInput)=>
+      input.toolResult?.type==="error",
+    getToolDefinitionTitle: (definition:import("../src/conversation/SourceMcpToolActivityLabel.js").SourceMcpToolActivityLabelInput["toolDefinition"])=>
+      typeof definition?.demoTitle==="string"?definition.demoTitle:null,
+    getFallbackLabel: (input:import("../src/conversation/SourceMcpToolActivityLabel.js").SourceMcpToolActivityLabelInput)=>
+      input.toolName||null,
+  };
   const historySources = new Map<string, ConnectedToolActivityHistorySource>();
+  const historyTurnStore=eventBridge.historicalTurns;
+  const historicalTurnSources=new Map<string,ConnectedSourceHistoricalTurnSource<ConversationMessageItem>>();
+  const historyTurnQuery={
+    hostId:"demo-host",threadId:"review",entityKey:"fixture-history-content",
+  };
+  function getHistoricalTurnSource(entry:import("../src/conversation/ConversationRenderEntriesModel.js").ConversationRenderEntry){
+    const query=sourceHistoricalTurnQuery(entry);
+    if(query==null)return null;
+    const key=JSON.stringify([query.hostId,query.threadId,query.entityKey]);
+    const existing=historicalTurnSources.get(key);
+    if(existing!=null)return existing;
+    const source=createSourceHistoricalTurnContentSource(query,historyTurnStore);
+    historicalTurnSources.set(key,source);
+    return source;
+  }
+  const turnRuntimeStore=eventBridge.turnRuntime;
+  const turnRuntimeSources=new Map<string,ConnectedSourceTurnRuntimeStatusSource>();
+  const liveHistoryQuery={
+    hostId:"demo-host",threadId:"review",entityKey:"fixture-live-turn-history",
+  };
+  const liveUpNextQuery={hostId:"demo-host",threadId:"review"};
+  function getTurnRuntimeSource(entry:import("../src/conversation/ConversationRenderEntriesModel.js").ConversationRenderEntry) {
+    if(entry.turnId!=="review-live-turn-state")return null;
+    const key=JSON.stringify([entry.conversationId,entry.turnId,entry.historyEntityKey]);
+    const existing=turnRuntimeSources.get(key);
+    if(existing!=null)return existing;
+    const source=createSourceTurnRuntimeStatusSource({
+      hostId:"demo-host",threadId:"review",
+      historyEntityKey:"fixture-live-turn-history",turnStatus:"in_progress",
+      isTerminalOrSummaryTurn:false,assistantItem:null,
+      hasInlineSubagentActivity:false,isMostRecentTurn:true,
+      hasUpNextStatusItem:true,interruptedByThisClient:false,
+    },turnRuntimeStore);
+    turnRuntimeSources.set(key,source);
+    return source;
+  }
+
   function getHistorySource(item: ConversationMessageItem, isActive: boolean) {
     // DEMO only: use the fixture's stable ID as the history item ID. A real host
     // must pass the source item ID and canonical history key from its event store.
@@ -121,11 +184,13 @@ export function makeDemoRow(notify: (message: string) => void) {
     };
     const status = item.state === "Working" ? "inProgress" : "completed";
     const output = typeof item.output === "string" ? item.output : undefined;
-    historyStore.publishHistoryEntity(query, {
-      type: "commandExecution", status,
+    // One ingress for LO/Au/Vd, Y history and Fc qn/Qr; metadata remains
+    // deliberately synthetic and no command is executed.
+    eventBridge.publish({type:"tool-history-entity",query,entity:{
+      type:"commandExecution",status,
       ...(item.processId == null ? {} : {processId: item.processId}),
-      ...(output == null ? {} : {aggregatedOutput: output, exitCode: status === "completed" ? 0 : undefined}),
-    });
+      ...(output == null ? {} : {aggregatedOutput:output,exitCode:status==="completed"?0:undefined}),
+    }});
     const source = createToolActivityHistorySource({
       item: {...item, commandExecutionItemId: itemId} as ToolItem,
       queryContext,
@@ -151,7 +216,20 @@ export function makeDemoRow(notify: (message: string) => void) {
       toUnits: (items) => groupSourceAgentActivityUnits(items, {
         getGrouping: item => item.grouping === "groupable" ? "groupable" : "standalone",
         startsGroup: item => item.startsGroup === true,
+        // Only fixture-verified private fr outcomes; never assume all reads
+        // or successful commands are skippable in a real conversation.
+        shouldSkipBeforeGrouping: (item,next) => isSourcePreGroupExecSuppressed(item,next,{
+          // Undefined lets source Jt/Kt/qt run; explicit fixture outcomes
+          // may override but no broad "any SKILL.md" classification is used.
+          isSuccessfulExecution: item => item.demoSuccessfulExecution === true ? true : undefined,
+          classifyVisualizationCommand: item => item.demoVisualizationKind ?? undefined,
+          isVisualizationSkillRead: item => item.demoVisualizeSkillRead === true ? true : undefined,
+        }),
       }),
+      // Source qe uses Gi from private turn state. Only opt-in test fixtures
+      // supply it; other demo turns keep their previously verified behavior.
+      allowLatestCompletedGroup: ({items,isActive}) =>
+        items.some(item=>item.demoLatestSourceVisibility === true) ? isActive : null,
       getCollapseContext: ({ isActive, collapseWhenPossible, hasFollowingFinalAnswer }) => ({
         hasFinalAssistantStarted: !isActive,
         isTurnCancelled: false,
@@ -165,8 +243,30 @@ export function makeDemoRow(notify: (message: string) => void) {
         getRepeatedRows: items => projectSourceRepeatedActivityRows(items, {
           getGrouping: item => item.grouping==="groupable" ? "groupable" : "standalone",
           canGroupMcpResult: item => item.demoSafeMcpResult === true,
-          getToolDisplaySignature: item => item.demoToolDisplaySignature ?? null,
+          getToolDisplaySignature: item => typeof item.demoToolDisplaySignature === "string"
+            ? item.demoToolDisplaySignature : null,
         }),
+        getRecognizedRepeatedAction: item => {
+          const name=item.demoRecognizedActionLabel;
+          return typeof name==="string"?{
+            message:{id:"demo.mcp.recognizedAction",defaultMessage:name},
+            iconKey:"demo-mcp-recognized",
+          }:null;
+        },
+        renderRepeatedHeader: header => {
+          if(header.variant==="external-event")return {
+            summary:`已收到来自 ${header.sourceLabel || "未知来源"} 的 ${header.count} 个事件 · 模拟`
+          };
+          const icon=<span data-demo-repeated-icon="" aria-hidden="true">◇</span>;
+          if(header.variant==="codex-action")return {
+            icon,summary:`${header.action.message.defaultMessage} · ${header.count} 次调用 · 模拟`
+          };
+          const label=resolveSourceMcpToolActivityLabel(
+            sourceMcpLabelInputFromActivity(header.item),demoMcpLabelHost);
+          return {icon,summary:`${label.text??"工具"} · ${header.count} 次调用 · 模拟`};
+        },
+        // DEMO-only icon. XO uses mv and V_ uses bv from the original app host.
+        renderRepeatedIcon: () => <span data-demo-repeated-icon="" aria-hidden="true">◇</span>,
         renderRepeatedSummary: group => {
           const first=group.items[0];
           const count=group.items.length;
@@ -236,7 +336,7 @@ export function makeDemoRow(notify: (message: string) => void) {
         conversationId: "demo-conversation", hostId: "demo-host", cwd: "/projects/agent-web",
         isReadOnly: false, isTurnInProgress: isActive, isTurnCancelled: false,
         threadDetailLevel: "STEPS_PROSE", summaryTone: "default", showSummaryIcon: true,
-        hideRawCommand: false,
+        hideRawCommand: false,mcpLabelHost:demoMcpLabelHost,
       }),
       leafAdapters: {
         Read: CodexSourceExecReadLeaf,
@@ -244,10 +344,11 @@ export function makeDemoRow(notify: (message: string) => void) {
         ListFiles: CodexSourceExecListFilesLeaf,
         Command: DemoCommandLeaf,
         Patch: CodexSourcePatchLeaf,
+        McpToolCall: CodexSourceMcpToolCallLeaf,
       },
     },
     ActivityDetails,
-    ActivityResult: ({ result }) => <pre className="demo-activity-detail">{typeof result === "string" ? result : "模拟活动结果"}</pre>,
+    ActivityResult: ({ result }) => <pre data-demo-aeon-task-result="" className="demo-activity-detail">{typeof result === "string" ? result : result != null && typeof result === "object" && "demoLabel" in result ? String(result.demoLabel) : "模拟活动结果"}</pre>,
     GeneratedImages: () => <span className="demo-muted">图片展示尚未接通</span>,
     ThinkingStatus: ({ isVisible, showThinking }) => isVisible && showThinking
       ? <div className="demo-thinking"><span className="demo-thinking-dot"/> 正在思考（模拟）</div>
@@ -255,7 +356,7 @@ export function makeDemoRow(notify: (message: string) => void) {
     InProgressFixedContent: () => <span className="demo-muted">执行中（模拟）</span>,
     ConversationGap: () => <div className="demo-conversation-gap" />,
     FileDiff: DemoFileDiff,
-    getText: (item) => item.type === "userMessage" || item.type === "agentMessage" || item.type === "assistant-message"
+    getText: (item) => item.type === "userMessage" || item.type === "user-message" || item.type === "agentMessage" || item.type === "assistant-message"
       ? typeof item.content === "string" ? item.content : null
       : null,
     getFileReview: (item) => item.type === "demo-file-review"
@@ -281,8 +382,24 @@ export function makeDemoRow(notify: (message: string) => void) {
   const renderers = createConnectedConversationMessageRenderers(host);
   const RecoveredRow = createConversationLiveRow({
     getBlocks: getDemoBlocks,
+    getTurnRuntimeSource,
+    getHistoricalTurnSource,
     getPlanOptions: (entry) => ({ isTurnInProgress: entry.turn?.status === "inProgress", includeTurnExtras: false,
-      renderMode: entry.isLatestTurn ? "latest" : "all" }),
+      isAeonThread: entry.isAeonThread === true,
+      // The turn host supplies K/Y/ar/U/rn/we/Ui. Test-only fixture below
+      // makes those original Gi inputs explicit; no inferred task state.
+      latestActivityRetentionInput: entry.turnId === "review-source-ke-qe" ? {
+        isTurnInProgress: entry.turn?.status === "inProgress",
+        isTerminalOrSummaryTurn: false,
+        assistantItem: null,
+        hasInlineSubagentActivity: false,
+        isMostRecentTurn: entry.isMostRecentTurn === true,
+        hasUpNextStatusItem: false,
+        interruptedByThisClient: false,
+        hasResolvedUpNextState: false,
+      } : undefined,
+      renderMode: entry.turnId === "review-source-ke-qe" || entry.turnId === "review-live-turn-state"
+        ? "latest" : entry.isLatestTurn ? "latest" : "all" }),
     dependencies: demoPlanDependencies,
     renderers,
   });
@@ -293,6 +410,31 @@ export function makeDemoRow(notify: (message: string) => void) {
       {typeof props.entry.timestampSeparatorAtMs === "number" && <div className="demo-time-marker">
         {new Date(props.entry.timestampSeparatorAtMs).toLocaleString("zh-CN")}
       </div>}
+      {props.entry.turnId==="review-history-hydration" ? <div
+        data-demo-history-turn-controls="">
+        <button type="button" data-demo-load-history=""
+          onClick={()=>eventBridge.publish({type:"historical-turn",query:historyTurnQuery,
+            payload:{status:"completed",items:getDemoHistoryTurnItems()},
+          })}>模拟：读取历史回合</button>
+        <button type="button" data-demo-clear-history=""
+          onClick={()=>eventBridge.publish({type:"clear-thread",hostId:"demo-host",threadId:"review"})}>
+          模拟：清除历史缓存</button>
+      </div> : null}
+      {props.entry.turnId==="review-live-turn-state" ? <div className="demo-source-turn-controls"
+        data-demo-source-turn-controls="">
+        <button type="button" data-demo-resolve-up-next=""
+          onClick={()=>eventBridge.publish({type:"up-next-ready",query:liveUpNextQuery,ready:true})}>
+          模拟：后续状态就绪
+        </button>
+        <button type="button" data-demo-complete-turn=""
+          onClick={()=>eventBridge.publish({type:"turn-history-status",query:liveHistoryQuery,status:"completed"})}>
+          模拟：历史回合完成
+        </button>
+        <button type="button" data-demo-resume-turn=""
+          onClick={()=>eventBridge.publish({type:"turn-history-status",query:liveHistoryQuery,status:"inProgress"})}>
+          模拟：历史回合进行中
+        </button>
+      </div> : null}
       <RecoveredRow {...props} />
     </div>;
   };
@@ -300,7 +442,13 @@ export function makeDemoRow(notify: (message: string) => void) {
     dispose() {
       for (const source of historySources.values()) source.dispose();
       historySources.clear();
-      historyStore.dispose();
+      // Event bridge owns the three underlying stores.
+      for(const source of turnRuntimeSources.values())source.dispose();
+      turnRuntimeSources.clear();
+
+      for(const source of historicalTurnSources.values())source.dispose();
+      historicalTurnSources.clear();
+      eventBridge.dispose();
       collapseState.dispose();
     },
   });

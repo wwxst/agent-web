@@ -7,12 +7,14 @@ import { isMeaningfulReadToolActivity, getVisualizationActivityKind } from "../c
 import { getToolPatchDiffPresentation, getToolPatchDiffText } from "../conversation/ToolPatchDiffPresentationModel.js";
 import { CodexSourcePatchDiffPreview } from "./CodexSourcePatchDiffPreview.js";
 import { getToolCommandElapsedMs, getToolCommandSummary } from "../conversation/ToolCommandSummaryModel.js";
+import { sourceMcpLabelInputFromActivity, resolveSourceMcpToolActivityLabel } from "../conversation/SourceMcpToolActivityLabel.js";
 import type {
   ExecCommandLeafProps,
   ExecListFilesLeafProps,
   ExecReadLeafProps,
   ExecSearchLeafProps,
   PatchLeafProps,
+  McpToolCallLeafProps,
   ToolActivityOpenFileRequest,
 } from "./CodexToolActivityLeafRenderer.js";
 
@@ -334,6 +336,12 @@ function PatchFileRow(props: {
             : unified
               ? <CodexSourcePatchDiffPreview patch={diff} path={props.path} change={props.change}
                   isShortView={props.status === "pending"}
+                  frame={{
+                    path: props.path,
+                    added: counts?.added ?? 0,
+                    removed: counts?.removed ?? 0,
+                    ...(props.onOpenFile ? {onOpenFile:openFile} : {}),
+                  }}
                   header={<ApprovalReviewDetails reviews={props.automaticApprovalReviews}
                     isDeclined={props.status === "auto-review-declined"} />} />
               : <>
@@ -381,4 +389,25 @@ export function CodexSourcePatchLeaf(props: PatchLeafProps & {
       </div>
     </div>
   );
+}
+
+// Single KO MCP row shares xa title semantics with repeated XO headers.
+// Content/approval detail remains host owned, never parsed as unsafe HTML.
+export function CodexSourceMcpToolCallLeaf(props:McpToolCallLeafProps) {
+  const input=sourceMcpLabelInputFromActivity({
+    completed:props.item.completed,invocation:props.item.invocation,
+    result:props.item.result,toolDisplay:props.item.toolDisplay,
+    toolDefinition:props.item.toolDefinition,
+  });
+  const resolved=resolveSourceMcpToolActivityLabel(input,props.labelHost);
+  const invocation=isRecord(props.item.invocation)?props.item.invocation:null;
+  const visibleLabel=resolved.text ?? text(invocation?.tool) ?? "MCP 工具";
+  return <div className="codex-source-tool-leaf"
+      data-codex-source-leaf="mcp-tool-call"
+      data-codex-source-mcp-title-source={resolved.source}
+      data-codex-source-mcp-completed={String(input.completed)}>
+    <ToolSummaryWithReviews label={visibleLabel} summaryIcon={props.summaryIcon}
+      automaticApprovalReviews={props.item.automaticApprovalReviews}/>
+    {props.renderResult?.(props.item)}
+  </div>;
 }

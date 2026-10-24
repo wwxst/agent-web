@@ -12,6 +12,13 @@
   --height-toolbar-sm: 36px;
   --height-titlebar: calc(var(--spacing) * 11);
   --thread-content-max-width: 48rem;
+  /* app-shared root and original conversation-gap item/grouped variants. */
+  --font-ui-size: 13px;
+  --font-code-size: 12px;
+  --codex-chat-font-size: var(--font-ui-size);
+  --codex-chat-code-font-size: var(--font-code-size);
+  --conversation-item-gap: 16px;
+  --conversation-grouped-item-gap: 4px;
   --spacing-token-sidebar: clamp(240px, var(--codex-sidebar-preferred-width, 275px), min(520px, calc(100vw - 320px)));
   --composer-radius: calc(var(--spacing) * 5.5);
   --color-surface-elevated-secondary: #fff;
@@ -84,21 +91,65 @@ button:focus-visible, textarea:focus-visible { outline: 2px solid #578cda; outli
 .demo-toolbar {padding:0;border:0;gap:6px;justify-content:flex-start;}
 .demo-toolbar button{background:#f8f8f8;color:#454545;border:1px solid #e8e8e8;padding:6px 9px;font-size:11px;}
 .demo-toolbar button:not(:disabled):hover{background:#ededed;color:#272727;}
-.demo-scroll-region {scrollbar-color:#d7d7d7 transparent;scrollbar-width:thin;}
-.demo-transcript-column {width:min(100% - 64px,var(--thread-content-max-width));padding-bottom:10px;}
+.demo-scroll-region {
+  scrollbar-color:#d7d7d7 transparent;
+  scrollbar-width:thin;
+  outline:none;
+  /* The source scroll host sets this to the measured footer height + 16px. */
+  scroll-padding-bottom:var(--thread-scroll-padding-bottom,0px);
+  overflow-anchor:none;
+}
+/* Original default thread-scroll-layout wraps content and its sticky footer
+ * clearance within one min-h-full flex column. */
+.demo-thread-scroll-content {
+  display:flex;
+  flex-direction:column;
+  min-height:100%;
+  min-width:0;
+}
+.demo-thread-footer-clearance {
+  position:sticky;
+  bottom:0;
+  z-index:10;
+  flex-shrink:0;
+  margin-top:auto;
+  pointer-events:none;
+  width:100%;
+  height:max(0px,calc(var(--thread-scroll-padding-bottom,0px) - var(--spacing,4px) * 4));
+}
+.demo-thread-footer-fade {
+  position:absolute;
+  inset-inline:0;
+  bottom:0;
+  height:calc(var(--spacing,4px) * 8);
+  pointer-events:none;
+  /* Original i_i part=fade uses from-surface and a to-top gradient. */
+  background:linear-gradient(to top,var(--color-surface,#fff),transparent);
+}
+/* Original thread-scroll-layout: outline-none + focus-visible:ring-2 inset. */
+.demo-scroll-region:focus-visible {
+  outline:2px solid var(--color-ring,#578cda);
+  outline-offset:-2px;
+}
+.demo-transcript-column {
+  width:min(100% - 64px,var(--thread-content-max-width));
+  /* Source transcriptContent has pb-8; footer clearance is its own sticky
+   * sibling, not an additional padding on each transcript row. */
+  padding-bottom:calc(var(--spacing,4px) * 8);
+}
 .demo-conversation-intro {padding:24px 0 12px;}
 /* The thread title belongs to the real header surface, not an extra hero block. */
 .demo-conversation-intro h1 {position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;}
 .demo-worked-label {display:flex;align-items:center;gap:5px;color:#989898;font-size:12.5px;padding:0 0 8px;border-bottom:1px solid #e9e9e9;}
 .demo-worked-label span{font-size:10px;color:#b1b1b1;}
-.demo-row{font-size:13px;line-height:1.65;}
+.demo-row{font-size:var(--codex-chat-font-size);line-height:1.65;}
 .demo-row--user > div:not(.demo-time-marker){max-width:84%;}
 [data-conversation-message="user"] {background:#f2f2f2;color:#323232;padding:10px 14px;border-radius:15px;}
 .demo-row--assistant {padding:1px 0 2px;}
-.demo-markdown,.demo-markdown--user {font-size:13.5px;line-height:1.75;color:#292929;}
+.demo-markdown,.demo-markdown--user {font-size:var(--codex-chat-font-size);line-height:1.75;color:#292929;}
 .demo-markdown strong {color:#242424;}
 .demo-markdown p {margin-bottom:11px;}
-.demo-markdown code{background:#eeeeee;color:#454545;font-size:12px;border-radius:4px;padding:2px 5px;}
+.demo-markdown code{background:#eeeeee;color:#454545;font-size:var(--codex-chat-code-font-size);border-radius:4px;padding:2px 5px;}
 .demo-markdown pre{background:#f8f8f8;border:1px solid #e7e7e7;color:#303030;}
 .demo-markdown blockquote{color:#777;border-color:#dddddd;}
 .demo-markdown a{color:#2464a4;}
@@ -122,7 +173,33 @@ button:focus-visible, textarea:focus-visible { outline: 2px solid #578cda; outli
 .demo-row--activity ins,.demo-diff-plus{background:#e1f2e5;color:#276241;}
 .demo-thinking,.demo-muted{color:#888;}
 .demo-full-diff{background:#f9f9f9;}
-.demo-composer-zone {padding:8px 30px 15px;background:linear-gradient(0deg,#fff 91%,#fffc);}
+.demo-composer-zone {
+  /* Source thread-scroll-layout default footer: absolute inset-x-0
+   * bottom-0 z-20; interactive descendants remain pointer-enabled. */
+  position:absolute;
+  inset-inline:0;
+  bottom:0;
+  z-index:20;
+  pointer-events:none;
+  padding:8px 30px 15px;
+  background:transparent;
+}
+.demo-thread-footer-surface {
+  position:absolute;
+  inset-inline:0;
+  bottom:0;
+  top:calc(var(--spacing,4px) * -8);
+  margin-top:calc(var(--spacing,4px) * 8);
+  z-index:0;
+  pointer-events:none;
+  background:var(--color-surface,#fff);
+}
+.demo-composer-zone > .demo-composer-wrap {
+  position:relative;
+  z-index:10;
+  pointer-events:auto;
+}
+
 .demo-composer-wrap {width:min(100%,var(--thread-content-max-width));}
 .demo-composer {background:var(--color-surface-elevated-secondary);border:1px solid #e9e9e9;box-shadow:0 3px 16px #00000008;border-radius:var(--composer-radius);min-height:98px;}
 .demo-composer:focus-within{border-color:#c8c8c8;}
@@ -153,4 +230,72 @@ button:focus-visible, textarea:focus-visible { outline: 2px solid #578cda; outli
 /* No second 56px mini-sidebar: the original rail already owns that area. */
 @media (max-width:600px) {
   [data-app-shell-feature-navigation="true"] .demo-sidebar:not(.demo-sidebar--collapsed) { width: var(--spacing-token-sidebar); min-width: var(--spacing-token-sidebar); }
+}
+
+/* Real Electron's native framed window owns title-bar controls. The browser
+ * preview keeps its explicit fake 36px window-menu fixture; do not stack both. */
+:root[data-desktop-shell="true"] .demo-window-menu { display:none; }
+
+/* Pinned thread-app-shell-chrome Ps/Fs: a separate main-focus toolbar
+ * contains the thread title and header actions. Do not add a second toolbar. */
+.demo-titlebar-toolbar {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:20px;
+  width:100%;
+  min-width:0;
+  height:100%;
+  user-select:none;
+}
+.demo-titlebar-toolbar [data-app-shell-titlebar-content] { min-width:0; flex:1; }
+
+/* Original uUa left panel is the positioning root for its outside sbi
+ * hit area. It must paint above the thread viewport at the shared edge. */
+.demo-sidebar {
+  position:relative;
+  z-index:13;
+  overflow:visible;
+  /* Original JFu/YFu width writes apply immediately during keyboard and
+   * pointer resizing. Remove the old preview-only width/min-width transition,
+   * which moves the hit target away from the pointer after a rapid reset. */
+  transition-property:background-color;
+  transition-duration:.12s;
+}
+
+/* Original main-C4DYk222 z9(primary): Windows/Linux titleBarStyle hidden
+   + transparent A9 overlay at 36px. Only native Electron uses this.
+   Browser screenshots retain explicit non-interactive example controls. */
+.demo-desktop[data-independent-electron="true"] .demo-window-menu {
+  -webkit-app-region: drag;
+  padding-right: 148px; /* reserve native minimize/maximize/close hit targets */
+  height: 36px;
+  min-height: 36px;
+}
+.demo-desktop[data-independent-electron="true"] .demo-window-buttons {
+  display: none; /* native Electron owns caption buttons */
+}
+.demo-desktop[data-independent-electron="true"] button,
+.demo-desktop[data-independent-electron="true"] input,
+.demo-desktop[data-independent-electron="true"] textarea,
+.demo-desktop[data-independent-electron="true"] a,
+.demo-desktop[data-independent-electron="true"] [role="button"] {
+  -webkit-app-region: no-drag;
+}
+
+/* Original compiled w0e/D0e builds the native Electron application menu.
+   The standalone desktop renderer only supplies trusted popup anchors. */
+.demo-desktop[data-independent-electron="true"] .demo-native-application-menus {
+  display:flex;align-items:center;gap:4px;
+  -webkit-app-region:no-drag;
+}
+.demo-desktop[data-independent-electron="true"] .demo-native-application-menus > button {
+  -webkit-app-region:no-drag;
+  appearance:none;background:transparent;border:0;
+  padding:3px 9px;border-radius:5px;
+  font-size:13px;line-height:19px;color:#6e6e6e;cursor:default;
+}
+.demo-desktop[data-independent-electron="true"] .demo-native-application-menus > button:hover,
+.demo-desktop[data-independent-electron="true"] .demo-native-application-menus > button:focus-visible {
+  background:#eaeaea;color:#292929;
 }

@@ -1,0 +1,65 @@
+/*
+ * BT frame reconstructed from original sites-end-resource BT → VT:
+ * border-default rounded-lg, muted file name + line counts, right-hand copy
+ * control, separate bg-surface-tertiary content. No proprietary icon assets.
+ */
+.codex-source-diff-frame {
+  display:flex;
+  flex-direction:column;
+  min-width:0;
+  border:1px solid var(--color-border-default,var(--demo-border,#e5e5e5));
+  border-radius:var(--radius-lg,8px);
+  overflow:hidden;
+}
+.codex-source-diff-frame__header {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  min-width:0;
+  gap:8px;
+  padding:2px 10px;
+  min-height:26px;
+  /* BT's bg-background-primary-ghost-hover/60, not an opaque gray fill. */
+  background:color-mix(in srgb,var(--color-background-primary-ghost-hover,#0000000d) 60%,transparent);
+  border-bottom:1px solid var(--color-border-default,var(--demo-border,#e5e5e5));
+  color:var(--color-codex-description,var(--demo-dim,#777));
+  /* BT uses text-size-chat-sm from app-shared. */
+  font-size:calc(var(--codex-chat-font-size,13px) - 1px);
+  line-height:1.55;
+}
+.codex-source-diff-frame__file { display:flex; align-items:center; gap:8px; min-width:0; }
+.codex-source-diff-frame__path {
+  display:block;
+  min-width:0;
+  max-width:100%;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  font-size:inherit;
+  border:0;
+  padding:0;
+  background:transparent;
+  color:inherit;
+}
+button.codex-source-diff-frame__path { cursor:pointer; text-align:start; }
+button.codex-source-diff-frame__path:hover { text-decoration:underline; }
+.codex-source-diff-frame__stats { display:inline-flex; align-items:center; gap:4px; flex:none; }
+.codex-source-diff-frame__stats .is-added { color:var(--color-text-success,#178343); }
+.codex-source-diff-frame__stats .is-removed { color:var(--color-text-danger,#d34242); }
+.codex-source-diff-frame__copy {
+  flex:none;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  border:0;
+  background:transparent;
+  color:inherit;
+  border-radius:4px;
+  padding:3px;
+  cursor:pointer;
+}
+.codex-source-diff-frame__copy:hover { background:var(--color-background-primary-ghost-hover,var(--demo-raised,#eee)); }
+.codex-source-diff-frame__copy:focus-visible,
+.codex-source-diff-frame__path:focus-visible { outline:2px solid var(--demo-accent,#777); outline-offset:2px; }
+.codex-source-diff-frame__body { min-width:0; background:var(--color-surface-tertiary,var(--demo-panel,#fff)); }

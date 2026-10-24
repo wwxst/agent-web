@@ -19,7 +19,10 @@ test('demo creates two separate deterministic conversations', () => {
   const b = createDemoSource('review');
   assert.equal(a.getSnapshot().conversationId, 'frontend');
   assert.equal(b.getSnapshot().conversationId, 'review');
-  assert.notEqual(a.getSnapshot().entries.length, b.getSnapshot().entries.length);
+  assert.ok(a.getSnapshot().entries.length > 0);
+  assert.ok(b.getSnapshot().entries.length > 0);
+  assert.equal(a.getSnapshot().entries.some(e => e.turnId === 'review-history-hydration'), false);
+  assert.equal(b.getSnapshot().entries.some(e => e.turnId === 'review-history-hydration'), true);
   assert.notEqual(a.getSnapshot().entries[0].turnId, b.getSnapshot().entries[0].turnId);
   a.dispose(); b.dispose();
 });

@@ -1,6 +1,6 @@
 import {test,expect} from "@playwright/test";
 
-test("source Je/bg opens only the eligible consecutive MCP calls and keeps the barrier separate",async ({page})=>{
+test("source Je/bg uses A_ phase disclosure with XO icon and keeps ineligible MCP calls separate",async ({page})=>{
   const errors:string[]=[];page.on("pageerror",error=>errors.push(error.message));
   await page.goto("/");
   await page.getByRole("button",{name:/工具调用与审批交互/}).click();
@@ -12,15 +12,52 @@ test("source Je/bg opens only the eligible consecutive MCP calls and keeps the b
   await expect(group).toBeVisible();
   await group.locator(".codex-activity-group-row__toggle").click();
   const repeated=group.locator('[data-codex-source-repeated-group="mcp-tool-call"]');
-  await expect(repeated).toHaveCount(1);
-  await expect(repeated.locator("summary")).toContainText("search · 2 次调用");
-  await expect(repeated.locator("[data-codex-source-repeated-body]")).toBeHidden();
-  await repeated.locator("summary").click();
-  await expect(repeated.locator("[data-codex-source-repeated-body]")).toBeVisible();
-  await expect(repeated.locator(".codex-activity-group-row__subrow")).toHaveCount(2);
+  const toggle=repeated.first().locator("[data-codex-source-repeated-toggle]");
+  await expect(repeated).toHaveCount(2);
+  await expect(repeated.first()).toHaveAttribute("data-codex-source-repeated-header-variant","mcp-tool");
+  await expect(repeated.nth(1)).toHaveAttribute("data-codex-source-repeated-header-variant","codex-action");
+  await expect(repeated.nth(1)).toContainText("已搜索文件 · 2 次调用");
+  await expect(toggle).toContainText("已搜索资料 · 2 次调用");
+  await expect(repeated.first().locator("[data-demo-repeated-icon]")).toBeVisible();
+  await expect(repeated.first()).toHaveAttribute("data-source-disclosure-phase","collapsed");
+  await expect(toggle).toHaveAttribute("aria-expanded","false");
+  await expect(repeated.first().locator("[data-codex-source-repeated-body]")).toHaveCount(0);
+  await toggle.click();
+  await expect(toggle).toHaveAttribute("aria-expanded","true");
+  await expect(repeated.first()).toHaveAttribute("data-source-disclosure-phase","expanded");
+  await expect(repeated.first().locator("[data-codex-source-repeated-body]")).toBeVisible();
+  await expect(repeated.first().locator(".codex-activity-group-row__subrow")).toHaveCount(2);
   await expect(group.locator(".codex-activity-group-row__subrow")).toHaveCount(4);
-  await expect(group.locator('[data-codex-source-repeated-group="external-event"]')).toHaveCount(0);
-  await repeated.locator("summary").click();
-  await expect(repeated.locator("[data-codex-source-repeated-body]")).toBeHidden();
+  const external=group.locator('[data-codex-source-repeated-group="external-event"]');
+  await expect(external).toHaveCount(1);
+  const externalToggle=external.locator("[data-codex-source-repeated-toggle]");
+  await expect(externalToggle).toContainText("Slack");
+  await expect(externalToggle).toContainText("2 个事件");
+  await expect(external).toHaveAttribute("data-source-disclosure-phase","collapsed");
+  await expect(external.locator("[data-codex-source-repeated-body]")).toHaveCount(0);
+  await externalToggle.click();
+  await expect(external).toHaveAttribute("data-source-disclosure-phase","expanded");
+  await expect(external.locator(".codex-activity-group-row__subrow")).toHaveCount(2);
+  await expect(group.locator(".codex-activity-group-row__subrow")).toHaveCount(6);
+  await externalToggle.click();
+  await expect(external).toHaveAttribute("data-source-disclosure-phase","collapsed");
+  await toggle.click();
+  await expect(toggle).toHaveAttribute("aria-expanded","false");
+  // A_ deliberately preserves children through closing; it unmounts after motion.
+  await expect(repeated.first()).toHaveAttribute("data-source-disclosure-phase","collapsed");
+  await expect(repeated.first().locator("[data-codex-source-repeated-body]")).toHaveCount(0);
+  // Reopen from the same virtual turn; the existing children and tool leaves work.
+  await toggle.click();
+  await expect(repeated.first()).toHaveAttribute("data-source-disclosure-phase","expanded");
+  await expect(repeated.first().locator(".codex-activity-group-row__subrow")).toHaveCount(2);
+  // A distinct recognized Codex action can expand independently of the
+  // generic MCP subgroup and uses the recovered XO variant.
+  const recognizedToggle=repeated.nth(1).locator("[data-codex-source-repeated-toggle]");
+  await recognizedToggle.click();
+  await expect(repeated.nth(1)).toHaveAttribute("data-source-disclosure-phase","expanded");
+  await expect(repeated.nth(1).locator(".codex-activity-group-row__subrow")).toHaveCount(2);
+  await expect(group.locator(".codex-activity-group-row__subrow")).toHaveCount(6);
+  await recognizedToggle.click();
+  await expect(repeated.nth(1)).toHaveAttribute("data-source-disclosure-phase","collapsed");
   expect(errors).toEqual([]);
 });

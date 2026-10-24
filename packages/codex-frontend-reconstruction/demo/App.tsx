@@ -3,11 +3,14 @@ import { CodexComposerLayout } from "../src/components/CodexComposerLayout.js";
 import { CodexSourceComposerHostForm } from "../src/components/CodexSourceComposerHostForm.js";
 import { DemoProseMirrorComposerEditor } from "./DemoProseMirrorComposerEditor.js";
 import { CodexNavigationRail, type CodexRailDestination } from "../src/components/CodexNavigationRail.js";
+import { CodexSourceSidebarResizeHandle } from "../src/components/CodexSourceSidebarResizeHandle.js";
+import { clampSourceSidebarWidth } from "../src/conversation/SourceSidebarResizeModel.js";
 import { projectNavigationDestinations } from "../src/conversation/NavigationRailModel.js";
 import type { VirtualizedTurnListApi } from "../src/components/VirtualizedTurnList.js";
 import { ConnectedLiveConversationTranscript } from "../src/components/ConnectedLiveConversationTranscript.js";
 import { resolveComposerSubmitDecision } from "../src/conversation/ComposerInteractionModel.js";
 import { resolveComposerPrimaryAction } from "../src/conversation/ComposerPrimaryActionModel.js";
+import { SOURCE_CONVERSATION_ITEM_GAP_PX } from "../src/conversation/SourceConversationLayoutTokens.js";
 import { BrowserScrollController } from "./browserScrollController.js";
 import { makeDemoRow, demoProjectionDependencies } from "./adapters.js";
 import {
@@ -60,8 +63,9 @@ function ConversationSidebar(props: {
   onSelect: (id: DemoConversationId) => void;
   onReset: () => void;
   navigationRailEnabled: boolean;
+  resizeHandle?:React.ReactNode;
 }) {
-  const { active, collapsed, onToggle, onSelect, onReset, navigationRailEnabled } = props;
+  const { active, collapsed, onToggle, onSelect, onReset, navigationRailEnabled, resizeHandle } = props;
   return <aside className={`demo-sidebar ${collapsed ? "demo-sidebar--collapsed" : ""}`} aria-label="演示会话导航">
     <div className="demo-sidebar-head">
       <div className="demo-logo">{collapsed ? <Icon name="folder" size={18}/> : <><strong>Codex</strong><Icon name="chevron" size={12}/></>}</div>
@@ -86,6 +90,7 @@ function ConversationSidebar(props: {
       <div className="demo-section-heading demo-recent-heading">Recents</div>
       {!navigationRailEnabled && <div className="demo-sidebar-foot"><Icon name="settings" size={15}/> 预览环境 · 本地模拟数据</div>}
     </>}
+    {!collapsed && resizeHandle}
   </aside>;
 }
 
@@ -96,6 +101,26 @@ export function App() {
   // to exercise the independently reconstructed original navigation layout.
   const navigationRailEnabled = true;
   const [collapsed, setCollapsed] = React.useState(false);
+  const [sidebarWidth,setSidebarWidth]=React.useState(275);
+  const [availableWidth,setAvailableWidth]=React.useState(()=>
+    typeof window==="undefined"?1352:window.innerWidth);
+  React.useEffect(()=>{
+    const update=()=>{
+      const width=window.innerWidth;
+      setAvailableWidth(width);
+      setSidebarWidth(current=>clampSourceSidebarWidth(current,width));
+    };
+    window.addEventListener("resize",update);
+    return ()=>window.removeEventListener("resize",update);
+  },[]);
+  // Source JFu/YFu writes the preference to documentElement: the original
+  // --spacing-token-sidebar is defined on :root and evaluated there.
+  // Overriding only an App descendant leaves the inherited width stale.
+  React.useLayoutEffect(()=>{
+    const root=document.documentElement;
+    root.style.setProperty("--codex-sidebar-preferred-width",`${sidebarWidth}px`);
+    return ()=>{root.style.removeProperty("--codex-sidebar-preferred-width");};
+  },[sidebarWidth]);
   const [measuredRailWidth, setMeasuredRailWidth] = React.useState(52);
   const [draft, setDraft] = React.useState("");
   const [playing, setPlaying] = React.useState(false);
@@ -103,6 +128,7 @@ export function App() {
   const [historyAdded, setHistoryAdded] = React.useState(false);
   const [showDemoTools, setShowDemoTools] = React.useState(false);
   const scrollElementRef = React.useRef<HTMLDivElement | null>(null);
+  const composerFooterRef = React.useRef<HTMLDivElement | null>(null);
   const virtualizerApiRef = React.useRef<VirtualizedTurnListApi | null>(null);
   const timerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   const toastTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -124,6 +150,38 @@ export function App() {
   const scrollToBottom = React.useCallback(() => {
     shouldFollowRef.current = true;
     scrollController.scrollToDistanceFromBottomPx(0, "instant");
+  }, [scrollController]);
+  // Original thread-scroll-layout (Wt/Gt) measures the default footer and
+  // writes its real height + 16px onto the active scroll container.
+  // Preserve the existing BrowserScrollController and virtualizer; do not
+  // introduce a second scroll host or imitate a fake Electron footer.
+  React.useLayoutEffect(() => {
+    const footer = composerFooterRef.current;
+    const scroll = scrollElementRef.current;
+    if (footer == null || scroll == null) return;
+    let frame: number | null = null;
+    const update = () => {
+      const height = footer.getBoundingClientRect().height;
+      const next = `${height + 16}px`;
+      if (scroll.style.getPropertyValue("--thread-scroll-padding-bottom") === next) return;
+      const wasFollowing = shouldFollowRef.current;
+      scroll.style.setProperty("--thread-scroll-padding-bottom", next);
+      // The source preserves bottom-following on Footer resize. The
+      // browser-only host exposes a synchronous equivalent controller.
+      if (wasFollowing) {
+        if (frame != null) window.cancelAnimationFrame(frame);
+        frame = window.requestAnimationFrame(() =>
+          scrollController.scrollToDistanceFromBottomPx(0, "instant"));
+      }
+    };
+    const observer = new ResizeObserver(update);
+    observer.observe(footer);
+    update();
+    return () => {
+      observer.disconnect();
+      if (frame != null) window.cancelAnimationFrame(frame);
+      scroll.style.removeProperty("--thread-scroll-padding-bottom");
+    };
   }, [scrollController]);
   const onVisibleContentReady = React.useCallback(() => {
     if (shouldFollowRef.current) scrollToBottom();
@@ -244,6 +302,28 @@ export function App() {
     setActive(id);
   }
 
+  // Original D0e routes native Toggle Sidebar / previousThread / nextThread
+  // through renderer commands. Our standalone host maps only these proven
+  // commands onto EXISTING sidebar/conversation state (demo routes, not
+  // the private Codex navigation/history store).
+  React.useEffect(() => {
+    const host=window.agentWebDesktopHost;
+    if(host==null)return;
+    return host.subscribeUiCommands(command=>{
+      if(command==="toggle-sidebar"){
+        setCollapsed(value=>!value);
+        return;
+      }
+      const index=DEMO_CONVERSATIONS.findIndex(entry=>entry.id===active);
+      if(index<0)return;
+      const destination=command==="previous-thread"?index-1:index+1;
+      if(destination>=0&&destination<DEMO_CONVERSATIONS.length){
+        const id=DEMO_CONVERSATIONS[destination]?.id;
+        if(id!=null)switchConversation(id);
+      }
+    });
+  },[active]);
+
   // The direct/more identity projection is sourced from original GZc/QZc;
   // routing/feature flags are supplied explicitly by this mock host.
   const availableRailDestinations: CodexRailDestination[] = [
@@ -261,11 +341,22 @@ export function App() {
     availableRailDestinations.find((candidate) => candidate.id === item.id)!,
   );
 
-  return <div className="demo-desktop" data-app-shell-frame="true" data-app-shell-feature-navigation={navigationRailEnabled} data-app-shell-sidebar-open={!collapsed} data-app-shell-application-menu-bar="true" style={{ "--app-shell-navigation-rail-width": navigationRailEnabled ? `${measuredRailWidth}px` : "0px" } as React.CSSProperties}>
-    <div className="demo-window-menu" aria-label="桌面窗口示意（浏览器内，不是原生 Electron）">
+  return <div className="demo-desktop" data-app-shell-frame="true" data-independent-electron={window.agentWebDesktopHost != null} data-app-shell-feature-navigation={navigationRailEnabled} data-app-shell-sidebar-open={!collapsed} data-app-shell-application-menu-bar="true" style={{ "--app-shell-navigation-rail-width": navigationRailEnabled ? `${measuredRailWidth}px` : "0px" } as React.CSSProperties}>
+    <div className="demo-window-menu" aria-label={window.agentWebDesktopHost != null ? "Electron 原生标题栏拖拽区域" : "桌面窗口示意（浏览器内，不是原生 Electron）"}>
       <span className="demo-menubar-back" aria-hidden="true">‹</span><span className="demo-menubar-back" aria-hidden="true">›</span>
       <span className="demo-menubar-panel" aria-hidden="true"><Icon name="panel" size={15}/></span>
-      <span>File</span><span>Edit</span><span>View</span><span>Help</span>
+      {window.agentWebDesktopHost != null ? (
+        <div className="demo-native-application-menus" aria-label="Electron 原生应用菜单">
+          {(["file","edit","view","help"] as const).map((id) => (
+            <button key={id} type="button" data-desktop-menu={id}
+              aria-label={`${id[0]!.toUpperCase()}${id.slice(1)} 菜单`}
+              onClick={(event) => {
+                const box=event.currentTarget.getBoundingClientRect();
+                void window.agentWebDesktopHost?.openMenu(id,{x:box.left,y:box.bottom});
+              }}>{id[0]!.toUpperCase()}{id.slice(1)}</button>
+          ))}
+        </div>
+      ) : <><span>File</span><span>Edit</span><span>View</span><span>Help</span></>}
       <span className="demo-window-buttons" aria-hidden="true">─　□　×</span>
     </div>
     <div className="demo-app" data-codex-shell-preview="light">
@@ -277,14 +368,22 @@ export function App() {
         <button type="button" disabled aria-label="Settings（尚未接入）" title="设置尚未接入"><Icon name="settings" size={18}/></button>
       </>}
     />}
-    <ConversationSidebar active={active} collapsed={collapsed} navigationRailEnabled={navigationRailEnabled} onToggle={() => setCollapsed((v) => !v)} onSelect={switchConversation} onReset={reset}/>
-    <div className="demo-main" data-app-shell-main-surface="default">
+    <ConversationSidebar active={active} collapsed={collapsed} navigationRailEnabled={navigationRailEnabled} onToggle={() => setCollapsed((v) => !v)} onSelect={switchConversation} onReset={reset}
+      resizeHandle={<CodexSourceSidebarResizeHandle
+        width={sidebarWidth} availableWidth={availableWidth}
+        onWidthChange={setSidebarWidth}/>}/>
+    <div className="demo-main" data-app-shell-main-surface="default"
+      data-thread-scroll-layout="default">
       <header className="demo-header" data-app-shell-main-titlebar="true">
-        <div className="demo-header-location"><span className="demo-header-folder"><Icon name="folder" size={17}/></span><strong>{DEMO_CONVERSATIONS.find((c) => c.id === active)?.title}</strong></div>
+        <div className="demo-titlebar-toolbar" role="toolbar" aria-label="聊天工具栏"
+          data-app-shell-focus-area="main">
+        <div className="demo-header-location" data-app-shell-titlebar-content="true">
+          <span className="demo-header-folder"><Icon name="folder" size={17}/></span><strong>{DEMO_CONVERSATIONS.find((c) => c.id === active)?.title}</strong></div>
         <div className="demo-header-actions">
           <span className="demo-header-static" title="原版桌面按钮布局参考，暂未接通功能"><Icon name="dots" size={17}/></span>
           <button type="button" className="demo-icon-button" title={showDemoTools ? "收起演示工具" : "打开演示工具"} aria-label={showDemoTools ? "收起演示工具" : "打开演示工具"} aria-expanded={showDemoTools} onClick={() => setShowDemoTools((value) => !value)}><Icon name="sliders" size={17}/></button>
           <button type="button" className="demo-icon-button demo-collapse-toggle" aria-label={collapsed ? "展开侧边栏" : "收起侧边栏"} onClick={() => setCollapsed((value) => !value)}><Icon name="panel" size={17}/></button>
+        </div>
         </div>
       </header>
       {showDemoTools && <div className="demo-tools-popover" data-testid="demo-tools">
@@ -297,10 +396,14 @@ export function App() {
           <button type="button" onClick={reset}><Icon name="refresh" size={15}/> 重置</button>
         </div>
       </div>}
-      <div className="demo-scroll-region" ref={scrollElementRef} onScroll={() => {
+      <div className="demo-scroll-region" ref={scrollElementRef}
+        role="region" tabIndex={0} aria-label="对话"
+        data-thread-scroll-viewport=""
+        onScroll={() => {
         scrollController.notifyScroll();
         shouldFollowRef.current = scrollController.getLastScrollDistanceFromBottomPx() < 120;
       }} data-testid="transcript-scroll">
+        <div className="demo-thread-scroll-content" data-source-thread-scroll-content="">
         <div className="demo-transcript-column">
           <div className="demo-conversation-intro"><h1>{DEMO_CONVERSATIONS.find((c) => c.id === active)?.title}</h1><div className="demo-worked-label">Worked for 2m 11s <Icon name="chevron" size={12}/><span> · mock</span></div></div>
           <ConnectedLiveConversationTranscript
@@ -309,7 +412,7 @@ export function App() {
             projectionDependencies={demoProjectionDependencies}
             RowComponent={DemoRow}
             scrollController={scrollController}
-            gapPx={22}
+            gapPx={SOURCE_CONVERSATION_ITEM_GAP_PX}
             overscanCount={4}
             onApiChange={onApiChange}
             onVisibleContentReady={onVisibleContentReady}
@@ -318,8 +421,14 @@ export function App() {
           />
           <div className="demo-thread-end" aria-hidden="true"/>
         </div>
+        <div className="demo-thread-footer-clearance" data-thread-footer-clearance="" aria-hidden="true">
+          <div className="demo-thread-footer-fade" data-thread-footer-background-part="fade"/>
+        </div>
+        </div>
       </div>
-      <div className="demo-composer-zone">
+      <div className="demo-composer-zone" ref={composerFooterRef}
+        data-thread-scroll-footer="true" data-thread-footer-placement="bottom">
+        <div className="demo-thread-footer-surface" data-thread-footer-background-part="surface" aria-hidden="true"/>
         <CodexSourceComposerHostForm className="demo-composer-wrap"
           integratedVoiceModeActive={false} hasUploadPolicy={false}
           onSubmit={() => { if (composerAction.kind === "send") sendMessage(); }}>

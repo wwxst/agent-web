@@ -6,6 +6,10 @@ import type { ConversationRenderEntry } from "../src/conversation/ConversationRe
 import type { ConversationMessageItem, ConversationTranscriptBlock } from "../src/conversation/ConversationMessageRenderPlan.js";
 import { createLiveConversationSource } from "../src/conversation/LiveConversationSource.js";
 import { projectSourceTurnTranscriptBlocks } from "../src/conversation/SourceTurnTranscriptBlocks.js";
+import {
+ selectSourceHistoricalTurnItems,
+ type SourceHistoricalTurnSnapshot,
+} from "../src/conversation/SourceHistoricalTurnContentSource.js";
 import type { TurnItem, Dependencies } from "../src/conversation/TurnItemRenderGroups.js";
 
 export type DemoSource = ReturnType<typeof createLiveConversationSource>;
@@ -68,7 +72,20 @@ export function demoRawTurnEntry(id: string, items: TurnItem[]): ConversationRen
     turn: { items, status: "completed" },
   };
 }
-export function getDemoBlocks(entry: ConversationRenderEntry): readonly ConversationTranscriptBlock[] {
+export function getDemoBlocks(
+ entry:ConversationRenderEntry,
+ historical?:SourceHistoricalTurnSnapshot<ConversationMessageItem>|null,
+):readonly ConversationTranscriptBlock[] {
+ if(entry.turn == null && historical?.loaded === true && entry.historyEntityKey != null){
+   const items=selectSourceHistoricalTurnItems(historical,entry.turnItemIds);
+   return projectSourceTurnTranscriptBlocks({
+     turnId:entry.turnId??entry.turnSearchKey??"history",
+     items:items as TurnItem[],
+     status:historical.status??"completed",
+     mode:entry.isLatestTurn?"latest":"all",
+     dependencies:fixtureTurnDependencies,
+   });
+ }
   const items: unknown = entry.turn?.items;
   if (Array.isArray(items) && items.length > 0) {
     return projectSourceTurnTranscriptBlocks({
@@ -116,6 +133,25 @@ function frontendScenario(): ConversationRenderEntry[] {
     })]),
     demoMessageEntry("assistant", "last", "这是一套 **Codex 风格集成演示**：当前可验证的是组件如何协作，而不是完成了原版全部功能。可以点击左侧会话、滚动历史、查看审批和 Diff，或者在下面的输入区体验模拟发送。"),
   ];
+}
+
+/** Explicit synthetic turn history payload; identical IDs in the Y base
+ * turn and the subscription. Production reads history from a host query. */
+export function getDemoHistoryTurnItems(): TurnItem[] {
+ return [
+  demoItem("history-visible-user","user-message",
+   "这是历史记录的用户消息（模拟），不是内联 turn 内容"),
+  demoItem("history-visible-command","exec",undefined,{
+   command:"git status --porcelain",state:"Ready",
+  }),
+  demoItem("history-visible-command-b","exec",undefined,{
+   command:"git diff --stat",state:"Ready",
+  }),
+  demoItem("history-visible-answer","assistant-message",
+   "历史正文已通过订阅恢复（模拟事件）",{
+    phase:"final_answer",completed:true,
+  }),
+ ];
 }
 
 function reviewScenario(): ConversationRenderEntry[] {
@@ -210,6 +246,7 @@ function reviewScenario(): ConversationRenderEntry[] {
         functionName:"files.search",appContext:{connectorId:"file-connector",linkId:"link"},
         result:{type:"success",content:[]},demoSafeMcpResult:true,
         demoToolDisplaySignature:"Files search",
+        toolDisplay:{invoked:"已搜索资料",invoking:"正在搜索资料",title:"资料搜索"},
       }),
       demoItem("repeat-b","mcp-tool-call",undefined,{
         grouping:"groupable",completed:true,source:null,
@@ -217,21 +254,98 @@ function reviewScenario(): ConversationRenderEntry[] {
         functionName:"files.search",appContext:{connectorId:"file-connector",linkId:"link"},
         result:{type:"success",content:[]},demoSafeMcpResult:true,
         demoToolDisplaySignature:"Files search",
+        toolDisplay:{invoked:"已搜索资料",invoking:"正在搜索资料",title:"资料搜索"},
       }),
       demoItem("repeat-barrier","mcp-tool-call",undefined,{
         grouping:"groupable",completed:false,source:null,
         invocation:{server:"fixture-files",tool:"search",arguments:{query:"pending"}},
         functionName:"files.search",appContext:{connectorId:"file-connector",linkId:"link"},
         demoSafeMcpResult:true,demoToolDisplaySignature:"Files search",
+        toolDisplay:{invoking:"正在搜索资料",title:"资料搜索"},
       }),
       demoItem("repeat-c","mcp-tool-call",undefined,{
         grouping:"groupable",completed:true,source:null,
+        demoRecognizedActionLabel:"已搜索文件",
         invocation:{server:"fixture-files",tool:"search",arguments:{query:"after"}},
         functionName:"files.search",appContext:{connectorId:"file-connector",linkId:"link"},
         result:{type:"success",content:[]},demoSafeMcpResult:true,
         demoToolDisplaySignature:"Files search",
       }),
+      demoItem("repeat-d","mcp-tool-call",undefined,{
+        grouping:"groupable",completed:true,source:null,
+        demoRecognizedActionLabel:"已搜索文件",
+        invocation:{server:"fixture-files",tool:"search",arguments:{query:"next"}},
+        functionName:"files.search",appContext:{connectorId:"file-connector",linkId:"link"},
+        result:{type:"success",content:[]},demoSafeMcpResult:true,
+        demoToolDisplaySignature:"Files search",
+      }),
+      // Source V_ fixture: two adjacent incoming events, then subscription
+      // closure which Je must keep outside the repeated disclosure.
+      demoItem("external-a","external-event",undefined,{
+        grouping:"groupable",sourceKey:"fixture-slack",sourceLabel:"Slack",
+        subscriptionEnded:false,heading:"收到事件 A",state:"Ready",
+      }),
+      demoItem("external-b","external-event",undefined,{
+        grouping:"groupable",sourceKey:"fixture-slack",sourceLabel:"Slack",
+        subscriptionEnded:false,heading:"收到事件 B",state:"Ready",
+      }),
+      demoItem("external-ended","external-event",undefined,{
+        grouping:"groupable",sourceKey:"fixture-slack",sourceLabel:"Slack",
+        subscriptionEnded:true,heading:"订阅结束",state:"Ready",
+      }),
     ]),
+    // DEMO-only source Ke/fr + qe visibility case. It is forced through the
+    // latest renderer without changing the existing actual latest review turn.
+    {...demoActivityEntry("review-source-ke-qe",[
+      demoItem("source-old-finished","exec",undefined,{
+        grouping:"groupable",state:"Ready",command:"git status",
+        demoLatestSourceVisibility:true,
+      }),
+      demoItem("source-divider","assistant-message"," ",{
+        grouping:"standalone",completed:false,
+      }),
+      demoItem("source-running-command","exec",undefined,{
+        grouping:"groupable",state:"Working",command:"npm run build",
+        heading:"运行中（模拟）",
+      }),
+      demoItem("source-hidden-visualize-read","exec",undefined,{
+        grouping:"groupable",parsedCmd:{type:"read",path:".codex/skills/visualize/SKILL.md",isFinished:true},
+      }),
+      // Ordinary skill reads must remain; qt only recognizes visualize.
+      demoItem("source-ordinary-skill-read","exec",undefined,{
+        grouping:"groupable",state:"Ready",
+        parsedCmd:{type:"read",path:".codex/skills/ordinary/SKILL.md",isFinished:true},
+      }),
+      demoItem("source-hidden-visualization-command","exec",undefined,{
+        grouping:"groupable",state:"Ready",command:"touch .codex/visualizations/preview.html",
+        demoSuccessfulExecution:true,
+      }),
+      demoItem("source-patch-with-visualization","patch",undefined,{
+        grouping:"groupable",success:true,changes:{},
+        visualizationActivities:[{path:"preview.tsx",kind:"create"}],
+      }),
+    ])},
+    // Explicit qn/Qr **frontend subscription** fixture, not a live Agent.
+    // This historical turn has the same query identities as Fc. Both tool
+    // leaves are completed; only the turn status/up-next stream controls qe.
+    {...demoActivityEntry("review-live-turn-state",[
+      demoItem("live-turn-command-a","exec",undefined,{
+        state:"Ready",command:"git status --short",startsGroup:true,
+      }),
+      demoItem("live-turn-command-b","exec",undefined,{
+        state:"Ready",command:"git diff --stat",
+      }),
+    ]),historyEntityKey:"fixture-live-turn-history",
+       preserveServerUserMessages:true,
+       turn:{items:[],status:"inProgress",demoBlocks:[{
+         type:"agent-activity",key:"block:review-live-turn-state",items:[
+           demoItem("live-turn-command-a","exec",undefined,{state:"Ready",command:"git status --short",startsGroup:true}),
+           demoItem("live-turn-command-b","exec",undefined,{state:"Ready",command:"git diff --stat"}),
+         ],
+       }]}},
+    // Original Y history-summary path: its turn content is *removed* from
+    // the projected virtual row. A host subscription restores these same items.
+    {...demoRawTurnEntry("review-history-hydration",getDemoHistoryTurnItems()),historyEntityKey:"fixture-history-content"},
     demoMessageEntry("assistant", "review-final", "**演示不会触发真实权限变更。** 与 Agent 后端接入时，需要在宿主层明确实现权限校验、授权请求和执行回调。"),
     // Real source turn.items fixture: commentary, command group, file patch,
     // and final answer share ONE virtualized row, unlike former mock turns.
@@ -306,7 +420,7 @@ export function createDemoSource(id: DemoConversationId): DemoSource {
     entries: initialDemoEntries(id),
     connectionState: "connected",
     loadingHistory: false,
-    projection: { conversationId: id, cwd: "/projects/agent-web", showFullTranscript: true },
+    projection: { conversationId: id, hostId: "demo-host", cwd: "/projects/agent-web", showFullTranscript: true },
   });
 }
 
