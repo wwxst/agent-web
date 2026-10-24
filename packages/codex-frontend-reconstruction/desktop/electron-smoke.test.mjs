@@ -335,6 +335,20 @@ test("independent Electron file renderer starts, isolates preload and routes Fc 
     await reviewGroup.getAttribute("aria-expanded")==="false")
     await reviewGroup.click();
   const realDiff=fullReviewRow.locator('[data-source-inline-file-diff-engine="pierre"]');
+  // Integration diagnosis: the combined menu/find/session branch must mount
+  // the same original O/k review leaf inside its real Rk/nk disclosure.
+  if(await realDiff.count()===0){
+    const diag=await fullReviewRow.evaluate(node=>({
+      rowText:node.textContent?.slice(0,1300),
+      rowHtml:node.outerHTML.slice(0,14500),
+      toggles:[...node.querySelectorAll("button,summary")].map(e=>({
+        tag:e.tagName,aria:e.getAttribute("aria-expanded"),
+        label:e.getAttribute("aria-label"),text:e.textContent?.slice(0,150)
+      })).slice(0,22),
+      review:node.querySelectorAll('[data-inline-file-diff-review-viewport]').length
+    }));
+    console.log("INTEGRATED_INLINE_REVIEW_DIAGNOSTIC",JSON.stringify(diag));
+  }
   await realDiff.waitFor({timeout:15000});
   await page.waitForFunction(()=>{
     const engine=document.querySelector('[data-demo-turn-id="review-diff"] [data-source-inline-file-diff-engine="pierre"]');
