@@ -269,15 +269,15 @@ export function App() {
   const findResult=React.useMemo(()=>searchSourceThreadLiteralRows(findRows,findQuery),[findRows,findQuery]);
   const findMatches=findResult.matches;
   const currentFindOrdinal=Math.min(findOrdinal,Math.max(0,findMatches.length-1));
-  // Source search points at a canonical virtual turn key. Keep exactly the
-  // selected Find row mounted while navigating, even if an older turn lies
-  // outside the current viewport after the per-thread scroll-restoration
-  // reconciliation. This uses VirtualizedTurnList's existing retained-key
-  // support; it does not create a second transcript or synthetic entry.
+  // Preserve the selected source turn after the Find bar closes. Otherwise
+  // closing Find immediately releases the only retained virtual row before
+  // an already-open historical review/diff disclosure can finish mounting.
+  // The pin is limited to one canonical turn key and disappears when the
+  // query/result or conversation changes; no duplicate transcript is made.
   const retainedFindTurnKeys=React.useMemo<readonly string[]>(()=>{
-    const target=findOpen?findMatches[currentFindOrdinal]:undefined;
+    const target=findMatches[currentFindOrdinal];
     return target==null?[]:[target.turnKey];
-  },[findOpen,findMatches,currentFindOrdinal]);
+  },[findMatches,currentFindOrdinal]);
 
   React.useEffect(()=>{
     if(!findOpen)return;
@@ -397,12 +397,13 @@ export function App() {
       finishViewportRestore(pending);
       return;
     }
-    // Search navigation owns the scroll target. An asynchronous row
-    // measurement must not drag its matched turn back to the latest message.
-    if(findOpen&&findQuery.trim()&&findMatches.length>0)return;
+    // The one retained canonical Find target continues to own the viewport
+    // while its historic activity or full-file review is being inspected,
+    // even if the search bar itself has been dismissed.
+    if(retainedFindTurnKeys.length>0)return;
     if (shouldFollowRef.current) scrollToBottom();
   }, [active,scrollController,scrollToBottom,finishViewportRestore,
-      findOpen,findQuery,findMatches.length]);
+      retainedFindTurnKeys]);
 
   React.useEffect(() => {
     const pending=pendingViewportRestoreRef.current;
