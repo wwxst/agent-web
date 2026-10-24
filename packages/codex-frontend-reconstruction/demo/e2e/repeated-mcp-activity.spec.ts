@@ -27,7 +27,7 @@ test("source Je/bg uses A_ phase disclosure with XO icon and keeps ineligible MC
   await expect(repeated.first()).toHaveAttribute("data-source-disclosure-phase","expanded");
   await expect(repeated.first().locator("[data-codex-source-repeated-body]")).toBeVisible();
   await expect(repeated.first().locator(".codex-activity-group-row__subrow")).toHaveCount(2);
-  await expect(group.locator(".codex-activity-group-row__subrow")).toHaveCount(5);
+  await expect(group.locator(".codex-activity-group-row__subrow")).toHaveCount(4);
   const external=group.locator('[data-codex-source-repeated-group="external-event"]');
   await expect(external).toHaveCount(1);
   const externalToggle=external.locator("[data-codex-source-repeated-toggle]");
@@ -38,7 +38,7 @@ test("source Je/bg uses A_ phase disclosure with XO icon and keeps ineligible MC
   await externalToggle.click();
   await expect(external).toHaveAttribute("data-source-disclosure-phase","expanded");
   await expect(external.locator(".codex-activity-group-row__subrow")).toHaveCount(2);
-  await expect(group.locator(".codex-activity-group-row__subrow")).toHaveCount(7);
+  await expect(group.locator(".codex-activity-group-row__subrow")).toHaveCount(6);
   await externalToggle.click();
   await expect(external).toHaveAttribute("data-source-disclosure-phase","collapsed");
   await toggle.click();
@@ -50,5 +50,14 @@ test("source Je/bg uses A_ phase disclosure with XO icon and keeps ineligible MC
   await toggle.click();
   await expect(repeated.first()).toHaveAttribute("data-source-disclosure-phase","expanded");
   await expect(repeated.first().locator(".codex-activity-group-row__subrow")).toHaveCount(2);
+  // A distinct recognized Codex action can expand independently of the
+  // generic MCP subgroup and uses the recovered XO variant.
+  const recognizedToggle=repeated.nth(1).locator("[data-codex-source-repeated-toggle]");
+  await recognizedToggle.click();
+  await expect(repeated.nth(1)).toHaveAttribute("data-source-disclosure-phase","expanded");
+  await expect(repeated.nth(1).locator(".codex-activity-group-row__subrow")).toHaveCount(2);
+  await expect(group.locator(".codex-activity-group-row__subrow")).toHaveCount(6);
+  await recognizedToggle.click();
+  await expect(repeated.nth(1)).toHaveAttribute("data-source-disclosure-phase","collapsed");
   expect(errors).toEqual([]);
 });
