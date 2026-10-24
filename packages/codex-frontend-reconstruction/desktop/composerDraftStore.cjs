@@ -11,7 +11,9 @@ const path=require("node:path");
 const DRAFT_FILENAME="agent-web-composer-drafts.json";
 const ALLOWED_DEMO_THREADS=Object.freeze(["frontend","review"]);
 const MAX_DRAFT_LENGTH=64*1024;
-// Two maximum-length UTF-16 drafts can expand up to 6 JSON bytes per\n// code unit for escaped control characters. Keep the reader bound above that.\nconst MAX_STORED_BYTES=1024*1024;
+// Two maximum-length UTF-16 drafts can expand up to 6 JSON bytes per
+// code unit for escaped control characters. Keep the reader bound above that.
+const MAX_STORED_BYTES=1024*1024;
 
 function isDemoThread(id){return ALLOWED_DEMO_THREADS.includes(id);}
 function isDraft(text){return typeof text==="string" && text.length<=MAX_DRAFT_LENGTH;}
