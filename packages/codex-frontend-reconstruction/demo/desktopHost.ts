@@ -12,6 +12,7 @@ import type {
 declare global {
   interface Window {
     agentWebDesktopHost?: {
+      subscribeUiCommands(listener:(command:"toggle-sidebar"|"previous-thread"|"next-thread")=>void):()=>void;
       openMenu(id:"file"|"edit"|"view"|"help",anchor:{x:number;y:number}):Promise<boolean>;
       getHostInfo():Promise<{
         windowType:"electron";platform:string;theme:string;backendConnected:false
