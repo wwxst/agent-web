@@ -75,6 +75,11 @@ test("original sbi separator supports keyboard, reset and pointer drag without m
   await expect(handle).toHaveAttribute("aria-valuenow","520");
   await handle.dblclick();
   await expect(handle).toHaveAttribute("aria-valuenow","340");
+  // A source width update and its painted separator must be the SAME
+  // geometry before the pointer interaction. PR #2's inherited .2s width
+  // animation previously left an invisible moving target over the transcript.
+  await expect(sidebar).toHaveCSS("width","340px");
+  await expect(sidebar).toHaveCSS("transition-property","background-color");
   const rect=await handle.boundingBox();
   expect(rect).not.toBeNull();
   const dragX=rect!.x+rect!.width/2;
