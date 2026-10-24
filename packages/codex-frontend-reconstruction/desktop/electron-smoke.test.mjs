@@ -336,12 +336,17 @@ test("independent Electron file renderer starts, isolates preload and routes Fc 
     const el=document.querySelector('[data-testid="transcript-scroll"]');
     return el!=null&&el.scrollHeight-el.clientHeight>1200;
   });
-  const restoredDistance=await viewport.evaluate(el=>{
+  await viewport.evaluate(el=>{
     const max=el.scrollHeight-el.clientHeight;
     el.scrollTop=Math.round(max*0.42);
     el.dispatchEvent(new Event("scroll",{bubbles:true}));
-    return Math.max(0,max-el.scrollTop);
   });
+  // This is a real ResizeObserver-backed virtual list. Snapshot the
+  // settled user viewport rather than the transient pre-measurement height;
+  // retain the existing strict 170px navigation restoration bound.
+  await page.waitForTimeout(950);
+  const restoredDistance=await viewport.evaluate(el=>
+    Math.max(0,el.scrollHeight-el.clientHeight-el.scrollTop));
   assert.ok(restoredDistance>300);
   await app.evaluate(({Menu})=>Menu.getApplicationMenu().getMenuItemById("previousThread").click());
   await page.waitForFunction(()=>document.querySelector(".demo-header-location strong")
