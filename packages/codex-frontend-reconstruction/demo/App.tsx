@@ -129,6 +129,50 @@ export function App() {
   },[sidebarWidth]);
   const [measuredRailWidth, setMeasuredRailWidth] = React.useState(52);
   const [draft, setDraft] = React.useState("");
+  const [draftHydrated,setDraftHydrated]=React.useState(()=>
+    typeof window==="undefined" || window.agentWebDesktopHost==null);
+  const activeConversationRef=React.useRef(active);
+  activeConversationRef.current=active;
+  const pendingDraftSaves=React.useRef(new Map<DemoConversationId,ReturnType<typeof setTimeout>>());
+  const saveDraftNow=React.useCallback((id:DemoConversationId,text:string)=>{
+    const pending=pendingDraftSaves.current.get(id);
+    if(pending!=null)clearTimeout(pending);
+    pendingDraftSaves.current.delete(id);
+    const host=window.agentWebDesktopHost;
+    if(host!=null)void host.setComposerDraft(id,text).catch(()=>{});
+  },[]);
+  const scheduleDraftSave=React.useCallback((id:DemoConversationId,text:string)=>{
+    const host=window.agentWebDesktopHost;
+    if(host==null)return;
+    const old=pendingDraftSaves.current.get(id);
+    if(old!=null)clearTimeout(old);
+    pendingDraftSaves.current.set(id,setTimeout(()=>saveDraftNow(id,text),120));
+  },[saveDraftNow]);
+  React.useEffect(()=>{
+    const host=window.agentWebDesktopHost;
+    if(host==null)return;
+    let live=true;
+    void host.getComposerDrafts().then(saved=>{
+      if(!live)return;
+      for(const id of ["frontend","review"] as const){
+        const value=saved[id];
+        if(typeof value==="string")draftByConversationRef.current.set(id,value);
+      }
+      setDraft(draftByConversationRef.current.get(activeConversationRef.current)??"");
+      setDraftHydrated(true);
+    }).catch(()=>{if(live)setDraftHydrated(true);});
+    return ()=>{live=false;};
+  },[]);
+  React.useEffect(()=>()=> {
+    // A route switch flushes the active draft synchronously through the
+    // host API; app teardown also sends any still-debounced updates.
+    for(const [id,timeout] of pendingDraftSaves.current){
+      clearTimeout(timeout);
+      const value=draftByConversationRef.current.get(id)??"";
+      void window.agentWebDesktopHost?.setComposerDraft(id,value).catch(()=>{});
+    }
+    pendingDraftSaves.current.clear();
+  },[]);
   // Preserve canonical conversation sources through navigation. Original Y
   // projects keyed turns; remounting the virtualizer must not recreate or
   // silently discard its host-owned source snapshot.
@@ -138,7 +182,8 @@ export function App() {
   const updateDraft = React.useCallback((text:string)=>{
     draftByConversationRef.current.set(active,text);
     setDraft(text);
-  },[active]);
+    scheduleDraftSave(active,text);
+  },[active,scheduleDraftSave]);
   const [playing, setPlaying] = React.useState(false);
   const [toast, setToast] = React.useState<string | null>(null);
   const [historyAdded, setHistoryAdded] = React.useState(false);
@@ -401,6 +446,7 @@ export function App() {
     sessionSourcesRef.current.get(active)?.dispose();
     sessionSourcesRef.current.delete(active);
     draftByConversationRef.current.delete(active);
+    saveDraftNow(active,"");
     historyByConversationRef.current.delete(active);
     setPlaying(false);
     setHistoryAdded(false);
@@ -409,6 +455,8 @@ export function App() {
   }
   function switchConversation(id: DemoConversationId) {
     if (id === active) return;
+    // Preserve the current editor value before ProseMirror is replaced.
+    saveDraftNow(active,draftByConversationRef.current.get(active)??"");
     if (timerRef.current != null) clearTimeout(timerRef.current);
     timerRef.current = null;
     setPlaying(false);
@@ -580,14 +628,14 @@ export function App() {
             density="comfortable"
             radiusVariant="default"
             surfaceVariant="default"
-            input={<DemoProseMirrorComposerEditor key={active}
+            input={draftHydrated ? <DemoProseMirrorComposerEditor key={active}
               value={draft}
               onChange={updateDraft}
               onSubmit={sendMessage}
               onPastedImages={() => notify("演示模式：图片上传尚未接入。")}
               onPastedFiles={() => notify("演示模式：文件上传尚未接入。")}
               onPastedText={() => false}
-            />}
+            /> : <div data-composer-draft-hydrating="true" aria-live="polite">恢复输入内容中…</div>}
             leadingControls={<div className="demo-composer-options">
               <button type="button" className="demo-composer-plus" title="附件尚未恢复" disabled aria-label="附件尚未恢复"><Icon name="plus" size={20}/></button>
               <span className="demo-composer-permission" title="演示模式，无真实权限授予">♧ Full access <span>· mock</span></span>
