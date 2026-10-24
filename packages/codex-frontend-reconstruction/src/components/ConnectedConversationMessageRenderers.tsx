@@ -5,6 +5,7 @@ import { CodexAgentActivity } from "./CodexAgentActivity.js";
 import { combineSourceActivityTrace } from "../conversation/SourceCombinedActivityTrace.js";
 import { filterSourceLatestActivityUnits } from "../conversation/SourceLatestActivityVisibility.js";
 import type { SourceRepeatedActivityRow } from "../conversation/SourceRepeatedActivityGroups.js";
+import type { SourceRepeatedHeader, SourceRecognizedMcpAction } from "../conversation/SourceRepeatedActivityHeader.js";
 import { CodexActivityGroupRow } from "./CodexActivityGroupRow.js";
 import { CodexToolActivityItem } from "./CodexToolActivityItem.js";
 import { ConnectedCodexToolActivityItem } from "./ConnectedCodexToolActivityItem.js";
@@ -77,6 +78,8 @@ export interface ConnectedConversationRendererHost extends ConversationContentAd
       /** Original Je/bg group consecutive completed compatible MCP and events. */
       getRepeatedRows?(items:readonly ConversationMessageItem[]): readonly SourceRepeatedActivityRow<ConversationMessageItem>[];
       renderRepeatedSummary?(row:SourceRepeatedActivityRow<ConversationMessageItem>): React.ReactNode;
+      getRecognizedRepeatedAction?(item:ConversationMessageItem):SourceRecognizedMcpAction | null | undefined;
+      renderRepeatedHeader?(header:SourceRepeatedHeader<ConversationMessageItem>): {summary:React.ReactNode;icon?:React.ReactNode} | undefined;
       /** Original XO/V_ icon slots resolved by mv/bv from real host metadata. */
       renderRepeatedIcon?(row:SourceRepeatedActivityRow<ConversationMessageItem>): React.ReactNode;
       renderCompletedSummary(items: readonly ConversationMessageItem[]): React.ReactNode;
@@ -280,6 +283,7 @@ export function createConnectedConversationMessageRenderers(host: ConnectedConve
           return <CodexActivityGroupRow
             items={unit.items} detailItems={groupHeader.getVisibleItems?.(unit.items)}
             getRepeatedRows={groupHeader.getRepeatedRows} renderRepeatedSummary={groupHeader.renderRepeatedSummary}
+            getRecognizedRepeatedAction={groupHeader.getRecognizedRepeatedAction} renderRepeatedHeader={groupHeader.renderRepeatedHeader}
             renderRepeatedIcon={groupHeader.renderRepeatedIcon}
             {...stateContext}
             canExpand={groupHeader.canExpand(unit.items)}
