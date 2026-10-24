@@ -299,3 +299,47 @@ button:focus-visible, textarea:focus-visible { outline: 2px solid #578cda; outli
 .demo-desktop[data-independent-electron="true"] .demo-native-application-menus > button:focus-visible {
   background:#eaeaea;color:#292929;
 }
+
+/* Original app-primary AFt: conversation find controls portal to document.body
+ * at top-2/right-16, z-[55], max-w-[70vw]. This standalone host supports
+ * conversation text only, not the source regex worker or other search domains. */
+.demo-thread-find-bar[data-content-search-bar="true"] {
+  position:fixed;
+  top:8px;
+  right:16px;
+  z-index:55;
+  display:flex;
+  align-items:center;
+  gap:5px;
+  max-width:70vw;
+  padding:6px 8px;
+  background:var(--color-surface-elevated-secondary,#fff);
+  color:#252525;
+  border:1px solid #dedede;
+  border-radius:10px;
+  box-shadow:0 8px 28px rgba(0,0,0,.12);
+  font-size:12px;
+}
+.demo-thread-find-bar input {
+  min-width:96px;
+  width:min(220px,24vw);
+  border:0;
+  outline:0;
+  color:inherit;
+  background:transparent;
+  padding:5px 7px;
+  font:inherit;
+}
+.demo-thread-find-bar input:focus-visible {outline:2px solid #96b4d9;outline-offset:1px;border-radius:4px;}
+.demo-thread-find-bar button {
+  border:0;
+  background:transparent;
+  color:#575757;
+  min-width:27px;
+  height:27px;
+  border-radius:6px;
+  font-size:16px;
+}
+.demo-thread-find-bar button:hover:not(:disabled) {background:#ededed;color:#171717;}
+.demo-thread-find-bar button:disabled {opacity:.35;}
+.demo-find-results {min-width:76px;font-variant-numeric:tabular-nums;text-align:center;white-space:nowrap;color:#626262;}
