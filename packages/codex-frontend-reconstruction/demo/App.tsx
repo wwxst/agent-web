@@ -1,4 +1,5 @@
 import * as React from "react";
+import { createPortal } from "react-dom";
 import { CodexComposerLayout } from "../src/components/CodexComposerLayout.js";
 import { CodexSourceComposerHostForm } from "../src/components/CodexSourceComposerHostForm.js";
 import { DemoProseMirrorComposerEditor } from "./DemoProseMirrorComposerEditor.js";
@@ -478,7 +479,8 @@ export function App() {
         </div>
         </div>
       </header>
-      {findOpen && <div className="demo-thread-find-bar" data-content-search-bar="true"
+      {findOpen && createPortal(<div className="demo-thread-find-portal" data-source-thread-find-portal="true">
+        <div className="demo-thread-find-bar" data-content-search-bar="true"
         role="search" aria-label="会话内查找（当前演示仅搜索已加载会话文本）">
         <input ref={findInputRef} type="search" aria-label="Find in chat"
           placeholder="Search chat…" value={findQuery}
@@ -497,7 +499,8 @@ export function App() {
         </span>
         <button type="button" aria-label="Close find" title="Close find"
           onClick={closeFind}>×</button>
-      </div>}
+        </div>
+      </div>,document.body)}
       {showDemoTools && <div className="demo-tools-popover" data-testid="demo-tools">
         <p>本地演示工具 · 不执行真实 Agent 请求</p>
         <div className="demo-toolbar">

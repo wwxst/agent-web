@@ -159,6 +159,27 @@ test("independent Electron file renderer starts, isolates preload and routes Fc 
   });
   const findInput=page.getByRole("searchbox",{name:"Find in chat"});
   await findInput.waitFor({timeout:10000});
+  // Source AFt: portal to document.body, outer pointer-transparent fixed
+  // top-2/right-16, z-[55], max-w-[70vw]. Actual Electron DOM is checked,
+  // not an isolated model or a screenshot of a substitute search view.
+  const portal=page.locator("[data-source-thread-find-portal='true']");
+  assert.equal(await portal.count(),1);
+  const portalGeometry=await portal.evaluate(element=>{
+    const rect=element.getBoundingClientRect();
+    const style=getComputedStyle(element);
+    const find=element.querySelector("[data-content-search-bar='true']");
+    return {
+      isBodyChild:element.parentElement===document.body,
+      top:rect.top,right:window.innerWidth-rect.right,
+      position:style.position,zIndex:style.zIndex,pointerEvents:style.pointerEvents,
+      maxWidthPercent:Math.round(100*Number.parseFloat(style.maxWidth)/window.innerWidth),
+      searchPointerEvents:find==null?null:getComputedStyle(find).pointerEvents,
+    };
+  });
+  assert.deepEqual(portalGeometry,{
+    isBodyChild:true,top:8,right:16,position:"fixed",zIndex:"55",
+    pointerEvents:"none",maxWidthPercent:70,searchPointerEvents:"auto",
+  });
   await findInput.fill("历史正文已通过订阅恢复");
   await page.waitForFunction(()=>document.querySelector(".demo-find-results")?.textContent==="0 results");
   await historyRow.locator("[data-demo-load-history]").click();

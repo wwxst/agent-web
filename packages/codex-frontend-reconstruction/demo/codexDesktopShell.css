@@ -303,11 +303,22 @@ button:focus-visible, textarea:focus-visible { outline: 2px solid #578cda; outli
 /* Original app-primary AFt: conversation find controls portal to document.body
  * at top-2/right-16, z-[55], max-w-[70vw]. This standalone host supports
  * conversation text only, not the source regex worker or other search domains. */
-.demo-thread-find-bar[data-content-search-bar="true"] {
+/* Original AFt mounts to document.body in a fixed, pointer-transparent
+   outer portal. The independent demo has no right-hand panel inset or
+   zoom-state host; retain the source-confirmed 16px default only. */
+.demo-thread-find-portal[data-source-thread-find-portal="true"] {
   position:fixed;
   top:8px;
   right:16px;
   z-index:55;
+  display:flex;
+  justify-content:flex-end;
+  max-width:70vw;
+  pointer-events:none;
+}
+.demo-thread-find-bar[data-content-search-bar="true"] {
+  position:relative;
+  pointer-events:auto;
   display:flex;
   align-items:center;
   gap:5px;
