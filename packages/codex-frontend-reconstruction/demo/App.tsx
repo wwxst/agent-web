@@ -216,7 +216,7 @@ export function App() {
       });
       pendingViewportRestoreRef.current=null;
       viewportSettleTimeoutRef.current=null;
-    },250);
+    },650);
   },[]);
   React.useEffect(()=>()=>{if(viewportSettleTimeoutRef.current!=null)clearTimeout(viewportSettleTimeoutRef.current);},[]);
   const nextIdRef = React.useRef(0);
@@ -358,6 +358,22 @@ export function App() {
       scroll.style.removeProperty("--thread-scroll-padding-bottom");
     };
   }, [scrollController]);
+  // The recovered virtualizer changes the scroll content height when its
+  // mounted Markdown/tool rows finish ResizeObserver measurement. Keep the
+  // source bottom-distance hold active across those actual DOM layout
+  // corrections rather than releasing it after one arbitrary timer tick.
+  React.useEffect(()=>{
+    const content=scrollElementRef.current?.querySelector("[data-source-thread-scroll-content]");
+    if(content==null||typeof ResizeObserver==="undefined")return;
+    const observer=new ResizeObserver(()=>{
+      const pending=pendingViewportRestoreRef.current;
+      if(pending?.id!==active)return;
+      scrollController.scrollToDistanceFromBottomPx(pending.distance,"instant");
+      finishViewportRestore(pending);
+    });
+    observer.observe(content);
+    return ()=>observer.disconnect();
+  },[active,scrollController,finishViewportRestore]);
   const onVisibleContentReady = React.useCallback(() => {
     const pending=pendingViewportRestoreRef.current;
     if(pending?.id===active){
