@@ -10,5 +10,13 @@
     "exactOptionalPropertyTypes": true,
     "skipLibCheck": true
   },
-  "include": ["mockConversation.ts", "../src/conversation/ConversationRenderEntriesModel.ts", "../src/conversation/ConversationMessageRenderPlan.ts", "../src/conversation/LiveConversationSource.ts"]
+  "include": [
+    "mockConversation.ts",
+    "../src/conversation/ConversationRenderEntriesModel.ts",
+    "../src/conversation/ConversationMessageRenderPlan.ts",
+    "../src/conversation/LiveConversationSource.ts",
+    "threadFindProjection.ts",
+    "../src/conversation/SourceThreadFindModel.ts",
+    "../src/conversation/SourceHistoricalTurnContentSource.ts"
+  ]
 }
