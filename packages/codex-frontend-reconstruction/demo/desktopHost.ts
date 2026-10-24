@@ -12,6 +12,7 @@ import type {
 declare global {
   interface Window {
     agentWebDesktopHost?: {
+      openMenu(id:"file"|"edit"|"view"|"help",anchor:{x:number;y:number}):Promise<boolean>;
       getHostInfo():Promise<{
         windowType:"electron";platform:string;theme:string;backendConnected:false
       }>;
