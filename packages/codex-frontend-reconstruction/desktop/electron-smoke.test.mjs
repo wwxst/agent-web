@@ -149,6 +149,35 @@ test("independent Electron file renderer starts, isolates preload and routes Fc 
     .waitFor({state:"attached",timeout:10000});
   await page.waitForFunction(()=>document.querySelector(".demo-header-location strong")
     ?.textContent?.includes("工具调用与审批交互")===true);
+  // D0e View find-in-thread now crosses the SAME native menu, isolated
+  // preload and mounted React transcript. Only its conversation-text domain
+  // is implemented; the private regex worker and other domains are excluded.
+  await app.evaluate(({Menu})=>{
+    Menu.getApplicationMenu().getMenuItemById("findInThread").click();
+  });
+  const findInput=page.getByRole("searchbox",{name:"Find in chat"});
+  await findInput.waitFor({timeout:10000});
+  await findInput.fill("does-not-occur-in-fixture-12345");
+  await page.waitForFunction(()=>document.querySelector(".demo-find-results")?.textContent==="0 results");
+  await findInput.fill("工具");
+  await page.waitForFunction(()=>{
+    const label=document.querySelector(".demo-find-results")?.textContent??"";
+    const found=label.match(/^(\d+) \/ (\d+) results/);
+    return found!=null && Number(found[2])>=2;
+  });
+  const findLabel=page.locator(".demo-find-results");
+  assert.match(await findLabel.textContent(),/^1 \/ \d+ results/);
+  await app.evaluate(({Menu})=>{
+    Menu.getApplicationMenu().getMenuItemById("findNextInThread").click();
+  });
+  await page.waitForFunction(()=>document.querySelector(".demo-find-results")?.textContent?.startsWith("2 / "));
+  await app.evaluate(({Menu})=>{
+    Menu.getApplicationMenu().getMenuItemById("findPreviousInThread").click();
+  });
+  await page.waitForFunction(()=>document.querySelector(".demo-find-results")?.textContent?.startsWith("1 / "));
+  await findInput.press("Escape");
+  await findInput.waitFor({state:"detached",timeout:10000});
+
   // Click actual application menu items in the main process; zoom updates
   // this *real* WebContents, not a fake React numeric model.
   const zooms=await app.evaluate(({Menu,BrowserWindow})=>{

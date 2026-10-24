@@ -39,6 +39,16 @@ function buildSourceNativeMenus({platform="win32",actions}){
     {label:"Previous Thread",id:"previousThread",click:actions.previousThread},
     {label:"Next Thread",id:"nextThread",click:actions.nextThread},
     {type:"separator"},
+    // Original D0e's it/at/ot: primary accelerator is dynamic, so leave
+    // it unspecified; only fixed next/previous shortcuts are source-proven.
+    {label:"Find in Thread",id:"findInThread",click:actions.findInThread},
+    {label:"Find Next",id:"findNextInThread",visible:false,
+      accelerator:isMac?"Command+G":"Ctrl+G",acceleratorWorksWhenHidden:true,
+      click:actions.findNextInThread},
+    {label:"Find Previous",id:"findPreviousInThread",visible:false,
+      accelerator:isMac?"Command+Shift+G":"Shift+F3",acceleratorWorksWhenHidden:true,
+      click:actions.findPreviousInThread},
+    {type:"separator"},
     {label:"Zoom In",id:"zoomIn",accelerator:"CmdOrCtrl+Plus",
       click:actions.zoomIn},
     // Original D0e includes this Windows-only Ctrl+= hidden accelerator.

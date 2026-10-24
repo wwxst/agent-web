@@ -12,6 +12,8 @@ import { resolveComposerSubmitDecision } from "../src/conversation/ComposerInter
 import { resolveComposerPrimaryAction } from "../src/conversation/ComposerPrimaryActionModel.js";
 import { SOURCE_CONVERSATION_ITEM_GAP_PX } from "../src/conversation/SourceConversationLayoutTokens.js";
 import { BrowserScrollController } from "./browserScrollController.js";
+import { findSourceThreadLiteralMatches, wrapSourceThreadFindOrdinal } from "../src/conversation/SourceThreadFindModel.js";
+import { projectDemoThreadFindRows } from "./threadFindProjection.js";
 import { makeDemoRow, demoProjectionDependencies } from "./adapters.js";
 import {
   DEMO_CONVERSATIONS, appendDemoEntries, createDemoSource,
@@ -127,6 +129,10 @@ export function App() {
   const [toast, setToast] = React.useState<string | null>(null);
   const [historyAdded, setHistoryAdded] = React.useState(false);
   const [showDemoTools, setShowDemoTools] = React.useState(false);
+  const [findOpen,setFindOpen]=React.useState(false);
+  const [findQuery,setFindQuery]=React.useState("");
+  const [findOrdinal,setFindOrdinal]=React.useState(0);
+  const findInputRef=React.useRef<HTMLInputElement | null>(null);
   const scrollElementRef = React.useRef<HTMLDivElement | null>(null);
   const composerFooterRef = React.useRef<HTMLDivElement | null>(null);
   const virtualizerApiRef = React.useRef<VirtualizedTurnListApi | null>(null);
@@ -136,6 +142,44 @@ export function App() {
   const nextIdRef = React.useRef(0);
 
   const source = React.useMemo(() => createDemoSource(active), [active, generation]);
+  // Search the same immutable conversation snapshot used by the mounted
+  // virtualizer. This standalone literal adapter excludes unloaded history,
+  // private regex-worker modes, browser pages, diff and file search.
+  const findSnapshot=React.useSyncExternalStore(source.subscribe,source.getSnapshot,source.getSnapshot);
+  const findRows=React.useMemo(()=>projectDemoThreadFindRows(findSnapshot.entries),[findSnapshot.entries]);
+  const findMatches=React.useMemo(()=>findSourceThreadLiteralMatches(findRows,findQuery),[findRows,findQuery]);
+  const currentFindOrdinal=Math.min(findOrdinal,Math.max(0,findMatches.length-1));
+  React.useEffect(()=>{
+    if(!findOpen)return;
+    const id=window.requestAnimationFrame(()=>{findInputRef.current?.focus();findInputRef.current?.select();});
+    return ()=>window.cancelAnimationFrame(id);
+  },[findOpen]);
+  React.useEffect(()=>{
+    if(!findOpen||findMatches.length===0)return;
+    const match=findMatches[currentFindOrdinal];
+    if(match==null)return;
+    const controller=new AbortController();
+    // Source conversation domain resolves to the existing virtualized
+    // history-content:turn key. Do not add a second scroll implementation.
+    void virtualizerApiRef.current?.scrollToKey(match.turnKey,undefined,{
+      align:"center",signal:controller.signal,
+    }).catch(()=>{});
+    return ()=>controller.abort();
+  },[findOpen,findMatches,currentFindOrdinal]);
+  function openFind(){
+    if(!findOpen){
+      const selected=window.getSelection()?.toString().trim()??"";
+      if(selected.length>0 && !/[\\r\\n]/.test(selected))setFindQuery(selected);
+      setFindOrdinal(0);
+      setFindOpen(true);
+    } else {
+      window.requestAnimationFrame(()=>{findInputRef.current?.focus();findInputRef.current?.select();});
+    }
+  }
+  function closeFind(){setFindOpen(false);}
+  function navigateFind(direction:"next"|"previous"){
+    setFindOrdinal(index=>wrapSourceThreadFindOrdinal(index,findMatches.length,direction));
+  }
   const scrollController = React.useMemo(() => new BrowserScrollController(() => scrollElementRef.current), []);
   const notify = React.useCallback((message: string) => {
     setToast(message);
@@ -300,6 +344,8 @@ export function App() {
     setHistoryAdded(false);
     setDraft("");
     setActive(id);
+    // Never retain result offsets from an unrelated demo conversation.
+    setFindOrdinal(0);
   }
 
   // Original D0e routes native Toggle Sidebar / previousThread / nextThread
@@ -314,6 +360,9 @@ export function App() {
         setCollapsed(value=>!value);
         return;
       }
+      if(command==="find-in-thread"){openFind();return;}
+      if(command==="find-next-in-thread"){navigateFind("next");return;}
+      if(command==="find-previous-in-thread"){navigateFind("previous");return;}
       const index=DEMO_CONVERSATIONS.findIndex(entry=>entry.id===active);
       if(index<0)return;
       const destination=command==="previous-thread"?index-1:index+1;
@@ -322,7 +371,7 @@ export function App() {
         if(id!=null)switchConversation(id);
       }
     });
-  },[active]);
+  },[active,findOpen,findMatches.length]);
 
   // The direct/more identity projection is sourced from original GZc/QZc;
   // routing/feature flags are supplied explicitly by this mock host.
@@ -386,6 +435,26 @@ export function App() {
         </div>
         </div>
       </header>
+      {findOpen && <div className="demo-thread-find-bar" data-content-search-bar="true"
+        role="search" aria-label="会话内查找（当前演示仅搜索已加载会话文本）">
+        <input ref={findInputRef} type="search" aria-label="Find in chat"
+          placeholder="Search chat…" value={findQuery}
+          onChange={event=>{setFindQuery(event.target.value);setFindOrdinal(0);}}
+          onKeyDown={event=>{
+            if(event.key==="Escape"){event.preventDefault();closeFind();}
+            else if(event.key==="Enter"){event.preventDefault();navigateFind(event.shiftKey?"previous":"next");}
+          }}/>
+        <button type="button" title="Previous result" aria-label="Previous result"
+          onClick={()=>navigateFind("previous")} disabled={findMatches.length===0}>↑</button>
+        <button type="button" title="Next result" aria-label="Next result"
+          onClick={()=>navigateFind("next")} disabled={findMatches.length===0}>↓</button>
+        <span className="demo-find-results" role="status" aria-live="polite">
+          {findQuery.trim()?findMatches.length===0?"0 results":
+            `${currentFindOrdinal+1} / ${findMatches.length}${findMatches.length===2000?"+":""} results`:""}
+        </span>
+        <button type="button" aria-label="Close find" title="Close find"
+          onClick={closeFind}>×</button>
+      </div>}
       {showDemoTools && <div className="demo-tools-popover" data-testid="demo-tools">
         <p>本地演示工具 · 不执行真实 Agent 请求</p>
         <div className="demo-toolbar">

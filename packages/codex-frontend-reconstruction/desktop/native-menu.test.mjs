@@ -4,7 +4,7 @@ import {createRequire} from "node:module";
 const require=createRequire(import.meta.url);
 const {MENU_IDS,buildSourceNativeMenus,isAllowedMenuId,sanitizeMenuAnchor}=require("./nativeMenu.cjs");
 
-const names=["closeWindow","quit","zoomIn","zoomOut","actualSize","toggleFullScreen","documentation","toggleSidebar","previousThread","nextThread"];
+const names=["closeWindow","quit","zoomIn","zoomOut","actualSize","toggleFullScreen","documentation","toggleSidebar","previousThread","nextThread","findInThread","findNextInThread","findPreviousInThread"];
 function makeActions(){
  const calls=[];
  const actions=Object.fromEntries(names.map(name=>[name,()=>calls.push(name)]));
@@ -40,13 +40,20 @@ test("source D0e View accelerators and real IPC action subset",()=>{
  }
  assert.deepEqual(calls,["zoomIn","zoomOut","actualSize","toggleFullScreen"]);
  assert.equal(item(menus,"documentation").label,"Documentation");
- for(const id of ["toggleSidebar","previousThread","nextThread"]){
+ for(const id of ["toggleSidebar","previousThread","nextThread","findInThread"]){
   assert.equal(item(menus,id).accelerator,undefined,
    "source keymap is dynamic: never invent native shortcuts");
   item(menus,id).click();
  }
  assert.deepEqual(calls,["zoomIn","zoomOut","actualSize","toggleFullScreen",
-  "toggleSidebar","previousThread","nextThread"]);
+  "toggleSidebar","previousThread","nextThread","findInThread"]);
+ assert.equal(item(menus,"findNextInThread").accelerator,"Ctrl+G");
+ assert.equal(item(menus,"findPreviousInThread").accelerator,"Shift+F3");
+ assert.equal(item(menus,"findNextInThread").visible,false);
+ assert.equal(item(menus,"findPreviousInThread").visible,false);
+ item(menus,"findNextInThread").click();
+ item(menus,"findPreviousInThread").click();
+ assert.deepEqual(calls.slice(-2),["findNextInThread","findPreviousInThread"]);
 });
 test("macOS edit/window branch retains original roles and full screen shortcut",()=>{
  const {actions}=makeActions();
@@ -56,6 +63,9 @@ test("macOS edit/window branch retains original roles and full screen shortcut",
  assert.equal(menus.find(x=>x.id==="edit").submenu.find(x=>x.role==="pasteAndMatchStyle").accelerator,
   "Command+Option+Shift+V");
  assert.equal(item(menus,"toggleFullScreen").accelerator,"Command+Control+F");
+ assert.equal(item(menus,"findInThread").accelerator,undefined);
+ assert.equal(item(menus,"findNextInThread").accelerator,"Command+G");
+ assert.equal(item(menus,"findPreviousInThread").accelerator,"Command+Shift+G");
 });
 test("renderer may request only explicit menu ids and finite window anchors",()=>{
  for(const id of MENU_IDS)assert.equal(isAllowedMenuId(id),true);
