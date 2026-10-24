@@ -18,12 +18,10 @@ import { getSourceExpandableGroupRows } from "../src/conversation/AgentActivityG
 import { createSourceActivityCollapseState } from "../src/conversation/SourceActivityCollapseState.js";
 import {
   createSourceTurnRuntimeStatusSource,
-  createSourceTurnRuntimeStatusStore,
   type ConnectedSourceTurnRuntimeStatusSource,
 } from "../src/conversation/SourceTurnRuntimeStatusSource.js";
 import {
  createSourceHistoricalTurnContentSource,
- createSourceHistoricalTurnStore,
  sourceHistoricalTurnQuery,
  type ConnectedSourceHistoricalTurnSource,
 } from "../src/conversation/SourceHistoricalTurnContentSource.js";
@@ -38,7 +36,7 @@ import {
   CodexSourceExecSearchLeaf,
   CodexSourcePatchLeaf,
 } from "../src/components/CodexSourceToolActivityLeaves.js";
-import { createToolActivityHistoryEntityStore } from "../src/conversation/ToolActivityHistoryEntityStore.js";
+import {createSourceConversationHostEventBridge} from "../src/conversation/SourceConversationHostEventBridge.js";
 import { createToolActivityHistorySource, type ConnectedToolActivityHistorySource } from "../src/conversation/ToolActivityHistorySource.js";
 import type { ToolItem } from "../src/conversation/ToolActivityDetailModel.js";
 
@@ -114,10 +112,11 @@ function DemoFileDiff({ oldFile: oldVersion, newFile: newVersion, overflow }: {
 }
 
 export function makeDemoRow(notify: (message: string) => void) {
-  const historyStore = createToolActivityHistoryEntityStore();
+  const eventBridge=createSourceConversationHostEventBridge();
+  const historyStore=eventBridge.toolHistory;
   const collapseState = createSourceActivityCollapseState();
   const historySources = new Map<string, ConnectedToolActivityHistorySource>();
-  const historyTurnStore=createSourceHistoricalTurnStore<ConversationMessageItem>();
+  const historyTurnStore=eventBridge.historicalTurns;
   const historicalTurnSources=new Map<string,ConnectedSourceHistoricalTurnSource<ConversationMessageItem>>();
   const historyTurnQuery={
     hostId:"demo-host",threadId:"review",entityKey:"fixture-history-content",
@@ -132,7 +131,7 @@ export function makeDemoRow(notify: (message: string) => void) {
     historicalTurnSources.set(key,source);
     return source;
   }
-  const turnRuntimeStore=createSourceTurnRuntimeStatusStore();
+  const turnRuntimeStore=eventBridge.turnRuntime;
   const turnRuntimeSources=new Map<string,ConnectedSourceTurnRuntimeStatusSource>();
   const liveHistoryQuery={
     hostId:"demo-host",threadId:"review",entityKey:"fixture-live-turn-history",
@@ -171,11 +170,13 @@ export function makeDemoRow(notify: (message: string) => void) {
     };
     const status = item.state === "Working" ? "inProgress" : "completed";
     const output = typeof item.output === "string" ? item.output : undefined;
-    historyStore.publishHistoryEntity(query, {
-      type: "commandExecution", status,
+    // One ingress for LO/Au/Vd, Y history and Fc qn/Qr; metadata remains
+    // deliberately synthetic and no command is executed.
+    eventBridge.publish({type:"tool-history-entity",query,entity:{
+      type:"commandExecution",status,
       ...(item.processId == null ? {} : {processId: item.processId}),
-      ...(output == null ? {} : {aggregatedOutput: output, exitCode: status === "completed" ? 0 : undefined}),
-    });
+      ...(output == null ? {} : {aggregatedOutput:output,exitCode:status==="completed"?0:undefined}),
+    }});
     const source = createToolActivityHistorySource({
       item: {...item, commandExecutionItemId: itemId} as ToolItem,
       queryContext,
@@ -378,25 +379,25 @@ export function makeDemoRow(notify: (message: string) => void) {
       {props.entry.turnId==="review-history-hydration" ? <div
         data-demo-history-turn-controls="">
         <button type="button" data-demo-load-history=""
-          onClick={()=>historyTurnStore.publish(historyTurnQuery,{
-            status:"completed",items:getDemoHistoryTurnItems(),
+          onClick={()=>eventBridge.publish({type:"historical-turn",query:historyTurnQuery,
+            payload:{status:"completed",items:getDemoHistoryTurnItems()},
           })}>模拟：读取历史回合</button>
         <button type="button" data-demo-clear-history=""
-          onClick={()=>historyTurnStore.clearThread("demo-host","review")}>
+          onClick={()=>eventBridge.publish({type:"clear-thread",hostId:"demo-host",threadId:"review"})}>
           模拟：清除历史缓存</button>
       </div> : null}
       {props.entry.turnId==="review-live-turn-state" ? <div className="demo-source-turn-controls"
         data-demo-source-turn-controls="">
         <button type="button" data-demo-resolve-up-next=""
-          onClick={()=>turnRuntimeStore.publishUpNextReady(liveUpNextQuery,true)}>
+          onClick={()=>eventBridge.publish({type:"up-next-ready",query:liveUpNextQuery,ready:true})}>
           模拟：后续状态就绪
         </button>
         <button type="button" data-demo-complete-turn=""
-          onClick={()=>turnRuntimeStore.publishHistoryStatus(liveHistoryQuery,"completed")}>
+          onClick={()=>eventBridge.publish({type:"turn-history-status",query:liveHistoryQuery,status:"completed"})}>
           模拟：历史回合完成
         </button>
         <button type="button" data-demo-resume-turn=""
-          onClick={()=>turnRuntimeStore.publishHistoryStatus(liveHistoryQuery,"inProgress")}>
+          onClick={()=>eventBridge.publish({type:"turn-history-status",query:liveHistoryQuery,status:"inProgress"})}>
           模拟：历史回合进行中
         </button>
       </div> : null}
@@ -407,13 +408,13 @@ export function makeDemoRow(notify: (message: string) => void) {
     dispose() {
       for (const source of historySources.values()) source.dispose();
       historySources.clear();
-      historyStore.dispose();
+      // Event bridge owns the three underlying stores.
       for(const source of turnRuntimeSources.values())source.dispose();
       turnRuntimeSources.clear();
-      turnRuntimeStore.dispose();
+
       for(const source of historicalTurnSources.values())source.dispose();
       historicalTurnSources.clear();
-      historyTurnStore.dispose();
+      eventBridge.dispose();
       collapseState.dispose();
     },
   });
