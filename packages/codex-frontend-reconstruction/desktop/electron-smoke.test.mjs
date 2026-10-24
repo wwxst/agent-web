@@ -172,13 +172,13 @@ test("independent Electron file renderer starts, isolates preload and routes Fc 
       isBodyChild:element.parentElement===document.body,
       top:rect.top,right:window.innerWidth-rect.right,
       position:style.position,zIndex:style.zIndex,pointerEvents:style.pointerEvents,
-      maxWidth:style.maxWidth,
+      maxWidthPercent:Math.round(100*Number.parseFloat(style.maxWidth)/window.innerWidth),
       searchPointerEvents:find==null?null:getComputedStyle(find).pointerEvents,
     };
   });
   assert.deepEqual(portalGeometry,{
     isBodyChild:true,top:8,right:16,position:"fixed",zIndex:"55",
-    pointerEvents:"none",maxWidth:"70vw",searchPointerEvents:"auto",
+    pointerEvents:"none",maxWidthPercent:70,searchPointerEvents:"auto",
   });
   await findInput.fill("历史正文已通过订阅恢复");
   await page.waitForFunction(()=>document.querySelector(".demo-find-results")?.textContent==="0 results");
