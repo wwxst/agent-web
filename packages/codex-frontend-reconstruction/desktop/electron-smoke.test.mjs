@@ -133,6 +133,11 @@ test("independent Electron file renderer starts, isolates preload and routes Fc 
   await page.waitForFunction(()=>document.querySelector(".demo-desktop")
     ?.getAttribute("data-app-shell-sidebar-open")==="true");
 
+  // The host owns per-thread snapshots: native previous/next commands
+  // must not discard an already-edited ProseMirror draft. This exercises
+  // the actual menu -> preload -> mounted App and editor controller.
+  const retainedDraft=page.getByRole("textbox",{name:"演示消息输入"});
+  await retainedDraft.fill("Electron 会话保留草稿");
   // The demo has two explicit source-projected conversations; we validate
   // native commands calling EXISTING switchConversation with bounded routing.
   await app.evaluate(({Menu})=>{
@@ -142,6 +147,7 @@ test("independent Electron file renderer starts, isolates preload and routes Fc 
     .waitFor({state:"detached",timeout:10000});
   await page.waitForFunction(()=>document.querySelector(".demo-header-location strong")
     ?.textContent?.includes("恢复 Codex 会话界面")===true);
+  await retainedDraft.fill("前端会话自己的草稿");
   await app.evaluate(({Menu})=>{
     Menu.getApplicationMenu().getMenuItemById("nextThread").click();
   });
@@ -149,6 +155,19 @@ test("independent Electron file renderer starts, isolates preload and routes Fc 
     .waitFor({state:"attached",timeout:10000});
   await page.waitForFunction(()=>document.querySelector(".demo-header-location strong")
     ?.textContent?.includes("工具调用与审批交互")===true);
+  // First return to review restores the earlier review-only draft.
+  await page.waitForFunction(()=>document.querySelector('[aria-label="演示消息输入"]')?.textContent?.includes("Electron 会话保留草稿")===true);
+  // Update review and verify two separate thread drafts after another round.
+  await retainedDraft.fill("审阅会话自己的草稿");
+  await app.evaluate(({Menu})=>Menu.getApplicationMenu().getMenuItemById("previousThread").click());
+  await page.waitForFunction(()=>document.querySelector(".demo-header-location strong")
+    ?.textContent?.includes("恢复 Codex 会话界面")===true);
+  await page.waitForFunction(()=>document.querySelector('[aria-label="演示消息输入"]')?.textContent?.includes("前端会话自己的草稿")===true);
+  await app.evaluate(({Menu})=>Menu.getApplicationMenu().getMenuItemById("nextThread").click());
+  await page.waitForFunction(()=>document.querySelector(".demo-header-location strong")
+    ?.textContent?.includes("工具调用与审批交互")===true);
+  await page.waitForFunction(()=>document.querySelector('[aria-label="演示消息输入"]')?.textContent?.includes("审阅会话自己的草稿")===true);
+  await retainedDraft.fill("");
   // Y history content is a host-keyed subscription, not the raw demo turn.
   // Find must reflect hydration and clear-thread while using the SAME
   // mounted virtual row (no separate search/transcript renderer).

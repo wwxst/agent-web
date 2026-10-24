@@ -129,6 +129,16 @@ export function App() {
   },[sidebarWidth]);
   const [measuredRailWidth, setMeasuredRailWidth] = React.useState(52);
   const [draft, setDraft] = React.useState("");
+  // Preserve canonical conversation sources through navigation. Original Y
+  // projects keyed turns; remounting the virtualizer must not recreate or
+  // silently discard its host-owned source snapshot.
+  const sessionSourcesRef = React.useRef(new Map<DemoConversationId, ReturnType<typeof createDemoSource>>());
+  const draftByConversationRef = React.useRef(new Map<DemoConversationId,string>());
+  const historyByConversationRef = React.useRef(new Set<DemoConversationId>());
+  const updateDraft = React.useCallback((text:string)=>{
+    draftByConversationRef.current.set(active,text);
+    setDraft(text);
+  },[active]);
   const [playing, setPlaying] = React.useState(false);
   const [toast, setToast] = React.useState<string | null>(null);
   const [historyAdded, setHistoryAdded] = React.useState(false);
@@ -145,7 +155,18 @@ export function App() {
   const shouldFollowRef = React.useRef(true);
   const nextIdRef = React.useRef(0);
 
-  const source = React.useMemo(() => createDemoSource(active), [active, generation]);
+  const source = React.useMemo(() => {
+    const sessions=sessionSourcesRef.current;
+    const existing=sessions.get(active);
+    if(existing!=null)return existing;
+    const created=createDemoSource(active);
+    sessions.set(active,created);
+    return created;
+  },[active,generation]);
+  React.useEffect(() => () => {
+    for(const existing of sessionSourcesRef.current.values())existing.dispose();
+    sessionSourcesRef.current.clear();
+  },[]);
   const notify = React.useCallback((message: string) => {
       setToast(message);
       if (toastTimerRef.current != null) clearTimeout(toastTimerRef.current);
@@ -281,7 +302,6 @@ export function App() {
     return () => {
       cancelAnimationFrame(frame);
       if (timerRef.current != null) clearTimeout(timerRef.current);
-      source.dispose();
     };
   }, [scrollToBottom, source]);
   React.useEffect(() => () => {
@@ -337,7 +357,7 @@ export function App() {
     if (submitDecision.kind !== "submit") return;
     markFollow();
     appendDemoEntries(source, [demoMessageEntry("user", nextId("user"), message)]);
-    setDraft("");
+    updateDraft("");
     setPlaying(true);
     scheduleAppend(demoMessageEntry("assistant", nextId("reply"),
       `**模拟回复**：已收到你的消息。\n\n> ${message.slice(0, 180).replace(/\n/g, "\n> ")}\n\n当前只是在浏览器中验证恢复后的 React 消息渲染链路，**不会请求模型或调用真实 Agent 后端**。`), 700);
@@ -369,12 +389,19 @@ export function App() {
     if (historyAdded) return;
     markFollow();
     appendDemoEntries(source, makeLongHistory());
+    historyByConversationRef.current.add(active);
     setHistoryAdded(true);
     notify("已加入 45 条模拟消息。可滚动检查虚拟列表。");
   }
   function reset() {
     if (timerRef.current != null) clearTimeout(timerRef.current);
     timerRef.current = null;
+    // Explicit reset is the only UI path that replaces the active source.
+    // Switching threads never drops existing turn snapshots or drafts.
+    sessionSourcesRef.current.get(active)?.dispose();
+    sessionSourcesRef.current.delete(active);
+    draftByConversationRef.current.delete(active);
+    historyByConversationRef.current.delete(active);
     setPlaying(false);
     setHistoryAdded(false);
     setDraft("");
@@ -385,8 +412,8 @@ export function App() {
     if (timerRef.current != null) clearTimeout(timerRef.current);
     timerRef.current = null;
     setPlaying(false);
-    setHistoryAdded(false);
-    setDraft("");
+    setHistoryAdded(historyByConversationRef.current.has(id));
+    setDraft(draftByConversationRef.current.get(id)??"");
     setActive(id);
     // Never retain result offsets from an unrelated demo conversation.
     setFindOrdinal(0);
@@ -553,9 +580,9 @@ export function App() {
             density="comfortable"
             radiusVariant="default"
             surfaceVariant="default"
-            input={<DemoProseMirrorComposerEditor
+            input={<DemoProseMirrorComposerEditor key={active}
               value={draft}
-              onChange={setDraft}
+              onChange={updateDraft}
               onSubmit={sendMessage}
               onPastedImages={() => notify("演示模式：图片上传尚未接入。")}
               onPastedFiles={() => notify("演示模式：文件上传尚未接入。")}
