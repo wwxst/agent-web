@@ -150,3 +150,29 @@ The main Composer now uses `ComposerPrimaryActionModel.ts` for the original `YMt
 ## Real ProseMirror plain-mode Composer (2026-10-23)
 
 `src/components/SourcePlainProseMirrorController.ts` now builds a real ProseMirror EditorState + EditorView from the source-confirmed plain schema and plugs it into the existing `CodexSourceComposerEditorMount`. The visible demo uses `DemoProseMirrorComposerEditor` instead of textarea; `ComposerEditorBehaviorModel`, the host paste-event bridge and outer YMt form are reused. This is **not** the original rich Markdown, mention and suggestion editor. The demo still generates synthetic responses; neither Electron nor the Agent backend is connected. See `reports/PROSEMIRROR_PLAIN_MODE.md` for the explicit gap matrix.
+
+## Independent Electron runtime (2026-10-24)
+
+The recovered React UI now also has a **real independently authored Electron
+main process and isolated preload**, in addition to the Vite browser preview.
+It is *not* the private original Codex Electron host or a working Agent client.
+
+```sh
+npm install
+npm run demo:build
+npm run desktop:start   # launches a BrowserWindow from local file:// build
+# alternatively for development:
+npm run desktop:dev     # starts Vite + Electron
+# actual Electron preload/React/IPC smoke, with a display:
+npm run desktop:test:smoke
+```
+
+The smoke has been run under Linux Xvfb in GitHub Actions; it verifies a real
+BrowserWindow, renderer Node isolation and a main-process event reaching the
+existing qn/Qr React activity group. The original Electron preload is pinned
+by SHA-256/source signatures and **its private `electronBridge` has not been
+copied**. See `desktop/README.md` and
+`reports/ELECTRON_DESKTOP_HOST_STARTUP.md` for build requirements, security
+boundaries and missing native features. Windows installer/signing, private IPC,
+real Agent backend events and version-matched UI pixel parity are **not**
+complete.
