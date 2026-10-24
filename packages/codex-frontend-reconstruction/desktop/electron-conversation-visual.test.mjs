@@ -120,8 +120,29 @@ test("real Electron review timeline renders last meaningful PowerShell action an
   const body=command.locator("[data-codex-source-command-body]");
   assert.match(await body.locator("pre").first().innerText(),/Get-ChildItem src -File/);
   assert.doesNotMatch(await body.locator("pre").first().innerText(),/powershell\.exe|cmd\.exe/i);
-  await command.scrollIntoViewIfNeeded();
+  // Source virtualizer can compensate height after the command expands.
+  // Position the ACTUAL command body in the transcript viewport and assert
+  // that screenshot captures it, rather than accepting an unrelated section.
+  await body.evaluate(element=>{
+    const viewport=element.closest('[data-thread-scroll-viewport]');
+    if(viewport==null)throw Error("mounted command has no conversation viewport");
+    const r=element.getBoundingClientRect();
+    const bounds=viewport.getBoundingClientRect();
+    viewport.scrollTop+=r.top-bounds.top-90;
+    viewport.dispatchEvent(new Event("scroll",{bubbles:true}));
+  });
+  await page.waitForTimeout(220);
+  await body.scrollIntoViewIfNeeded();
+  const visible=await body.evaluate(element=>{
+    const viewport=element.closest('[data-thread-scroll-viewport]');
+    if(viewport==null)return false;
+    const box=element.getBoundingClientRect();
+    const bounds=viewport.getBoundingClientRect();
+    return box.top>=bounds.top-4&&box.bottom<=bounds.bottom+4;
+  });
+  assert.equal(visible,true,"expanded command must be visibly inside the conversation before capture");
   await mkdir(resolve(root,"desktop/test-results"),{recursive:true});
+  await body.screenshot({path:resolve(root,"desktop/test-results/conversation-command-action-detail.png")});
   await page.screenshot({path:resolve(root,"desktop/test-results/conversation-windows-command-action.png"),
    fullPage:false});
   await toggle.click();
