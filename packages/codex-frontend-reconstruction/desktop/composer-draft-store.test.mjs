@@ -50,3 +50,16 @@ test("corrupted, version-mismatched and hostile saved payloads do not hydrate a 
   assert.deepEqual(readComposerDrafts(root),{frontend:"okay",review:"restored"});
  }finally{await rm(root,{recursive:true,force:true});}
 });
+
+test("two maximal Unicode and escaped-control drafts remain readable after JSON expansion",async()=>{
+ const root=await mkdtemp(join(tmpdir(),"agent-web-draft-test-"));
+ try{
+  const prefix="\u0000".repeat(MAX_DRAFT_LENGTH);
+  const emoji="✨".repeat(MAX_DRAFT_LENGTH);
+  assert.equal(writeComposerDraft(root,"frontend",prefix),true);
+  assert.equal(writeComposerDraft(root,"review",emoji),true);
+  const restored=readComposerDrafts(root);
+  assert.equal(restored.frontend,prefix);
+  assert.equal(restored.review,emoji);
+ }finally{await rm(root,{recursive:true,force:true});}
+});
