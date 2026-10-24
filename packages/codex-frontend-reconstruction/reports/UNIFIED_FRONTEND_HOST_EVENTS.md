@@ -37,3 +37,7 @@ For the target checkout, CI runs `npm run test:core`, `npm run demo:check-model`
 ## Open work and acceptance boundary
 
 The unified host event ingress is tested against deterministic *synthetic* events, not a real Electron preload or Agent backend. A verified, permission-aware host event transport must be implemented and tested before calling the frontend independently live. Other remaining work: original connected task-result cards, controls and approvals, true Electron process startup/IPC, browser/desktop screenshots against the **matching original Codex binary/theme**, and long-history remount/navigation regressions. Do not merge to main until user authorization.
+
+### Canonical wire identity hardening
+
+Host transports may deserialize query object fields in an arbitrary order. `qn/Qr` source/cache keys now serialize explicit `hostId/threadId/(entityKey)` fields, rather than `Object.values(query)`. The original query identity is therefore stable under field reordering and a stale or malformed event cannot accidentally create an unobserved shadow subscription. Unit tests cover reversed field insertion order and the same thread's coordinated cache clear.
