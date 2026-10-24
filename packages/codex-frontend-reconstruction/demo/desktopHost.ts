@@ -17,6 +17,9 @@ declare global {
       getHostInfo():Promise<{
         windowType:"electron";platform:string;theme:string;backendConnected:false
       }>;
+      /** Independent draft persistence; IDs are local demo threads only. */
+      getComposerDrafts():Promise<Partial<Record<"frontend"|"review",string>>>;
+      setComposerDraft(threadId:"frontend"|"review",text:string):Promise<boolean>;
       subscribeHostEvents(listener:(event:SourceConversationHostEvent)=>void):()=>void;
     };
   }
