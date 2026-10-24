@@ -63,3 +63,37 @@ jobs:
           name: codex-style-demo-browser-preview
           path: packages/codex-frontend-reconstruction/demo/test-results/
           if-no-files-found: warn
+
+  windows-electron-smoke:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: packages/codex-frontend-reconstruction
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install independent desktop dependencies
+        run: npm install --no-audit --no-fund
+      - name: Type-check and bundle local Electron renderer
+        run: npm run demo:build
+      - name: Ensure Windows Electron executable was downloaded
+        shell: pwsh
+        run: |
+          if (!(Test-Path "node_modules/electron/dist/electron.exe")) {
+            Remove-Item Env:ELECTRON_SKIP_BINARY_DOWNLOAD -ErrorAction SilentlyContinue
+            node node_modules/electron/install.js
+          }
+          if (!(Test-Path "node_modules/electron/dist/electron.exe")) {
+            throw "Electron Windows binary is missing"
+          }
+      - name: Real Windows Electron window, preload, IPC and native menu smoke
+        run: npm run desktop:test:smoke
+      - name: Upload Windows Electron screenshot
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reconstructed-electron-windows-smoke
+          path: packages/codex-frontend-reconstruction/desktop/test-results/
+          if-no-files-found: warn
