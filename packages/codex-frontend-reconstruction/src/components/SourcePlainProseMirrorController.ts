@@ -161,6 +161,26 @@ export class SourcePlainProseMirrorController implements ComposerControllerPort 
           for (const handler of owner.files) handler(dropped, transfer);
           return true;
         },
+        // Original rUu clipboardTextSerializer unwraps an open, single code
+        // block and copies its literal text, without Markdown fences.
+        // For all other slices preserve upstream ProseMirror's plain-text
+        // fallback: the private uG Markdown serializer is not restored.
+        clipboardTextSerializer(slice) {
+          let content = slice.content;
+          for (let depth = 1; depth < Math.min(slice.openStart, slice.openEnd); depth++) {
+            const node = content.firstChild;
+            if (content.childCount !== 1 || node == null) break;
+            content = node.content;
+          }
+          if (content.childCount !== 1 || !content.firstChild?.isTextblock) {
+            content = slice.content;
+          }
+          if (slice.openStart > 0 && content.childCount === 1 &&
+              content.firstChild?.type.name === "code_block") {
+            return content.firstChild.textContent;
+          }
+          return content.textBetween(0, content.size, "\n\n");
+        },
         handleDOMEvents: {
           compositionstart: () => { owner.composing = true; return false; },
           compositionend: () => { owner.composing = false; return false; },
