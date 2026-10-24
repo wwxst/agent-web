@@ -252,7 +252,16 @@ button:focus-visible, textarea:focus-visible { outline: 2px solid #578cda; outli
 
 /* Original uUa left panel is the positioning root for its outside sbi
  * hit area. It must paint above the thread viewport at the shared edge. */
-.demo-sidebar { position:relative; z-index:13; overflow:visible; }
+.demo-sidebar {
+  position:relative;
+  z-index:13;
+  overflow:visible;
+  /* Original JFu/YFu width writes apply immediately during keyboard and
+   * pointer resizing. Remove the old preview-only width/min-width transition,
+   * which moves the hit target away from the pointer after a rapid reset. */
+  transition-property:background-color;
+  transition-duration:.12s;
+}
 
 /* Original main-C4DYk222 z9(primary): Windows/Linux titleBarStyle hidden
    + transparent A9 overlay at 36px. Only native Electron uses this.
