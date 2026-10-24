@@ -133,6 +133,11 @@ test("independent Electron file renderer starts, isolates preload and routes Fc 
   await page.waitForFunction(()=>document.querySelector(".demo-desktop")
     ?.getAttribute("data-app-shell-sidebar-open")==="true");
 
+  // The host owns per-thread snapshots: native previous/next commands
+  // must not discard an already-edited ProseMirror draft. This exercises
+  // the actual menu -> preload -> mounted App and editor controller.
+  const retainedDraft=page.getByRole("textbox",{name:"演示消息输入"});
+  await retainedDraft.fill("Electron 会话保留草稿");
   // The demo has two explicit source-projected conversations; we validate
   // native commands calling EXISTING switchConversation with bounded routing.
   await app.evaluate(({Menu})=>{
@@ -149,6 +154,18 @@ test("independent Electron file renderer starts, isolates preload and routes Fc 
     .waitFor({state:"attached",timeout:10000});
   await page.waitForFunction(()=>document.querySelector(".demo-header-location strong")
     ?.textContent?.includes("工具调用与审批交互")===true);
+  // Review has its own draft. Return to frontend and restore it without
+  // recreating the per-thread source; then resume the review tests.
+  await retainedDraft.fill("审阅会话自己的草稿");
+  await app.evaluate(({Menu})=>Menu.getApplicationMenu().getMenuItemById("previousThread").click());
+  await page.waitForFunction(()=>document.querySelector(".demo-header-location strong")
+    ?.textContent?.includes("恢复 Codex 会话界面")===true);
+  assert.match(await retainedDraft.innerText(),/Electron 会话保留草稿/);
+  await app.evaluate(({Menu})=>Menu.getApplicationMenu().getMenuItemById("nextThread").click());
+  await page.waitForFunction(()=>document.querySelector(".demo-header-location strong")
+    ?.textContent?.includes("工具调用与审批交互")===true);
+  assert.match(await retainedDraft.innerText(),/审阅会话自己的草稿/);
+  await retainedDraft.fill("");
   // Y history content is a host-keyed subscription, not the raw demo turn.
   // Find must reflect hydration and clear-thread while using the SAME
   // mounted virtual row (no separate search/transcript renderer).
