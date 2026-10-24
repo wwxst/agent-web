@@ -120,19 +120,18 @@ test("real Electron review timeline renders last meaningful PowerShell action an
   const body=command.locator("[data-codex-source-command-body]");
   assert.match(await body.locator("pre").first().innerText(),/Get-ChildItem src -File/);
   assert.doesNotMatch(await body.locator("pre").first().innerText(),/powershell\.exe|cmd\.exe/i);
-  // Source virtualizer can compensate height after the command expands.
-  // Position the ACTUAL command body in the transcript viewport and assert
-  // that screenshot captures it, rather than accepting an unrelated section.
-  await body.evaluate(element=>{
-    const viewport=element.closest('[data-thread-scroll-viewport]');
-    if(viewport==null)throw Error("mounted command has no conversation viewport");
-    const r=element.getBoundingClientRect();
-    const bounds=viewport.getBoundingClientRect();
-    viewport.scrollTop+=r.top-bounds.top-90;
-    viewport.dispatchEvent(new Event("scroll",{bubbles:true}));
+  // The source virtualizer is bottom-following on thread entry. Move to the
+  // beginning (where this actual command is the second activity), signal the
+  // existing browser scroll controller, then allow source measurements to
+  // settle before the screenshot. Do NOT fake or portal the command content.
+  const viewport=page.getByTestId("transcript-scroll");
+  await viewport.evaluate(element=>{
+    element.scrollTop=0;
+    element.dispatchEvent(new Event("scroll",{bubbles:true}));
   });
-  await page.waitForTimeout(220);
+  await page.waitForTimeout(350);
   await body.scrollIntoViewIfNeeded();
+  await page.waitForTimeout(250);
   const visible=await body.evaluate(element=>{
     const viewport=element.closest('[data-thread-scroll-viewport]');
     if(viewport==null)return false;
@@ -140,11 +139,22 @@ test("real Electron review timeline renders last meaningful PowerShell action an
     const bounds=viewport.getBoundingClientRect();
     return box.top>=bounds.top-4&&box.bottom<=bounds.bottom+4;
   });
-  assert.equal(visible,true,"expanded command must be visibly inside the conversation before capture");
+  assert.equal(visible,true,"actual expanded command must be in visible conversation");
+  // Rendered position must remain stable for a full animation frame; a DOM
+  // node from a stale virtual row does not qualify as a screenshot oracle.
+  await page.waitForTimeout(180);
+  const visibleAgain=await body.evaluate(element=>{
+    const viewport=element.closest('[data-thread-scroll-viewport]');
+    if(viewport==null)return false;
+    const box=element.getBoundingClientRect(),vr=viewport.getBoundingClientRect();
+    return box.top>=vr.top-4&&box.bottom<=vr.bottom+4;
+  });
+  assert.equal(visibleAgain,true);
   await mkdir(resolve(root,"desktop/test-results"),{recursive:true});
-  await body.screenshot({path:resolve(root,"desktop/test-results/conversation-command-action-detail.png")});
   await page.screenshot({path:resolve(root,"desktop/test-results/conversation-windows-command-action.png"),
-   fullPage:false});
+   fullPage:false,animations:"disabled"});
+  await body.screenshot({path:resolve(root,"desktop/test-results/conversation-command-action-detail.png"),
+   animations:"disabled"});
   await toggle.click();
   assert.equal(await body.count(),0);
  }finally{
