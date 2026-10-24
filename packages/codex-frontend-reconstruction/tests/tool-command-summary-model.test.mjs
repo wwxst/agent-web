@@ -4,6 +4,7 @@ import {
   getToolCommandElapsedMs as elapsedMs,
   getToolCommandSummary as summary,
   getSkillScriptSummary,
+  selectSourceExecutionDisplayCommand,
   isDateTimeCheckCommand,
 } from "../build/ToolCommandSummaryModel.js";
 
@@ -120,4 +121,18 @@ test("WC uses skill-script labels in collapsed summaries but preserves source ga
 test("hidden raw-command mode never adds elapsed text to summaries", () => {
   assert.equal(summary({ ...base, showRawCommand: false, elapsedLabel: null }), "已运行命令");
   assert.equal(summary({ ...base, showRawCommand: false, isInProgress: true, elapsedLabel: null }), "正在运行命令");
+});
+
+test("original command-execution-command t/n selects last actual action, excluding Windows and Unix launchers",()=>{
+  const selected=selectSourceExecutionDisplayCommand;
+  assert.equal(selected({command:"powershell.exe -NoProfile",commandActions:[
+    {command:"cmd.exe /c"},{command:"Get-ChildItem src -File"},{command:"pwsh.exe -NoProfile"},
+  ]}),"Get-ChildItem src -File");
+  assert.equal(selected({command:"/bin/bash -lc",commandActions:[
+    {command:" git status --short "},{command:"zsh -c"},{command:"npm run build"},
+  ]}),"npm run build");
+  assert.equal(selected({command:" C:\\Windows\\System32\\cmd.exe /c ",commandActions:[{command:"powershell.exe"}]}),"");
+  assert.equal(selected({command:" git diff --stat ",commandActions:[]}),"git diff --stat");
+  assert.equal(selected({command:" bash -lc ",commandActions:[null,{command:"  "}]}),"");
+  assert.equal(selected({command:" npm run test ",commandActions:[{command:" /usr/bin/fish -c "}]}),"npm run test");
 });

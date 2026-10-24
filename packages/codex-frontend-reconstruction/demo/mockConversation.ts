@@ -159,7 +159,12 @@ function reviewScenario(): ConversationRenderEntry[] {
     demoMessageEntry("user", "review-intro", "我想核对工具状态、文件差异和权限审批是否分开展示。"),
     demoMessageEntry("assistant", "review-response", "把任务分成 **工具活动、修改审阅和审批** 三种不同条目，而不是把所有输出混在一段文本里。"),
     demoActivityEntry("review-exec", [demoItem("review-exec1", "exec", undefined, {
-      heading: "读取项目结构", command: "find src -maxdepth 2 -type f", output: "src/components/\nsrc/conversation/\nsrc/index.ts", state: "Ready",
+      heading: "读取项目结构（模拟）",
+      command: "powershell.exe -NoProfile", cmd: "powershell.exe -NoProfile",
+      commandActions:[
+        {command:"cmd.exe /c"},{command:"Get-ChildItem src -File"},{command:"pwsh.exe -NoProfile"},
+      ],
+      output: "src/components/\nsrc/conversation/\nsrc/index.ts", state: "Ready",
     })]),
     // Synthetic UI-only fixtures exercise the source ZC/QC/$C script labels.
     // They do not launch commands or imply that a real skill script ran.

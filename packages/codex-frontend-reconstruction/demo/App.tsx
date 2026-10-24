@@ -216,9 +216,15 @@ export function App() {
       });
       pendingViewportRestoreRef.current=null;
       viewportSettleTimeoutRef.current=null;
-    },250);
+    },650);
   },[]);
   React.useEffect(()=>()=>{if(viewportSettleTimeoutRef.current!=null)clearTimeout(viewportSettleTimeoutRef.current);},[]);
+  const cancelPendingViewportOnUserScroll=React.useCallback(()=>{
+    if(pendingViewportRestoreRef.current==null)return;
+    pendingViewportRestoreRef.current=null;
+    if(viewportSettleTimeoutRef.current!=null)clearTimeout(viewportSettleTimeoutRef.current);
+    viewportSettleTimeoutRef.current=null;
+  },[]);
   const nextIdRef = React.useRef(0);
 
   const source = React.useMemo(() => {
@@ -358,6 +364,22 @@ export function App() {
       scroll.style.removeProperty("--thread-scroll-padding-bottom");
     };
   }, [scrollController]);
+  // The recovered virtualizer changes the scroll content height when its
+  // mounted Markdown/tool rows finish ResizeObserver measurement. Keep the
+  // source bottom-distance hold active across those actual DOM layout
+  // corrections rather than releasing it after one arbitrary timer tick.
+  React.useEffect(()=>{
+    const content=scrollElementRef.current?.querySelector("[data-source-thread-scroll-content]");
+    if(content==null||typeof ResizeObserver==="undefined")return;
+    const observer=new ResizeObserver(()=>{
+      const pending=pendingViewportRestoreRef.current;
+      if(pending?.id!==active)return;
+      scrollController.scrollToDistanceFromBottomPx(pending.distance,"instant");
+      finishViewportRestore(pending);
+    });
+    observer.observe(content);
+    return ()=>observer.disconnect();
+  },[active,scrollController,finishViewportRestore]);
   const onVisibleContentReady = React.useCallback(() => {
     const pending=pendingViewportRestoreRef.current;
     if(pending?.id===active){
@@ -641,6 +663,14 @@ export function App() {
       <div className="demo-scroll-region" ref={scrollElementRef}
         role="region" tabIndex={0} aria-label="对话"
         data-thread-scroll-viewport=""
+        // Original scrollToDistanceFromBottomPx(source:"user"|"programmatic")
+        // distinguishes user intent from the automatic route hold. Never
+        // override a real wheel operation with a stale pending restore.
+        onWheel={event=>{
+          if(event.deltaY===0)return;
+          cancelPendingViewportOnUserScroll();
+          shouldFollowRef.current=false;
+        }}
         onScroll={() => {
         scrollController.notifyScroll();
         // Mount/measurement scroll events during a thread handoff are NOT a
