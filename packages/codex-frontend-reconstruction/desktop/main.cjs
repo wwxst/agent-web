@@ -103,6 +103,9 @@ function installNativeMenu(){
     toggleSidebar:()=>sendSourceUiCommand("toggle-sidebar"),
     previousThread:()=>sendSourceUiCommand("previous-thread"),
     nextThread:()=>sendSourceUiCommand("next-thread"),
+    findInThread:()=>sendSourceUiCommand("find-in-thread"),
+    findNextInThread:()=>sendSourceUiCommand("find-next-in-thread"),
+    findPreviousInThread:()=>sendSourceUiCommand("find-previous-in-thread"),
     closeWindow:()=>focusedWindow()?.close(),
     quit:()=>app.quit(),
     // Original native menu forwards step-window-zoom/reset-window-zoom to
