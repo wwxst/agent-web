@@ -4,7 +4,7 @@ import {createRequire} from "node:module";
 const require=createRequire(import.meta.url);
 const {MENU_IDS,buildSourceNativeMenus,isAllowedMenuId,sanitizeMenuAnchor}=require("./nativeMenu.cjs");
 
-const names=["closeWindow","quit","zoomIn","zoomOut","actualSize","toggleFullScreen","documentation"];
+const names=["closeWindow","quit","zoomIn","zoomOut","actualSize","toggleFullScreen","documentation","toggleSidebar","previousThread","nextThread"];
 function makeActions(){
  const calls=[];
  const actions=Object.fromEntries(names.map(name=>[name,()=>calls.push(name)]));
@@ -40,6 +40,13 @@ test("source D0e View accelerators and real IPC action subset",()=>{
  }
  assert.deepEqual(calls,["zoomIn","zoomOut","actualSize","toggleFullScreen"]);
  assert.equal(item(menus,"documentation").label,"Documentation");
+ for(const id of ["toggleSidebar","previousThread","nextThread"]){
+  assert.equal(item(menus,id).accelerator,undefined,
+   "source keymap is dynamic: never invent native shortcuts");
+  item(menus,id).click();
+ }
+ assert.deepEqual(calls,["zoomIn","zoomOut","actualSize","toggleFullScreen",
+  "toggleSidebar","previousThread","nextThread"]);
 });
 test("macOS edit/window branch retains original roles and full screen shortcut",()=>{
  const {actions}=makeActions();
