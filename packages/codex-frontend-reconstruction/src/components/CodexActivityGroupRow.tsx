@@ -10,6 +10,7 @@ import {
 import type { SourceRepeatedActivityRow } from "../conversation/SourceRepeatedActivityGroups.js";
 import { projectSourceRepeatedHeader, type SourceRepeatedHeader, type SourceRecognizedMcpAction } from "../conversation/SourceRepeatedActivityHeader.js";
 import { SourceActivityDisclosure } from "./SourceActivityDisclosure.js";
+import "./codexScrollFade.css";
 import "./codexActivityGroupRow.css";
 
 export interface CodexActivityGroupRowProps<T extends GroupActivityItem>
