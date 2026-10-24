@@ -214,9 +214,11 @@ test("thread navigation restores its own virtualized scroll distance without for
     return Math.max(0,total-el.scrollTop);
   });
   expect(before).toBeGreaterThan(300);
-  // The source virtualizer measures rendered rows asynchronously. Test a
-  // settled user viewport, not a scrollTop set in the middle of a reflow.
-  await page.waitForTimeout(350);
+  // The Markdown fenced-code source surface alters measured turn heights.
+  // Let the original ResizeObserver/virtualizer finish its reconciliation
+  // before taking the *outgoing* user's viewport snapshot. Keep the same
+  // strict restored-distance bound; do not excuse a real navigation jump.
+  await page.waitForTimeout(1000);
   const settledBefore=await viewport.evaluate(el=>Math.max(0,el.scrollHeight-el.clientHeight-el.scrollTop));
   await page.getByRole("button",{name:/工具调用与审批交互/}).click();
   await expect(page.locator(".demo-header-location strong")).toHaveText("工具调用与审批交互");
