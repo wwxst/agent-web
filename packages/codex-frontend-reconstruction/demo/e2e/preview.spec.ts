@@ -175,3 +175,34 @@ test("switches the mock conversation and shows its real recovered row dispatch",
   await expect(page.getByRole("button", { name: "打开演示工具" })).toBeVisible();
   expect(uncaughtErrors).toEqual([]);
 });
+
+test("thread navigation retains canonical transcript, appended history, draft and explicit reset boundary",async({page})=>{
+  await page.goto("/");
+  const editor=page.getByRole("textbox",{name:"演示消息输入"});
+  await editor.fill("未发送的前端草稿");
+  await page.getByRole("button",{name:/工具调用与审批交互/}).click();
+  await editor.fill("仅供审阅会话的草稿");
+  await page.getByRole("button",{name:/恢复 Codex 会话界面/}).click();
+  await expect(editor).toContainText("未发送的前端草稿");
+  await editor.fill("跨会话保留消息");
+  await page.getByRole("button",{name:"发送模拟消息"}).click();
+  await expect(page.getByText("已收到你的消息",{exact:false})).toBeVisible();
+  await page.getByRole("button",{name:"打开演示工具"}).click();
+  await page.getByRole("button",{name:"添加 45 条历史"}).click();
+  await expect(page.getByRole("button",{name:"添加 45 条历史"})).toBeDisabled();
+  await page.getByRole("button",{name:/工具调用与审批交互/}).click();
+  await expect(editor).toContainText("仅供审阅会话的草稿");
+  await page.getByRole("button",{name:/恢复 Codex 会话界面/}).click();
+  await expect.poll(()=>page.locator('[data-turn-key="history-content:turn:user-1"]').count()).toBeGreaterThanOrEqual(0);
+  const record=await page.evaluate(()=>Array.from(document.querySelectorAll('[data-turn-key]'))
+    .map(el=>el.getAttribute("data-turn-key")).filter(Boolean));
+  // The immutable snapshot and virtualizer can remount independently;
+  // search targets stored turns even when virtual rows are off screen.
+  const sourceCount=await page.evaluate(()=>document.querySelectorAll('[data-turn-key]').length);
+  expect(sourceCount).toBeGreaterThan(0);
+  await expect(page.getByRole("button",{name:"添加 45 条历史"})).toBeDisabled();
+  await page.getByRole("button",{name:"重置"}).click();
+  await expect(page.getByRole("button",{name:"添加 45 条历史"})).toBeEnabled();
+  await expect(editor).toBeEmpty();
+  expect(record.length).toBeGreaterThan(0);
+});
