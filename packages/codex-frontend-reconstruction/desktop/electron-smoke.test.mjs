@@ -178,6 +178,55 @@ test("independent Electron file renderer starts, isolates preload and routes Fc 
   await findInput.press("Escape");
   await findInput.waitFor({state:"detached",timeout:10000});
 
+  // A genuinely mounted conversation row, not an isolated search model:
+  // inject a synthetic repeated phrase and wait for the mock reply so there
+  // are multiple distinct matches inside each of two virtualized turns.
+  const composer=page.getByRole("textbox",{name:"演示消息输入"});
+  await composer.fill("可见定位可见定位可见定位");
+  await page.getByRole("button",{name:"发送模拟消息"}).click();
+  await page.waitForFunction(()=>Array.from(document.querySelectorAll(".demo-markdown"))
+    .some(element=>element.textContent?.includes("模拟回复")));
+  await app.evaluate(({Menu})=>{
+    Menu.getApplicationMenu().getMenuItemById("findInThread").click();
+  });
+  await findInput.waitFor({timeout:10000});
+  await findInput.fill("可见定位");
+  await page.waitForFunction(()=>document.querySelector(".demo-find-results")
+    ?.textContent?.startsWith("1 / 6"));
+  // Chromium's CSS Highlight API marks one precise mounted Markdown Range,
+  // without inserting a span/mark inside React-owned DOM or leaking selection.
+  const selectedRange=async()=>page.evaluate(()=>{
+    const registry=CSS.highlights;
+    const highlight=registry?.get("demo-thread-find-active");
+    const ranges=highlight==null?[]:Array.from(highlight);
+    const range=ranges[0];
+    if(ranges.length!==1||range==null)return null;
+    const viewport=document.querySelector('[data-testid="transcript-scroll"]');
+    const box=range.getBoundingClientRect(),screen=viewport?.getBoundingClientRect();
+    return {
+      text:range.toString(),offset:range.startOffset,
+      turn:range.startContainer.parentElement?.closest("[data-demo-turn-id]")
+        ?.getAttribute("data-demo-turn-id"),
+      visible:screen!=null&&box.top>=screen.top-2&&box.bottom<=screen.bottom+2,
+    };
+  });
+  await page.waitForFunction(()=>CSS.highlights?.has("demo-thread-find-active")===true);
+  const firstMatch=await selectedRange();
+  assert.equal(firstMatch?.text,"可见定位");
+  assert.equal(firstMatch?.visible,true);
+  await app.evaluate(({Menu})=>{
+    Menu.getApplicationMenu().getMenuItemById("findNextInThread").click();
+  });
+  await page.waitForFunction(()=>document.querySelector(".demo-find-results")?.textContent?.startsWith("2 / "));
+  await page.waitForFunction(()=>Array.from(CSS.highlights?.get("demo-thread-find-active")??[])
+    .some(range=>range.startOffset>0));
+  const secondMatch=await selectedRange();
+  assert.equal(secondMatch?.text,"可见定位");
+  assert.equal(secondMatch?.turn,firstMatch?.turn);
+  assert.ok(secondMatch.offset>firstMatch.offset);
+  await findInput.press("Escape");
+  await page.waitForFunction(()=>!CSS.highlights?.has("demo-thread-find-active"));
+
   // Click actual application menu items in the main process; zoom updates
   // this *real* WebContents, not a fake React numeric model.
   const zooms=await app.evaluate(({Menu,BrowserWindow})=>{
