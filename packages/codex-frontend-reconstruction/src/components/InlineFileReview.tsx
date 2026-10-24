@@ -64,11 +64,11 @@ function SourceInlineFileReviewDiff(props: {
   const original = React.useMemo(() => ({
     name: props.oldFile.name ?? props.newFile.name ?? "(unnamed)",
     contents: props.oldFile.contents,
-  }), [props.oldFile]);
+  }), [props.oldFile, props.newFile.name]);
   const updated = React.useMemo(() => ({
     name: props.newFile.name ?? props.oldFile.name ?? "(unnamed)",
     contents: props.newFile.contents,
-  }), [props.newFile]);
+  }), [props.newFile, props.oldFile.name]);
   React.useEffect(() => {
     if (!props.onViewportReady) return;
     const container = containerRef.current;
