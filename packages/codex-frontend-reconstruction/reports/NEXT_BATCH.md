@@ -115,3 +115,10 @@
 - The **same mounted Demo React conversation** now routes all three event families through the single bridge. Added per-thread qn/Qr invalidation and stale transport fencing; tests verify cross-conversation isolation and an event-driven clear/recovery browser scenario.
 - No duplicate message/activity UI, no hidden private API imitation, no Agent backend change. See `UNIFIED_FRONTEND_HOST_EVENTS.md`.
 - **Next:** inspect the existing Electron host / CLI event semantics when available, bind a permission-aware transport and exercise it in an actual desktop startup. Do not fabricate a Codex IPC schema or replace genuine test data with unsupported invented fields. Compare theme/version matched UI after desktop host runs.
+
+## 2026-10-24 — real Electron boot completed, next original UI/IPC acceptance
+
+- Electron main/preload and `file://` React renderer now start as an independently executable desktop frontend. Playwright Electron smoke proves preload isolation and real main-process IPC delivering a qn/Qr event into the **existing** Ga/qe UI.
+- Run `npm run demo:build && npm run desktop:start` to launch the built renderer, or `npm run desktop:dev` for Vite development. `npm run desktop:test:smoke` requires a display (Linux CI uses Xvfb).
+- Original Codex preload evidence: `scripts/audit-electron-preload-evidence.mjs`; independent runtime, security contract and unsupported private APIs: `reports/ELECTRON_DESKTOP_HOST_STARTUP.md`.
+- **Highest priority next:** inventory source-backed Electron shell geometry/assets and version-specific original screenshots; audit any missing native navigation, keyboard and window lifecycle states; then map confirmed Agent host protocol events to the independent `SourceConversationHostEventBridge` under explicit permissions. Windows packaged startup and installer smoke remain unverified. Do not merge to main until requested.
