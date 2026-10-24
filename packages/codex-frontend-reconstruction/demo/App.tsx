@@ -265,7 +265,18 @@ export function App() {
     <div className="demo-window-menu" aria-label={window.agentWebDesktopHost != null ? "Electron 原生标题栏拖拽区域" : "桌面窗口示意（浏览器内，不是原生 Electron）"}>
       <span className="demo-menubar-back" aria-hidden="true">‹</span><span className="demo-menubar-back" aria-hidden="true">›</span>
       <span className="demo-menubar-panel" aria-hidden="true"><Icon name="panel" size={15}/></span>
-      <span>File</span><span>Edit</span><span>View</span><span>Help</span>
+      {window.agentWebDesktopHost != null ? (
+        <div className="demo-native-application-menus" aria-label="Electron 原生应用菜单">
+          {(["file","edit","view","help"] as const).map((id) => (
+            <button key={id} type="button" data-desktop-menu={id}
+              aria-label={`${id[0]!.toUpperCase()}${id.slice(1)} 菜单`}
+              onClick={(event) => {
+                const box=event.currentTarget.getBoundingClientRect();
+                void window.agentWebDesktopHost?.openMenu(id,{x:box.left,y:box.bottom});
+              }}>{id[0]!.toUpperCase()}{id.slice(1)}</button>
+          ))}
+        </div>
+      ) : <><span>File</span><span>Edit</span><span>View</span><span>Help</span></>}
       <span className="demo-window-buttons" aria-hidden="true">─　□　×</span>
     </div>
     <div className="demo-app" data-codex-shell-preview="light">
