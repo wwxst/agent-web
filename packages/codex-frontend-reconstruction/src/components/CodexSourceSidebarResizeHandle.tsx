@@ -17,35 +17,46 @@ export interface CodexSourceSidebarResizeHandleProps {
 export function CodexSourceSidebarResizeHandle({
   width,availableWidth,onWidthChange,
 }:CodexSourceSidebarResizeHandleProps):React.ReactElement {
-  const drag=React.useRef<{pointerId:number;startX:number;startWidth:number}|null>(null);
+  const drag=React.useRef<{kind:"mouse"|"pointer";pointerId?:number;startX:number;startWidth:number}|null>(null);
   const handleRef=React.useRef<HTMLDivElement|null>(null);
   const [resizing,setResizing]=React.useState(false);
   const maximum=sourceSidebarMaxWidth(availableWidth);
   const change=React.useCallback((value:number)=>
     onWidthChange(clampSourceSidebarWidth(value,availableWidth)),[onWidthChange,availableWidth]);
-  const finish=React.useCallback((pointerId:number)=>{
-    if(drag.current?.pointerId!==pointerId)return;
+  const finish=React.useCallback((kind:"mouse"|"pointer",pointerId?:number)=>{
+    const state=drag.current;
+    if(state==null||state.kind!==kind ||
+      (kind==="pointer"&&state.pointerId!==pointerId))return;
     drag.current=null;
     setResizing(false);
-    const node=handleRef.current;
-    if(node?.hasPointerCapture?.(pointerId))node.releasePointerCapture(pointerId);
   },[]);
   React.useEffect(()=>{
     if(!resizing)return;
-    const move=(event:PointerEvent)=>{
+    const pointerMove=(event:PointerEvent)=>{
       const state=drag.current;
-      if(state?.pointerId!==event.pointerId)return;
+      if(state?.kind!=="pointer"||state.pointerId!==event.pointerId)return;
       event.preventDefault();
       change(state.startWidth+event.clientX-state.startX);
     };
-    const end=(event:PointerEvent)=>finish(event.pointerId);
-    window.addEventListener("pointermove",move);
-    window.addEventListener("pointerup",end);
-    window.addEventListener("pointercancel",end);
+    const pointerEnd=(event:PointerEvent)=>finish("pointer",event.pointerId);
+    const mouseMove=(event:MouseEvent)=>{
+      const state=drag.current;
+      if(state?.kind!=="mouse")return;
+      event.preventDefault();
+      change(state.startWidth+event.clientX-state.startX);
+    };
+    const mouseEnd=()=>finish("mouse");
+    window.addEventListener("pointermove",pointerMove);
+    window.addEventListener("pointerup",pointerEnd);
+    window.addEventListener("pointercancel",pointerEnd);
+    window.addEventListener("mousemove",mouseMove);
+    window.addEventListener("mouseup",mouseEnd);
     return ()=>{
-      window.removeEventListener("pointermove",move);
-      window.removeEventListener("pointerup",end);
-      window.removeEventListener("pointercancel",end);
+      window.removeEventListener("pointermove",pointerMove);
+      window.removeEventListener("pointerup",pointerEnd);
+      window.removeEventListener("pointercancel",pointerEnd);
+      window.removeEventListener("mousemove",mouseMove);
+      window.removeEventListener("mouseup",mouseEnd);
     };
   },[resizing,change,finish]);
   return <div className="codex-source-sidebar-resizer"
@@ -55,18 +66,22 @@ export function CodexSourceSidebarResizeHandle({
       aria-valuemin={SOURCE_SIDEBAR_MIN_WIDTH} aria-valuemax={maximum}
       aria-valuenow={clampSourceSidebarWidth(width,availableWidth)}
       tabIndex={0}
-      onPointerDown={event=>{
+      onMouseDown={event=>{
         if(event.button!==0)return;
         event.preventDefault();
-        drag.current={pointerId:event.pointerId,startX:event.clientX,startWidth:width};
+        drag.current={kind:"mouse",startX:event.clientX,startWidth:width};
         setResizing(true);
-        // The original sbi tracks pointer movement at window level.
-        // Capturing a zero-width boundary child can deliver an immediate
-        // pointercancel when a browser relayouts that hit target on mouse-down.
-        // Keep the hit region stable and rely on the global listeners.
       }}
-      onPointerUp={event=>finish(event.pointerId)}
-      onPointerCancel={event=>finish(event.pointerId)}
+      onMouseUp={()=>finish("mouse")}
+      onPointerDown={event=>{
+        if(event.pointerType==="mouse"||event.button!==0)return;
+        event.preventDefault();
+        drag.current={kind:"pointer",pointerId:event.pointerId,
+          startX:event.clientX,startWidth:width};
+        setResizing(true);
+      }}
+      onPointerUp={event=>finish("pointer",event.pointerId)}
+      onPointerCancel={event=>finish("pointer",event.pointerId)}
       onKeyDown={event=>{
         const next=sourceSidebarWidthFromKey(width,event.key,availableWidth);
         if(next===null)return;
