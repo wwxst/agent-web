@@ -24,8 +24,8 @@ test("source Je/bg uses A_ phase disclosure with XO icon and keeps ineligible MC
   await expect(repeated.first().locator("[data-codex-source-repeated-body]")).toHaveCount(0);
   await toggle.click();
   await expect(toggle).toHaveAttribute("aria-expanded","true");
-  await expect(repeated).toHaveAttribute("data-source-disclosure-phase","expanded");
-  await expect(repeated.locator("[data-codex-source-repeated-body]")).toBeVisible();
+  await expect(repeated.first()).toHaveAttribute("data-source-disclosure-phase","expanded");
+  await expect(repeated.first().locator("[data-codex-source-repeated-body]")).toBeVisible();
   await expect(repeated.first().locator(".codex-activity-group-row__subrow")).toHaveCount(2);
   await expect(group.locator(".codex-activity-group-row__subrow")).toHaveCount(5);
   const external=group.locator('[data-codex-source-repeated-group="external-event"]');
@@ -44,11 +44,11 @@ test("source Je/bg uses A_ phase disclosure with XO icon and keeps ineligible MC
   await toggle.click();
   await expect(toggle).toHaveAttribute("aria-expanded","false");
   // A_ deliberately preserves children through closing; it unmounts after motion.
-  await expect(repeated).toHaveAttribute("data-source-disclosure-phase","collapsed");
-  await expect(repeated.locator("[data-codex-source-repeated-body]")).toHaveCount(0);
+  await expect(repeated.first()).toHaveAttribute("data-source-disclosure-phase","collapsed");
+  await expect(repeated.first().locator("[data-codex-source-repeated-body]")).toHaveCount(0);
   // Reopen from the same virtual turn; the existing children and tool leaves work.
   await toggle.click();
-  await expect(repeated).toHaveAttribute("data-source-disclosure-phase","expanded");
-  await expect(repeated.locator(".codex-activity-group-row__subrow")).toHaveCount(2);
+  await expect(repeated.first()).toHaveAttribute("data-source-disclosure-phase","expanded");
+  await expect(repeated.first().locator(".codex-activity-group-row__subrow")).toHaveCount(2);
   expect(errors).toEqual([]);
 });
