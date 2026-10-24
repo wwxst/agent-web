@@ -210,7 +210,7 @@ test("source-shaped RC/EC/NC leaves route read search and file-list summaries", 
 test("actual review command leaf prioritizes source last non-shell action in both collapsed and expanded states",async({page})=>{
   await page.goto("/");
   await page.getByRole("button",{name:/工具调用与审批交互/}).click();
-  const activity=page.locator('[data-demo-turn-id="review-windows-shell-action"] [data-recovered-agent-activity]');
+  const activity=page.locator('[data-demo-turn-id="review-exec"] [data-recovered-agent-activity]');
   await activity.getByRole("button",{name:/项工具活动/}).click();
   const command=activity.locator('[data-codex-source-leaf="exec-command"]');
   await expect(command).toHaveAttribute("data-source-execution-action-selected","command");
