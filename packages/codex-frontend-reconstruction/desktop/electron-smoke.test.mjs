@@ -336,6 +336,9 @@ test("independent Electron file renderer starts, isolates preload and routes Fc 
     const el=document.querySelector('[data-testid="transcript-scroll"]');
     return el!=null&&el.scrollHeight-el.clientHeight>1200;
   });
+  // The real scroll controller must treat an arriving user wheel as higher
+  // priority than an unfinished route restoration, even after host events.
+  await viewport.dispatchEvent("wheel",{deltaY:-800,deltaMode:0});
   await viewport.evaluate(el=>{
     const max=el.scrollHeight-el.clientHeight;
     el.scrollTop=Math.round(max*0.42);
