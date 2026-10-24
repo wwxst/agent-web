@@ -65,6 +65,10 @@ export class SourcePlainProseMirrorController implements ComposerControllerPort 
   private ready = false;
   private composing = false;
   private disposed = false;
+  // Restoring host-owned drafts is not a user editing transaction. The
+  // source original restores controller text separately from the TE input
+  // observer which persists user edits.
+  private restoringHostText = false;
   private readonly onChange: ((text: string) => void) | undefined;
   private readonly enterBehavior: ComposerEnterBehavior;
   private readonly enableSourceCodeFenceRule: boolean;
@@ -199,7 +203,7 @@ export class SourcePlainProseMirrorController implements ComposerControllerPort 
       dispatchTransaction(transaction) {
         owner.view.updateState(owner.view.state.apply(transaction));
         owner.updateEmpty();
-        if (transaction.docChanged) owner.onChange?.(owner.getText());
+        if (transaction.docChanged && !owner.restoringHostText) owner.onChange?.(owner.getText());
       },
     });
     this.updateEmpty();
@@ -219,9 +223,14 @@ export class SourcePlainProseMirrorController implements ComposerControllerPort 
   setText(value: string) {
     if (this.disposed || this.getText() === value) return;
     const doc = documentFromText(value);
-    this.view.dispatch(this.view.state.tr
-      .replaceWith(0, this.view.state.doc.content.size, doc.content)
-      .setMeta("addToHistory", false));
+    this.restoringHostText = true;
+    try{
+      this.view.dispatch(this.view.state.tr
+        .replaceWith(0, this.view.state.doc.content.size, doc.content)
+        .setMeta("addToHistory", false));
+    }finally{
+      this.restoringHostText = false;
+    }
   }
   setPlaceholder(value: string | undefined) {
     if (value == null) delete this.view.dom.dataset.placeholder;
