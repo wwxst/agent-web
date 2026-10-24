@@ -137,3 +137,10 @@
 - CI now includes both Linux Xvfb and Windows Electron desktop smoke; Node tests verify menu roles and shortcuts, Electron smoke verifies real menu instance and WebContents zoom action.
 - Source audit/report: `scripts/audit-original-native-menu.mjs` and `reports/NATIVE_MENU_SOURCE_RECOVERY.md`.
 - **Next priority:** verify Windows CI, inspect actual native Windows screenshot/artifact, then recover command dispatcher/keymap/state for private native menu commands. Ensure no guessed New Task / Search / Settings routes, no Agent backend change, and no main merge until user requests.
+
+## 2026-10-24 — native D0e view commands now reach existing React navigation
+
+- Source-backed Toggle Sidebar and Previous/Next Thread native menu commands are wired from Electron main through the sandboxed preload into the existing `App.tsx` state and already recovered `ConnectedLiveConversationTranscript`. Original D0e evidence and dynamic-keymap boundary: `NATIVE_SIDEBAR_THREAD_COMMANDS.md`.
+- The demo renderer uses its explicit two-conversation navigation semantics, not a claim about all private Codex tabs. No guessed accelerator, private IPC payload or disconnected standalone timeline.
+- Both Linux and Windows desktop smoke must verify actual native item invocation and mounted React changes before CI is considered green; all previous smoke assertions preserved.
+- **Next:** source-verify the original `find-in-thread` route and existing search UI before enabling native Cmd/Ctrl+F, then complete Electron window/theme screenshot comparison on a matching Codex version. Real Agent transport, original configurable keymap and Windows installer remain unimplemented.
