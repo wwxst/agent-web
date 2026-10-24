@@ -15,6 +15,7 @@ const {
 } = require("./windowChrome.cjs");
 const {restorePrimaryWindowBounds,persistPrimaryWindowBounds}=require("./windowBounds.cjs");
 const {buildSourceNativeMenus,isAllowedMenuId,sanitizeMenuAnchor}=require("./nativeMenu.cjs");
+const {isAllowedNavigation:allowedNavigation}=require("./navigationPolicy.cjs");
 
 const HOST_INFO_CHANNEL = "agent-web:host-info";
 const HOST_EVENT_CHANNEL = "agent-web:host-event";
@@ -25,17 +26,8 @@ const devMode=devUrl.length>0;
 const indexPath=path.resolve(__dirname,"../demo-dist/index.html");
 let mainWindow=null;
 
-function isAllowedNavigation(url) {
-  try {
-    if(devMode){
-      const target=new URL(url),origin=new URL(devUrl);
-      return target.origin===origin.origin && (target.protocol==="http:" || target.protocol==="https:");
-    }
-    const target=new URL(url);
-    return target.protocol==="file:" &&
-      decodeURIComponent(target.pathname).replace(/^\\/,"").toLowerCase() ===
-        indexPath.replaceAll("\\","/").replace(/^\\/,"").toLowerCase();
-  } catch{return false;}
+function isAllowedNavigation(url){
+  return allowedNavigation(url,{devUrl,indexPath});
 }
 function createWindow(){
   // i3e restores only geometry still intersecting an attached display.
