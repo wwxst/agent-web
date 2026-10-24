@@ -581,7 +581,7 @@ export function App() {
             density="comfortable"
             radiusVariant="default"
             surfaceVariant="default"
-            input={<DemoProseMirrorComposerEditor
+            input={<DemoProseMirrorComposerEditor key={active}
               value={draft}
               onChange={updateDraft}
               onSubmit={sendMessage}
