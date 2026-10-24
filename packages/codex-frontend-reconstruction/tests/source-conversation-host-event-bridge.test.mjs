@@ -149,3 +149,21 @@ test("host subscription failure never leaves old stream connected",()=>{
  assert.equal(stopCount,1);
  bridge.dispose();
 });
+
+test("qn/Qr subscriptions use canonical query fields regardless of event property order",()=>{
+ const bridge=createSourceConversationHostEventBridge();
+ const state=createSourceTurnRuntimeStatusSource(runtimeInput,bridge.turnRuntime);
+ // JSON-decoded transports are not required to preserve source object insertion
+ // order; hostId/threadId/entityKey identity is authoritative.
+ bridge.publish({type:"up-next-ready",
+  query:{threadId:"thread-A",hostId:"host-A"},ready:true});
+ bridge.publish({type:"turn-history-status",
+  query:{entityKey:"history-A",threadId:"thread-A",hostId:"host-A"},status:"completed"});
+ assert.equal(state.getSnapshot().upNextReady,true);
+ assert.equal(state.getSnapshot().historyStatusResolved,true);
+ assert.equal(state.getSnapshot().isTurnInProgress,false);
+ bridge.publish({type:"clear-thread",hostId:"host-A",threadId:"thread-A"});
+ assert.equal(state.getSnapshot().isTurnInProgress,true);
+ assert.equal(state.getSnapshot().upNextReady,false);
+ state.dispose();bridge.dispose();
+});
