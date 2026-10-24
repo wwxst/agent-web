@@ -174,3 +174,20 @@ button:focus-visible, textarea:focus-visible { outline: 2px solid #578cda; outli
 .demo-desktop[data-independent-electron="true"] [role="button"] {
   -webkit-app-region: no-drag;
 }
+
+/* Original compiled w0e/D0e builds the native Electron application menu.
+   The standalone desktop renderer only supplies trusted popup anchors. */
+.demo-desktop[data-independent-electron="true"] .demo-native-application-menus {
+  display:flex;align-items:center;gap:4px;
+  -webkit-app-region:no-drag;
+}
+.demo-desktop[data-independent-electron="true"] .demo-native-application-menus > button {
+  -webkit-app-region:no-drag;
+  appearance:none;background:transparent;border:0;
+  padding:3px 9px;border-radius:5px;
+  font-size:13px;line-height:19px;color:#6e6e6e;cursor:default;
+}
+.demo-desktop[data-independent-electron="true"] .demo-native-application-menus > button:hover,
+.demo-desktop[data-independent-electron="true"] .demo-native-application-menus > button:focus-visible {
+  background:#eaeaea;color:#292929;
+}
