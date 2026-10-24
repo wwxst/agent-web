@@ -343,3 +343,12 @@ button:focus-visible, textarea:focus-visible { outline: 2px solid #578cda; outli
 .demo-thread-find-bar button:hover:not(:disabled) {background:#ededed;color:#171717;}
 .demo-thread-find-bar button:disabled {opacity:.35;}
 .demo-find-results {min-width:76px;font-variant-numeric:tabular-nums;text-align:center;white-space:nowrap;color:#626262;}
+
+/* This is a deliberate visual approximation, NOT the private Codex worker's
+   match paint. CSS Highlights never mutate React-managed Markdown nodes. */
+::highlight(demo-thread-find-active) {
+  background-color: rgba(249, 187, 42, .65);
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: #ad7d16;
+}
