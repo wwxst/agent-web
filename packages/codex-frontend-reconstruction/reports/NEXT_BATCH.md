@@ -129,3 +129,11 @@
 - Restored `i3e` geometry contract using safe standalone `windowBounds.cjs`: persistence, maximization, min-width/height clamp, and display-workarea validation on restore. Source evidence SHA and nine source fingerprints are documented in `PRIMARY_WINDOW_CHROME_SOURCE_RECOVERY.md`.
 - Test with actual Playwright Electron smoke + windowChrome/windowBounds Node cases; compare screenshots on native Windows against the matching Codex original before claiming pixel parity. Do not treat Linux Xvfb caption rendering as Windows UI acceptance.
 - **Next priorities:** restore original native keyboard/application menu command mapping from compiled resources and integrate functional actions only after verification; audit multi-display resize/restore transitions, Windows native titlebar hit targets and shell visual diffs; then wire a permission-checked real host event stream to the independent React bridge. No Agent backend rewrite and no main merge.
+
+## 2026-10-24 — source w0e/D0e native menu to actual Electron titlebar
+
+- The previously inert File/Edit/View/Help text now opens real native Electron submenus in desktop mode. Source w0e Edit roles and D0e View zoom/fullscreen/File close/quit/Help documentation are implemented as a **functional limited subset**; menus whose actions require private host commands are excluded rather than simulated.
+- Native main validates IPC caller identity, loaded origin, menu ID allowlist and popup anchor; renderer's isolated preload exposes only `openMenu` (not raw Electron ipcRenderer). Chromium preview remains unchanged.
+- CI now includes both Linux Xvfb and Windows Electron desktop smoke; Node tests verify menu roles and shortcuts, Electron smoke verifies real menu instance and WebContents zoom action.
+- Source audit/report: `scripts/audit-original-native-menu.mjs` and `reports/NATIVE_MENU_SOURCE_RECOVERY.md`.
+- **Next priority:** verify Windows CI, inspect actual native Windows screenshot/artifact, then recover command dispatcher/keymap/state for private native menu commands. Ensure no guessed New Task / Search / Settings routes, no Agent backend change, and no main merge until user requests.
