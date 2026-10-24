@@ -9,6 +9,12 @@ on:
       - 'packages/codex-frontend-reconstruction/**'
       - '.github/workflows/frontend-demo.yml'
 
+# Recovery branch commits are frequent. Do not spend desktop CI resources
+# validating superseded heads; a fresh push rechecks every required gate.
+concurrency:
+  group: frontend-demo-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   core-and-browser-build:
     runs-on: ubuntu-latest
