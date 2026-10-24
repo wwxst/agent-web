@@ -60,9 +60,64 @@ export const demoPlanDependencies: ConversationMessagePlanDependencies = {
   shouldRenderActivityAsUnit: () => false,
 };
 
+/** Original chatgpt-code-block source layout: a dedicated code surface,
+ * independent scrollport and onCopyCode. This is intentionally NOT a port
+ * of the private CodeMirror/highlighter, preview or executable code paths. */
+function markdownCodeText(node:React.ReactNode):string {
+  if(typeof node==="string"||typeof node==="number")return String(node);
+  if(Array.isArray(node))return node.map(markdownCodeText).join("");
+  if(React.isValidElement<{children?:React.ReactNode}>(node))
+    return markdownCodeText(node.props.children);
+  return "";
+}
+function MarkdownSourceCodeBlock({children,...preProps}:React.ComponentProps<"pre">){
+  const element=React.Children.toArray(children).find(
+    (node):node is React.ReactElement<{className?:string;children?:React.ReactNode}>=>
+      React.isValidElement(node)&&node.type==="code",
+  );
+  const code=element?.props;
+  const language=/\\blanguage-([\\w.+-]+)/.exec(code?.className??"")?.[1]??null;
+  const raw=markdownCodeText(code?.children??children);
+  const copyContent=raw.replace(/\\n$/,"");
+  const [copyState,setCopyState]=React.useState<"idle"|"copied"|"error">("idle");
+  const copyTimeout=React.useRef<ReturnType<typeof setTimeout>|null>(null);
+  React.useEffect(()=>()=>{if(copyTimeout.current!=null)clearTimeout(copyTimeout.current);},[]);
+  async function copyCode(){
+    try{
+      if(navigator.clipboard?.writeText==null)throw Error("clipboard unavailable");
+      await navigator.clipboard.writeText(copyContent);
+      setCopyState("copied");
+    }catch{
+      setCopyState("error");
+    }
+    if(copyTimeout.current!=null)clearTimeout(copyTimeout.current);
+    copyTimeout.current=setTimeout(()=>setCopyState("idle"),1800);
+  }
+  return <div className="demo-markdown-code-surface" data-conversation-code-surface="true">
+    <div className="demo-markdown-code-action-bar" data-code-block-action-bar="true">
+      <span className="demo-markdown-code-language">{language??"Code"}</span>
+      <button type="button" className="demo-markdown-code-copy"
+        aria-label={copyState==="copied"?"已复制代码":copyState==="error"?"复制失败":"复制代码"}
+        title={copyState==="copied"?"已复制":copyState==="error"?"无法复制":"复制代码"}
+        onClick={()=>{void copyCode();}}>
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor"
+          strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <rect x="8" y="8" width="11" height="11" rx="2"/>
+          <path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/>
+        </svg>
+        <span>{copyState==="copied"?"已复制":copyState==="error"?"无法复制":"复制"}</span>
+      </button>
+    </div>
+    <div className="demo-markdown-code-scrollport chatgpt-code-scrollport"
+      data-code-block-source="true">
+      <pre {...preProps}>{children}</pre>
+    </div>
+  </div>;
+}
 function Markdown({ text, role }: { text: string; role: "user" | "assistant" | "activity" }) {
   return <div className={`demo-markdown demo-markdown--${role}`}>
-    <ReactMarkdown remarkPlugins={[remarkGfm]}>{text}</ReactMarkdown>
+    <ReactMarkdown remarkPlugins={[remarkGfm]}
+      components={{pre:MarkdownSourceCodeBlock}}>{text}</ReactMarkdown>
   </div>;
 }
 
