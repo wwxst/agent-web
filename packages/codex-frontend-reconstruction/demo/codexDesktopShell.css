@@ -363,3 +363,47 @@ button:focus-visible, textarea:focus-visible { outline: 2px solid #578cda; outli
   text-decoration: underline;
   text-decoration-color: #ad7d16;
 }
+
+/* Source: chatgpt-code-block-d92f3a4029b6 (scrollport + copy action);
+   app-shared ._Source_fab4p_2 pre normalization. The source theme's
+   editable/highlight/preview implementation is NOT included here. */
+.demo-markdown .demo-markdown-code-surface {
+  max-width:100%;margin:10px 0 17px;
+  background:var(--demo-raised);border:1px solid var(--demo-border);
+  border-radius:12px;overflow:hidden;
+  color:var(--demo-text);
+}
+.demo-markdown-code-action-bar{
+  display:flex;align-items:center;justify-content:space-between;
+  min-height:34px;padding:4px 8px 4px 16px;gap:12px;
+  border-bottom:1px solid var(--demo-border);
+}
+.demo-markdown-code-language{
+  min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  font-family:var(--font-code-family,ui-monospace,Consolas,monospace);
+  font-size:var(--codex-chat-code-font-size);color:var(--demo-dim);
+}
+.demo-markdown-code-copy{
+  display:inline-flex;align-items:center;justify-content:center;gap:5px;
+  flex-shrink:0;padding:4px 7px;min-height:25px;
+  background:transparent;border:0;border-radius:6px;color:var(--demo-dim);
+  font-size:12px;cursor:pointer;
+}
+.demo-markdown-code-copy:hover,.demo-markdown-code-copy:focus-visible{
+  background:var(--demo-panel);color:var(--demo-text);
+}
+.demo-markdown-code-scrollport{
+  width:100%;max-width:100%;overflow-x:auto;overscroll-behavior-x:contain;
+}
+.demo-markdown .demo-markdown-code-scrollport pre{
+  margin:0;padding:12px 16px;
+  background:transparent;border:0;border-radius:0;
+  font-family:var(--font-code-family,ui-monospace,Consolas,monospace);
+  font-size:var(--codex-chat-code-font-size);
+  line-height:max(1.5em,20px);white-space:pre;
+  color:inherit;overflow:visible;
+}
+.demo-markdown .demo-markdown-code-scrollport pre code{
+  background:transparent;border:0;border-radius:0;
+  padding:0;color:inherit;font:inherit;white-space:inherit;
+}
