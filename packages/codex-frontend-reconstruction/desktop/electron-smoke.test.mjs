@@ -261,7 +261,8 @@ test("independent Electron file renderer starts, isolates preload and routes Fc 
   await findInput.fill("Zcap");
   await page.waitForFunction(()=>{
     const label=document.querySelector(".demo-find-results")?.textContent??"";
-    return /^1 \\/ [3-9]\\d{2}\\+ results$/.test(label);
+    return label.startsWith("1 / ") && label.endsWith("+ results") &&
+      Number(label.split(" / ")[1]?.split("+")[0]) >= 300;
   });
   await page.waitForFunction(()=>Array.from(CSS.highlights?.get("demo-thread-find-active")??[])
     .some(range=>range.toString()==="Zcap"));
