@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {mkdtemp,rm} from "node:fs/promises";
+import {mkdtemp,rm,readFile} from "node:fs/promises";
 import {tmpdir} from "node:os";
 import {join,resolve} from "node:path";
 import {fileURLToPath} from "node:url";
@@ -14,7 +14,7 @@ function start(profile){
   executablePath,
   args:[".",...(process.platform==="linux"&&process.env.CI?["--no-sandbox"]:[])],
   cwd:root,
-  env:{...process.env,AGENT_WEB_DEV_URL:"",AGENT_WEB_USER_DATA_DIR:profile,
+  env:{...process.env,AGENT_WEB_DEV_URL:"",AGENT_WEB_USER_DATA_DIR:profile,AGENT_WEB_TRACE_DRAFTS:"1",
    ELECTRON_DISABLE_SECURITY_WARNINGS:"true"},
   timeout:40000,
  });
@@ -45,6 +45,9 @@ test("real Electron process restart hydrates each original mounted ProseMirror d
   await editor.fill("审阅线程：保持独立草稿");
   await stored(page,"review","审阅线程：保持独立草稿");
   const beforeClose=await page.evaluate(()=>window.agentWebDesktopHost.getComposerDrafts());
+  if(!beforeClose.review){
+    console.log("WRITE_TRACE",await readFile(join(profile,"draft-trace.jsonl"),"utf8"));
+  }
   assert.deepEqual(beforeClose,{
     frontend:"原始前端线程：重启恢复草稿",
     review:"审阅线程：保持独立草稿",
