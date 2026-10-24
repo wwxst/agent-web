@@ -206,3 +206,22 @@ test("source-shaped RC/EC/NC leaves route read search and file-list summaries", 
   await expect(activity.locator('[data-codex-source-leaf="exec-list-files"]')).toContainText("src/conversation");
   expect(errors).toEqual([]);
 });
+
+test("actual review command leaf prioritizes source last non-shell action in both collapsed and expanded states",async({page})=>{
+  await page.goto("/");
+  await page.getByRole("button",{name:/工具调用与审批交互/}).click();
+  const activity=page.locator('[data-demo-turn-id="review-windows-shell-action"] [data-recovered-agent-activity]');
+  await activity.getByRole("button",{name:/项工具活动/}).click();
+  const command=activity.locator('[data-codex-source-leaf="exec-command"]');
+  await expect(command).toHaveAttribute("data-source-execution-action-selected","command");
+  const toggle=command.locator('[data-codex-source-command-toggle]');
+  await expect(toggle).toContainText("Get-ChildItem src -File");
+  await expect(toggle).not.toContainText("powershell.exe");
+  await toggle.click();
+  await expect(command.locator('[data-codex-source-command-body]'))
+    .toContainText("Get-ChildItem src -File");
+  await expect(command.locator('.codex-source-tool-command__command'))
+    .not.toContainText("pwsh.exe");
+  await toggle.click();
+  await expect(command.locator('[data-codex-source-command-body]')).toHaveCount(0);
+});
