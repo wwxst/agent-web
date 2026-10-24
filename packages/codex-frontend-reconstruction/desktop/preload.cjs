@@ -9,7 +9,10 @@ const HOST_INFO_CHANNEL="agent-web:host-info";
 const HOST_EVENT_CHANNEL="agent-web:host-event";
 const OPEN_MENU_CHANNEL="agent-web:open-menu";
 const UI_COMMAND_CHANNEL="agent-web:ui-command";
-const allowedUiCommands=new Set(["toggle-sidebar","previous-thread","next-thread"]);
+const allowedUiCommands=new Set([
+  "toggle-sidebar","previous-thread","next-thread",
+  "find-in-thread","find-next-in-thread","find-previous-in-thread",
+]);
 const uiListeners=new Set();
 ipcRenderer.on(UI_COMMAND_CHANNEL,(_event,value)=>{
   // Never expose IpcRendererEvent or permit the main process to inject an
