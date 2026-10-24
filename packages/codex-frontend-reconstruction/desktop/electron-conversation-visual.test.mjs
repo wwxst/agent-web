@@ -106,6 +106,10 @@ test("real Electron review timeline renders last meaningful PowerShell action an
   await page.getByRole("button",{name:/工具调用与审批交互/}).click();
   await page.waitForFunction(()=>document.querySelector(".demo-header-location strong")
     ?.textContent?.includes("工具调用与审批交互")===true);
+  // Initial thread-scoped viewport restoration must settle before our
+  // intentional user scroll; otherwise the source controller legitimately
+  // follows its pending bottom hold and the screenshot captures another row.
+  await page.waitForTimeout(950);
   const activity=page.locator('[data-demo-turn-id="review-exec"]');
   await activity.waitFor({timeout:12000});
   await activity.locator("[data-recovered-agent-activity] button").first().click();
