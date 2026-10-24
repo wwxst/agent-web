@@ -58,6 +58,17 @@ function SourceInlineFileReviewDiff(props: {
   onViewportReady?: ((element: HTMLElement) => void) | undefined;
 }) {
   const containerRef = React.useRef<HTMLDivElement>(null);
+  // The independent review model permits names to be omitted; Pierre
+  // requires them. Preserve real names (including rename pairs) when present,
+  // and use one explicit unknown placeholder only if both are absent.
+  const original = React.useMemo(() => ({
+    name: props.oldFile.name ?? props.newFile.name ?? "(unnamed)",
+    contents: props.oldFile.contents,
+  }), [props.oldFile]);
+  const updated = React.useMemo(() => ({
+    name: props.newFile.name ?? props.oldFile.name ?? "(unnamed)",
+    contents: props.newFile.contents,
+  }), [props.newFile]);
   React.useEffect(() => {
     if (!props.onViewportReady) return;
     const container = containerRef.current;
@@ -86,8 +97,8 @@ function SourceInlineFileReviewDiff(props: {
   }, [props.oldFile, props.newFile, props.onViewportReady]);
   return <div ref={containerRef} data-source-inline-file-diff-engine="pierre">
     <MultiFileDiff
-      oldFile={props.oldFile}
-      newFile={props.newFile}
+      oldFile={original}
+      newFile={updated}
       className="relative overflow-clip [contain:content] [--codex-diffs-surface:var(--color-surface)] [--diffs-min-number-column-width:1ch]"
       options={{ ...SOURCE_INLINE_DIFF_OPTIONS, overflow: props.overflow }}
     />
