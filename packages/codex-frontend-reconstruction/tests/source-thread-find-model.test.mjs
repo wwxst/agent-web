@@ -1,7 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
-  findSourceThreadLiteralMatches, wrapSourceThreadFindOrdinal,
+  SOURCE_CONVERSATION_FIND_NAVIGATION_LIMIT, findSourceThreadLiteralMatches,
+  searchSourceThreadLiteralRows, wrapSourceThreadFindOrdinal,
 } from "../build/SourceThreadFindModel.js";
 
 test("independent literal conversation search keeps turn anchors and order", () => {
@@ -30,4 +31,29 @@ test("next/previous search navigation wraps but never leaves range",()=>{
   assert.equal(wrapSourceThreadFindOrdinal(0,3,"previous"),2);
   assert.equal(wrapSourceThreadFindOrdinal(10,3,"next"),0);
   assert.equal(wrapSourceThreadFindOrdinal(0,0,"next"),0);
+});
+
+test("250 source find offsets remain navigable while total and per-turn counts remain exact",()=>{
+  assert.equal(SOURCE_CONVERSATION_FIND_NAVIGATION_LIMIT,250);
+  const rows=[
+    {turnKey:"turn:1",text:"needle ".repeat(240)},
+    {turnKey:"turn:2",text:"needle ".repeat(80)},
+  ];
+  const result=searchSourceThreadLiteralRows(rows,"needle");
+  assert.equal(result.totalMatches,320);
+  assert.equal(result.matches.length,250);
+  assert.equal(result.isCapped,true);
+  assert.equal(result.totalByTurn.get("turn:1"),240);
+  assert.equal(result.totalByTurn.get("turn:2"),80);
+  assert.equal(result.matches.at(249).turnKey,"turn:2");
+  assert.equal(result.matches.at(249).offset,9*7);
+  assert.equal(wrapSourceThreadFindOrdinal(249,result.matches.length,"next"),0);
+  assert.deepEqual(searchSourceThreadLiteralRows(rows,"needle",400).matches.length,320);
+  assert.equal(searchSourceThreadLiteralRows(rows,"needle",400).isCapped,false);
+});
+test("literal fallback never interprets slash delimiters as a regex",()=>{
+  const rows=[{turnKey:"turn:1",text:"/a.+b/ abc aZZb"}];
+  const result=searchSourceThreadLiteralRows(rows,"/a.+b/");
+  assert.equal(result.totalMatches,1);
+  assert.deepEqual(result.matches,[{turnKey:"turn:1",offset:0,length:6}]);
 });
