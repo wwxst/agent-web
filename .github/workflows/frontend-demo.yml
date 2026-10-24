@@ -46,7 +46,7 @@ jobs:
           fi
           test -x node_modules/electron/dist/electron
       - name: Launch independent Electron desktop and verify preload
-        run: xvfb-run -a npm run desktop:test:smoke
+        run: xvfb-run -a -s "-screen 0 1600x900x24" npm run desktop:test:smoke
         env:
           CI: "true"
       - name: Upload Electron desktop screenshot
