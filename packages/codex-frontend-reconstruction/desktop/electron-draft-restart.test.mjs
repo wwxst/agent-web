@@ -25,9 +25,18 @@ async function ready(app){
  return page;
 }
 async function stored(page,field,value){
- await page.waitForFunction(async({key,expected})=>
-  (await window.agentWebDesktopHost?.getComposerDrafts())?.[key]===expected,
-  {key:field,expected:value},{timeout:15000});
+ // Poll from the *Node test process*, not an async predicate in Chromium's
+ // rAF loop. A debounced renderer update is not yet a durable disk write.
+ const deadline=Date.now()+15000;
+ while(Date.now()<deadline){
+  const actual=await page.evaluate(async key=>
+   (await window.agentWebDesktopHost?.getComposerDrafts())?.[key],field);
+  if(actual===value)return;
+  await new Promise(resolve=>setTimeout(resolve,80));
+ }
+ const latest=await page.evaluate(async key=>
+  (await window.agentWebDesktopHost?.getComposerDrafts())?.[key],field);
+ assert.equal(latest,value,"Electron failed to persist Composer draft for "+field);
 }
 
 test("real Electron process restart hydrates each original mounted ProseMirror draft and reset clears it",{
