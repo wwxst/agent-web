@@ -17,6 +17,7 @@ import {
  */
 export interface SourceActivityDisclosureProps {
   kind: "mcp-tool-call" | "external-event";
+  headerVariant?: "mcp-tool" | "codex-action" | "external-event";
   summary: React.ReactNode;
   icon?: React.ReactNode;
   children: () => React.ReactNode;
@@ -26,7 +27,7 @@ export interface SourceActivityDisclosureProps {
 }
 
 export function SourceActivityDisclosure({
-  kind, summary, icon, children, onExpand,
+  kind, headerVariant, summary, icon, children, onExpand,
   canExpand = true, defaultExpanded = false,
 }: SourceActivityDisclosureProps) {
   const [phase, setPhase] = React.useState<SourceActivityDisclosurePhase>(
@@ -59,6 +60,7 @@ export function SourceActivityDisclosure({
 
   return <div className="codex-activity-group-row__repeated"
     data-codex-source-repeated-group={kind}
+    data-codex-source-repeated-header-variant={headerVariant}
     data-source-disclosure-phase={effectivePhase}>
     <div className="codex-activity-group-row__repeated-header">
       {icon != null ? <span className="codex-activity-group-row__repeated-icon"
