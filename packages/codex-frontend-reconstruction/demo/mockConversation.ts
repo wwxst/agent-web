@@ -161,6 +161,20 @@ function reviewScenario(): ConversationRenderEntry[] {
     demoActivityEntry("review-exec", [demoItem("review-exec1", "exec", undefined, {
       heading: "读取项目结构", command: "find src -maxdepth 2 -type f", output: "src/components/\nsrc/conversation/\nsrc/index.ts", state: "Ready",
     })]),
+    // Exact command-execution-command source contract rendered by the
+    // existing tool leaf. Explicit synthetic record, never executed.
+    demoActivityEntry("review-windows-shell-action", [demoItem("review-windows-shell-action1", "exec", undefined, {
+      heading:"PowerShell 命令动作（仅 UI 演示）",
+      cmd:"powershell.exe -NoProfile",
+      command:"powershell.exe -NoProfile",
+      commandActions:[
+        {command:"cmd.exe /c"},
+        {command:"Get-ChildItem src -File"},
+        {command:"pwsh.exe -NoProfile"},
+      ],
+      output:"ToolActivityHistorySource.ts\\nAgentActivityUnitGrouping.ts",
+      state:"Ready",
+    })]),
     // Synthetic UI-only fixtures exercise the source ZC/QC/$C script labels.
     // They do not launch commands or imply that a real skill script ran.
     demoActivityEntry("review-skill-script-running", [demoItem("review-skill-script-running1", "exec", undefined, {
