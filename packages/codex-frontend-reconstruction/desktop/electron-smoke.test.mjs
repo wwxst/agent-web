@@ -160,11 +160,11 @@ test("independent Electron file renderer starts, isolates preload and routes Fc 
   await app.evaluate(({Menu})=>Menu.getApplicationMenu().getMenuItemById("previousThread").click());
   await page.waitForFunction(()=>document.querySelector(".demo-header-location strong")
     ?.textContent?.includes("恢复 Codex 会话界面")===true);
-  assert.match(await retainedDraft.innerText(),/Electron 会话保留草稿/);
+  await page.waitForFunction(()=>document.querySelector('[aria-label="演示消息输入"]')?.textContent?.includes("Electron 会话保留草稿")===true);
   await app.evaluate(({Menu})=>Menu.getApplicationMenu().getMenuItemById("nextThread").click());
   await page.waitForFunction(()=>document.querySelector(".demo-header-location strong")
     ?.textContent?.includes("工具调用与审批交互")===true);
-  assert.match(await retainedDraft.innerText(),/审阅会话自己的草稿/);
+  await page.waitForFunction(()=>document.querySelector('[aria-label="演示消息输入"]')?.textContent?.includes("审阅会话自己的草稿")===true);
   await retainedDraft.fill("");
   // Y history content is a host-keyed subscription, not the raw demo turn.
   // Find must reflect hydration and clear-thread while using the SAME
