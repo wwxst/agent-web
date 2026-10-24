@@ -32,6 +32,13 @@ jobs:
         run: npx playwright install --with-deps chromium
       - name: Browser smoke tests
         run: npm run demo:test:e2e
+      - name: Ensure Electron executable was downloaded
+        run: |
+          if [ ! -x node_modules/electron/dist/electron ]; then
+            echo "Electron npm package has no binary; downloading with install.js"
+            env -u ELECTRON_SKIP_BINARY_DOWNLOAD node node_modules/electron/install.js
+          fi
+          test -x node_modules/electron/dist/electron
       - name: Launch independent Electron desktop and verify preload
         run: xvfb-run -a npm run desktop:test:smoke
         env:
