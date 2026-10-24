@@ -32,6 +32,17 @@ jobs:
         run: npx playwright install --with-deps chromium
       - name: Browser smoke tests
         run: npm run demo:test:e2e
+      - name: Launch independent Electron desktop and verify preload
+        run: xvfb-run -a npm run desktop:test:smoke
+        env:
+          CI: "true"
+      - name: Upload Electron desktop screenshot
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reconstructed-electron-desktop-smoke
+          path: packages/codex-frontend-reconstruction/desktop/test-results/
+          if-no-files-found: warn
       - name: Upload browser preview screenshot
         if: always()
         uses: actions/upload-artifact@v4
