@@ -9,14 +9,16 @@
  * We intentionally DO NOT impersonate its private electronBridge API.
  */
 const path = require("node:path");
-const {app, BrowserWindow, ipcMain, shell, nativeTheme, screen} = require("electron");
+const {app, BrowserWindow, ipcMain, shell, nativeTheme, screen, Menu} = require("electron");
 const {
   PRIMARY_MIN_WIDTH,PRIMARY_MIN_HEIGHT,sourcePrimaryChromeOptions,
 } = require("./windowChrome.cjs");
 const {restorePrimaryWindowBounds,persistPrimaryWindowBounds}=require("./windowBounds.cjs");
+const {buildSourceNativeMenus,isAllowedMenuId,sanitizeMenuAnchor}=require("./nativeMenu.cjs");
 
 const HOST_INFO_CHANNEL = "agent-web:host-info";
 const HOST_EVENT_CHANNEL = "agent-web:host-event";
+const OPEN_MENU_CHANNEL = "agent-web:open-menu";
 const devUrl=process.env.AGENT_WEB_DEV_URL || "";
 const devMode=devUrl.length>0;
 const indexPath=path.resolve(__dirname,"../demo-dist/index.html");
@@ -53,6 +55,10 @@ function createWindow(){
     },
   });
   mainWindow=win;
+  // Original keeps accelerators in native Menu while its own window owns
+  // the visible File/Edit/View/Help chrome. Our header requests bounded
+  // submenu popups from main, rather than a separate renderer menu model.
+  if(process.platform!=="darwin")win.setMenuBarVisibility(false);
   // Source i3e.installApplicationMenuTitleBarOverlaySync refreshes A9 on
   // nativeTheme.updated; main handles window chrome, not React pseudo buttons.
   const refreshChrome=()=>{
@@ -85,7 +91,56 @@ function createWindow(){
   win.on("closed",()=>{if(mainWindow===win)mainWindow=null;});
   return win;
 }
+function focusedWindow(){
+  const win=BrowserWindow.getFocusedWindow()??mainWindow;
+  return win!=null&&!win.isDestroyed()?win:null;
+}
+function installNativeMenu(){
+  const actions={
+    closeWindow:()=>focusedWindow()?.close(),
+    quit:()=>app.quit(),
+    // Original native menu forwards step-window-zoom/reset-window-zoom to
+    // its private renderer command dispatcher. Our standalone WebContents
+    // uses Chromium's standard step (zoomLevel ±1) at that same boundary.
+    zoomIn:()=>{
+      const win=focusedWindow();
+      if(win!=null)win.webContents.setZoomLevel(
+        Math.min(6,win.webContents.getZoomLevel()+1));
+    },
+    zoomOut:()=>{
+      const win=focusedWindow();
+      if(win!=null)win.webContents.setZoomLevel(
+        Math.max(-6,win.webContents.getZoomLevel()-1));
+    },
+    actualSize:()=>focusedWindow()?.webContents.setZoomLevel(0),
+    toggleFullScreen:()=>{
+      const win=focusedWindow();
+      if(win!=null)win.setFullScreen(!win.isFullScreen());
+    },
+    documentation:()=>void shell.openExternal("https://developers.openai.com/codex/app"),
+  };
+  const template=buildSourceNativeMenus({platform:process.platform,actions});
+  Menu.setApplicationMenu(Menu.buildFromTemplate(template));
+  return template;
+}
 function setupIpc(){
+  const template=installNativeMenu();
+  ipcMain.handle(OPEN_MENU_CHANNEL,(event,id,anchor)=>{
+    const win=BrowserWindow.fromWebContents(event.sender);
+    if(win==null||win.isDestroyed()||event.sender!==win.webContents ||
+      !isAllowedNavigation(event.sender.getURL()) ||
+      !isAllowedMenuId(id))return false;
+    const position=sanitizeMenuAnchor(anchor);
+    if(position==null)return false;
+    const menu=template.find(entry=>entry.id===id);
+    if(menu?.submenu==null)return false;
+    const width=win.getContentBounds().width,height=win.getContentBounds().height;
+    // Only existing native source-defined actions; never arbitrary IPC.
+    const x=Math.min(position.x,Math.max(0,width-1));
+    const y=Math.min(position.y,Math.max(0,height-1));
+    Menu.buildFromTemplate(menu.submenu).popup({window:win,x,y});
+    return true;
+  });
   ipcMain.handle(HOST_INFO_CHANNEL,()=>({
     windowType:"electron",platform:process.platform,
     theme:nativeTheme.shouldUseDarkColors?"dark":"light",
@@ -96,4 +151,4 @@ function setupIpc(){
 app.on("window-all-closed",()=>{if(process.platform!=="darwin")app.quit();});
 app.on("activate",()=>{if(BrowserWindow.getAllWindows().length===0)createWindow();});
 app.whenReady().then(()=>{setupIpc();createWindow();});
-app.on("before-quit",()=>{ipcMain.removeHandler(HOST_INFO_CHANNEL);});
+app.on("before-quit",()=>{ipcMain.removeHandler(HOST_INFO_CHANNEL);ipcMain.removeHandler(OPEN_MENU_CHANNEL);});
