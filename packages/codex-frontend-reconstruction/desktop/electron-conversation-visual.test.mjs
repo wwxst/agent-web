@@ -87,3 +87,47 @@ test("real Electron Codex conversation screenshot shows source code panel and ac
   await rm(profile,{recursive:true,force:true});
  }
 });
+
+
+test("real Electron review timeline renders last meaningful PowerShell action and preserves expandable output",{
+ timeout:90000,
+},async()=>{
+ const profile=await mkdtemp(join(tmpdir(),"agent-web-command-visual-"));
+ const app=await electron.launch({
+  executablePath,
+  args:[".",...(process.platform==="linux"&&process.env.CI?["--no-sandbox"]:[])],
+  cwd:root,
+  env:{...process.env,AGENT_WEB_DEV_URL:"",AGENT_WEB_USER_DATA_DIR:profile,
+   ELECTRON_DISABLE_SECURITY_WARNINGS:"true"},
+  timeout:40000,
+ });
+ try{
+  const page=await app.firstWindow();
+  await page.getByRole("button",{name:/工具调用与审批交互/}).click();
+  await page.waitForFunction(()=>document.querySelector(".demo-header-location strong")
+    ?.textContent?.includes("工具调用与审批交互")===true);
+  const activity=page.locator('[data-demo-turn-id="review-windows-shell-action"]');
+  await activity.waitFor({timeout:12000});
+  await activity.locator("[data-recovered-agent-activity] button").first().click();
+  const command=activity.locator('[data-codex-source-leaf="exec-command"]');
+  await command.waitFor({timeout:12000});
+  assert.equal(await command.getAttribute("data-source-execution-action-selected"),"command");
+  const toggle=command.locator("[data-codex-source-command-toggle]");
+  assert.match(await toggle.innerText(),/Get-ChildItem src -File/);
+  assert.doesNotMatch(await toggle.innerText(),/powershell\.exe|pwsh\.exe|cmd\.exe/i);
+  await toggle.click();
+  await page.locator('[data-codex-source-command-body]').first().waitFor({timeout:10000});
+  const body=command.locator("[data-codex-source-command-body]");
+  assert.match(await body.locator("pre").first().innerText(),/Get-ChildItem src -File/);
+  assert.doesNotMatch(await body.locator("pre").first().innerText(),/powershell\.exe|cmd\.exe/i);
+  await command.scrollIntoViewIfNeeded();
+  await mkdir(resolve(root,"desktop/test-results"),{recursive:true});
+  await page.screenshot({path:resolve(root,"desktop/test-results/conversation-windows-command-action.png"),
+   fullPage:false});
+  await toggle.click();
+  assert.equal(await body.count(),0);
+ }finally{
+  await app.close();
+  await rm(profile,{recursive:true,force:true});
+ }
+});
