@@ -106,7 +106,7 @@ test("real Electron review timeline renders last meaningful PowerShell action an
   await page.getByRole("button",{name:/工具调用与审批交互/}).click();
   await page.waitForFunction(()=>document.querySelector(".demo-header-location strong")
     ?.textContent?.includes("工具调用与审批交互")===true);
-  const activity=page.locator('[data-demo-turn-id="review-windows-shell-action"]');
+  const activity=page.locator('[data-demo-turn-id="review-exec"]');
   await activity.waitFor({timeout:12000});
   await activity.locator("[data-recovered-agent-activity] button").first().click();
   const command=activity.locator('[data-codex-source-leaf="exec-command"]');
@@ -120,18 +120,13 @@ test("real Electron review timeline renders last meaningful PowerShell action an
   const body=command.locator("[data-codex-source-command-body]");
   assert.match(await body.locator("pre").first().innerText(),/Get-ChildItem src -File/);
   assert.doesNotMatch(await body.locator("pre").first().innerText(),/powershell\.exe|cmd\.exe/i);
-  // The source virtualizer is bottom-following on thread entry. Move to the
-  // beginning (where this actual command is the second activity), signal the
-  // existing browser scroll controller, then allow source measurements to
-  // settle before the screenshot. Do NOT fake or portal the command content.
+  // Use the EXISTING first review command, not a screenshot-only row.
   const viewport=page.getByTestId("transcript-scroll");
   await viewport.evaluate(element=>{
     element.scrollTop=0;
     element.dispatchEvent(new Event("scroll",{bubbles:true}));
   });
   await page.waitForTimeout(350);
-  await body.scrollIntoViewIfNeeded();
-  await page.waitForTimeout(250);
   const visible=await body.evaluate(element=>{
     const viewport=element.closest('[data-thread-scroll-viewport]');
     if(viewport==null)return false;
