@@ -8,6 +8,7 @@ import {
   type ActivityGroupStateOptions,
 } from "../conversation/AgentActivityGroupPresentation.js";
 import type { SourceRepeatedActivityRow } from "../conversation/SourceRepeatedActivityGroups.js";
+import { projectSourceRepeatedHeader, type SourceRepeatedHeader, type SourceRecognizedMcpAction } from "../conversation/SourceRepeatedActivityHeader.js";
 import { SourceActivityDisclosure } from "./SourceActivityDisclosure.js";
 import "./codexActivityGroupRow.css";
 
@@ -19,6 +20,8 @@ export interface CodexActivityGroupRowProps<T extends GroupActivityItem>
   /** Original Je/bg subgroup partition, driven only by verified host fields. */
   getRepeatedRows?: (items: readonly T[]) => readonly SourceRepeatedActivityRow<T>[];
   renderRepeatedSummary?: (group: SourceRepeatedActivityRow<T>) => React.ReactNode;
+  getRecognizedRepeatedAction?: (item:T) => SourceRecognizedMcpAction | null | undefined;
+  renderRepeatedHeader?: (header:SourceRepeatedHeader<T>) => {summary:React.ReactNode;icon?:React.ReactNode} | undefined;
   /** Original XO passes mv icon; V_ passes bv icon, resolved by the host. */
   renderRepeatedIcon?: (group: SourceRepeatedActivityRow<T>) => React.ReactNode;
   /** Host owns real source We/Sg completed aggregate, localization and icon metadata. */
@@ -87,10 +90,12 @@ export function CodexActivityGroupRow<T extends GroupActivityItem>(props: CodexA
         if (group.kind === "single") return <React.Fragment key={group.key}>
           {group.items.map(renderChild)}
         </React.Fragment>;
+        const header=projectSourceRepeatedHeader(group,{getRecognizedAction:props.getRecognizedRepeatedAction});
+        const presentation=header == null?undefined:props.renderRepeatedHeader?.(header);
         return <SourceActivityDisclosure key={group.key}
           kind={group.kind}
-          summary={props.renderRepeatedSummary?.(group)}
-          icon={props.renderRepeatedIcon?.(group)}>
+          summary={presentation?.summary ?? props.renderRepeatedSummary?.(group)}
+          icon={presentation?.icon ?? props.renderRepeatedIcon?.(group)}>
           {() => group.items.map(renderChild)}
         </SourceActivityDisclosure>;
       }) : null}
