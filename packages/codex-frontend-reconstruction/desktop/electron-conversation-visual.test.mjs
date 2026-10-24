@@ -134,6 +134,17 @@ test("real Electron review timeline renders last meaningful PowerShell action an
     const bounds=viewport.getBoundingClientRect();
     return box.top>=bounds.top-4&&box.bottom<=bounds.bottom+4;
   });
+  if(!visible){
+    const layout=await body.evaluate(element=>{
+      const viewport=element.closest('[data-thread-scroll-viewport]');
+      const r=element.getBoundingClientRect(),v=viewport?.getBoundingClientRect();
+      return {body:{top:r.top,bottom:r.bottom,height:r.height},
+        viewport:v&&{top:v.top,bottom:v.bottom,height:v.height},
+        scrollTop:viewport?.scrollTop,scrollHeight:viewport?.scrollHeight,
+        clientHeight:viewport?.clientHeight};
+    });
+    console.log("COMMAND_VIEWPORT_FAILURE",layout);
+  }
   assert.equal(visible,true,"actual expanded command must be in visible conversation");
   // Rendered position must remain stable for a full animation frame; a DOM
   // node from a stale virtual row does not qualify as a screenshot oracle.
