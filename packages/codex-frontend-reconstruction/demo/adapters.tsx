@@ -27,6 +27,7 @@ import {
  type ConnectedSourceHistoricalTurnSource,
 } from "../src/conversation/SourceHistoricalTurnContentSource.js";
 import { projectSourceRepeatedActivityRows } from "../src/conversation/SourceRepeatedActivityGroups.js";
+import {resolveSourceMcpToolActivityLabel,sourceMcpLabelInputFromActivity} from "../src/conversation/SourceMcpToolActivityLabel.js";
 import { partitionSourceAeonActivity } from "../src/conversation/SourceAeonActivityPartitions.js";
 import { classifyRawActivityItem } from "../src/conversation/AgentActivityRawClassifier.js";
 import type { ExecCommandLeafProps } from "../src/components/CodexToolActivityLeafRenderer.js";
@@ -36,6 +37,7 @@ import {
   CodexSourceExecReadLeaf,
   CodexSourceExecSearchLeaf,
   CodexSourcePatchLeaf,
+  CodexSourceMcpToolCallLeaf,
 } from "../src/components/CodexSourceToolActivityLeaves.js";
 import {createSourceConversationHostEventBridge} from "../src/conversation/SourceConversationHostEventBridge.js";
 import { createToolActivityHistorySource, type ConnectedToolActivityHistorySource } from "../src/conversation/ToolActivityHistorySource.js";
@@ -119,6 +121,14 @@ export function makeDemoRow(notify: (message: string) => void) {
   connectDesktopHostEventBridge(eventBridge);
   const historyStore=eventBridge.toolHistory;
   const collapseState = createSourceActivityCollapseState();
+  const demoMcpLabelHost = {
+    isFailedResult: (input:import("../src/conversation/SourceMcpToolActivityLabel.js").SourceMcpToolActivityLabelInput)=>
+      input.toolResult?.type==="error",
+    getToolDefinitionTitle: (definition:import("../src/conversation/SourceMcpToolActivityLabel.js").SourceMcpToolActivityLabelInput["toolDefinition"])=>
+      typeof definition?.demoTitle==="string"?definition.demoTitle:null,
+    getFallbackLabel: (input:import("../src/conversation/SourceMcpToolActivityLabel.js").SourceMcpToolActivityLabelInput)=>
+      input.toolName||null,
+  };
   const historySources = new Map<string, ConnectedToolActivityHistorySource>();
   const historyTurnStore=eventBridge.historicalTurns;
   const historicalTurnSources=new Map<string,ConnectedSourceHistoricalTurnSource<ConversationMessageItem>>();
@@ -236,6 +246,25 @@ export function makeDemoRow(notify: (message: string) => void) {
           getToolDisplaySignature: item => typeof item.demoToolDisplaySignature === "string"
             ? item.demoToolDisplaySignature : null,
         }),
+        getRecognizedRepeatedAction: item => {
+          const name=item.demoRecognizedActionLabel;
+          return typeof name==="string"?{
+            message:{id:"demo.mcp.recognizedAction",defaultMessage:name},
+            iconKey:"demo-mcp-recognized",
+          }:null;
+        },
+        renderRepeatedHeader: header => {
+          if(header.variant==="external-event")return {
+            summary:`已收到来自 ${header.sourceLabel || "未知来源"} 的 ${header.count} 个事件 · 模拟`
+          };
+          const icon=<span data-demo-repeated-icon="" aria-hidden="true">◇</span>;
+          if(header.variant==="codex-action")return {
+            icon,summary:`${header.action.message.defaultMessage} · ${header.count} 次调用 · 模拟`
+          };
+          const label=resolveSourceMcpToolActivityLabel(
+            sourceMcpLabelInputFromActivity(header.item),demoMcpLabelHost);
+          return {icon,summary:`${label.text??"工具"} · ${header.count} 次调用 · 模拟`};
+        },
         // DEMO-only icon. XO uses mv and V_ uses bv from the original app host.
         renderRepeatedIcon: () => <span data-demo-repeated-icon="" aria-hidden="true">◇</span>,
         renderRepeatedSummary: group => {
@@ -307,7 +336,7 @@ export function makeDemoRow(notify: (message: string) => void) {
         conversationId: "demo-conversation", hostId: "demo-host", cwd: "/projects/agent-web",
         isReadOnly: false, isTurnInProgress: isActive, isTurnCancelled: false,
         threadDetailLevel: "STEPS_PROSE", summaryTone: "default", showSummaryIcon: true,
-        hideRawCommand: false,
+        hideRawCommand: false,mcpLabelHost:demoMcpLabelHost,
       }),
       leafAdapters: {
         Read: CodexSourceExecReadLeaf,
@@ -315,6 +344,7 @@ export function makeDemoRow(notify: (message: string) => void) {
         ListFiles: CodexSourceExecListFilesLeaf,
         Command: DemoCommandLeaf,
         Patch: CodexSourcePatchLeaf,
+        McpToolCall: CodexSourceMcpToolCallLeaf,
       },
     },
     ActivityDetails,
