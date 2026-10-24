@@ -152,18 +152,8 @@ function setupIpc(){
   const template=installNativeMenu();
   ipcMain.handle(READ_DRAFTS_CHANNEL,event=>
     isTrustedRenderer(event)?readComposerDrafts(app.getPath("userData")):{});
-  ipcMain.handle(WRITE_DRAFT_CHANNEL,(event,threadId,text)=>{
-    if(!isTrustedRenderer(event))return false;
-    const result=writeComposerDraft(app.getPath("userData"),threadId,text);
-    // Opt-in diagnostic for the isolated desktop restart test; removed after
-    // ordering has been verified. Never log production prompts.
-    if(process.env.AGENT_WEB_TRACE_DRAFTS==="1"){
-      const fs=require("node:fs");
-      fs.appendFileSync(path.join(app.getPath("userData"),"draft-trace.jsonl"),
-        JSON.stringify({id:threadId,text,result,after:readComposerDrafts(app.getPath("userData"))})+"\\n");
-    }
-    return result;
-  });
+  ipcMain.handle(WRITE_DRAFT_CHANNEL,(event,threadId,text)=>
+    isTrustedRenderer(event)&&writeComposerDraft(app.getPath("userData"),threadId,text));
   ipcMain.handle(OPEN_MENU_CHANNEL,(event,id,anchor)=>{
     const win=BrowserWindow.fromWebContents(event.sender);
     if(win==null||win.isDestroyed()||event.sender!==win.webContents ||
