@@ -60,10 +60,10 @@ export function CodexSourceSidebarResizeHandle({
         event.preventDefault();
         drag.current={pointerId:event.pointerId,startX:event.clientX,startWidth:width};
         setResizing(true);
-        // Global pointer listeners are the source sbi's authoritative drag
-        // path. Pointer capture is best-effort, not required for activation.
-        try {event.currentTarget.setPointerCapture(event.pointerId);}
-        catch { /* Linux compositor/WebView fallback uses window listeners. */ }
+        // The original sbi tracks pointer movement at window level.
+        // Capturing a zero-width boundary child can deliver an immediate
+        // pointercancel when a browser relayouts that hit target on mouse-down.
+        // Keep the hit region stable and rely on the global listeners.
       }}
       onPointerUp={event=>finish(event.pointerId)}
       onPointerCancel={event=>finish(event.pointerId)}
