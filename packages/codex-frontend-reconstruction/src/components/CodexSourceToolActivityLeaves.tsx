@@ -6,7 +6,7 @@ import {
 import { isMeaningfulReadToolActivity, getVisualizationActivityKind } from "../conversation/ToolActivityHistorySourceTransforms.js";
 import { getToolPatchDiffPresentation, getToolPatchDiffText } from "../conversation/ToolPatchDiffPresentationModel.js";
 import { CodexSourcePatchDiffPreview } from "./CodexSourcePatchDiffPreview.js";
-import { getToolCommandElapsedMs, getToolCommandSummary } from "../conversation/ToolCommandSummaryModel.js";
+import { getToolCommandElapsedMs, getToolCommandSummary, selectSourceExecutionDisplayCommand } from "../conversation/ToolCommandSummaryModel.js";
 import { sourceMcpLabelInputFromActivity, resolveSourceMcpToolActivityLabel } from "../conversation/SourceMcpToolActivityLabel.js";
 import type {
   ExecCommandLeafProps,
@@ -193,10 +193,22 @@ export function CodexSourceExecCommandLeaf(props: ExecCommandLeafProps) {
     durationMs, isInProgress: props.isInProgress, nowMs, startedAtMs: effectiveStartedAtMs,
   });
   const elapsed = !props.hideRawCommand && elapsedMs > 0 ? formatElapsed(elapsedMs) : null;
+  // Source command-execution-command picks the last meaningful action rather
+  // than displaying a Windows PowerShell / cmd / bash launcher wrapper.
+  // No action list: keep the existing host item and summary untouched.
+  const actions=props.item.commandActions;
+  const displayCommand=Array.isArray(actions)
+    ? selectSourceExecutionDisplayCommand({
+        command:commandText(props.item.cmd??props.summary.cmd),
+        commandActions:actions.filter(isRecord).map(action=>({
+          command:text(action.command)??"",
+        })),
+      })
+    : null;
   const label = getToolCommandSummary({
     summaryType: text(props.summary.type) ?? "unknown",
-    command: props.summary.cmd,
-    rawCommand: props.item.cmd,
+    command: displayCommand??props.summary.cmd,
+    rawCommand: displayCommand??props.item.cmd,
     executionStatus: text(props.item.executionStatus),
     elapsedLabel: elapsed,
     isInProgress: props.isInProgress,
@@ -210,7 +222,7 @@ export function CodexSourceExecCommandLeaf(props: ExecCommandLeafProps) {
   const output = isRecord(props.item.output) ? props.item.output : null;
   const outputText = text(output?.aggregatedOutput) ?? "";
   const exitCode = typeof output?.exitCode === "number" ? output.exitCode : undefined;
-  const command = props.hideRawCommand ? "" : commandText(props.item.cmd ?? props.summary.cmd);
+  const command = props.hideRawCommand ? "" : displayCommand??commandText(props.item.cmd ?? props.summary.cmd);
   const reviews = Array.isArray(props.item.automaticApprovalReviews)
     ? props.item.automaticApprovalReviews.filter(isRecord) : [];
   const deniedReview = reviews.find((review) => review.status === "denied");
@@ -218,7 +230,8 @@ export function CodexSourceExecCommandLeaf(props: ExecCommandLeafProps) {
 
   return (
     <div className="codex-source-tool-leaf codex-source-tool-command"
-      data-codex-source-leaf="exec-command">
+      data-codex-source-leaf="exec-command"
+      data-source-execution-action-selected={displayCommand==null?"none":displayCommand===""?"shell-only":"command"}>
       {props.hideRawCommand
         ? <div className="codex-source-tool-command__static" data-codex-source-command-static="">
             <ToolSummary label={label} summaryIcon={props.showSummaryIcon ? props.summaryIcon : null}
