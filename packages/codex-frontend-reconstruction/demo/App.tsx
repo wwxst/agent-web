@@ -12,7 +12,7 @@ import { resolveComposerSubmitDecision } from "../src/conversation/ComposerInter
 import { resolveComposerPrimaryAction } from "../src/conversation/ComposerPrimaryActionModel.js";
 import { SOURCE_CONVERSATION_ITEM_GAP_PX } from "../src/conversation/SourceConversationLayoutTokens.js";
 import { BrowserScrollController } from "./browserScrollController.js";
-import { findSourceThreadLiteralMatches, wrapSourceThreadFindOrdinal } from "../src/conversation/SourceThreadFindModel.js";
+import { searchSourceThreadLiteralRows, wrapSourceThreadFindOrdinal } from "../src/conversation/SourceThreadFindModel.js";
 import { projectDemoThreadFindRows } from "./threadFindProjection.js";
 import { buildConversationRenderEntries } from "../src/conversation/ConversationRenderEntriesModel.js";
 import { sourceHistoricalTurnQuery } from "../src/conversation/SourceHistoricalTurnContentSource.js";
@@ -172,7 +172,8 @@ export function App() {
       query.threadId===findHistory.query.threadId&&query.entityKey===findHistory.query.entityKey
       ?findHistorySnapshot:null;
   }),[findEntries,findHistory,findHistorySnapshot]);
-  const findMatches=React.useMemo(()=>findSourceThreadLiteralMatches(findRows,findQuery),[findRows,findQuery]);
+  const findResult=React.useMemo(()=>searchSourceThreadLiteralRows(findRows,findQuery),[findRows,findQuery]);
+  const findMatches=findResult.matches;
   const currentFindOrdinal=Math.min(findOrdinal,Math.max(0,findMatches.length-1));
   React.useEffect(()=>{
     if(!findOpen)return;
@@ -190,7 +191,7 @@ export function App() {
     let frame:number|null=null;
     const ordinalWithinTurn=findMatches.slice(0,currentFindOrdinal)
       .filter(candidate=>candidate.turnKey===match.turnKey).length;
-    const expectedRowMatches=findMatches.filter(candidate=>candidate.turnKey===match.turnKey).length;
+    const expectedRowMatches=findResult.totalByTurn.get(match.turnKey)??0;
     // Keep the existing source virtualizer's scroll-to-key. After the target
     // mounts, identify the precise visible Markdown occurrence. The compiled
     // search worker/highlighter is private; collapsed or unmatched source
@@ -492,7 +493,7 @@ export function App() {
           onClick={()=>navigateFind("next")} disabled={findMatches.length===0}>↓</button>
         <span className="demo-find-results" role="status" aria-live="polite">
           {findQuery.trim()?findMatches.length===0?"0 results":
-            `${currentFindOrdinal+1} / ${findMatches.length}${findMatches.length===2000?"+":""} results`:""}
+            `${currentFindOrdinal+1} / ${findResult.totalMatches}${findResult.isCapped?"+":""} results`:""}
         </span>
         <button type="button" aria-label="Close find" title="Close find"
           onClick={closeFind}>×</button>
