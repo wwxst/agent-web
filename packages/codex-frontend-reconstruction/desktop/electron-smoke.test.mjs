@@ -358,6 +358,36 @@ test("independent Electron file renderer starts, isolates preload and routes Fc 
   });
   assert.ok(zooms.zoomed>zooms.before);
   assert.equal(zooms.reset,0);
+  // Original Wt controller holds a viewport distance while the virtualizer
+  // changes content. Exercise the SAME native menu → isolated preload →
+  // React switchConversation and existing BrowserScrollController after
+  // inserting 45 real mounted source entries, not a scroll model fixture.
+  await page.getByRole("button",{name:"打开演示工具"}).click();
+  await page.getByRole("button",{name:"添加 45 条历史"}).click();
+  const viewport=page.getByTestId("transcript-scroll");
+  await page.waitForFunction(()=>{
+    const el=document.querySelector('[data-testid="transcript-scroll"]');
+    return el!=null&&el.scrollHeight-el.clientHeight>1200;
+  });
+  const restoredDistance=await viewport.evaluate(el=>{
+    const max=el.scrollHeight-el.clientHeight;
+    el.scrollTop=Math.round(max*0.42);
+    el.dispatchEvent(new Event("scroll",{bubbles:true}));
+    return Math.max(0,max-el.scrollTop);
+  });
+  assert.ok(restoredDistance>300);
+  await app.evaluate(({Menu})=>Menu.getApplicationMenu().getMenuItemById("previousThread").click());
+  await page.waitForFunction(()=>document.querySelector(".demo-header-location strong")
+    ?.textContent?.includes("恢复 Codex 会话界面")===true);
+  await app.evaluate(({Menu})=>Menu.getApplicationMenu().getMenuItemById("nextThread").click());
+  await page.waitForFunction(()=>document.querySelector(".demo-header-location strong")
+    ?.textContent?.includes("工具调用与审批交互")===true);
+  await page.waitForFunction(expected=>{
+    const el=document.querySelector('[data-testid="transcript-scroll"]');
+    if(el==null)return false;
+    const actual=Math.max(0,el.scrollHeight-el.clientHeight-el.scrollTop);
+    return Math.abs(actual-expected)<170;
+  },restoredDistance,{timeout:12000});
   // Zoom testing happens after the real source activity DOM interaction.
   // Linux/Xvfb's offscreen compositor can keep an in-progress zoom
   // relayout unstable for Playwright pointer actionability checks.

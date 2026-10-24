@@ -200,3 +200,37 @@ test("thread navigation retains canonical transcript, appended history, draft an
   await expect(page.getByRole("button",{name:"添加 45 条历史"})).toBeEnabled();
   await expect(editor).toBeEmpty();
 });
+
+test("thread navigation restores its own virtualized scroll distance without forcing bottom follow",async({page})=>{
+  await page.goto("/");
+  const viewport=page.getByTestId("transcript-scroll");
+  await page.getByRole("button",{name:"打开演示工具"}).click();
+  await page.getByRole("button",{name:"添加 45 条历史"}).click();
+  await expect.poll(()=>viewport.evaluate(el=>el.scrollHeight-el.clientHeight)).toBeGreaterThan(1200);
+  const before=await viewport.evaluate(el=>{
+    const total=el.scrollHeight-el.clientHeight;
+    el.scrollTop=Math.round(total*0.43);
+    el.dispatchEvent(new Event("scroll",{bubbles:true}));
+    return Math.max(0,total-el.scrollTop);
+  });
+  expect(before).toBeGreaterThan(300);
+  // The source virtualizer measures rendered rows asynchronously. Test a
+  // settled user viewport, not a scrollTop set in the middle of a reflow.
+  await page.waitForTimeout(350);
+  const settledBefore=await viewport.evaluate(el=>Math.max(0,el.scrollHeight-el.clientHeight-el.scrollTop));
+  await page.getByRole("button",{name:/工具调用与审批交互/}).click();
+  await expect(page.locator(".demo-header-location strong")).toHaveText("工具调用与审批交互");
+  await page.getByRole("button",{name:/恢复 Codex 会话界面/}).click();
+  await expect(page.locator(".demo-header-location strong")).toHaveText("恢复 Codex 会话界面");
+  await page.waitForTimeout(500);
+  await expect.poll(async()=>{
+    const after=await viewport.evaluate(el=>Math.max(0,el.scrollHeight-el.clientHeight-el.scrollTop));
+    return Math.abs(after-settledBefore);
+  },{timeout:12000}).toBeLessThan(170);
+  // Restore an actual scroll position without discarding the same source data.
+  await expect(page.getByRole("button",{name:"添加 45 条历史"})).toBeDisabled();
+  await page.getByRole("button",{name:"重置"}).click();
+  await expect(page.getByRole("button",{name:"添加 45 条历史"})).toBeEnabled();
+  await expect.poll(()=>viewport.evaluate(el=>Math.max(0,el.scrollHeight-el.clientHeight-el.scrollTop)))
+    .toBeLessThan(125);
+});
