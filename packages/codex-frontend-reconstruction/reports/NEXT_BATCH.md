@@ -108,3 +108,10 @@
 - Deterministic DEMO turn is truly Y history-projected (no `preserveServerUserMessages` shortcut); preview buttons publish or clear simulated historical items, including a user message, two commands and final assistant. Core tests verify cache/identity/stale safety, and Chromium regression verifies actual mounted row hydration, nested tool expansion, invalidation and replay.
 - Source audit: `reports/HISTORICAL_TURN_HYDRATION_SOURCE_RECOVERY.md` and `scripts/audit-historical-turn-hydration-evidence.mjs` (seven exact strings + full original SHA-256).
 - **Next:** bind the historical turn store to a verified real host/Electron event transport, then test remount/navigation with durable history and compare exact Codex build visuals. No backend rework or main merge.
+
+## 2026-10-24 — unified host event ingress integrated into existing conversation
+
+- Reused separately keyed original Y, Fc/qn/Qr, and LO/Au/Vd stores and React rows; new `SourceConversationHostEventBridge` provides one non-private, typed independent-frontend event ingress and external `connect(transport)` adapter boundary.
+- The **same mounted Demo React conversation** now routes all three event families through the single bridge. Added per-thread qn/Qr invalidation and stale transport fencing; tests verify cross-conversation isolation and an event-driven clear/recovery browser scenario.
+- No duplicate message/activity UI, no hidden private API imitation, no Agent backend change. See `UNIFIED_FRONTEND_HOST_EVENTS.md`.
+- **Next:** inspect the existing Electron host / CLI event semantics when available, bind a permission-aware transport and exercise it in an actual desktop startup. Do not fabricate a Codex IPC schema or replace genuine test data with unsupported invented fields. Compare theme/version matched UI after desktop host runs.
