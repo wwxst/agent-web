@@ -14,6 +14,7 @@ import { SOURCE_CONVERSATION_ITEM_GAP_PX } from "../src/conversation/SourceConve
 import { BrowserScrollController } from "./browserScrollController.js";
 import { findSourceThreadLiteralMatches, wrapSourceThreadFindOrdinal } from "../src/conversation/SourceThreadFindModel.js";
 import { projectDemoThreadFindRows } from "./threadFindProjection.js";
+import { clearDemoThreadFindHighlight, highlightRenderedDemoThreadFindMatch } from "./threadFindRenderedHighlight.js";
 import { makeDemoRow, demoProjectionDependencies } from "./adapters.js";
 import {
   DEMO_CONVERSATIONS, appendDemoEntries, createDemoSource,
@@ -155,17 +156,42 @@ export function App() {
     return ()=>window.cancelAnimationFrame(id);
   },[findOpen]);
   React.useEffect(()=>{
-    if(!findOpen||findMatches.length===0)return;
+    if(!findOpen||!findQuery.trim()||findMatches.length===0){
+      clearDemoThreadFindHighlight();
+      return;
+    }
     const match=findMatches[currentFindOrdinal];
     if(match==null)return;
     const controller=new AbortController();
-    // Source conversation domain resolves to the existing virtualized
-    // history-content:turn key. Do not add a second scroll implementation.
-    void virtualizerApiRef.current?.scrollToKey(match.turnKey,undefined,{
-      align:"center",signal:controller.signal,
-    }).catch(()=>{});
-    return ()=>controller.abort();
-  },[findOpen,findMatches,currentFindOrdinal]);
+    let frame:number|null=null;
+    const ordinalWithinTurn=findMatches.slice(0,currentFindOrdinal)
+      .filter(candidate=>candidate.turnKey===match.turnKey).length;
+    const expectedRowMatches=findMatches.filter(candidate=>candidate.turnKey===match.turnKey).length;
+    // Keep the existing source virtualizer's scroll-to-key. After the target
+    // mounts, identify the precise visible Markdown occurrence. The compiled
+    // search worker/highlighter is private; collapsed or unmatched source
+    // fields intentionally do NOT produce a fabricated visual highlight.
+    void (async()=>{
+      try{
+        await virtualizerApiRef.current?.scrollToKey(match.turnKey,undefined,{
+          align:"center",signal:controller.signal,
+        });
+        if(controller.signal.aborted)return;
+        frame=window.requestAnimationFrame(()=>{
+          if(controller.signal.aborted||scrollElementRef.current==null)return;
+          highlightRenderedDemoThreadFindMatch({
+            viewport:scrollElementRef.current,turnKey:match.turnKey,query:findQuery,
+            ordinalWithinTurn,expectedRowMatches,
+          });
+        });
+      }catch{/* A replaced/removed virtual row must not crash Find. */}
+    })();
+    return ()=>{
+      controller.abort();
+      if(frame!=null)window.cancelAnimationFrame(frame);
+      clearDemoThreadFindHighlight();
+    };
+  },[findOpen,findQuery,findMatches,currentFindOrdinal]);
   function openFind(){
     if(!findOpen){
       const selected=window.getSelection()?.toString().trim()??"";
