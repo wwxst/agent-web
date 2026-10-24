@@ -160,3 +160,10 @@ export type {
   SourceHistoricalTurnEntry,
   SourceHistoricalTurnStore,
 } from "./conversation/SourceHistoricalTurnContentSource.js";
+
+export {createSourceConversationHostEventBridge} from "./conversation/SourceConversationHostEventBridge.js";
+export type {
+ SourceConversationHostEvent,
+ SourceConversationHostEventTransport,
+ SourceConversationHostEventBridge,
+} from "./conversation/SourceConversationHostEventBridge.js";
