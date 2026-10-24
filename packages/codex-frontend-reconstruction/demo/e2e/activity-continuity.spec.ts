@@ -26,7 +26,37 @@ test("source N groups command and multi-file patch inside the existing transcrip
   const scroller=group.locator("[data-source-group-scroll]");
   await expect(scroller).toBeVisible();
   await expect(scroller).toHaveCSS("max-height","224px");
+  // Exact original nk details utilities from pinned sites-end-resource:
+  // -ms-2 / ps-2, no left rule, 1.5rem scroll-fade distance.
+  const groupGeometry=await scroller.evaluate(element=>{
+    const css=getComputedStyle(element);
+    return {marginInlineStart:css.marginInlineStart,
+      paddingInlineStart:css.paddingInlineStart,
+      borderInlineStartWidth:css.borderInlineStartWidth,
+      edgeDistance:css.getPropertyValue("--edge-fade-distance").trim(),
+    };
+  });
+  expect(groupGeometry.marginInlineStart).toBe("-8px");
+  expect(groupGeometry.paddingInlineStart).toBe("8px");
+  expect(groupGeometry.borderInlineStartWidth).toBe("0px");
+  expect(groupGeometry.edgeDistance).toBe("1.5rem");
   await expect(scroller).toHaveCSS("overflow-y","auto");
+  // Original app-shared adds a scroll-driven edge mask; a permanent bottom
+  // shadow would be a different behavior and obscures rows without overflow.
+  const sourceFade=await scroller.evaluate(element => {
+    const css=getComputedStyle(element);
+    return {
+      supported:CSS.supports("animation-timeline","scroll(self y)"),
+      mask:css.maskImage,
+      animation:css.animationName,
+      timeline:css.getPropertyValue("animation-timeline"),
+    };
+  });
+  if(sourceFade.supported) {
+    expect(sourceFade.mask).toContain("linear-gradient");
+    expect(sourceFade.animation).toContain("codex-source-vertical-edge-fade");
+    expect(sourceFade.timeline).toContain("scroll(self y)");
+  }
   await expect(group.locator(".codex-activity-group-row__subrow")).toHaveCount(4);
   await expect(group.locator('[data-codex-source-leaf="exec-command"]')).toHaveCount(3);
   const patch=group.locator("[data-codex-source-patch]");
@@ -35,10 +65,35 @@ test("source N groups command and multi-file patch inside the existing transcrip
   await patch.locator("[data-codex-source-patch-toggle]").first().click();
   const diff=patch.locator("[data-codex-source-diff-engine='pierre']").first();
   await expect(diff).toBeVisible();
+  const frame=diff.locator("[data-codex-source-diff-frame]");
+  await expect(frame).toBeVisible();
+  await expect(frame.locator(".codex-source-diff-frame__path"))
+    .toHaveText("AgentActivityUnitGrouping.ts");
+  await expect(frame.locator(".codex-source-diff-frame__stats")).toContainText("+");
+  await expect(frame.locator(".codex-source-diff-frame__stats")).toContainText("−");
+  await expect(frame).toHaveCSS("border-top-style","solid");
+  await expect(frame.locator(".codex-source-diff-frame__header")).toHaveCSS("font-size","12px");
+  await page.context().grantPermissions(["clipboard-read","clipboard-write"]);
+  await frame.getByRole("button",{name:"复制文件差异"}).click();
+  const copied=await page.evaluate(() => navigator.clipboard.readText());
+  expect(copied).toContain("AgentActivityUnitGrouping.ts");
+  // Keep a visual acceptance frame with BT's filename/copy bar on screen;
+  // the other screenshot later in this test validates the bottom scroll state.
+  await frame.locator(".codex-source-diff-frame__header").evaluate(element =>
+    element.scrollIntoView({block:"start",inline:"nearest"}));
+  await page.screenshot({
+    path:testInfo.outputPath("codex-bt-file-diff-header.png"),
+    animations:"disabled",
+  });
   await expect(diff.locator(".codex-source-tool-patch-file__diff-viewport")).toHaveCSS("max-height","240px");
   await expect.poll(()=>scroller.evaluate(el=>el.scrollHeight>el.clientHeight)).toBe(true);
   await scroller.evaluate(el=>{el.scrollTop=el.scrollHeight;});
   await expect.poll(()=>scroller.evaluate(el=>el.scrollTop)).toBeGreaterThan(0);
+  if(sourceFade.supported)
+    await expect(scroller).not.toHaveCSS("mask-image","none");
+  // The FileDiff viewport has its own scroll region, unaffected by the mask.
+  await expect(diff.locator(".codex-source-tool-patch-file__diff-viewport"))
+    .toHaveCSS("overflow-y","auto");
   await expect(group.getByRole("button",{name:/编辑了文件.*运行了命令/})).toHaveAttribute("aria-expanded","true");
   await page.screenshot({path:testInfo.outputPath("codex-contiguous-command-patch.png"),animations:"disabled"});
   expect(errors).toEqual([]);
