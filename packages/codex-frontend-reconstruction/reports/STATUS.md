@@ -271,3 +271,23 @@ Follow `reports/NEXT_BATCH.md`: add the typed controller paste-event contract an
 - Connected `demo/App.tsx` directly to its already present `setCollapsed` and `switchConversation` functions. This changes the actual mounted navigation/sidebar and existing virtualized transcript; it is not a new mock UI. Previous/next traversal uses only the **two known demo conversation entries** and is not the original private Codex tab/history model.
 - Extended native menu unit tests and both Linux/Windows **actual Electron** smoke to execute the native menu and check React sidebar state and previous/next conversation DOM. The earlier native qn/Qr IPC, zoom and history checks remain.
 - Source audit and limitations: `scripts/audit-original-sidebar-thread-menu.mjs`, `reports/NATIVE_SIDEBAR_THREAD_COMMANDS.md`. Last-head CI result must be confirmed separately. No backend edits or main merge.
+
+## 2026-10-24 — Windows sidebar menu regression fixed at guarded file:// entry
+
+- Native D0e Toggle Sidebar and Previous/Next Thread are routed via the
+  isolated preload to **existing React App state**, not another demo.
+  Source auditors: `audit-original-sidebar-thread-menu.mjs` (original
+  main bundle SHA + 8 signatures).
+- Initial Linux passed, Windows failed because menu-driven React state did
+  not change. Root cause was host renderer permission check for Windows
+  `file://` URL vs application file path; replaced manual string stripping
+  with platform-aware `fileURLToPath` + normalized path/case comparison.
+  Security restriction remains intact; arbitrary external pages denied.
+- Added 3 desktop policy tests; actual Windows Electron 14/14 and Linux
+  Electron 14/14 passed on implementation commit `c7d8f8ee`, along with
+  Chromium 26/26 and existing core. Final-head status should be read again.
+- Screenshot artifacts and exact tests are linked from PR #3.
+  Remaining scope: original dynamic command keymap, native Find in Thread,
+  full original history/tab navigation, real Agent host event protocol,
+  Windows installer and version-specific visual parity. Backend and main
+  unchanged.
