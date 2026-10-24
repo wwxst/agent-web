@@ -162,11 +162,11 @@ test("independent Electron file renderer starts, isolates preload and routes Fc 
   await findInput.fill("工具");
   await page.waitForFunction(()=>{
     const label=document.querySelector(".demo-find-results")?.textContent??"";
-    const found=label.match(/^(\\d+) \\/ (\\d+) results/);
+    const found=label.match(/^(\d+) \/ (\d+) results/);
     return found!=null && Number(found[2])>=2;
   });
   const findLabel=page.locator(".demo-find-results");
-  assert.match(await findLabel.textContent(),/^1 \\/ [2-9]\\d* results/);
+  assert.match(await findLabel.textContent(),/^1 \/ \d+ results/);
   await app.evaluate(({Menu})=>{
     Menu.getApplicationMenu().getMenuItemById("findNextInThread").click();
   });
