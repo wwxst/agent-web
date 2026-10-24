@@ -10,6 +10,7 @@ import type { ConversationMessageItem, ConversationMessagePlanDependencies } fro
 import type { ConversationRenderProjectionDependencies } from "../src/conversation/ConversationRenderEntriesModel.js";
 import type { InlineFileReviewAction, InlineReviewFile } from "../src/conversation/InlineFileReviewModel.js";
 import { getDemoBlocks, getDemoHistoryTurnItems } from "./mockConversation.js";
+import {connectDesktopHostEventBridge} from "./desktopHost.js";
 import { projectCompletedGroupHeaderParts } from "../src/conversation/AgentActivityGroupPresentation.js";
 import { aggregateAgentActivityUnits } from "../src/conversation/AgentActivityAggregate.js";
 import { groupSourceAgentActivityUnits } from "../src/conversation/AgentActivityUnitGrouping.js";
@@ -113,6 +114,9 @@ function DemoFileDiff({ oldFile: oldVersion, newFile: newVersion, overflow }: {
 
 export function makeDemoRow(notify: (message: string) => void) {
   const eventBridge=createSourceConversationHostEventBridge();
+  // Subscribe to the independent Electron preload when available, or leave
+  // the synthetic browser preview on its existing deterministic event feed.
+  connectDesktopHostEventBridge(eventBridge);
   const historyStore=eventBridge.toolHistory;
   const collapseState = createSourceActivityCollapseState();
   const historySources = new Map<string, ConnectedToolActivityHistorySource>();
