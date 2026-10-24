@@ -193,10 +193,8 @@ test("thread navigation retains canonical transcript, appended history, draft an
   await page.getByRole("button",{name:/工具调用与审批交互/}).click();
   await expect(editor).toContainText("仅供审阅会话的草稿");
   await page.getByRole("button",{name:/恢复 Codex 会话界面/}).click();
-  // Search uses the retained source snapshot even if rows are unmounted.
-  await page.getByRole("button",{name:"打开演示工具"}).click();
-  // Source history is not replaced by navigation: existing 45 items persist.
-  await page.getByRole("button",{name:"打开演示工具"}).click();
+  // The existing tool popover remains open across thread switches. Confirm
+  // its already-injected history control remains disabled, not recreated.
   await expect(page.getByRole("button",{name:"添加 45 条历史"})).toBeDisabled();
   await page.getByRole("button",{name:"重置"}).click();
   await expect(page.getByRole("button",{name:"添加 45 条历史"})).toBeEnabled();
