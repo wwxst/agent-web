@@ -220,22 +220,11 @@ test("thread navigation restores its own virtualized scroll distance without for
   // strict restored-distance bound; do not excuse a real navigation jump.
   await page.waitForTimeout(1000);
   const settledBefore=await viewport.evaluate(el=>Math.max(0,el.scrollHeight-el.clientHeight-el.scrollTop));
-  const visibleAnchor=async()=>viewport.evaluate(el=>{
-    const vr=el.getBoundingClientRect();
-    return [...el.querySelectorAll("[data-turn-key]")].map(node=>{
-      const r=node.getBoundingClientRect();
-      return {key:node.getAttribute("data-turn-key"),offset:Math.round(r.top-vr.top),bottom:Math.round(r.bottom-vr.top)};
-    }).filter(row=>row.bottom>0&&row.offset<vr.height).slice(0,4);
-  });
-  const beforeRows=await visibleAnchor();
-  console.log("VISUAL_ANCHOR_BEFORE",{settledBefore,beforeRows});
   await page.getByRole("button",{name:/工具调用与审批交互/}).click();
   await expect(page.locator(".demo-header-location strong")).toHaveText("工具调用与审批交互");
   await page.getByRole("button",{name:/恢复 Codex 会话界面/}).click();
   await expect(page.locator(".demo-header-location strong")).toHaveText("恢复 Codex 会话界面");
   await page.waitForTimeout(500);
-  console.log("VISUAL_ANCHOR_AFTER",{rows:await visibleAnchor(),
-    distance:await viewport.evaluate(el=>Math.max(0,el.scrollHeight-el.clientHeight-el.scrollTop))});
   await expect.poll(async()=>{
     const after=await viewport.evaluate(el=>Math.max(0,el.scrollHeight-el.clientHeight-el.scrollTop));
     return Math.abs(after-settledBefore);
