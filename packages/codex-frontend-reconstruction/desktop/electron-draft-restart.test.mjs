@@ -44,6 +44,11 @@ test("real Electron process restart hydrates each original mounted ProseMirror d
   await page.getByRole("button",{name:/工具调用与审批交互/}).click();
   await editor.fill("审阅线程：保持独立草稿");
   await stored(page,"review","审阅线程：保持独立草稿");
+  const beforeClose=await page.evaluate(()=>window.agentWebDesktopHost.getComposerDrafts());
+  assert.deepEqual(beforeClose,{
+    frontend:"原始前端线程：重启恢复草稿",
+    review:"审阅线程：保持独立草稿",
+  });
   // Only two known demo thread IDs can be written, even by compromised UI.
   assert.equal(await page.evaluate(()=>window.agentWebDesktopHost?.setComposerDraft("../test","no")),false);
   assert.equal(await page.evaluate(()=>window.agentWebDesktopHost?.setComposerDraft("frontend","x".repeat(65537))),false);
@@ -53,6 +58,11 @@ test("real Electron process restart hydrates each original mounted ProseMirror d
   app=await start(profile);
   page=await ready(app);
   const mounted=page.getByRole("textbox",{name:"演示消息输入"});
+  const afterRestart=await page.evaluate(()=>window.agentWebDesktopHost.getComposerDrafts());
+  assert.deepEqual(afterRestart,{
+    frontend:"原始前端线程：重启恢复草稿",
+    review:"审阅线程：保持独立草稿",
+  });
   await page.waitForFunction(()=>document.querySelector('[aria-label="演示消息输入"]')
     ?.textContent?.includes("原始前端线程：重启恢复草稿")===true);
   await page.getByRole("button",{name:/工具调用与审批交互/}).click();
