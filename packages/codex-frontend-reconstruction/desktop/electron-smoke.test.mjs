@@ -147,6 +147,7 @@ test("independent Electron file renderer starts, isolates preload and routes Fc 
     .waitFor({state:"detached",timeout:10000});
   await page.waitForFunction(()=>document.querySelector(".demo-header-location strong")
     ?.textContent?.includes("恢复 Codex 会话界面")===true);
+  await retainedDraft.fill("前端会话自己的草稿");
   await app.evaluate(({Menu})=>{
     Menu.getApplicationMenu().getMenuItemById("nextThread").click();
   });
@@ -154,13 +155,14 @@ test("independent Electron file renderer starts, isolates preload and routes Fc 
     .waitFor({state:"attached",timeout:10000});
   await page.waitForFunction(()=>document.querySelector(".demo-header-location strong")
     ?.textContent?.includes("工具调用与审批交互")===true);
-  // Review has its own draft. Return to frontend and restore it without
-  // recreating the per-thread source; then resume the review tests.
+  // First return to review restores the earlier review-only draft.
+  await page.waitForFunction(()=>document.querySelector('[aria-label="演示消息输入"]')?.textContent?.includes("Electron 会话保留草稿")===true);
+  // Update review and verify two separate thread drafts after another round.
   await retainedDraft.fill("审阅会话自己的草稿");
   await app.evaluate(({Menu})=>Menu.getApplicationMenu().getMenuItemById("previousThread").click());
   await page.waitForFunction(()=>document.querySelector(".demo-header-location strong")
     ?.textContent?.includes("恢复 Codex 会话界面")===true);
-  await page.waitForFunction(()=>document.querySelector('[aria-label="演示消息输入"]')?.textContent?.includes("Electron 会话保留草稿")===true);
+  await page.waitForFunction(()=>document.querySelector('[aria-label="演示消息输入"]')?.textContent?.includes("前端会话自己的草稿")===true);
   await app.evaluate(({Menu})=>Menu.getApplicationMenu().getMenuItemById("nextThread").click());
   await page.waitForFunction(()=>document.querySelector(".demo-header-location strong")
     ?.textContent?.includes("工具调用与审批交互")===true);
