@@ -16,14 +16,23 @@ const {
 const {restorePrimaryWindowBounds,persistPrimaryWindowBounds}=require("./windowBounds.cjs");
 const {buildSourceNativeMenus,isAllowedMenuId,sanitizeMenuAnchor}=require("./nativeMenu.cjs");
 const {isAllowedNavigation:allowedNavigation}=require("./navigationPolicy.cjs");
+const {readComposerDrafts,writeComposerDraft}=require("./composerDraftStore.cjs");
 
 const HOST_INFO_CHANNEL = "agent-web:host-info";
 const HOST_EVENT_CHANNEL = "agent-web:host-event";
 const UI_COMMAND_CHANNEL = "agent-web:ui-command";
 const OPEN_MENU_CHANNEL = "agent-web:open-menu";
+const READ_DRAFTS_CHANNEL="agent-web:composer-drafts-read";
+const WRITE_DRAFT_CHANNEL="agent-web:composer-draft-write";
 const devUrl=process.env.AGENT_WEB_DEV_URL || "";
 const devMode=devUrl.length>0;
 const indexPath=path.resolve(__dirname,"../demo-dist/index.html");
+// Optional isolated application-profile directory for development and desktop
+// restart verification. Never accept this path from renderer-originated IPC.
+const dataDirOverride=process.env.AGENT_WEB_USER_DATA_DIR;
+if(typeof dataDirOverride==="string"&&path.isAbsolute(dataDirOverride)){
+  app.setPath("userData",dataDirOverride);
+}
 let mainWindow=null;
 
 function isAllowedNavigation(url){
@@ -132,8 +141,19 @@ function installNativeMenu(){
   Menu.setApplicationMenu(Menu.buildFromTemplate(template));
   return template;
 }
+function isTrustedRenderer(event){
+  const win=BrowserWindow.fromWebContents(event.sender);
+  return win!=null&&!win.isDestroyed()&&
+    win.webContents===event.sender&&
+    event.senderFrame===win.webContents.mainFrame&&
+    isAllowedNavigation(event.sender.getURL());
+}
 function setupIpc(){
   const template=installNativeMenu();
+  ipcMain.handle(READ_DRAFTS_CHANNEL,event=>
+    isTrustedRenderer(event)?readComposerDrafts(app.getPath("userData")):{});
+  ipcMain.handle(WRITE_DRAFT_CHANNEL,(event,threadId,text)=>
+    isTrustedRenderer(event)&&writeComposerDraft(app.getPath("userData"),threadId,text));
   ipcMain.handle(OPEN_MENU_CHANNEL,(event,id,anchor)=>{
     const win=BrowserWindow.fromWebContents(event.sender);
     if(win==null||win.isDestroyed()||event.sender!==win.webContents ||
@@ -160,4 +180,8 @@ function setupIpc(){
 app.on("window-all-closed",()=>{if(process.platform!=="darwin")app.quit();});
 app.on("activate",()=>{if(BrowserWindow.getAllWindows().length===0)createWindow();});
 app.whenReady().then(()=>{setupIpc();createWindow();});
-app.on("before-quit",()=>{ipcMain.removeHandler(HOST_INFO_CHANNEL);ipcMain.removeHandler(OPEN_MENU_CHANNEL);});
+app.on("before-quit",()=>{
+  for(const channel of [HOST_INFO_CHANNEL,OPEN_MENU_CHANNEL,READ_DRAFTS_CHANNEL,WRITE_DRAFT_CHANNEL]){
+    ipcMain.removeHandler(channel);
+  }
+});
