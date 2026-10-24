@@ -9,10 +9,11 @@
  * We intentionally DO NOT impersonate its private electronBridge API.
  */
 const path = require("node:path");
-const {app, BrowserWindow, ipcMain, shell, nativeTheme} = require("electron");
+const {app, BrowserWindow, ipcMain, shell, nativeTheme, screen} = require("electron");
 const {
   PRIMARY_MIN_WIDTH,PRIMARY_MIN_HEIGHT,sourcePrimaryChromeOptions,
 } = require("./windowChrome.cjs");
+const {restorePrimaryWindowBounds,persistPrimaryWindowBounds}=require("./windowBounds.cjs");
 
 const HOST_INFO_CHANNEL = "agent-web:host-info";
 const HOST_EVENT_CHANNEL = "agent-web:host-event";
@@ -34,7 +35,10 @@ function isAllowedNavigation(url) {
   } catch{return false;}
 }
 function createWindow(){
+  // i3e restores only geometry still intersecting an attached display.
+  const bounds=restorePrimaryWindowBounds(app.getPath("userData"),screen.getAllDisplays());
   const win=new BrowserWindow({
+    ...(bounds==null?{}:{x:bounds.x,y:bounds.y,width:bounds.width,height:bounds.height}),
     width:1352,height:760,minWidth:PRIMARY_MIN_WIDTH,minHeight:PRIMARY_MIN_HEIGHT,show:false,
     title:"agent-web · Codex 前端恢复",
     // The renderer is currently an explicitly light preview; opaque matching
@@ -58,7 +62,17 @@ function createWindow(){
   };
   nativeTheme.on("updated",refreshChrome);
   win.on("closed",()=>nativeTheme.off("updated",refreshChrome));
-  win.once("ready-to-show",()=>win.show());
+  win.once("ready-to-show",()=>{
+    if(bounds?.isMaximized)win.maximize();
+    win.show();
+  });
+  win.on("close",()=>{
+    if(win.isDestroyed())return;
+    const ordinary=win.getNormalBounds();
+    persistPrimaryWindowBounds(app.getPath("userData"),{
+      ...ordinary,isMaximized:win.isMaximized(),
+    });
+  });
   win.webContents.setWindowOpenHandler(({url})=>{
     if(/^https:\/\//i.test(url))void shell.openExternal(url);
     return {action:"deny"};
