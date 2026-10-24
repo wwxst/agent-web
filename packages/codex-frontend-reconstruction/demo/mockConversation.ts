@@ -159,21 +159,12 @@ function reviewScenario(): ConversationRenderEntry[] {
     demoMessageEntry("user", "review-intro", "我想核对工具状态、文件差异和权限审批是否分开展示。"),
     demoMessageEntry("assistant", "review-response", "把任务分成 **工具活动、修改审阅和审批** 三种不同条目，而不是把所有输出混在一段文本里。"),
     demoActivityEntry("review-exec", [demoItem("review-exec1", "exec", undefined, {
-      heading: "读取项目结构", command: "find src -maxdepth 2 -type f", output: "src/components/\nsrc/conversation/\nsrc/index.ts", state: "Ready",
-    })]),
-    // Exact command-execution-command source contract rendered by the
-    // existing tool leaf. Explicit synthetic record, never executed.
-    demoActivityEntry("review-windows-shell-action", [demoItem("review-windows-shell-action1", "exec", undefined, {
-      heading:"PowerShell 命令动作（仅 UI 演示）",
-      cmd:"powershell.exe -NoProfile",
-      command:"powershell.exe -NoProfile",
+      heading: "读取项目结构（模拟）",
+      command: "powershell.exe -NoProfile", cmd: "powershell.exe -NoProfile",
       commandActions:[
-        {command:"cmd.exe /c"},
-        {command:"Get-ChildItem src -File"},
-        {command:"pwsh.exe -NoProfile"},
+        {command:"cmd.exe /c"},{command:"Get-ChildItem src -File"},{command:"pwsh.exe -NoProfile"},
       ],
-      output:"ToolActivityHistorySource.ts\\nAgentActivityUnitGrouping.ts",
-      state:"Ready",
+      output: "src/components/\nsrc/conversation/\nsrc/index.ts", state: "Ready",
     })]),
     // Synthetic UI-only fixtures exercise the source ZC/QC/$C script labels.
     // They do not launch commands or imply that a real skill script ran.
