@@ -411,7 +411,6 @@ export function App() {
     if (id === active) return;
     if (timerRef.current != null) clearTimeout(timerRef.current);
     timerRef.current = null;
-    draftByConversationRef.current.set(active,draft);
     setPlaying(false);
     setHistoryAdded(historyByConversationRef.current.has(id));
     setDraft(draftByConversationRef.current.get(id)??"");
