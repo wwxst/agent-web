@@ -75,7 +75,11 @@ test("real Electron Codex conversation screenshot shows source code panel and ac
   await codeBlock.first().getByRole("button",{name:"复制代码"}).click();
   await page.getByRole("button",{name:"已复制代码"}).waitFor({timeout:10000});
   const clipboardValue=await app.evaluate(({clipboard})=>clipboard.readText());
-  assert.equal(clipboardValue,copiedText);
+  // Windows DOM innerText normalizes to CRLF, while the actual source code
+  // and clipboard use LF. Compare the preserved code bytes after newline
+  // canonicalization, not OS-specific presentation line separators.
+  const normalized=(value)=>value.replace(/\r\n?/g,"\n");
+  assert.equal(normalized(clipboardValue),normalized(copiedText));
   await page.screenshot({path:resolve(root,"desktop/test-results/conversation-code-copied.png"),
     fullPage:false});
  }finally{
