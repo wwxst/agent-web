@@ -118,6 +118,37 @@ test("independent Electron file renderer starts, isolates preload and routes Fc 
     });
   });
   await groups.waitFor({state:"detached",timeout:10000});
+  // The source-backed D0e menu dispatch now enters the SAME mounted
+  // App/sidebar/ConnectedLiveConversationTranscript, not a separate UI model.
+  const shell=page.locator(".demo-desktop");
+  assert.equal(await shell.getAttribute("data-app-shell-sidebar-open"),"true");
+  await app.evaluate(({Menu})=>{
+    Menu.getApplicationMenu().getMenuItemById("toggleSidebar").click();
+  });
+  await page.waitForFunction(()=>document.querySelector(".demo-desktop")
+    ?.getAttribute("data-app-shell-sidebar-open")==="false");
+  await app.evaluate(({Menu})=>{
+    Menu.getApplicationMenu().getMenuItemById("toggleSidebar").click();
+  });
+  await page.waitForFunction(()=>document.querySelector(".demo-desktop")
+    ?.getAttribute("data-app-shell-sidebar-open")==="true");
+
+  // The demo has two explicit source-projected conversations; we validate
+  // native commands calling EXISTING switchConversation with bounded routing.
+  await app.evaluate(({Menu})=>{
+    Menu.getApplicationMenu().getMenuItemById("previousThread").click();
+  });
+  await page.locator('[data-demo-turn-id="review-live-turn-state"]')
+    .waitFor({state:"detached",timeout:10000});
+  await page.waitForFunction(()=>document.querySelector(".demo-header-location strong")
+    ?.textContent?.includes("恢复 Codex 会话界面")===true);
+  await app.evaluate(({Menu})=>{
+    Menu.getApplicationMenu().getMenuItemById("nextThread").click();
+  });
+  await page.locator('[data-demo-turn-id="review-live-turn-state"]')
+    .waitFor({state:"attached",timeout:10000});
+  await page.waitForFunction(()=>document.querySelector(".demo-header-location strong")
+    ?.textContent?.includes("工具调用与审批交互")===true);
   // Click actual application menu items in the main process; zoom updates
   // this *real* WebContents, not a fake React numeric model.
   const zooms=await app.evaluate(({Menu,BrowserWindow})=>{
