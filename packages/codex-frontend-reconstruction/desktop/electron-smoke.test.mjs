@@ -249,6 +249,30 @@ test("independent Electron file renderer starts, isolates preload and routes Fc 
   await findInput.press("Escape");
   await page.waitForFunction(()=>!CSS.highlights?.has("demo-thread-find-active"));
 
+  // Original re/z caps *navigable offsets* at 250, not the count label.
+  // The running app must show a true total, a "+" marker and still highlight
+  // a first result in a turn whose visible text has >250 occurrences.
+  await composer.fill("Zcap".repeat(270));
+  await page.getByRole("button",{name:"发送模拟消息"}).click();
+  await app.evaluate(({Menu})=>{
+    Menu.getApplicationMenu().getMenuItemById("findInThread").click();
+  });
+  await findInput.waitFor({timeout:10000});
+  await findInput.fill("Zcap");
+  await page.waitForFunction(()=>{
+    const label=document.querySelector(".demo-find-results")?.textContent??"";
+    return label.startsWith("1 / ") && label.endsWith("+ results") &&
+      Number(label.split(" / ")[1]?.split("+")[0]) >= 300;
+  });
+  await page.waitForFunction(()=>Array.from(CSS.highlights?.get("demo-thread-find-active")??[])
+    .some(range=>range.toString()==="Zcap"));
+  // The source enables slash-regex only for host-confirmed searchMath, not
+  // the ordinary conversation find. This is still a literal query.
+  await findInput.fill("/Zcap/");
+  await page.waitForFunction(()=>document.querySelector(".demo-find-results")?.textContent==="0 results");
+  await findInput.press("Escape");
+  await page.waitForFunction(()=>!CSS.highlights?.has("demo-thread-find-active"));
+
   // Click actual application menu items in the main process; zoom updates
   // this *real* WebContents, not a fake React numeric model.
   const zooms=await app.evaluate(({Menu,BrowserWindow})=>{
