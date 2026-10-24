@@ -94,6 +94,7 @@ export function CodexActivityGroupRow<T extends GroupActivityItem>(props: CodexA
         const presentation=header == null?undefined:props.renderRepeatedHeader?.(header);
         return <SourceActivityDisclosure key={group.key}
           kind={group.kind}
+          headerVariant={header?.variant}
           summary={presentation?.summary ?? props.renderRepeatedSummary?.(group)}
           icon={presentation?.icon ?? props.renderRepeatedIcon?.(group)}>
           {() => group.items.map(renderChild)}
