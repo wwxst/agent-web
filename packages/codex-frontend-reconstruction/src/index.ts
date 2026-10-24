@@ -67,6 +67,8 @@ export * from "./conversation/ActivityStatusPresentation.js";
 export * from "./conversation/ConversationPresentationAdapterModel.js";
 
 export { projectNavigationDestinations } from "./conversation/NavigationRailModel.js";
+export { clampSourceSidebarWidth,sourceSidebarMaxWidth,sourceSidebarWidthFromKey } from "./conversation/SourceSidebarResizeModel.js";
+export { CodexSourceSidebarResizeHandle } from "./components/CodexSourceSidebarResizeHandle.js";
 export type { NavigationDestination, NavigationProjection, NavigationProjectionOptions } from "./conversation/NavigationRailModel.js";
 
 export { getAgentActivityCollapseEligibility, projectAgentActivityCollapse } from "./conversation/AgentActivityProjection.js";
@@ -101,6 +103,17 @@ export { projectSourceTurnTranscriptBlocks } from "./conversation/SourceTurnTran
 export type { SourceTurnBlockInput } from "./conversation/SourceTurnTranscriptBlocks.js";
 export { combineSourceActivityTrace } from "./conversation/SourceCombinedActivityTrace.js";
 export { projectSourceRepeatedActivityRows } from "./conversation/SourceRepeatedActivityGroups.js";
+export { resolveSourceMcpToolActivityLabel, sourceJsToolTitle, sourceMcpLabelInputFromActivity } from "./conversation/SourceMcpToolActivityLabel.js";
+export { CodexSourceMcpToolCallLeaf } from "./components/CodexSourceToolActivityLeaves.js";
+export type { SourceMcpToolActivityLabelInput, SourceMcpToolActivityLabelHost, SourceMcpToolActivityLabelResult } from "./conversation/SourceMcpToolActivityLabel.js";
+export { projectSourceRepeatedHeader } from "./conversation/SourceRepeatedActivityHeader.js";
+export type { SourceRepeatedHeader, SourceRecognizedMcpAction, SourceRepeatedHeaderHost } from "./conversation/SourceRepeatedActivityHeader.js";
+export {
+  SOURCE_CONVERSATION_ITEM_GAP_PX,
+  SOURCE_CONVERSATION_GROUPED_ITEM_GAP_PX,
+  SOURCE_DEFAULT_CHAT_FONT_SIZE_PX,
+  SOURCE_DEFAULT_CODE_FONT_SIZE_PX,
+} from "./conversation/SourceConversationLayoutTokens.js";
 export { isSourceMcpResultUngroupable } from "./conversation/SourceMcpResultGroupingGuard.js";
 export type { SourceMcpResult } from "./conversation/SourceMcpResultGroupingGuard.js";
 export type { SourceRepeatedItem, SourceRepeatedActivityHost, SourceRepeatedActivityRow } from "./conversation/SourceRepeatedActivityGroups.js";
