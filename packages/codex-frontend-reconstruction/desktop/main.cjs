@@ -10,6 +10,9 @@
  */
 const path = require("node:path");
 const {app, BrowserWindow, ipcMain, shell, nativeTheme} = require("electron");
+const {
+  PRIMARY_MIN_WIDTH,PRIMARY_MIN_HEIGHT,sourcePrimaryChromeOptions,
+} = require("./windowChrome.cjs");
 
 const HOST_INFO_CHANNEL = "agent-web:host-info";
 const HOST_EVENT_CHANNEL = "agent-web:host-event";
@@ -32,9 +35,12 @@ function isAllowedNavigation(url) {
 }
 function createWindow(){
   const win=new BrowserWindow({
-    width:1352,height:760,minWidth:800,minHeight:520,show:false,
+    width:1352,height:760,minWidth:PRIMARY_MIN_WIDTH,minHeight:PRIMARY_MIN_HEIGHT,show:false,
     title:"agent-web · Codex 前端恢复",
-    backgroundColor:"#171717",
+    // The renderer is currently an explicitly light preview; opaque matching
+    // its surface prevents the prior dark flash during native startup.
+    backgroundColor:"#f9f9f9",
+    ...sourcePrimaryChromeOptions(process.platform,nativeTheme.shouldUseDarkColors),
     autoHideMenuBar:true,
     webPreferences:{
       preload:path.join(__dirname,"preload.cjs"),
@@ -43,6 +49,15 @@ function createWindow(){
     },
   });
   mainWindow=win;
+  // Source i3e.installApplicationMenuTitleBarOverlaySync refreshes A9 on
+  // nativeTheme.updated; main handles window chrome, not React pseudo buttons.
+  const refreshChrome=()=>{
+    if(win.isDestroyed()||typeof win.setTitleBarOverlay!=="function")return;
+    const chrome=sourcePrimaryChromeOptions(process.platform,nativeTheme.shouldUseDarkColors);
+    if(chrome.titleBarOverlay!=null)win.setTitleBarOverlay(chrome.titleBarOverlay);
+  };
+  nativeTheme.on("updated",refreshChrome);
+  win.on("closed",()=>nativeTheme.off("updated",refreshChrome));
   win.once("ready-to-show",()=>win.show());
   win.webContents.setWindowOpenHandler(({url})=>{
     if(/^https:\/\//i.test(url))void shell.openExternal(url);
