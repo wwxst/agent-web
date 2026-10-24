@@ -144,3 +144,19 @@
 - The demo renderer uses its explicit two-conversation navigation semantics, not a claim about all private Codex tabs. No guessed accelerator, private IPC payload or disconnected standalone timeline.
 - Both Linux and Windows desktop smoke must verify actual native item invocation and mounted React changes before CI is considered green; all previous smoke assertions preserved.
 - **Next:** source-verify the original `find-in-thread` route and existing search UI before enabling native Cmd/Ctrl+F, then complete Electron window/theme screenshot comparison on a matching Codex version. Real Agent transport, original configurable keymap and Windows installer remain unimplemented.
+
+## 2026-10-24 — navigation menu delivery now verified on actual Windows
+
+- Verified source D0e native `toggle-sidebar`, `previousThread` and
+  `nextThread` reach the mounted React sidebar and conversation selector
+  via a typed, allowlisted independent preload channel; none of the original
+  keymap shortcuts were invented.
+- Fixed previously failing Windows delivery by canonicalizing the
+  `file://` renderer permission guard with Node `fileURLToPath`. Regression
+  tests cover external URL rejection and real native command actions.
+- CI implementation head `c7d8f8ee` passed Windows/Linux desktop 14 tests
+  each and kept all existing web regressions passing. Check final docs head.
+- **Next:** source-verify `find-in-thread` original routing and recovered
+  transcript search UI, integrate without new unrelated mock state; audit
+  original dynamic command keymap and Windows native screenshot against
+  matching source build. Real Agent and native installer still outstanding.
