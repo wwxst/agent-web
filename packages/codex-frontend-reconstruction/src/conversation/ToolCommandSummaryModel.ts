@@ -1,5 +1,23 @@
 type Command = unknown;
 
+/** The original `command-execution-command-615dea847916.js` t/n.
+ * The display command is the final non-shell commandAction, falling back
+ * only to a non-shell top-level command. This is presentation only: never
+ * remove commandActions from the host record or change execution semantics. */
+export function selectSourceExecutionDisplayCommand(input: {
+  command: string;
+  commandActions: ReadonlyArray<{command?:string|null} | null | undefined>;
+}): string {
+  const isShellLauncher=(command:string)=>
+    /^(?:.*[/\\])?(?:bash|cmd(?:\.exe)?|fish|powershell(?:\.exe)?|pwsh(?:\.exe)?|sh|zsh)(?:\s|$)/i.test(command);
+  for(let index=input.commandActions.length-1;index>=0;index--){
+    const command=input.commandActions[index]?.command?.trim()??"";
+    if(command.length>0&&!isShellLauncher(command))return command;
+  }
+  const fallback=input.command.trim();
+  return isShellLauncher(fallback)?"":fallback;
+}
+
 export interface ToolCommandElapsedInput {
   durationMs?: number | null;
   isInProgress: boolean;
