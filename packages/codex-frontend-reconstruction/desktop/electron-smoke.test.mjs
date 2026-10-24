@@ -178,14 +178,13 @@ test("independent Electron file renderer starts, isolates preload and routes Fc 
   await findInput.press("Escape");
   await findInput.waitFor({state:"detached",timeout:10000});
 
-  // A genuinely mounted conversation row, not an isolated search model:
-  // inject a synthetic repeated phrase and wait for the mock reply so there
-  // are multiple distinct matches inside each of two virtualized turns.
+  // Inject a repeated phrase, then await the source snapshot's six
+  // indexed occurrences. The delayed reply may be unmounted while the
+  // virtualizer is scrolled to a different turn; DOM presence is NOT the
+  // definition of host-owned conversation data.
   const composer=page.getByRole("textbox",{name:"演示消息输入"});
   await composer.fill("可见定位可见定位可见定位");
   await page.getByRole("button",{name:"发送模拟消息"}).click();
-  await page.waitForFunction(()=>Array.from(document.querySelectorAll(".demo-markdown"))
-    .some(element=>element.textContent?.includes("模拟回复")));
   await app.evaluate(({Menu})=>{
     Menu.getApplicationMenu().getMenuItemById("findInThread").click();
   });
