@@ -89,7 +89,7 @@ test('find indexes only Y hydrated canonical history and clears matches after ho
   },deps).entries;
   const entry=projected.find(item=>item.turnId==='review-history-hydration');
   assert.ok(entry);
-  assert.equal(entry.turn,null); // Y must strip raw demo items first
+  assert.equal(entry.turn == null,true); // Y uses undefined to strip raw demo items
   const query=sourceHistoricalTurnQuery(entry);
   assert.deepEqual(query,{
     hostId:'demo-host',threadId:'review',entityKey:'fixture-history-content',
