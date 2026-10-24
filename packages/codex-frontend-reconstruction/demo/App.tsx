@@ -198,6 +198,12 @@ export function App() {
   const timerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   const toastTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   const shouldFollowRef = React.useRef(true);
+  // Hold an independent scroll distance for each already-retained thread.
+  // Source thread-scroll-layout exposes getLastScrollDistanceFromBottomPx,
+  // scrollToDistanceFromBottomPx and holdViewport; preserve the existing
+  // BrowserScrollController/VirtualizedTurnList rather than adding a scroller.
+  const threadViewportDistanceRef=React.useRef(new Map<DemoConversationId,number>());
+  const pendingViewportRestoreRef=React.useRef<{id:DemoConversationId;distance:number}|null>(null);
   const nextIdRef = React.useRef(0);
 
   const source = React.useMemo(() => {
@@ -338,17 +344,36 @@ export function App() {
     };
   }, [scrollController]);
   const onVisibleContentReady = React.useCallback(() => {
+    const pending=pendingViewportRestoreRef.current;
+    if(pending?.id===active){
+      scrollController.scrollToDistanceFromBottomPx(pending.distance,"instant");
+      return;
+    }
     if (shouldFollowRef.current) scrollToBottom();
-  }, [scrollToBottom]);
+  }, [active,scrollController,scrollToBottom]);
 
   React.useEffect(() => {
-    shouldFollowRef.current = true;
-    const frame = requestAnimationFrame(() => requestAnimationFrame(scrollToBottom));
+    const pending=pendingViewportRestoreRef.current;
+    const requested=pending?.id===active?pending.distance:0;
+    shouldFollowRef.current=requested<120;
+    // The recovered virtualizer publishes its viewport after the next layout.
+    // Re-apply when mounted rows have been projected, not while the previous
+    // thread's DOM and scrollHeight are still attached to the scroll element.
+    let secondFrame:number|null=null;
+    const frame=requestAnimationFrame(()=>{
+      secondFrame=requestAnimationFrame(()=>{
+        if(pending?.id===active){
+          scrollController.scrollToDistanceFromBottomPx(requested,"instant");
+          if(pendingViewportRestoreRef.current===pending)pendingViewportRestoreRef.current=null;
+        }else scrollToBottom();
+      });
+    });
     return () => {
       cancelAnimationFrame(frame);
+      if(secondFrame!=null)cancelAnimationFrame(secondFrame);
       if (timerRef.current != null) clearTimeout(timerRef.current);
     };
-  }, [scrollToBottom, source]);
+  }, [active,scrollController,scrollToBottom,source]);
   React.useEffect(() => () => {
     if (toastTimerRef.current != null) clearTimeout(toastTimerRef.current);
   }, []);
@@ -448,6 +473,9 @@ export function App() {
     draftByConversationRef.current.delete(active);
     saveDraftNow(active,"");
     historyByConversationRef.current.delete(active);
+    // Reset must not revive a viewport from a previous lifetime of this turn.
+    threadViewportDistanceRef.current.delete(active);
+    pendingViewportRestoreRef.current={id:active,distance:0};
     setPlaying(false);
     setHistoryAdded(false);
     setDraft("");
@@ -455,6 +483,14 @@ export function App() {
   }
   function switchConversation(id: DemoConversationId) {
     if (id === active) return;
+    // Snapshot the existing controller before React remounts the source
+    // virtualizer. The outgoing viewport and its follow policy are owned by
+    // its thread identity, not a global scrollTop from the incoming thread.
+    const outgoing=scrollController.getLastScrollDistanceFromBottomPx();
+    threadViewportDistanceRef.current.set(active,outgoing);
+    const incoming=threadViewportDistanceRef.current.get(id)??0;
+    pendingViewportRestoreRef.current={id,distance:incoming};
+    shouldFollowRef.current=incoming<120;
     // Preserve the current editor value before ProseMirror is replaced.
     saveDraftNow(active,draftByConversationRef.current.get(active)??"");
     if (timerRef.current != null) clearTimeout(timerRef.current);
@@ -591,7 +627,11 @@ export function App() {
         data-thread-scroll-viewport=""
         onScroll={() => {
         scrollController.notifyScroll();
-        shouldFollowRef.current = scrollController.getLastScrollDistanceFromBottomPx() < 120;
+        // Mount/measurement scroll events during a thread handoff are NOT a
+        // user request to follow the new thread's bottom.
+        if(pendingViewportRestoreRef.current?.id!==active){
+          shouldFollowRef.current = scrollController.getLastScrollDistanceFromBottomPx() < 120;
+        }
       }} data-testid="transcript-scroll">
         <div className="demo-thread-scroll-content" data-source-thread-scroll-content="">
         <div className="demo-transcript-column">
