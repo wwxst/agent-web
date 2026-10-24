@@ -102,18 +102,6 @@ const newFile: InlineReviewFile = {
   contents: "const snapshot = freezeSnapshot(initialSnapshot);\nfor (const listener of [...listeners]) listener();",
 };
 
-function DemoFileDiff({ oldFile: oldVersion, newFile: newVersion, overflow }: {
-  oldFile: InlineReviewFile;
-  newFile: InlineReviewFile;
-  overflow: "wrap" | "scroll";
-}) {
-  return <div className={`demo-full-diff demo-full-diff--${overflow}`}>
-    <div className="demo-diff-filename">{newVersion.name ?? oldVersion.name ?? "example.ts"} · 演示对比</div>
-    <pre className="demo-diff-minus">- {oldVersion.contents}</pre>
-    <pre className="demo-diff-plus">+ {newVersion.contents}</pre>
-  </div>;
-}
-
 export function makeDemoRow(notify: (message: string) => void) {
   const eventBridge=createSourceConversationHostEventBridge();
   // Subscribe to the independent Electron preload when available, or leave
@@ -362,12 +350,11 @@ export function makeDemoRow(notify: (message: string) => void) {
       : null,
     InProgressFixedContent: () => <span className="demo-muted">执行中（模拟）</span>,
     ConversationGap: () => <div className="demo-conversation-gap" />,
-    FileDiff: DemoFileDiff,
     getText: (item) => item.type === "userMessage" || item.type === "user-message" || item.type === "agentMessage" || item.type === "assistant-message"
       ? typeof item.content === "string" ? item.content : null
       : null,
     getFileReview: (item) => item.type === "demo-file-review"
-      ? { oldFile, newFile, compact: true, canAccept: false, canEdit: false }
+      ? { oldFile, newFile, compact: false, canAccept: false, canEdit: false }
       : null,
     getApprovalReviews: (item) => item.type === "demo-approval" || item.type === "demo-approval-expandable"
       ? {

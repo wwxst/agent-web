@@ -294,6 +294,39 @@ test("independent Electron file renderer starts, isolates preload and routes Fc 
   await findInput.press("Escape");
   await page.waitForFunction(()=>!CSS.highlights?.has("demo-thread-find-active"));
 
+  // Source O/k: the native menu finds the canonical virtual turn, then
+  // real React activity disclosure mounts the full Pierre diff. No shadow-DOM
+  // test doubles, fake +/- <pre>, filesystem writes or approval side effects.
+  await app.evaluate(({Menu})=>{
+    Menu.getApplicationMenu().getMenuItemById("findInThread").click();
+  });
+  await findInput.waitFor({timeout:10000});
+  await findInput.fill("审阅变更（只读）");
+  await page.waitForFunction(()=>document.querySelector(".demo-find-results")
+    ?.textContent?.startsWith("1 / "));
+  const fullReviewRow=page.locator('[data-demo-turn-id="review-diff"]');
+  await fullReviewRow.waitFor({timeout:10000});
+  await findInput.press("Escape");
+  const reviewDisclosure=fullReviewRow.locator(".codex-agent-activity__toggle");
+  if(await reviewDisclosure.count()===1&&
+    await reviewDisclosure.getAttribute("aria-expanded")==="false")
+    await reviewDisclosure.click();
+  const reviewGroup=fullReviewRow.locator(".codex-activity-group-row__toggle");
+  if(await reviewGroup.count()===1&&
+    await reviewGroup.getAttribute("aria-expanded")==="false")
+    await reviewGroup.click();
+  const realDiff=fullReviewRow.locator('[data-source-inline-file-diff-engine="pierre"]');
+  await realDiff.waitFor({timeout:15000});
+  await page.waitForFunction(()=>{
+    const engine=document.querySelector('[data-demo-turn-id="review-diff"] [data-source-inline-file-diff-engine="pierre"]');
+    return engine!=null&&Array.from(engine.querySelectorAll("*"))
+      .some(node=>node.shadowRoot?.querySelector("[data-diff]")!=null);
+  },null,{timeout:15000});
+  assert.equal(await fullReviewRow.getByRole("button",{name:"Edit"}).isDisabled(),true);
+  assert.equal(await fullReviewRow.getByRole("button",{name:"Accept"}).isDisabled(),true);
+  await fullReviewRow.getByRole("button",{name:"Enable word wrap"}).click();
+  assert.equal(await fullReviewRow.getByRole("button",{name:"Disable word wrap"}).count(),1);
+
   // Click actual application menu items in the main process; zoom updates
   // this *real* WebContents, not a fake React numeric model.
   const zooms=await app.evaluate(({Menu,BrowserWindow})=>{
