@@ -261,8 +261,8 @@ export function App() {
     availableRailDestinations.find((candidate) => candidate.id === item.id)!,
   );
 
-  return <div className="demo-desktop" data-app-shell-frame="true" data-app-shell-feature-navigation={navigationRailEnabled} data-app-shell-sidebar-open={!collapsed} data-app-shell-application-menu-bar="true" style={{ "--app-shell-navigation-rail-width": navigationRailEnabled ? `${measuredRailWidth}px` : "0px" } as React.CSSProperties}>
-    <div className="demo-window-menu" aria-label="桌面窗口示意（浏览器内，不是原生 Electron）">
+  return <div className="demo-desktop" data-app-shell-frame="true" data-independent-electron={window.agentWebDesktopHost != null} data-app-shell-feature-navigation={navigationRailEnabled} data-app-shell-sidebar-open={!collapsed} data-app-shell-application-menu-bar="true" style={{ "--app-shell-navigation-rail-width": navigationRailEnabled ? `${measuredRailWidth}px` : "0px" } as React.CSSProperties}>
+    <div className="demo-window-menu" aria-label={window.agentWebDesktopHost != null ? "Electron 原生标题栏拖拽区域" : "桌面窗口示意（浏览器内，不是原生 Electron）"}>
       <span className="demo-menubar-back" aria-hidden="true">‹</span><span className="demo-menubar-back" aria-hidden="true">›</span>
       <span className="demo-menubar-panel" aria-hidden="true"><Icon name="panel" size={15}/></span>
       <span>File</span><span>Edit</span><span>View</span><span>Help</span>
