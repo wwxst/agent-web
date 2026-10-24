@@ -59,3 +59,28 @@ The auditor pins the full hash and eight exact source signatures.
 
 These are genuine UI integration steps, but final product parity remains
 dependent on real host data and a version-matched desktop comparison.
+
+## Actual Windows navigation boundary regression and fix
+
+The first Windows native-menu Electron run exposed a **real integration
+failure**: the original D0e sidebar item was present, but the mounted
+`data-app-shell-sidebar-open` property never changed. Linux passed.
+
+The independently authored `desktop/main.cjs` guarded renderer event
+delivery with a fragile comparison of `file://` URL path strings. We
+replaced that custom string manipulation with
+`desktop/navigationPolicy.cjs`, using Node's **platform-aware
+`fileURLToPath`**, `path.normalize`, and Windows' case-insensitive
+comparison. The same policy guards menu popups and in-app navigation; it
+still rejects unrelated file paths and external/unauthorized origins.
+
+`desktop/navigation-policy.test.mjs` verifies canonical local-file,
+rejected external/file URLs, and restricted dev origin semantics on each
+platform. This fix is tested alongside real native menu click → preload →
+React sidebar and previous/next conversation state transitions on
+`windows-latest` and Linux Xvfb. No permission was broadened to arbitrary
+URLs or arbitrary renderer commands.
+
+**Implementation-head CI:** [Actions 40051187694](https://github.com/wwxst/agent-web/actions/runs/40051187694)
+succeeded on Windows + Linux with 14/14 native desktop tests on each.
+Final documentation-head CI should be checked separately.
