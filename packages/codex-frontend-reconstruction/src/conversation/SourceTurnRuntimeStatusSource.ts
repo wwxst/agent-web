@@ -236,7 +236,7 @@ export function createSourceTurnRuntimeStatusStore():SourceTurnRuntimeStatusStor
     if(closed)return;
     const key=JSON.stringify(Object.values(query));
     let entry=map.get(key);
-    if(entry==null){entry={value:undefined,published:false,listeners:new Set()};map.set(key,entry);}
+    if(entry==null){entry={query:{hostId:query.hostId,threadId:query.threadId},value:undefined,published:false,listeners:new Set()};map.set(key,entry);}
     if(entry.published&&Object.is(entry.value,value))return;
     entry.value=value;entry.published=true;
     for(const listener of [...entry.listeners])listener(value);
