@@ -269,6 +269,16 @@ export function App() {
   const findResult=React.useMemo(()=>searchSourceThreadLiteralRows(findRows,findQuery),[findRows,findQuery]);
   const findMatches=findResult.matches;
   const currentFindOrdinal=Math.min(findOrdinal,Math.max(0,findMatches.length-1));
+  // Source search points at a canonical virtual turn key. Keep exactly the
+  // selected Find row mounted while navigating, even if an older turn lies
+  // outside the current viewport after the per-thread scroll-restoration
+  // reconciliation. This uses VirtualizedTurnList's existing retained-key
+  // support; it does not create a second transcript or synthetic entry.
+  const retainedFindTurnKeys=React.useMemo<readonly string[]>(()=>{
+    const target=findOpen?findMatches[currentFindOrdinal]:undefined;
+    return target==null?[]:[target.turnKey];
+  },[findOpen,findMatches,currentFindOrdinal]);
+
   React.useEffect(()=>{
     if(!findOpen)return;
     const id=window.requestAnimationFrame(()=>{findInputRef.current?.focus();findInputRef.current?.select();});
@@ -387,8 +397,12 @@ export function App() {
       finishViewportRestore(pending);
       return;
     }
+    // Search navigation owns the scroll target. An asynchronous row
+    // measurement must not drag its matched turn back to the latest message.
+    if(findOpen&&findQuery.trim()&&findMatches.length>0)return;
     if (shouldFollowRef.current) scrollToBottom();
-  }, [active,scrollController,scrollToBottom,finishViewportRestore]);
+  }, [active,scrollController,scrollToBottom,finishViewportRestore,
+      findOpen,findQuery,findMatches.length]);
 
   React.useEffect(() => {
     const pending=pendingViewportRestoreRef.current;
@@ -690,6 +704,7 @@ export function App() {
             scrollController={scrollController}
             gapPx={SOURCE_CONVERSATION_ITEM_GAP_PX}
             overscanCount={4}
+            retainedTurnKeys={retainedFindTurnKeys}
             onApiChange={onApiChange}
             onVisibleContentReady={onVisibleContentReady}
             LoadingView={() => <div>加载中…</div>}
