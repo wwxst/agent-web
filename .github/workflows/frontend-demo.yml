@@ -3,6 +3,7 @@ name: Recovered frontend demo CI
 on:
   push:
     branches:
+      - 'main'
       - 'recovery/**'
   pull_request:
     paths:
