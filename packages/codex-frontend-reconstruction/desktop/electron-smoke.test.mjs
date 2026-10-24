@@ -96,18 +96,6 @@ test("independent Electron file renderer starts, isolates preload and routes Fc 
   // The renderer cannot call arbitrary host menu actions through preload.
   assert.equal(await page.evaluate(()=>window.agentWebDesktopHost?.openMenu(
     "newTask",{x:12,y:14})),false);
-  // Click actual application menu items in the main process; zoom updates
-  // this *real* WebContents, not a fake React numeric model.
-  const zooms=await app.evaluate(({Menu,BrowserWindow})=>{
-    const win=BrowserWindow.getAllWindows()[0],menu=Menu.getApplicationMenu();
-    const before=win.webContents.getZoomLevel();
-    menu.getMenuItemById("zoomIn").click();
-    const zoomed=win.webContents.getZoomLevel();
-    menu.getMenuItemById("actualSize").click();
-    return {before,zoomed,reset:win.webContents.getZoomLevel()};
-  });
-  assert.ok(zooms.zoomed>zooms.before);
-  assert.equal(zooms.reset,0);
   const location=await page.evaluate(()=>window.location.protocol);
   assert.equal(location,"file:");
   await page.getByRole("button",{name:/工具调用与审批交互/}).click();
@@ -130,6 +118,21 @@ test("independent Electron file renderer starts, isolates preload and routes Fc 
     });
   });
   await groups.waitFor({state:"detached",timeout:10000});
+  // Click actual application menu items in the main process; zoom updates
+  // this *real* WebContents, not a fake React numeric model.
+  const zooms=await app.evaluate(({Menu,BrowserWindow})=>{
+    const win=BrowserWindow.getAllWindows()[0],menu=Menu.getApplicationMenu();
+    const before=win.webContents.getZoomLevel();
+    menu.getMenuItemById("zoomIn").click();
+    const zoomed=win.webContents.getZoomLevel();
+    menu.getMenuItemById("actualSize").click();
+    return {before,zoomed,reset:win.webContents.getZoomLevel()};
+  });
+  assert.ok(zooms.zoomed>zooms.before);
+  assert.equal(zooms.reset,0);
+  // Zoom testing happens after the real source activity DOM interaction.
+  // Linux/Xvfb's offscreen compositor can keep an in-progress zoom
+  // relayout unstable for Playwright pointer actionability checks.
   await mkdir(resolve(root,"desktop/test-results"),{recursive:true});
   await page.screenshot({path:screenshot,fullPage:false});
  }finally{await app.close();}
