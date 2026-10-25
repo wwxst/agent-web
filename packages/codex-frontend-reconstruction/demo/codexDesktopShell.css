@@ -200,6 +200,52 @@ button:focus-visible, textarea:focus-visible { outline: 2px solid #578cda; outli
   pointer-events:auto;
 }
 
+/* Original thread-scroll-layout Ae + app-initial UYl:
+ * zero-height footer anchor, centered 32px circular button positioned
+ * 6 spacing units above the composer. The hidden element stays mounted,
+ * but has no hit target or tab stop. No second scroll container. */
+.codex-source-scroll-to-bottom-anchor {
+  position:relative;
+  z-index:30;
+  height:0;
+  width:min(100%,var(--thread-content-max-width));
+  margin-inline:auto;
+  pointer-events:none;
+}
+.codex-source-scroll-to-bottom-button {
+  position:absolute;
+  inset-inline-end:50%;
+  bottom:calc(100% + 6 * var(--spacing,4px));
+  transform:translateX(50%);
+  z-index:30;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  width:32px;
+  height:32px;
+  padding:0;
+  border:1px solid var(--demo-border,#e7e7e7);
+  border-radius:50%;
+  background:var(--color-surface,#fff);
+  color:#777;
+  opacity:0;
+  pointer-events:none;
+  cursor:pointer;
+  transition:opacity .15s ease-in-out;
+}
+.codex-source-scroll-to-bottom-button[data-visible="true"] {
+  opacity:1;
+  pointer-events:auto;
+}
+.codex-source-scroll-to-bottom-button:hover { color:#333; background:#fafafa; }
+.codex-source-scroll-to-bottom-button:focus-visible {
+  outline:2px solid #578cda;
+  outline-offset:2px;
+}
+@media print {
+  .codex-source-scroll-to-bottom-anchor { display:none; }
+}
+
 .demo-composer-wrap {width:min(100%,var(--thread-content-max-width));}
 .demo-composer {background:var(--color-surface-elevated-secondary);border:1px solid #e9e9e9;box-shadow:0 3px 16px #00000008;border-radius:var(--composer-radius);min-height:98px;}
 .demo-composer:focus-within{border-color:#c8c8c8;}
