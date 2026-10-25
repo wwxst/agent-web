@@ -168,6 +168,35 @@ test("independent Electron file renderer starts, isolates preload and routes Fc 
     ?.textContent?.includes("工具调用与审批交互")===true);
   await page.waitForFunction(()=>document.querySelector('[aria-label="演示消息输入"]')?.textContent?.includes("审阅会话自己的草稿")===true);
   await retainedDraft.fill("");
+  // Original app-primary cFt forwards the selected DOM text into the SAME
+  // mounted Find portal through the native View menu. The previous incorrectly
+  // escaped regex rejected normal selections containing an "r" or "n".
+  const selectedForFind=await page.evaluate(()=>{
+    const heading=document.querySelector(".demo-project-heading");
+    const node=Array.from(heading?.childNodes??[]).find(node=>
+      node.nodeType===Node.TEXT_NODE&&node.textContent?.includes("agent web"));
+    if(node==null)return null;
+    const range=document.createRange();
+    range.selectNodeContents(node);
+    const selection=window.getSelection();
+    selection?.removeAllRanges();
+    selection?.addRange(range);
+    return selection?.toString().trim()??null;
+  });
+  assert.equal(selectedForFind,"agent web");
+  await app.evaluate(({Menu})=>
+    Menu.getApplicationMenu().getMenuItemById("findInThread").click());
+  const findSelectionInput=page.getByRole("searchbox",{name:"Find in chat"});
+  await findSelectionInput.waitFor({timeout:10000});
+  assert.equal(await findSelectionInput.inputValue(),"agent web");
+  await mkdir(resolve(root,"desktop/test-results"),{recursive:true});
+  await page.screenshot({
+    path:resolve(root,"desktop/test-results/electron-find-selection-prefill.png"),
+    animations:"disabled",
+  });
+  await findSelectionInput.press("Escape");
+  await findSelectionInput.waitFor({state:"detached",timeout:10000});
+  await page.evaluate(()=>window.getSelection()?.removeAllRanges());
   // Y history content is a host-keyed subscription, not the raw demo turn.
   // Find must reflect hydration and clear-thread while using the SAME
   // mounted virtual row (no separate search/transcript renderer).
