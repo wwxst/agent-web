@@ -269,6 +269,16 @@ export function App() {
   const findResult=React.useMemo(()=>searchSourceThreadLiteralRows(findRows,findQuery),[findRows,findQuery]);
   const findMatches=findResult.matches;
   const currentFindOrdinal=Math.min(findOrdinal,Math.max(0,findMatches.length-1));
+  // Preserve the selected source turn after the Find bar closes. Otherwise
+  // closing Find immediately releases the only retained virtual row before
+  // an already-open historical review/diff disclosure can finish mounting.
+  // The pin is limited to one canonical turn key and disappears when the
+  // query/result or conversation changes; no duplicate transcript is made.
+  const retainedFindTurnKeys=React.useMemo<readonly string[]>(()=>{
+    const target=findMatches[currentFindOrdinal];
+    return target==null?[]:[target.turnKey];
+  },[findMatches,currentFindOrdinal]);
+
   React.useEffect(()=>{
     if(!findOpen)return;
     const id=window.requestAnimationFrame(()=>{findInputRef.current?.focus();findInputRef.current?.select();});
@@ -387,8 +397,13 @@ export function App() {
       finishViewportRestore(pending);
       return;
     }
+    // The one retained canonical Find target continues to own the viewport
+    // while its historic activity or full-file review is being inspected,
+    // even if the search bar itself has been dismissed.
+    if(retainedFindTurnKeys.length>0)return;
     if (shouldFollowRef.current) scrollToBottom();
-  }, [active,scrollController,scrollToBottom,finishViewportRestore]);
+  }, [active,scrollController,scrollToBottom,finishViewportRestore,
+      retainedFindTurnKeys]);
 
   React.useEffect(() => {
     const pending=pendingViewportRestoreRef.current;
@@ -690,6 +705,7 @@ export function App() {
             scrollController={scrollController}
             gapPx={SOURCE_CONVERSATION_ITEM_GAP_PX}
             overscanCount={4}
+            retainedTurnKeys={retainedFindTurnKeys}
             onApiChange={onApiChange}
             onVisibleContentReady={onVisibleContentReady}
             LoadingView={() => <div>加载中…</div>}
