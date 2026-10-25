@@ -439,6 +439,46 @@ test("independent Electron file renderer starts, isolates preload and routes Fc 
     const actual=Math.max(0,el.scrollHeight-el.clientHeight-el.scrollTop);
     return Math.abs(actual-expected)<170;
   },restoredDistance,{timeout:12000});
+  // Original thread-scroll-layout Ae / app-initial UYl: the mounted footer
+  // exposes a 32px button when >24px away from bottom, even after native
+  // thread navigation restores an old virtualized viewport.
+  const latest=page.locator("[data-source-scroll-to-bottom-button]");
+  await latest.waitFor({timeout:12000});
+  await page.waitForFunction(()=>
+    document.querySelector("[data-source-scroll-to-bottom-button]")
+      ?.getAttribute("data-visible")==="true");
+  assert.equal(await latest.getAttribute("aria-hidden"),"false");
+  assert.equal(await latest.getAttribute("tabindex"),"0");
+  const sourceButtonGeometry=await latest.evaluate(button=>{
+    const r=button.getBoundingClientRect();
+    const composer=document.querySelector(".demo-composer-wrap")?.getBoundingClientRect();
+    return {
+      width:r.width,height:r.height,
+      centerX:r.left+r.width/2,
+      composerCenterX:composer==null?null:composer.left+composer.width/2,
+      distanceAboveComposer:composer==null?null:composer.top-r.bottom,
+    };
+  });
+  assert.deepEqual([sourceButtonGeometry.width,sourceButtonGeometry.height],[32,32]);
+  assert.ok(Math.abs(sourceButtonGeometry.centerX-sourceButtonGeometry.composerCenterX)<3);
+  assert.ok(Math.abs(sourceButtonGeometry.distanceAboveComposer-24)<4);
+  await mkdir(resolve(root,"desktop/test-results"),{recursive:true});
+  await page.screenshot({path:resolve(root,
+    "desktop/test-results/conversation-scroll-to-bottom-visible.png"),
+    fullPage:false,animations:"disabled"});
+  await latest.click();
+  await page.waitForFunction(()=>{
+    const e=document.querySelector('[data-testid="transcript-scroll"]');
+    return e!=null && e.scrollHeight-e.clientHeight-e.scrollTop<=24;
+  },null,{timeout:12000});
+  await page.waitForFunction(()=>
+    document.querySelector("[data-source-scroll-to-bottom-button]")
+      ?.getAttribute("data-visible")==="false");
+  assert.equal(await latest.getAttribute("aria-hidden"),"true");
+  assert.equal(await latest.getAttribute("tabindex"),"-1");
+  await page.screenshot({path:resolve(root,
+    "desktop/test-results/conversation-scroll-to-bottom-hidden.png"),
+    fullPage:false,animations:"disabled"});
   // Zoom testing happens after the real source activity DOM interaction.
   // Linux/Xvfb's offscreen compositor can keep an in-progress zoom
   // relayout unstable for Playwright pointer actionability checks.
