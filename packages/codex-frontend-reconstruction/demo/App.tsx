@@ -14,6 +14,7 @@ import { resolveComposerPrimaryAction } from "../src/conversation/ComposerPrimar
 import { SOURCE_CONVERSATION_ITEM_GAP_PX } from "../src/conversation/SourceConversationLayoutTokens.js";
 import { BrowserScrollController } from "./browserScrollController.js";
 import { searchSourceThreadLiteralRows, wrapSourceThreadFindOrdinal } from "../src/conversation/SourceThreadFindModel.js";
+import { sourceThreadFindSelectedQuery } from "../src/conversation/SourceThreadFindSelectionModel.js";
 import { projectDemoThreadFindRows } from "./threadFindProjection.js";
 import { buildConversationRenderEntries } from "../src/conversation/ConversationRenderEntriesModel.js";
 import { sourceHistoricalTurnQuery } from "../src/conversation/SourceHistoricalTurnContentSource.js";
@@ -323,8 +324,15 @@ export function App() {
   },[findOpen,findQuery,findMatches,currentFindOrdinal]);
   function openFind(){
     if(!findOpen){
-      const selected=window.getSelection()?.toString().trim()??"";
-      if(selected.length>0 && !/[\\r\\n]/.test(selected))setFindQuery(selected);
+      // Original app-primary cFt: a focused text control owns its selection.
+      // Otherwise use the document selection. CR/LF clears the current query;
+      // no selection preserves it. This is the actual mounted Find action.
+      const focused=document.activeElement;
+      const control=focused instanceof HTMLInputElement ||
+        focused instanceof HTMLTextAreaElement ? focused : null;
+      const selected=sourceThreadFindSelectedQuery(
+        control,control==null?window.getSelection()?.toString():null);
+      if(selected!==undefined)setFindQuery(selected);
       setFindOrdinal(0);
       setFindOpen(true);
     } else {
