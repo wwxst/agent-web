@@ -2,6 +2,7 @@ import * as React from "react";
 import { createPortal } from "react-dom";
 import { CodexComposerLayout } from "../src/components/CodexComposerLayout.js";
 import { CodexSourceComposerHostForm } from "../src/components/CodexSourceComposerHostForm.js";
+import { CodexSourceScrollToBottomButton } from "../src/components/CodexSourceScrollToBottomButton.js";
 import { DemoProseMirrorComposerEditor } from "./DemoProseMirrorComposerEditor.js";
 import { CodexNavigationRail, type CodexRailDestination } from "../src/components/CodexNavigationRail.js";
 import { CodexSourceSidebarResizeHandle } from "../src/components/CodexSourceSidebarResizeHandle.js";
@@ -344,11 +345,27 @@ export function App() {
     setFindOrdinal(index=>wrapSourceThreadFindOrdinal(index,findMatches.length,direction));
   }
   const scrollController = React.useMemo(() => new BrowserScrollController(() => scrollElementRef.current), []);
+  // Source Ae: with no private response spacer, show the floating footer
+  // button only when the canonical scroll controller is >24px from bottom.
+  const [showScrollToBottom,setShowScrollToBottom]=React.useState(false);
+  const updateScrollToBottomVisibility=React.useCallback(()=>{
+    setShowScrollToBottom(scrollController.getLastScrollDistanceFromBottomPx()>24);
+  },[scrollController]);
+  const scrollToLatest=React.useCallback(()=>{
+    // Explicit navigation must supersede an unfinished route viewport hold.
+    cancelPendingViewportOnUserScroll();
+    shouldFollowRef.current=true;
+    const behavior=window.matchMedia("(prefers-reduced-motion: reduce)").matches
+      ?"instant":"smooth";
+    scrollController.scrollToDistanceFromBottomPx(0,behavior);
+    if(behavior==="instant")setShowScrollToBottom(false);
+  },[scrollController,cancelPendingViewportOnUserScroll]);
 
   const onApiChange = React.useCallback((api: VirtualizedTurnListApi | null) => { virtualizerApiRef.current = api; }, []);
   const scrollToBottom = React.useCallback(() => {
     shouldFollowRef.current = true;
     scrollController.scrollToDistanceFromBottomPx(0, "instant");
+    setShowScrollToBottom(false);
   }, [scrollController]);
   // Original thread-scroll-layout (Wt/Gt) measures the default footer and
   // writes its real height + 16px onto the active scroll container.
@@ -391,27 +408,32 @@ export function App() {
     if(content==null||typeof ResizeObserver==="undefined")return;
     const observer=new ResizeObserver(()=>{
       const pending=pendingViewportRestoreRef.current;
-      if(pending?.id!==active)return;
-      scrollController.scrollToDistanceFromBottomPx(pending.distance,"instant");
-      finishViewportRestore(pending);
+      if(pending?.id===active){
+        scrollController.scrollToDistanceFromBottomPx(pending.distance,"instant");
+        finishViewportRestore(pending);
+      }
+      // Virtualized row measurements change scrollHeight without scroll.
+      updateScrollToBottomVisibility();
     });
     observer.observe(content);
     return ()=>observer.disconnect();
-  },[active,scrollController,finishViewportRestore]);
+  },[active,scrollController,finishViewportRestore,updateScrollToBottomVisibility]);
   const onVisibleContentReady = React.useCallback(() => {
     const pending=pendingViewportRestoreRef.current;
     if(pending?.id===active){
       scrollController.scrollToDistanceFromBottomPx(pending.distance,"instant");
       finishViewportRestore(pending);
+      updateScrollToBottomVisibility();
       return;
     }
+    updateScrollToBottomVisibility();
     // The one retained canonical Find target continues to own the viewport
     // while its historic activity or full-file review is being inspected,
     // even if the search bar itself has been dismissed.
     if(retainedFindTurnKeys.length>0)return;
     if (shouldFollowRef.current) scrollToBottom();
   }, [active,scrollController,scrollToBottom,finishViewportRestore,
-      retainedFindTurnKeys]);
+      retainedFindTurnKeys,updateScrollToBottomVisibility]);
 
   React.useEffect(() => {
     const pending=pendingViewportRestoreRef.current;
@@ -537,6 +559,7 @@ export function App() {
     // Reset must not revive a viewport from a previous lifetime of this turn.
     threadViewportDistanceRef.current.delete(active);
     pendingViewportRestoreRef.current={id:active,distance:0};
+    setShowScrollToBottom(false);
     setPlaying(false);
     setHistoryAdded(false);
     setDraft("");
@@ -552,6 +575,7 @@ export function App() {
     const incoming=threadViewportDistanceRef.current.get(id)??0;
     pendingViewportRestoreRef.current={id,distance:incoming};
     shouldFollowRef.current=incoming<120;
+    setShowScrollToBottom(incoming>24);
     // Preserve the current editor value before ProseMirror is replaced.
     saveDraftNow(active,draftByConversationRef.current.get(active)??"");
     if (timerRef.current != null) clearTimeout(timerRef.current);
@@ -696,6 +720,7 @@ export function App() {
         }}
         onScroll={() => {
         scrollController.notifyScroll();
+        updateScrollToBottomVisibility();
         // Mount/measurement scroll events during a thread handoff are NOT a
         // user request to follow the new thread's bottom.
         if(pendingViewportRestoreRef.current?.id!==active){
@@ -729,6 +754,8 @@ export function App() {
       <div className="demo-composer-zone" ref={composerFooterRef}
         data-thread-scroll-footer="true" data-thread-footer-placement="bottom">
         <div className="demo-thread-footer-surface" data-thread-footer-background-part="surface" aria-hidden="true"/>
+        <CodexSourceScrollToBottomButton
+          visible={showScrollToBottom} onClick={scrollToLatest}/>
         <CodexSourceComposerHostForm className="demo-composer-wrap"
           integratedVoiceModeActive={false} hasUploadPolicy={false}
           onSubmit={() => { if (composerAction.kind === "send") sendMessage(); }}>
