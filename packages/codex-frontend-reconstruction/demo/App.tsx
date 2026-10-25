@@ -355,14 +355,12 @@ export function App() {
     // Explicit navigation must supersede an unfinished route viewport hold.
     cancelPendingViewportOnUserScroll();
     shouldFollowRef.current=true;
-    const behavior=window.matchMedia("(prefers-reduced-motion: reduce)").matches
-      ?"instant":"smooth";
-    scrollController.scrollToDistanceFromBottomPx(0,behavior);
-    if(behavior==="instant")setShowScrollToBottom(false);
+    scrollController.scrollToBottomFromSource();
   },[scrollController,cancelPendingViewportOnUserScroll]);
 
   const onApiChange = React.useCallback((api: VirtualizedTurnListApi | null) => { virtualizerApiRef.current = api; }, []);
   const scrollToBottom = React.useCallback(() => {
+    scrollController.cancelSourceScrollToBottomAnimation();
     shouldFollowRef.current = true;
     scrollController.scrollToDistanceFromBottomPx(0, "instant");
     setShowScrollToBottom(false);
@@ -547,6 +545,7 @@ export function App() {
     notify("已加入 45 条模拟消息。可滚动检查虚拟列表。");
   }
   function reset() {
+    scrollController.cancelSourceScrollToBottomAnimation();
     if (timerRef.current != null) clearTimeout(timerRef.current);
     timerRef.current = null;
     // Explicit reset is the only UI path that replaces the active source.
@@ -567,6 +566,7 @@ export function App() {
   }
   function switchConversation(id: DemoConversationId) {
     if (id === active) return;
+    scrollController.cancelSourceScrollToBottomAnimation();
     // Snapshot the existing controller before React remounts the source
     // virtualizer. The outgoing viewport and its follow policy are owned by
     // its thread identity, not a global scrollTop from the incoming thread.
@@ -715,6 +715,7 @@ export function App() {
         // override a real wheel operation with a stale pending restore.
         onWheel={event=>{
           if(event.deltaY===0)return;
+          scrollController.cancelSourceScrollToBottomAnimation();
           cancelPendingViewportOnUserScroll();
           shouldFollowRef.current=false;
         }}
