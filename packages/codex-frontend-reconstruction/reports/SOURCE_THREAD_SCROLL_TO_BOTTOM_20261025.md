@@ -33,7 +33,7 @@
 - Actual transcript `onScroll`, virtualizer content `ResizeObserver`,
   conversation navigation/restoration, footer follow and reset update the same
   visibility state. A click cancels an obsolete pending viewport restoration and
-  scrolls the same scroll region to bottom (smooth except reduced-motion).
+  scrolls the same scroll region to bottom with the source's 260ms cubic frame animation (instant for reduced-motion).
 - `demo/codexDesktopShell.css` carries source-confirmed size, absolute footer
   positioning, center alignment, border and hidden pointer/tab behavior.
 
@@ -65,8 +65,12 @@ Run the complete CI suite on the final branch head:
 - No private response spacer exists in this standalone preview. That source
   branch and its working-dots decoration are not integrated; do not synthesize
   their states.
-- Browser-native smooth scrolling approximates the original source's explicit
-  260ms cubic ease. This is an identified behavior difference, not pixel parity.
+- An initial CI run showed native Chromium smooth scrolling could fail to
+  reach the latest message under Linux/Xvfb despite Windows passing. We
+  replaced it with the **original source's** 260ms ease-out cubic rAF behavior,
+  recomputing from current virtualized scrollHeight each frame and cancelling
+  on wheel/route changes. A subsequent final-head CI run must still confirm
+  the fix; neither OS is assumed passing without that evidence.
 - Screenshots are from the reconstructed Electron renderer; comparison against
   an identical-version original Codex Windows runtime remains outstanding.
 - No real Agent model calls, security permission handling, or backend integration.
