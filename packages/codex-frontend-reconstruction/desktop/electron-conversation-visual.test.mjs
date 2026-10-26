@@ -172,3 +172,66 @@ test("real Electron review timeline renders last meaningful PowerShell action an
   await rm(profile,{recursive:true,force:true});
  }
 });
+
+
+test("real Electron mounts source Worked for status in its tool disclosure, never under conversation title",{
+ timeout:100000,
+},async()=>{
+ const profile=await mkdtemp(join(tmpdir(),"agent-web-work-status-"));
+ const app=await electron.launch({
+  executablePath,
+  args:[".",...(process.platform==="linux"&&process.env.CI?["--no-sandbox"]:[])],
+  cwd:root,
+  env:{...process.env,AGENT_WEB_DEV_URL:"",AGENT_WEB_USER_DATA_DIR:profile,
+   ELECTRON_DISABLE_SECURITY_WARNINGS:"true"},
+  timeout:40000,
+ });
+ try{
+  const page=await app.firstWindow();
+  await page.locator('[aria-label="演示会话导航"]').waitFor({timeout:20000});
+  assert.equal(await page.locator(".demo-worked-label").count(),0,
+   "a fabricated global Worked for subtitle must not be mounted");
+  await page.getByRole("button",{name:/工具调用与审批交互/}).click();
+  const viewport=page.getByTestId("transcript-scroll");
+  const statusTurn=page.locator('[data-demo-turn-id="review-work-status"]');
+  let mounted=false;
+  for(let index=16;index>=0;index--){
+   await viewport.evaluate((el,position)=>{
+    const max=Math.max(0,el.scrollHeight-el.clientHeight);
+    el.scrollTop=Math.round(max*position/16);
+    el.dispatchEvent(new Event("scroll",{bubbles:true}));
+   },index);
+   await page.waitForTimeout(100);
+   if(await statusTurn.count()){mounted=true;break;}
+  }
+  assert.equal(mounted,true,"status must be part of the real virtualized transcript");
+  const activity=statusTurn.locator('[data-recovered-agent-activity]');
+  const toggle=activity.locator(".codex-agent-activity__toggle");
+  await toggle.waitFor({timeout:12000});
+  assert.equal(await toggle.getAttribute("aria-expanded"),"false");
+  assert.match(await toggle.innerText(),/Worked for 2m 11s/);
+  assert.equal(await activity.locator('[data-source-work-status-divider]').count(),0);
+  await toggle.click();
+  const divider=activity.locator('[data-source-work-status-divider="true"]');
+  await divider.waitFor({timeout:12000});
+  assert.equal(await divider.locator('[data-source-work-status="worked"]').count(),1);
+  assert.match(await divider.innerText(),/Worked for 2m 11s/);
+  await divider.scrollIntoViewIfNeeded();
+  await mkdir(resolve(root,"desktop/test-results"),{recursive:true});
+  await page.screenshot({
+   path:resolve(root,"desktop/test-results/conversation-work-status-expanded.png"),
+   fullPage:false,animations:"disabled",
+  });
+  await toggle.click();
+  assert.equal(await divider.count(),0,
+   "expanded status is not duplicated into the collapsed activity details");
+  assert.match(await toggle.innerText(),/Worked for 2m 11s/);
+  await page.screenshot({
+   path:resolve(root,"desktop/test-results/conversation-work-status-collapsed.png"),
+   fullPage:false,animations:"disabled",
+  });
+ }finally{
+  await app.close();
+  await rm(profile,{recursive:true,force:true});
+ }
+});
