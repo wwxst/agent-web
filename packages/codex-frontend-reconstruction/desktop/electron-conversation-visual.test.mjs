@@ -421,3 +421,94 @@ test("native Find in Thread reveals the exact hidden long-user match in mounted 
   await rm(profile,{recursive:true,force:true});
  }
 });
+
+
+test("native Find maps Markdown link labels but never highlights the hidden identical URL hit",{
+ timeout:100000,
+},async()=>{
+ const profile=await mkdtemp(join(tmpdir(),"agent-web-markdown-link-find-"));
+ const app=await electron.launch({
+  executablePath,
+  args:[".",...(process.platform==="linux"&&process.env.CI?["--no-sandbox"]:[])],
+  cwd:root,
+  env:{...process.env,AGENT_WEB_DEV_URL:"",AGENT_WEB_USER_DATA_DIR:profile,
+   ELECTRON_DISABLE_SECURITY_WARNINGS:"true"},
+  timeout:40000,
+ });
+ try{
+  const page=await app.firstWindow();
+  await page.locator('[aria-label="演示会话导航"]').waitFor({timeout:20000});
+  const token="SOURCE_LINK_7C91E";
+  // The first 220 chars exclude the token from the fixture assistant's
+  // mock reply. All four hits must remain in one real submitted user unit.
+  const message="Source link regression: "+"x".repeat(220)+"\\n\\n"+
+   `${token} [${token}](https://docs.example.org/${token}) ${token}`;
+  const composer=page.getByTestId("composer");
+  await composer.waitFor({timeout:12000});
+  await composer.fill(message);
+  await page.getByTestId("send-button").click();
+  const row=page.locator('[data-demo-turn-id^="user-"]').last();
+  await row.waitFor({timeout:12000});
+  const unit=row.locator('[data-conversation-message="user"][data-content-search-unit-key]');
+  await unit.waitFor({timeout:12000});
+  const visibleLink=unit.locator('a[href*="docs.example.org"]');
+  await visibleLink.waitFor({timeout:12000});
+  assert.equal(await visibleLink.textContent(),token);
+  await app.evaluate(({Menu})=>
+    Menu.getApplicationMenu().getMenuItemById("findInThread").click());
+  const input=page.getByRole("searchbox",{name:"Find in chat"});
+  await input.waitFor({timeout:10000});
+  await input.fill(token);
+  const currentHighlight=()=>page.evaluate(()=>{
+    const ranges=Array.from(CSS.highlights?.get("demo-thread-find-active")??[]);
+    return ranges.map(range=>({
+      text:range.toString(),
+      inLink:range.startContainer.parentElement?.closest("a")!=null,
+      unitKey:range.startContainer.parentElement?.closest("[data-content-search-unit-key]")
+        ?.getAttribute("data-content-search-unit-key"),
+    }));
+  });
+  const findStatus=page.locator(".demo-find-results");
+  await page.waitForFunction(()=>
+    document.querySelector(".demo-find-results")?.textContent==="1 / 4 results");
+  const unitKey=await unit.getAttribute("data-content-search-unit-key");
+  await page.waitForFunction((needle)=>
+    Array.from(CSS.highlights?.get("demo-thread-find-active")??[])
+      .some(range=>range.toString()===needle),token);
+  assert.deepEqual(await currentHighlight(),[{text:token,inLink:false,unitKey}]);
+
+  await page.getByRole("button",{name:"Next result"}).click();
+  await page.waitForFunction(()=>
+    document.querySelector(".demo-find-results")?.textContent==="2 / 4 results");
+  await page.waitForFunction((needle)=>
+    Array.from(CSS.highlights?.get("demo-thread-find-active")??[])
+      .some(range=>range.toString()===needle&&
+        range.startContainer.parentElement?.closest("a")!=null),token);
+  assert.deepEqual(await currentHighlight(),[{text:token,inLink:true,unitKey}]);
+  await mkdir(resolve(root,"desktop/test-results"),{recursive:true});
+  await page.screenshot({path:resolve(root,
+    "desktop/test-results/conversation-find-visible-markdown-link.png"),
+    animations:"disabled",fullPage:false});
+
+  // The third source hit belongs to the raw Markdown link destination.
+  // Search still reports its raw source ordinal, but it is not falsely
+  // highlighted as a second occurrence of the visible link label.
+  await page.getByRole("button",{name:"Next result"}).click();
+  await page.waitForFunction(()=>
+    document.querySelector(".demo-find-results")?.textContent==="3 / 4 results");
+  await page.waitForFunction(()=>!CSS.highlights?.has("demo-thread-find-active"));
+  assert.deepEqual(await currentHighlight(),[]);
+
+  await page.getByRole("button",{name:"Next result"}).click();
+  await page.waitForFunction(()=>
+    document.querySelector(".demo-find-results")?.textContent==="4 / 4 results");
+  await page.waitForFunction((needle)=>
+    Array.from(CSS.highlights?.get("demo-thread-find-active")??[])
+      .some(range=>range.toString()===needle),token);
+  assert.deepEqual(await currentHighlight(),[{text:token,inLink:false,unitKey}]);
+  assert.match(await findStatus.textContent(),/4 \\/ 4 results/);
+ }finally{
+  await app.close();
+  await rm(profile,{recursive:true,force:true});
+ }
+});
