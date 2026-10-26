@@ -4,6 +4,10 @@ import remarkGfm from "remark-gfm";
 import {createSourceCodeBlockWordWrapPreference,
   sourceCodeBlockWrapState} from "../src/conversation/SourceCodeBlockWordWrapPreference.js";
 import {
+  highlightSourceCodeWithLezer,
+  type SourceCodeHighlightOutput,
+} from "../src/conversation/SourceLezerCodeHighlight.js";
+import {
   createConnectedConversationMessageRenderers,
   type ConnectedConversationRendererHost,
 } from "../src/components/ConnectedConversationMessageRenderers.js";
@@ -87,6 +91,27 @@ function MarkdownSourceCodeBlock({children,...preProps}:React.ComponentProps<"pr
   const language=/\blanguage-([\w.+-]+)/.exec(code?.className??"")?.[1]??null;
   const raw=markdownCodeText(code?.children??children);
   const copyContent=raw.replace(/\n$/,"");
+  const [syntax,setSyntax]=React.useState<{
+    raw:string;language:string|null;output:SourceCodeHighlightOutput;
+  }|null>(null);
+  React.useEffect(()=>{
+    let subscribed=true;
+    void highlightSourceCodeWithLezer(raw,language).then(output=>{
+      if(subscribed)setSyntax({raw,language,output});
+    });
+    return ()=>{subscribed=false;};
+  },[raw,language]);
+  const parsed=syntax?.raw===raw&&syntax.language===language?syntax.output:null;
+  // The original Lezer spans replace only the existing code children, not
+  // the Markdown parser, enclosing pre, copy action or virtual row DOM.
+  const styledCode=parsed?.highlighted&&element!=null
+    ? React.cloneElement(element,{
+        children:parsed.segments.map((segment,index)=>
+          <span key={index} className={segment.className??undefined}>
+            {segment.text}
+          </span>),
+      })
+    : children;
   const [copyState,setCopyState]=React.useState<"idle"|"copied"|"error">("idle");
   const preference=React.useSyncExternalStore(
     demoCodeBlockWordWrapPreference.subscribe,
@@ -111,7 +136,8 @@ function MarkdownSourceCodeBlock({children,...preProps}:React.ComponentProps<"pr
     data-code-block=""
     data-conversation-code-surface="true"
     data-markdown-copy="code-block"
-    data-source-code-wrap-lines={wrap.wrapLines?"true":"false"}>
+    data-source-code-wrap-lines={wrap.wrapLines?"true":"false"}
+    data-source-code-highlight={parsed==null?"pending":parsed.highlighted?"ready":"fallback"}>
     <div className="demo-markdown-code-action-bar"
       data-code-block-action-bar="true" data-markdown-copy="exclude">
       <span className="demo-markdown-code-language">{language??"Code"}</span>
@@ -144,7 +170,7 @@ function MarkdownSourceCodeBlock({children,...preProps}:React.ComponentProps<"pr
     </div>
     <div className="demo-markdown-code-scrollport chatgpt-code-scrollport"
       data-code-block-source="true" dir="ltr">
-      <pre {...preProps}>{children}</pre>
+      <pre {...preProps}>{styledCode}</pre>
     </div>
   </div>;
 }
