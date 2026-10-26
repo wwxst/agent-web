@@ -17,6 +17,7 @@ const {restorePrimaryWindowBounds,persistPrimaryWindowBounds}=require("./windowB
 const {buildSourceNativeMenus,isAllowedMenuId,sanitizeMenuAnchor}=require("./nativeMenu.cjs");
 const {isAllowedNavigation:allowedNavigation}=require("./navigationPolicy.cjs");
 const {readComposerDrafts,writeComposerDraft}=require("./composerDraftStore.cjs");
+const {handleMcpApprovalReply}=require("./mcpApprovalReply.cjs");
 
 const HOST_INFO_CHANNEL = "agent-web:host-info";
 const HOST_EVENT_CHANNEL = "agent-web:host-event";
@@ -24,6 +25,7 @@ const UI_COMMAND_CHANNEL = "agent-web:ui-command";
 const OPEN_MENU_CHANNEL = "agent-web:open-menu";
 const READ_DRAFTS_CHANNEL="agent-web:composer-drafts-read";
 const WRITE_DRAFT_CHANNEL="agent-web:composer-draft-write";
+const MCP_APPROVAL_REPLY_CHANNEL="agent-web:mcp-approval-reply";
 const devUrl=process.env.AGENT_WEB_DEV_URL || "";
 const devMode=devUrl.length>0;
 const indexPath=path.resolve(__dirname,"../demo-dist/index.html");
@@ -150,6 +152,11 @@ function isTrustedRenderer(event){
 }
 function setupIpc(){
   const template=installNativeMenu();
+  // Original mcp-request-card ye calls a request-scoped host reply method;
+  // this standalone app does NOT have that Agent backend protocol. Use
+  // existing main-frame navigation/sender guards and fail closed.
+  ipcMain.handle(MCP_APPROVAL_REPLY_CHANNEL,(event,envelope)=>
+    handleMcpApprovalReply({isTrustedRenderer},event,envelope));
   ipcMain.handle(READ_DRAFTS_CHANNEL,event=>
     isTrustedRenderer(event)?readComposerDrafts(app.getPath("userData")):{});
   ipcMain.handle(WRITE_DRAFT_CHANNEL,(event,threadId,text)=>
@@ -181,7 +188,7 @@ app.on("window-all-closed",()=>{if(process.platform!=="darwin")app.quit();});
 app.on("activate",()=>{if(BrowserWindow.getAllWindows().length===0)createWindow();});
 app.whenReady().then(()=>{setupIpc();createWindow();});
 app.on("before-quit",()=>{
-  for(const channel of [HOST_INFO_CHANNEL,OPEN_MENU_CHANNEL,READ_DRAFTS_CHANNEL,WRITE_DRAFT_CHANNEL]){
+  for(const channel of [HOST_INFO_CHANNEL,OPEN_MENU_CHANNEL,READ_DRAFTS_CHANNEL,WRITE_DRAFT_CHANNEL,MCP_APPROVAL_REPLY_CHANNEL]){
     ipcMain.removeHandler(channel);
   }
 });
