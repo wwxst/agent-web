@@ -322,3 +322,74 @@ test("real Electron folds long user Markdown and restores clipped links, print, 
   await rm(profile,{recursive:true,force:true});
  }
 });
+
+
+test("native Find in Thread reveals the exact hidden long-user match in mounted Electron timeline",{
+ timeout:100000,
+},async()=>{
+ const profile=await mkdtemp(join(tmpdir(),"agent-web-user-find-reveal-"));
+ const app=await electron.launch({
+  executablePath,
+  args:[".",...(process.platform==="linux"&&process.env.CI?["--no-sandbox"]:[])],
+  cwd:root,
+  env:{...process.env,AGENT_WEB_DEV_URL:"",AGENT_WEB_USER_DATA_DIR:profile,
+   ELECTRON_DISABLE_SECURITY_WARNINGS:"true"},
+  timeout:40000,
+ });
+ try{
+  const page=await app.firstWindow();
+  await page.locator('[aria-label="演示会话导航"]').waitFor({timeout:20000});
+  const needle="SOURCE_FOLDED_MATCH_8BF26";
+  const longText=[
+    "真实 Composer 发送的长消息：检测 _u 折叠搜索展开路径（模拟发送）。",
+    ...Array.from({length:38},(_,index)=>
+      `第 ${String(index+1).padStart(2,"0")} 段：保留 Codex 原版消息与滚动历史语义；这是长用户消息的真实前端交互验证。`),
+    `最后一段：${needle} — 此词必须在折叠线数之外才能被搜索到。`,
+  ].join("\n\n");
+  const editor=page.getByTestId("composer");
+  await editor.waitFor({timeout:12000});
+  await editor.fill(longText);
+  await page.getByTestId("send-button").click();
+  const row=page.locator('[data-demo-turn-id^="user-"]').last();
+  await row.waitFor({timeout:12000});
+  const folded=row.locator('[data-source-user-message-collapsible="true"]');
+  await folded.waitFor({timeout:12000});
+  assert.equal(await folded.getAttribute("data-source-user-message-expanded"),"false");
+  // The unique source match is present in indexed host text but hidden in
+  // rendered DOM. The original _u callback must reveal it before CSS marks.
+  assert.equal(await row.getByText(needle,{exact:false}).count(),0);
+  await app.evaluate(({Menu})=>
+    Menu.getApplicationMenu().getMenuItemById("findInThread").click());
+  const input=page.getByRole("searchbox",{name:"Find in chat"});
+  await input.waitFor({timeout:10000});
+  await input.fill(needle);
+  await page.waitForFunction(()=>
+    document.querySelector(".demo-find-results")?.textContent==="1 / 1 results");
+  await page.waitForFunction(()=>
+    Array.from(document.querySelectorAll('[data-demo-turn-id^="user-"]'))
+      .some(row=>row.querySelector('[data-source-user-message-expanded="true"]')
+        ?.textContent?.includes("SOURCE_FOLDED_MATCH_8BF26")),{timeout:12000});
+  await page.waitForFunction((value)=>
+    Array.from(CSS.highlights?.get("demo-thread-find-active")??[])
+      .some(range=>range.toString()===value &&
+        range.startContainer.parentElement?.closest('[data-demo-turn-id^="user-"]')!=null),
+    needle,{timeout:12000});
+  assert.equal(await folded.getAttribute("data-source-user-message-expanded"),"true");
+  await mkdir(resolve(root,"desktop/test-results"),{recursive:true});
+  await page.screenshot({
+    path:resolve(root,"desktop/test-results/conversation-find-revealed-long-user-message.png"),
+    animations:"disabled",fullPage:false,
+  });
+  // Source _u reveal changes the disclosure itself; closing the search
+  // should clear only highlighting and not re-collapse the user message.
+  await input.press("Escape");
+  await input.waitFor({state:"detached",timeout:10000});
+  assert.equal(await folded.getAttribute("data-source-user-message-expanded"),"true");
+  await folded.getByRole("button",{name:"Show less"}).click();
+  await folded.getByRole("button",{name:"Show more"}).waitFor();
+  assert.equal(await folded.getAttribute("data-source-user-message-expanded"),"false");
+ }finally{
+  await app.close();
+  await rm(profile,{recursive:true,force:true});
+ }
+});
