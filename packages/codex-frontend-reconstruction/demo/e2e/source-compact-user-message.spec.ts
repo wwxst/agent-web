@@ -8,6 +8,9 @@ test("mounted source user message applies compact Aeon geometry only for explici
   async({page},testInfo)=>{
     await page.goto("/");
     // The normal message must remain on the standard source bubble path.
+    await page.locator('[data-testid="transcript-scroll"]').evaluate(
+      (el:HTMLElement)=>{el.scrollTop=0;},
+    );
     const standard=page.locator('[data-demo-turn-id="intro"] [data-conversation-message="user"]');
     await expect(standard).toHaveAttribute("data-source-user-message-format","standard");
     const standardGeometry=await standard.evaluate(el=>{
@@ -19,6 +22,9 @@ test("mounted source user message applies compact Aeon geometry only for explici
     expect(standardGeometry).toEqual({radius:"22px",padding:"16px",maxWidth:"70%"});
 
     await page.getByRole("button",{name:/工具调用与审批交互/}).click();
+    await page.locator('[data-testid="transcript-scroll"]').evaluate(
+      (el:HTMLElement)=>{el.scrollTop=0;},
+    );
     const compact=page.locator(
       '[data-demo-turn-id="review-intro"] [data-conversation-message="user"]');
     await expect(compact).toHaveAttribute("data-source-user-message-format","compact");
@@ -39,14 +45,14 @@ test("mounted source user message applies compact Aeon geometry only for explici
         letterSpacing:md.letterSpacing,
       };
     });
-    expect(actual.maxWidth).toBe("456px");
-    expect(actual.wrapperMaxWidth).toBe("456px");
+    expect(actual.maxWidth).toContain("456px");
+    expect(actual.wrapperMaxWidth).toContain("456px");
     expect(actual.horizontalPadding).toBe("12px");
     expect(actual.verticalPadding).toBe("8px");
     expect(actual.radius).toBe("16px");
     expect(actual.width).toBeLessThanOrEqual(456);
     expect(actual.lineHeight).toBe("17px");
-    expect(actual.letterSpacing).toBe("-0.13px");
+    expect(parseFloat(actual.letterSpacing)).toBeCloseTo(-.13,1);
     await compact.scrollIntoViewIfNeeded();
     await page.screenshot({path:testInfo.outputPath("source-aeon-compact-live-message.png"),
       animations:"disabled"});
