@@ -1103,3 +1103,55 @@ test("native Electron MCP approval request waits for host, fails safely, and all
   });
  }finally{await app.close();await rm(profile,{recursive:true,force:true});}
 });
+
+
+test("native Electron renders original high-risk MCP header and truly expands long tool parameters",{
+ timeout:100000,
+},async()=>{
+ const profile=await mkdtemp(join(tmpdir(),"agent-web-mcp-source-presentation-"));
+ const app=await electron.launch({
+  executablePath,args:[".",...(process.platform==="linux"&&process.env.CI?["--no-sandbox"]:[])],
+  cwd:root,env:{...process.env,AGENT_WEB_DEV_URL:"",AGENT_WEB_USER_DATA_DIR:profile,
+    ELECTRON_DISABLE_SECURITY_WARNINGS:"true"},timeout:40000,
+ });
+ try{
+  const page=await app.firstWindow();
+  await page.locator('[aria-label="演示会话导航"]').waitFor({timeout:20000});
+  await page.getByRole("button",{name:"打开演示工具"}).click();
+  await page.getByTestId("demo-mcp-approval-request").click();
+  const row=page.locator('[data-demo-turn-id^="mcp-approval-"]').last();
+  const card=row.locator("[data-source-mcp-approval-card]");
+  await card.waitFor({timeout:15000});
+  const header=card.locator("[data-source-mcp-header-variant]");
+  assert.equal(await header.getAttribute("data-source-mcp-header-variant"),"elevated-risk");
+  assert.match(await header.textContent(),/Elevated Risk/);
+  assert.doesNotMatch(await header.textContent(),/Fixture files MCP connector/);
+  assert.equal(await card.locator(".codex-source-mcp-approval__tool-name").innerText(),"files.search");
+  assert.equal(await card.locator(".codex-source-mcp-approval__title").innerText(),
+    "Allow Fixture files MCP connector to run files.search tool?");
+  await card.getByRole("button",{name:"Show 2 more items"}).click();
+  const description=card.locator('[data-source-mcp-param="description"] pre');
+  const preview=await description.evaluate(el=>({
+    height:el.getBoundingClientRect().height,
+    clamp:getComputedStyle(el).webkitLineClamp,
+  }));
+  assert.equal(preview.clamp,"4");
+  assert.ok(preview.height<100);
+  await card.getByRole("button",{name:"Expand description"}).click();
+  const after=await description.evaluate(el=>({
+    height:el.getBoundingClientRect().height,
+    maxHeight:getComputedStyle(el).maxHeight,
+    text:el.textContent,
+  }));
+  assert.ok(after.height>preview.height*2);
+  assert.equal(after.maxHeight,"none");
+  assert.match(after.text,/Line 18: long tool argument/);
+  assert.equal(await card.getAttribute("data-source-mcp-reply-phase"),"idle");
+  await row.scrollIntoViewIfNeeded();
+  await mkdir(resolve(root,"desktop/test-results"),{recursive:true});
+  await page.screenshot({
+    path:resolve(root,"desktop/test-results/source-mcp-expanded-argument.png"),
+    animations:"disabled",fullPage:false,
+  });
+ }finally{await app.close();await rm(profile,{recursive:true,force:true});}
+});
