@@ -12,6 +12,10 @@ test("real review timeline keeps collapsing repeated tool details outside keyboa
     await page.waitForTimeout(60);
   }
   await expect(row).toHaveCount(1);
+  // A prior completed activity slice first uses the original Rk wrapper.
+  // Expand the outer historical group before inspecting nk repeated rows.
+  const historyToggle=row.locator('[data-recovered-agent-activity] button').first();
+  await historyToggle.click();
   const outer=row.locator('[data-codex-activity-group] [aria-expanded]').first();
   await outer.click();
   await expect(outer).toHaveAttribute("aria-expanded","true");
