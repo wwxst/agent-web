@@ -996,3 +996,54 @@ test("real Electron keeps source file-review C wrap setting across two real conv
   await app.close();await rm(profile,{recursive:true,force:true});
  }
 });
+
+
+test("native Electron preserves source inProgress approval shimmer and high-risk denial state",{
+ timeout:90000,
+},async()=>{
+ const profile=await mkdtemp(join(tmpdir(),"agent-web-auto-review-status-"));
+ const app=await electron.launch({
+   executablePath,
+   args:[".",...(process.platform==="linux"&&process.env.CI?["--no-sandbox"]:[])],
+   cwd:root,
+   env:{...process.env,AGENT_WEB_DEV_URL:"",AGENT_WEB_USER_DATA_DIR:profile,
+     ELECTRON_DISABLE_SECURITY_WARNINGS:"true"},
+   timeout:40000,
+ });
+ try{
+   const page=await app.firstWindow();
+   await page.locator('[aria-label="演示会话导航"]').waitFor({timeout:20000});
+   await page.getByRole("button",{name:"打开演示工具"}).click();
+   await page.getByTestId("demo-automatic-review-transition").click();
+   const row=page.locator('[data-demo-turn-id^="automatic-review-"]').last();
+   const active=row.locator('[data-source-automatic-approval-status="inProgress"]');
+   await active.waitFor({timeout:12000});
+   const shimmer=active.locator('[data-source-automatic-approval-shimmer="true"]');
+   await shimmer.waitFor({timeout:12000});
+   const animation=await shimmer.evaluate(el=>getComputedStyle(el).animationName);
+   assert.match(animation,/source-automatic-approval-review-shimmer/);
+   const disclosure=active.locator('button[aria-expanded]').first();
+   await disclosure.click();
+   assert.equal(await disclosure.getAttribute("aria-expanded"),"true");
+   await row.scrollIntoViewIfNeeded();
+   await mkdir(resolve(root,"desktop/test-results"),{recursive:true});
+   await page.screenshot({
+     path:resolve(root,"desktop/test-results/automatic-approval-in-progress.png"),
+     animations:"disabled",fullPage:false,
+   });
+   const denied=row.getByText(
+     "Requires explicit authorization because this action is considered high risk");
+   await denied.waitFor({timeout:15000});
+   assert.equal(await row.locator('[data-source-automatic-approval-shimmer]').count(),0);
+   assert.equal(await row.locator('button[aria-expanded]').count(),0);
+   assert.equal(await page.locator('[data-demo-turn-id^="automatic-review-"]').count(),1);
+   await row.scrollIntoViewIfNeeded();
+   await page.screenshot({
+     path:resolve(root,"desktop/test-results/automatic-approval-high-risk-denied.png"),
+     animations:"disabled",fullPage:false,
+   });
+ }finally{
+   await app.close();
+   await rm(profile,{recursive:true,force:true});
+ }
+});
