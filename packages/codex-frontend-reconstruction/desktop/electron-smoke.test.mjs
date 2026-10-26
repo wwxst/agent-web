@@ -172,6 +172,11 @@ test("independent Electron file renderer starts, isolates preload and routes Fc 
   // mounted Find portal through the native View menu. The previous incorrectly
   // escaped regex rejected normal selections containing an "r" or "n".
   const selectedForFind=await page.evaluate(()=>{
+    // Source app-primary cFt always prioritizes a focused input/textarea
+    // over the document Selection. This is explicitly the DOM-selection
+    // branch: blur the previously edited draft before selecting heading text.
+    // Otherwise an empty focused draft correctly wins and Find has no prefill.
+    if(document.activeElement instanceof HTMLElement)document.activeElement.blur();
     const heading=document.querySelector(".demo-project-heading");
     const node=Array.from(heading?.childNodes??[]).find(node=>
       node.nodeType===Node.TEXT_NODE&&node.textContent?.includes("agent web"));
