@@ -441,7 +441,7 @@ test("native Find maps Markdown link labels but never highlights the hidden iden
   const token="SOURCE_LINK_7C91E";
   // The first 220 chars exclude the token from the fixture assistant's
   // mock reply. All four hits must remain in one real submitted user unit.
-  const message="Source link regression: "+"x".repeat(220)+"\\n\\n"+
+  const message="Source link regression: "+"x".repeat(220)+"\n\n"+
    `${token} [${token}](https://docs.example.org/${token}) ${token}`;
   const composer=page.getByTestId("composer");
   await composer.waitFor({timeout:12000});
@@ -506,7 +506,7 @@ test("native Find maps Markdown link labels but never highlights the hidden iden
     Array.from(CSS.highlights?.get("demo-thread-find-active")??[])
       .some(range=>range.toString()===needle),token);
   assert.deepEqual(await currentHighlight(),[{text:token,inLink:false,unitKey}]);
-  assert.match(await findStatus.textContent(),/4 \\/ 4 results/);
+  assert.equal(await findStatus.textContent(),"4 / 4 results");
  }finally{
   await app.close();
   await rm(profile,{recursive:true,force:true});
