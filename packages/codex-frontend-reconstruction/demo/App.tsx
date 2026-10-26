@@ -28,6 +28,7 @@ import {
   DEMO_CONVERSATIONS, appendDemoEntries, createDemoSource,
   demoActivityEntry, demoItem, demoMessageEntry, makeLongHistory,
   demoStreamingCodeEntry, updateDemoStreamingCodeEntry,
+  demoAutomaticReviewEntry, updateDemoAutomaticReviewEntry,
   type DemoConversationId,
 } from "./mockConversation.js";
 
@@ -593,6 +594,22 @@ export function App() {
     },150);
   }
 
+  function playAutomaticReviewFixture(){
+    if(playing)return;
+    markFollow();
+    setPlaying(true);
+    const id=nextId("automatic-review");
+    // DEMO ONLY: exercise the original automatic-review status view using
+    // immutable updates to the same canonical activity turn. This is not
+    // an approval submission or backend permission request.
+    appendDemoEntries(source,[demoAutomaticReviewEntry(id,"inProgress")]);
+    timerRef.current=setTimeout(()=>{
+      updateDemoAutomaticReviewEntry(source,id,"denied");
+      timerRef.current=null;
+      setPlaying(false);
+    },2200);
+  }
+
   function stopSample() {
     if (timerRef.current != null) clearTimeout(timerRef.current);
     timerRef.current = null;
@@ -767,6 +784,8 @@ export function App() {
           <button type="button" onClick={playSample} disabled={playing}><Icon name="play" size={15}/> 模拟运行</button>
           <button type="button" onClick={playStreamingCodeFixture} disabled={playing}
             data-testid="demo-source-streaming-code"><Icon name="play" size={15}/> 演示流式代码（模拟）</button>
+          <button type="button" onClick={playAutomaticReviewFixture} disabled={playing}
+            data-testid="demo-automatic-review-transition"><Icon name="check" size={15}/> 演示自动审阅状态（模拟）</button>
           <button type="button" onClick={injectHistory} disabled={historyAdded}><Icon name="plus" size={15}/> 添加 45 条历史</button>
           <button type="button" onClick={() => void virtualizerApiRef.current?.scrollToKey(`history-content:turn:${source.getSnapshot().entries[0]?.turnId ?? ""}`, undefined, {align:"top"})}><Icon name="top" size={15}/> 跳到开头</button>
           <button type="button" onClick={scrollToBottom}><Icon name="bottom" size={15}/> 跳到最新</button>
