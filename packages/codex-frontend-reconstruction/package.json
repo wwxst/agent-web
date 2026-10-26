@@ -15,7 +15,7 @@
     "demo:test:e2e": "playwright test --config demo/playwright.config.ts",
     "desktop:start": "electron .",
     "desktop:dev": "node desktop/dev.mjs",
-    "desktop:test:smoke": "node --test desktop/electron-conversation-visual.test.mjs desktop/electron-smoke.test.mjs desktop/electron-draft-restart.test.mjs desktop/composer-draft-store.test.mjs desktop/native-menu.test.mjs desktop/window-bounds.test.mjs desktop/window-chrome.test.mjs desktop/navigation-policy.test.mjs"
+    "desktop:test:smoke": "node --test desktop/mcp-approval-ipc.test.mjs desktop/electron-conversation-visual.test.mjs desktop/electron-smoke.test.mjs desktop/electron-draft-restart.test.mjs desktop/composer-draft-store.test.mjs desktop/native-menu.test.mjs desktop/window-bounds.test.mjs desktop/window-chrome.test.mjs desktop/navigation-policy.test.mjs"
   },
   "devDependencies": {
     "typescript": "^5.8.3",
