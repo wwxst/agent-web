@@ -18,9 +18,31 @@
 .codex-source-mcp-approval__reason,.codex-source-mcp-approval__subtitle,
 .codex-source-mcp-approval__readonly {margin:0;color:var(--demo-dim,#858585)}
 .codex-source-mcp-approval__params {display:flex;flex-direction:column;gap:8px;min-width:0}
-.codex-source-mcp-approval__param {display:grid;grid-template-columns:minmax(95px,24%) minmax(0,1fr);gap:12px;min-width:0}
-.codex-source-mcp-approval__param-name {color:var(--demo-dim,#858585);word-break:break-word}
-.codex-source-mcp-approval__param-value {display:flex;flex-direction:column;align-items:flex-start;min-width:0;gap:2px}
+/* Original Ibd renders <dl class="@container"> wrapping Mbd's
+ * one-column grid; Mbd switches to a 120px label at container >=24rem.
+ * Unlike our former unconditional percentage column, narrow cards now
+ * stack dt/dd without compressing values beyond legibility. */
+.codex-source-mcp-approval__param {container-type:inline-size;display:block;width:100%;min-width:0;margin:0}
+.codex-source-mcp-approval__param-row {
+  display:grid;grid-template-columns:minmax(0,1fr);
+  align-items:start;column-gap:12px;row-gap:2px;
+  min-height:var(--height-token-row,24px);
+  min-width:0;line-height:20px;font-size:var(--codex-chat-font-size,13px);
+}
+.codex-source-mcp-approval__param-name {
+  display:flex;align-items:center;min-width:0;
+  color:var(--demo-dim,#858585);overflow-wrap:anywhere;
+}
+.codex-source-mcp-approval__param-value {
+  display:flex;flex-direction:column;align-items:flex-start;
+  min-width:0;margin:0;gap:2px;overflow-wrap:anywhere;
+}
+@container (min-width:24rem) {
+  .codex-source-mcp-approval__param-row {
+    grid-template-columns:var(--detail-property-label-width,120px) minmax(0,1fr);
+    align-items:center;
+  }
+}
 .codex-source-mcp-approval__param-value pre {
   min-width:0;max-width:100%;white-space:pre-wrap;overflow-wrap:anywhere;
   margin:0;font-family:var(--font-mono,ui-monospace,monospace);font-size:12px;
