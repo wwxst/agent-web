@@ -66,16 +66,22 @@ export function SourceMcpApprovalRequestCard({
     setPhase("submitting");setError(null);
     const current=generation.current;
     try{
-      await onReply(request.requestId,reply);
+      await onReply(request.requestId,reply,{
+        hostId:request.hostId,conversationId:request.conversationId,
+      });
       if(generation.current!==current)return;
       // Transport delivery is NOT permission approval. Wait for the host
       // to settle/remove this request via authoritative conversation state.
       setPhase("submitted");
-    }catch{
+    }catch(failure){
       if(generation.current!==current)return;
       submitting.current=false;
       setPhase("error");
-      setError("Unable to send response. Retry or contact the host.");
+      const backendUnavailable=failure instanceof Error&&
+        failure.message.includes("MCP_BACKEND_UNAVAILABLE");
+      setError(backendUnavailable
+        ?"Unable to send response: MCP backend unavailable. No permission was changed."
+        :"Unable to send response. Retry or contact the host.");
     }
   }
   return <section className="codex-source-mcp-approval"
