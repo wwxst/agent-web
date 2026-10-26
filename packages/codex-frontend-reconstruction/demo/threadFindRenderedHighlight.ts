@@ -72,6 +72,9 @@ export interface DemoThreadFindVisibleTarget {
   query: string;
   ordinalWithinTurn: number;
   expectedRowMatches: number;
+  /** Original data-content-search-unit-key: match only the selected unit. */
+  unitKey?: string;
+  expectedUnitMatches?: number;
 }
 
 /** Source _u reveal registration is owned by the exact user-message
@@ -83,6 +86,7 @@ export function revealCollapsedDemoThreadFindMatch(
   target:Pick<DemoThreadFindVisibleTarget,"viewport"|"turnKey"|"query"> & {
     sourceOffset:number;
     sourceLength:number;
+    unitKey?:string;
   },
 ):boolean {
   const row=Array.from(target.viewport.querySelectorAll<HTMLElement>("[data-turn-key]"))
@@ -90,9 +94,14 @@ export function revealCollapsedDemoThreadFindMatch(
   if(row==null)return false;
   // Source search may match tool output in the same turn; do not reveal
   // unrelated user messages, nor guess offsets in non-user blocks.
-  const users=row.querySelectorAll<HTMLElement>(
-    '[data-conversation-message="user"] [data-source-user-message-collapsible="true"]',
-  );
+  const users=Array.from(row.querySelectorAll<HTMLElement>(
+    '[data-conversation-message="user"]',
+  )).filter(message=>
+    target.unitKey==null ||
+    message.dataset.contentSearchUnitKey===target.unitKey,
+  ).flatMap(message=>Array.from(message.querySelectorAll<HTMLElement>(
+    '[data-source-user-message-collapsible="true"]',
+  )));
   if(users.length!==1)return false;
   const payload:SourceUserMessageFindRevealDetail={
     query:target.query,sourceOffset:target.sourceOffset,
@@ -118,9 +127,18 @@ export function highlightRenderedDemoThreadFindMatch(target: DemoThreadFindVisib
   const virtualRow = Array.from(target.viewport.querySelectorAll<HTMLElement>("[data-turn-key]"))
     .find(element => element.getAttribute("data-turn-key") === target.turnKey);
   if (virtualRow == null) return false;
-  const ranges = Array.from(virtualRow.querySelectorAll(".demo-markdown"))
+  // Source Y maps matches by unit ID. A tool output containing the same
+  // query must not shift a user-message or assistant-message highlight.
+  const scoped = target.unitKey == null ? [virtualRow]
+    : Array.from(virtualRow.querySelectorAll<HTMLElement>(
+        '[data-content-search-unit-key]',
+      )).filter(unit=>unit.dataset.contentSearchUnitKey===target.unitKey);
+  if (scoped.length!==1) return false;
+  const ranges = Array.from(scoped[0]!.querySelectorAll(".demo-markdown"))
     .flatMap(markdown => findRenderedMarkdownRanges(markdown, target.query));
-  if (ranges.length !== target.expectedRowMatches) return false;
+  const expected=target.unitKey==null?target.expectedRowMatches:
+    target.expectedUnitMatches;
+  if(expected==null || ranges.length!==expected) return false;
   const range = ranges[target.ordinalWithinTurn];
   if (range == null) return false;
   api.registry.set(DEMO_ACTIVE_THREAD_FIND_HIGHLIGHT, new api.Constructor(range));
