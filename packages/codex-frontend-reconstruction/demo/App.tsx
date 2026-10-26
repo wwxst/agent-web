@@ -27,6 +27,7 @@ import { makeDemoRow, demoProjectionDependencies } from "./adapters.js";
 import {
   DEMO_CONVERSATIONS, appendDemoEntries, createDemoSource,
   demoActivityEntry, demoItem, demoMessageEntry, makeLongHistory,
+  demoStreamingCodeEntry, updateDemoStreamingCodeEntry,
   type DemoConversationId,
 } from "./mockConversation.js";
 
@@ -562,6 +563,36 @@ export function App() {
       }, 900);
     }, 650);
   }
+  function playStreamingCodeFixture() {
+    if(playing)return;
+    markFollow();
+    setPlaying(true);
+    const id=nextId("streaming-code");
+    // DEMO-ONLY source updates, not a fake Agent transport. The same item
+    // remains mounted in the canonical virtualizer across all revisions.
+    const fence="```ts";
+    const prefix="const sourceStreaming = 1;";
+    const code=(lines:readonly string[])=>
+      [fence,...lines,"```"].join("\n");
+    appendDemoEntries(source,[demoStreamingCodeEntry(id,code([prefix]))]);
+    timerRef.current=setTimeout(()=>{
+      updateDemoStreamingCodeEntry(source,id,
+        code([prefix,"const continued = 'source_' + sourceStreaming;"]));
+      timerRef.current=setTimeout(()=>{
+        updateDemoStreamingCodeEntry(source,id,
+          code([prefix,"const continued = 'source_' + sourceStreaming;",
+            "console.log(continued);"]));
+        timerRef.current=setTimeout(()=>{
+          updateDemoStreamingCodeEntry(source,id,
+            code([prefix,"const continued = 'source_' + sourceStreaming;",
+              "console.log(continued);"]),true);
+          timerRef.current=null;
+          setPlaying(false);
+        },900);
+      },90);
+    },150);
+  }
+
   function stopSample() {
     if (timerRef.current != null) clearTimeout(timerRef.current);
     timerRef.current = null;
@@ -734,6 +765,8 @@ export function App() {
         <p>本地演示工具 · 不执行真实 Agent 请求</p>
         <div className="demo-toolbar">
           <button type="button" onClick={playSample} disabled={playing}><Icon name="play" size={15}/> 模拟运行</button>
+          <button type="button" onClick={playStreamingCodeFixture} disabled={playing}
+            data-testid="demo-source-streaming-code"><Icon name="play" size={15}/> 演示流式代码（模拟）</button>
           <button type="button" onClick={injectHistory} disabled={historyAdded}><Icon name="plus" size={15}/> 添加 45 条历史</button>
           <button type="button" onClick={() => void virtualizerApiRef.current?.scrollToKey(`history-content:turn:${source.getSnapshot().entries[0]?.turnId ?? ""}`, undefined, {align:"top"})}><Icon name="top" size={15}/> 跳到开头</button>
           <button type="button" onClick={scrollToBottom}><Icon name="bottom" size={15}/> 跳到最新</button>
