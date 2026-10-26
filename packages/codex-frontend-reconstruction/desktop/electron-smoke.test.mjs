@@ -188,6 +188,12 @@ test("independent Electron file renderer starts, isolates preload and routes Fc 
     Menu.getApplicationMenu().getMenuItemById("findInThread").click());
   const findSelectionInput=page.getByRole("searchbox",{name:"Find in chat"});
   await findSelectionInput.waitFor({timeout:10000});
+  // Native View-menu events and React state can commit the search input
+  // before the selection prefill has settled on a slower Windows runner.
+  await page.waitForFunction(()=>{
+    const input=document.querySelector('input[aria-label="Find in chat"]');
+    return input instanceof HTMLInputElement && input.value==="agent web";
+  },null,{timeout:10000});
   assert.equal(await findSelectionInput.inputValue(),"agent web");
   await mkdir(resolve(root,"desktop/test-results"),{recursive:true});
   await page.screenshot({
