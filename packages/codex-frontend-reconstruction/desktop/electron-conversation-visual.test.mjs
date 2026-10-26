@@ -354,6 +354,14 @@ test("native Find in Thread reveals the exact hidden long-user match in mounted 
   await row.waitFor({timeout:12000});
   const folded=row.locator('[data-source-user-message-collapsible="true"]');
   await folded.waitFor({timeout:12000});
+  // The source user message exposes the same stable unit identity used by
+  // the canonical turn search index, not an anonymous joined Markdown row.
+  const sourceUnit=row.locator(
+    '[data-conversation-message="user"][data-content-search-unit-key]',
+  );
+  const unitKey=await sourceUnit.getAttribute("data-content-search-unit-key");
+  assert.ok(unitKey?.startsWith("user-"));
+  assert.equal(unitKey,await row.getAttribute("data-demo-turn-id"));
   assert.equal(await folded.getAttribute("data-source-user-message-expanded"),"false");
   // The unique source match is present in indexed host text but hidden in
   // rendered DOM. The original _u callback must reveal it before CSS marks.
@@ -389,7 +397,10 @@ test("native Find in Thread reveals the exact hidden long-user match in mounted 
   await page.waitForFunction((value)=>
     Array.from(CSS.highlights?.get("demo-thread-find-active")??[])
       .some(range=>range.toString()===value &&
-        range.startContainer.parentElement?.closest('[data-demo-turn-id^="user-"]')!=null),
+        range.startContainer.parentElement?.closest('[data-content-search-unit-key]')
+          ?.getAttribute("data-content-search-unit-key")===document.querySelector(
+            '[data-demo-turn-id^="user-"] [data-conversation-message="user"]',
+          )?.getAttribute("data-content-search-unit-key")),
     needle,{timeout:12000});
   assert.equal(await folded.getAttribute("data-source-user-message-expanded"),"true");
   await mkdir(resolve(root,"desktop/test-results"),{recursive:true});
