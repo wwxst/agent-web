@@ -1,6 +1,8 @@
 import * as React from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import {createSourceCodeBlockWordWrapPreference,
+  sourceCodeBlockWrapState} from "../src/conversation/SourceCodeBlockWordWrapPreference.js";
 import {
   createConnectedConversationMessageRenderers,
   type ConnectedConversationRendererHost,
@@ -61,6 +63,11 @@ export const demoPlanDependencies: ConversationMessagePlanDependencies = {
   shouldRenderActivityAsUnit: () => false,
 };
 
+/** Original shared Ce/ord preference is host-owned and has no private
+ * persistence in this reconstructed frontend. Every mounted code block
+ * observes the same session-scoped user-controlled setting. */
+const demoCodeBlockWordWrapPreference=createSourceCodeBlockWordWrapPreference();
+
 /** Original chatgpt-code-block source layout: a dedicated code surface,
  * independent scrollport and onCopyCode. This is intentionally NOT a port
  * of the private CodeMirror/highlighter, preview or executable code paths. */
@@ -81,6 +88,12 @@ function MarkdownSourceCodeBlock({children,...preProps}:React.ComponentProps<"pr
   const raw=markdownCodeText(code?.children??children);
   const copyContent=raw.replace(/\n$/,"");
   const [copyState,setCopyState]=React.useState<"idle"|"copied"|"error">("idle");
+  const preference=React.useSyncExternalStore(
+    demoCodeBlockWordWrapPreference.subscribe,
+    demoCodeBlockWordWrapPreference.getSnapshot,
+    demoCodeBlockWordWrapPreference.getSnapshot,
+  );
+  const wrap=sourceCodeBlockWrapState({policy:"user-controlled",preference});
   const copyTimeout=React.useRef<ReturnType<typeof setTimeout>|null>(null);
   React.useEffect(()=>()=>{if(copyTimeout.current!=null)clearTimeout(copyTimeout.current);},[]);
   async function copyCode(){
@@ -94,23 +107,43 @@ function MarkdownSourceCodeBlock({children,...preProps}:React.ComponentProps<"pr
     if(copyTimeout.current!=null)clearTimeout(copyTimeout.current);
     copyTimeout.current=setTimeout(()=>setCopyState("idle"),1800);
   }
-  return <div className="demo-markdown-code-surface" data-conversation-code-surface="true">
-    <div className="demo-markdown-code-action-bar" data-code-block-action-bar="true">
+  return <div className="demo-markdown-code-surface"
+    data-code-block=""
+    data-conversation-code-surface="true"
+    data-markdown-copy="code-block"
+    data-source-code-wrap-lines={wrap.wrapLines?"true":"false"}>
+    <div className="demo-markdown-code-action-bar"
+      data-code-block-action-bar="true" data-markdown-copy="exclude">
       <span className="demo-markdown-code-language">{language??"Code"}</span>
-      <button type="button" className="demo-markdown-code-copy"
-        aria-label={copyState==="copied"?"已复制代码":copyState==="error"?"复制失败":"复制代码"}
-        title={copyState==="copied"?"已复制":copyState==="error"?"无法复制":"复制代码"}
-        onClick={()=>{void copyCode();}}>
-        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor"
-          strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-          <rect x="8" y="8" width="11" height="11" rx="2"/>
-          <path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/>
-        </svg>
-        <span>{copyState==="copied"?"已复制":copyState==="error"?"无法复制":"复制"}</span>
-      </button>
+      <div className="demo-markdown-code-controls" data-code-block-controls="" role="presentation">
+        {wrap.canToggle?<button type="button" className="demo-markdown-code-wrap"
+          aria-label={wrap.wrapLines?"Disable word wrap":"Enable word wrap"}
+          title={wrap.wrapLines?"Disable word wrap":"Enable word wrap"}
+          aria-pressed={wrap.wrapLines}
+          onClick={()=>demoCodeBlockWordWrapPreference.setEnabled(!wrap.wrapLines)}>
+          <svg viewBox="0 0 24 24" width="16" height="16"
+            fill="none" stroke="currentColor" strokeWidth="1.7"
+            strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M4 6h16M4 10h13a3 3 0 0 1 0 6h-4"/>
+            <path d="m16 13-3 3 3 3M4 18h6"/>
+          </svg>
+        </button>:null}
+        <button type="button" className="demo-markdown-code-copy"
+          aria-label={copyState==="copied"?"已复制代码":copyState==="error"?"复制失败":"复制代码"}
+          title={copyState==="copied"?"已复制":copyState==="error"?"无法复制":"复制代码"}
+          onClick={()=>{void copyCode();}}>
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none"
+            stroke="currentColor" strokeWidth="1.75" strokeLinecap="round"
+            strokeLinejoin="round" aria-hidden="true">
+            <rect x="8" y="8" width="11" height="11" rx="2"/>
+            <path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/>
+          </svg>
+          <span>{copyState==="copied"?"已复制":copyState==="error"?"复制失败":"复制"}</span>
+        </button>
+      </div>
     </div>
     <div className="demo-markdown-code-scrollport chatgpt-code-scrollport"
-      data-code-block-source="true">
+      data-code-block-source="true" dir="ltr">
       <pre {...preProps}>{children}</pre>
     </div>
   </div>;
