@@ -44,7 +44,7 @@ import type { ConversationMessageRenderers } from "./ConversationMessageBlocks.j
  * those missing subsystems or granting permission on the host's behalf.
  */
 export interface ConnectedConversationRendererHost extends ConversationContentAdapters {
-  Markdown: React.ComponentType<{ text: string; role: "user" | "assistant" | "activity" }>;
+  Markdown: React.ComponentType<{ text: string; role: "user" | "assistant" | "activity"; isStreaming?:boolean }>;
   /** The private Wa unit factory and turn-level Rk state must be host-provided.
    * Without them, preserve the existing ActivityGroup layout unchanged. */
   agentActivity?: {
@@ -252,7 +252,8 @@ export function createConnectedConversationMessageRenderers(host: ConnectedConve
       return <div data-conversation-message="assistant"
         data-content-search-unit-key={typeof props.item.id==="string"?props.item.id:undefined}
         className="flex flex-col gap-2">
-        {content.kind === "markdown" ? <host.Markdown text={content.text} role="assistant" />
+        {content.kind === "markdown" ? <host.Markdown text={content.text} role="assistant"
+            isStreaming={props.item.completed===false} />
           : <host.ActivityDetails item={props.item} isActive={false} presentation="ordinary" />}
         {host.AssistantMessageExtras ? <host.AssistantMessageExtras {...props} /> : null}
       </div>;
