@@ -16,6 +16,7 @@ import { SOURCE_CONVERSATION_ITEM_GAP_PX } from "../src/conversation/SourceConve
 import { BrowserScrollController } from "./browserScrollController.js";
 import { searchSourceThreadLiteralRows, sourceThreadFindUnitIdentity,
   wrapSourceThreadFindOrdinal } from "../src/conversation/SourceThreadFindModel.js";
+import {sourceMarkdownVisibleFindOrdinal} from "../src/conversation/SourceMarkdownVisibleFindModel.js";
 import { sourceThreadFindSelectedQuery } from "../src/conversation/SourceThreadFindSelectionModel.js";
 import { projectDemoThreadFindRows } from "./threadFindProjection.js";
 import { buildConversationRenderEntries } from "../src/conversation/ConversationRenderEntriesModel.js";
@@ -305,6 +306,14 @@ export function App() {
       findResult.totalByUnit.get(sourceThreadFindUnitIdentity(
         match.turnKey,match.unitKey,
       ))??0;
+    const sourceText=match.unitKey==null?undefined:findRows.find(row=>
+      row.turnKey===match.turnKey)?.units?.find(unit=>
+        unit.unitKey===match.unitKey)?.text;
+    // A source match in an invisible Markdown link URL must not unfold
+    // a different visible label in this message.
+    const mappedVisible=sourceText==null?undefined:sourceMarkdownVisibleFindOrdinal({
+      text:sourceText,query:findQuery,offset:match.offset,length:match.length,
+    });
     // Keep the existing source virtualizer's scroll-to-key. After the target
     // mounts, identify the precise visible Markdown occurrence. The compiled
     // search worker/highlighter is private; collapsed or unmatched source
@@ -323,15 +332,20 @@ export function App() {
             ...(match.unitKey==null?{}:{
               unitKey:match.unitKey,expectedUnitMatches,
             }),
+            ...(sourceText==null?{}:{
+              sourceText,sourceOffset:match.offset,sourceLength:match.length,
+            }),
           };
           // Original _u's registered reveal callback expands the user
           // content for the exact matched raw offset before finding its DOM
           // text range. Unrelated activity/assistant matches remain unchanged.
-          revealCollapsedDemoThreadFindMatch({
-            viewport:target.viewport,turnKey:target.turnKey,query:target.query,
-            sourceOffset:match.offset,sourceLength:match.length,
-            ...(match.unitKey==null?{}:{unitKey:match.unitKey}),
-          });
+          if(mappedVisible!==null){
+            revealCollapsedDemoThreadFindMatch({
+              viewport:target.viewport,turnKey:target.turnKey,query:target.query,
+              sourceOffset:match.offset,sourceLength:match.length,
+              ...(match.unitKey==null?{}:{unitKey:match.unitKey}),
+            });
+          }
           highlightRenderedDemoThreadFindMatch(target);
         });
       }catch{/* A replaced/removed virtual row must not crash Find. */}
