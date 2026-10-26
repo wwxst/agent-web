@@ -3,6 +3,7 @@ import {
   sourceMcpApprovalParamText,
   sourceMcpApprovalParameterEntries,
   sourceMcpApprovalReply,
+  projectSourceMcpToolApprovalTitle,
   SOURCE_MCP_INITIAL_PARAMETER_COUNT,
   type SourceMcpApprovalRequest,
   type SourceMcpApprovalPersistence,
@@ -23,8 +24,9 @@ function Param({entry}:{entry:SourceMcpApprovalParameter}){
   return <div className="codex-source-mcp-approval__param" data-source-mcp-param={entry.name}>
     <span className="codex-source-mcp-approval__param-name">{entry.displayName??entry.name}</span>
     <div className="codex-source-mcp-approval__param-value">
-      <pre className={content.kind==="json"?"codex-source-mcp-approval__json":""}
-        data-source-mcp-param-preview={expanded?"expanded":"preview"}>{expanded?content.full:content.preview}</pre>
+      <pre className={"codex-source-mcp-approval__"+content.kind}
+        data-source-mcp-param-preview={expanded?"expanded":"preview"}
+        data-source-mcp-param-expandable={content.expandable?"true":"false"}>{expanded?content.full:content.preview}</pre>
       {content.expandable?<button type="button" aria-expanded={expanded}
         aria-label={(expanded?"Collapse ":"Expand ")+(entry.displayName??entry.name)}
         onClick={()=>setExpanded(value=>!value)}>{expanded?"Collapse":"Expand"}</button>:null}
@@ -55,6 +57,8 @@ export function SourceMcpApprovalRequestCard({
     return ()=>{generation.current++;};
   },[request.requestId]);
   const entries=sourceMcpApprovalParameterEntries(request.toolParams,request.toolParamsDisplay);
+  const parsedTitle=projectSourceMcpToolApprovalTitle(request.title,request.connectorName);
+  const highRisk=request.riskLevel==="high";
   const visible=showAll?entries:entries.slice(0,SOURCE_MCP_INITIAL_PARAMETER_COUNT);
   const remaining=entries.length-visible.length;
   const disabled=request.disabled===true||onReply==null||phase==="submitting"||phase==="submitted";
@@ -89,12 +93,26 @@ export function SourceMcpApprovalRequestCard({
     data-source-mcp-request-id={request.requestId}
     data-source-mcp-reply-phase={phase}
     aria-label="MCP tool approval request">
-    <div className="codex-source-mcp-approval__header">
-      <span className="codex-source-mcp-approval__connector">{request.connectorName}</span>
-      {request.riskLevel==="high"
-        ?<span className="codex-source-mcp-approval__risk">Elevated Risk</span>:null}
+    <div className="codex-source-mcp-approval__header"
+      data-source-mcp-header-variant={highRisk?"elevated-risk":"connector"}>
+      {highRisk
+        ?<span className="codex-source-mcp-approval__risk">
+          <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16"
+            fill="none" stroke="currentColor" strokeWidth="1.8"
+            strokeLinecap="round" strokeLinejoin="round">
+            <path d="M10.3 3.5a2 2 0 0 1 3.4 0l8 14A2 2 0 0 1 20 20.5H4a2 2 0 0 1-1.7-3z"/>
+            <path d="M12 9v4.2M12 16.6h.01"/>
+          </svg>
+          Elevated Risk
+        </span>
+        :<span className="codex-source-mcp-approval__connector">{request.connectorName}</span>}
     </div>
-    <h3 className="codex-source-mcp-approval__title">{request.title}</h3>
+    <h3 className="codex-source-mcp-approval__title">
+      {parsedTitle
+        ?<>{parsedTitle.prefix}<span className="codex-source-mcp-approval__tool-name">
+          {parsedTitle.toolName}</span>{parsedTitle.suffix}</>
+        :request.title}
+    </h3>
     {request.subtitle?<p className="codex-source-mcp-approval__subtitle">{request.subtitle}</p>:null}
     {request.reason?<p className="codex-source-mcp-approval__reason">{request.reason}</p>:null}
     {entries.length>0?<div className="codex-source-mcp-approval__params"
