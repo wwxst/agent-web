@@ -40,7 +40,7 @@ export function CodexSourceCollapsibleUserMessage({
   // guessed approximate character/word count.
   const collapsible=shouldCollapseSourceUserMessage({
     textLength:text.length,renderedContentHeightPx:renderedHeight,
-    lineHeightPx,collapsedLines:collapsedLineCount,
+    lineHeightPx:lineHeight,collapsedLines:collapsedLineCount,
   });
   const collapsed=collapsible&&!expanded&&!printing;
   const shownText=sourceUserMessageVisibleText(text,collapsed,collapsedLineCount);
