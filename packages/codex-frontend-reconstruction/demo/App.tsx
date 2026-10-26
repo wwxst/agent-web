@@ -730,7 +730,7 @@ export function App() {
       }} data-testid="transcript-scroll">
         <div className="demo-thread-scroll-content" data-source-thread-scroll-content="">
         <div className="demo-transcript-column">
-          <div className="demo-conversation-intro"><h1>{DEMO_CONVERSATIONS.find((c) => c.id === active)?.title}</h1><div className="demo-worked-label">Worked for 2m 11s <Icon name="chevron" size={12}/><span> · mock</span></div></div>
+          <div className="demo-conversation-intro"><h1>{DEMO_CONVERSATIONS.find((c) => c.id === active)?.title}</h1></div>
           <ConnectedLiveConversationTranscript
             key={`${active}-${generation}`}
             source={source}
