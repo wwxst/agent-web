@@ -703,3 +703,36 @@ button:focus-visible, textarea:focus-visible { outline: 2px solid #578cda; outli
   .demo-markdown-code-scrollport pre code {
   white-space:inherit;overflow-wrap:inherit;
 }
+
+
+/* Original chatgpt-code-block-highlighting 72144295f264 + app-shared
+ * Codex syntax palette. Lezer HighlightStyle supplies these exact source
+ * class names; keep fallback theme tokens so unsupported grammars do not
+ * inherit fake token colors. No proprietary CSS is copied verbatim. */
+.demo-markdown .demo-markdown-code-scrollport .text-codex-syntax-comment {
+  color:var(--color-text-secondary,#858585);
+}
+.demo-markdown .demo-markdown-code-scrollport .text-codex-syntax-keyword {
+  color:var(--color-codex-syntax-keyword,#ab4f7a);
+}
+.demo-markdown .demo-markdown-code-scrollport .text-codex-syntax-literal {
+  color:var(--color-codex-syntax-literal,#ac4f23);
+}
+.demo-markdown .demo-markdown-code-scrollport .text-codex-syntax-string {
+  color:var(--color-codex-syntax-string,#3a843f);
+}
+.demo-markdown .demo-markdown-code-scrollport .text-codex-syntax-variable {
+  color:var(--color-codex-syntax-variable,#643cae);
+}
+.demo-markdown .demo-markdown-code-scrollport .text-codex-syntax-attribute {
+  color:var(--color-codex-syntax-attribute,#b8802b);
+}
+.demo-markdown .demo-markdown-code-scrollport .text-codex-syntax-name {
+  color:var(--color-codex-syntax-name,#1f4e94);
+}
+.demo-markdown .demo-markdown-code-scrollport .text-codex-syntax-error {
+  color:var(--color-codex-syntax-error,#cd3739);
+}
+.demo-markdown .demo-markdown-code-scrollport .underline {
+  text-decoration-line:underline;
+}
