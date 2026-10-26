@@ -134,7 +134,8 @@ export function projectSourceMcpToolApprovalTitle(
   const match=/^Allow\s+(.+?)\s+to\s+run\s+tool\s+"([^"]+)"\?$/.exec(message);
   return match==null?null:{
     prefix:"Allow "+connectorName+" to run ",
-    toolName:match[2],
+    // Regex group #2 is required by the matched pattern.
+    toolName:match[2]!,
     suffix:" tool?",
   };
 }
