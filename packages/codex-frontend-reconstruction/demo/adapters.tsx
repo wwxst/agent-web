@@ -16,6 +16,8 @@ import { CodexSourceWorkStatus } from "../src/components/CodexSourceWorkStatus.j
 import type { ConversationMessageItem, ConversationMessagePlanDependencies } from "../src/conversation/ConversationMessageRenderPlan.js";
 import type { ConversationRenderProjectionDependencies } from "../src/conversation/ConversationRenderEntriesModel.js";
 import type { InlineFileReviewAction, InlineReviewFile } from "../src/conversation/InlineFileReviewModel.js";
+import {createSourceInlineReviewWrapPreference}
+  from "../src/conversation/SourceInlineReviewWrapPreference.js";
 import { getDemoBlocks, getDemoHistoryTurnItems } from "./mockConversation.js";
 import {connectDesktopHostEventBridge} from "./desktopHost.js";
 import { projectCompletedGroupHeaderParts } from "../src/conversation/AgentActivityGroupPresentation.js";
@@ -214,6 +216,10 @@ function DemoCommandLeaf(props: ExecCommandLeafProps) {
     <CodexSourceExecCommandLeaf {...props} />
   </div>;
 }
+
+/** Demo host's persistent-in-session C preference, separate from code-snippet
+ * word wrap. It survives conversation/source remounts, with no backend claim. */
+const demoInlineReviewWrapPreference=createSourceInlineReviewWrapPreference();
 
 const oldFile: InlineReviewFile = {
   name: "LiveConversationSource.ts",
@@ -491,6 +497,7 @@ export function makeDemoRow(notify: (message: string) => void) {
         isExpandable: true,
       }
       : null,
+    inlineReviewWrapPreference:demoInlineReviewWrapPreference,
     onFileReviewAction: (_item: ConversationMessageItem, action: InlineFileReviewAction) =>
       notify(action === "reject" ? "仅演示：已点击 Reject；没有修改任何文件。" : "操作已禁用：此演示不具备文件修改权限。"),
     translator: {
