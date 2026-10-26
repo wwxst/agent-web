@@ -8,7 +8,12 @@
  */
 export type SourceMcpApprovalDecision="accept"|"decline";
 export type SourceMcpApprovalPersistence="session"|"always";
-export interface SourceMcpApprovalRequest {
+/** Original ye's host-scoped request identity, not a global request ID. */
+export interface SourceMcpApprovalContext {
+  hostId:string;
+  conversationId:string;
+}
+export interface SourceMcpApprovalRequest extends SourceMcpApprovalContext {
   requestId:string;
   title:string;
   connectorName:string;
@@ -34,6 +39,7 @@ export interface SourceMcpApprovalReply {
 }
 export type SourceMcpApprovalReplyTransport=(
   requestId:string,reply:SourceMcpApprovalReply,
+  context:SourceMcpApprovalContext,
 )=>Promise<void>;
 export const SOURCE_MCP_INITIAL_PARAMETER_COUNT=4;
 export const SOURCE_MCP_PARAMETER_TEXT_LINES=4;
