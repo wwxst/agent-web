@@ -16,6 +16,8 @@ import { CodexSourceWorkStatus } from "../src/components/CodexSourceWorkStatus.j
 import type { ConversationMessageItem, ConversationMessagePlanDependencies } from "../src/conversation/ConversationMessageRenderPlan.js";
 import type { ConversationRenderProjectionDependencies } from "../src/conversation/ConversationRenderEntriesModel.js";
 import type { InlineFileReviewAction, InlineReviewFile } from "../src/conversation/InlineFileReviewModel.js";
+import {projectSourceMcpGenericApprovalMessage}
+  from "../src/conversation/SourceMcpApprovalRequestModel.js";
 import {createSourceInlineReviewWrapPreference}
   from "../src/conversation/SourceInlineReviewWrapPreference.js";
 import { getDemoBlocks, getDemoHistoryTurnItems } from "./mockConversation.js";
@@ -510,12 +512,18 @@ export function makeDemoRow(notify: (message: string) => void) {
     getMcpApprovalRequest:(item)=>{
       if(item.type!=="demo-mcp-approval"||typeof item.id!=="string")return null;
       const disabled=item.demoMcpApprovalDisabled===true;
+      // Original be/ke generic-message title logic is exercised by the
+      // secondary readonly fixture; the active tool-call fixture exercises Se.
+      const generic=projectSourceMcpGenericApprovalMessage(
+        "Tool call needs your approval. Reason: Host approval is unavailable",
+        {reason:"Host approval is unavailable"});
       return {
         hostId:"demo-host",conversationId:"frontend",
-        requestId:item.id,title:"Allow this MCP tool call? (simulation)",
+        requestId:item.id,
+        title:disabled?generic.title:'Allow sample files app to run tool "files.search"?',
         connectorName:"Fixture files MCP connector",
         subtitle:"Synthetic request · no Agent backend is connected",
-        reason:"Read a list of sample project files for display only.",
+        reason:disabled?generic.reason:"Read a list of sample project files for display only.",
         riskLevel:disabled?null:"high",
         disabled,
         persist:disabled?[]:["session","always"] as const,
@@ -524,7 +532,9 @@ export function makeDemoRow(notify: (message: string) => void) {
           query:"codex",
           count:20,
           filters:{kinds:["ts","tsx","css"],includeHidden:false},
-          description:"A long tool parameter value ".repeat(10),
+          description:Array.from({length:18},(_,index)=>
+            "Line "+String(index+1).padStart(2,"0")+
+            ": long tool argument, retained after expansion").join("\n"),
           recursive:true,
         },
         collapseToolParams:false,
