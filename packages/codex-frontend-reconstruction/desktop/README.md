@@ -53,3 +53,32 @@ against the private original binary, nor a working Agent transport. Before
 production packaging the host event **schema**, Electron app identity,
 permissions, persistence, update/security policy, offline handling and real
 Agent binding all need independent decisions and validation.
+
+
+## MCP reply IPC boundary (2026-10-26)
+
+The original compiled `mcp-request-card-e83948fa712b.js` calls
+`replyWithMcpServerElicitationResponse(conversationId, requestId, response)`
+on the host selected by `hostId`. **That private channel is not reused.**
+
+The independent shell now exposes exactly one bounded renderer API:
+`agentWebDesktopHost.replyToMcpApproval({hostId,conversationId,requestId,response})`.
+It travels over one fixed `agent-web:mcp-approval-reply` channel; Electron
+main checks the trusted primary main frame and a strict request/decision
+allowlist. Neither preload nor renderer exposes generic IPC, credentials,
+shell execution, arbitrary tool calls or persistent grants.
+
+**The Agent backend is not connected**, so main always rejects valid MCP
+responses with `MCP_BACKEND_UNAVAILABLE`, including Deny. The mounted card
+shows the failure and can retry; it never claims approval or emits a
+fabricated resolved event. Browser-only fixture behavior remains explicitly
+simulated and separate from native Electron IPC.
+
+Unit tests validate malformed envelopes, scopes and frame trust.
+`electron-mcp-approval-ipc.test.mjs` invokes the real context-isolated
+preload from an actual Electron window to confirm the native rejection.
+This is frontend/Electron transport preparation, **not end-to-end approval
+integration**. Before connecting to the user's Agent backend, verify its
+actual request IDs, authority and authorization protocol and require a
+backend-maintained outstanding-request registry; never bridge arbitrary
+renderer-provided request IDs directly into permission execution.
