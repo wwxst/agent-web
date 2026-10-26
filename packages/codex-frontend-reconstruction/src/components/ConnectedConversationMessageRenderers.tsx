@@ -35,6 +35,10 @@ import type { SourceInlineReviewWrapPreference } from "../conversation/SourceInl
 import type { AutomaticApprovalReviewSummary } from "../conversation/ActivityStatusPresentation.js";
 import { ActivityStatusLabel, AutomaticApprovalReviewList, type ActivityStatusTranslation } from "./ActivityStatusViews.js";
 import { InlineFileReview } from "./InlineFileReview.js";
+import { SourceMcpApprovalRequestCard } from "./SourceMcpApprovalRequestCard.js";
+import type {
+  SourceMcpApprovalRequest, SourceMcpApprovalReplyTransport,
+} from "../conversation/SourceMcpApprovalRequestModel.js";
 import type { ConversationMessageRenderers } from "./ConversationMessageBlocks.js";
 
 /**
@@ -132,6 +136,10 @@ export interface ConnectedConversationRendererHost extends ConversationContentAd
   /** Private app setting C must be supplied by the real session host. */
   inlineReviewWrapPreference?:SourceInlineReviewWrapPreference;
   onFileReviewAction: (item: ConversationMessageItem, action: InlineFileReviewAction) => void;
+  /** Host is solely responsible for resolving real MCP pending request ids.
+   * Absent callback = explicit readonly request, never simulated permission. */
+  getMcpApprovalRequest?:(item:ConversationMessageItem)=>SourceMcpApprovalRequest|null;
+  onMcpApprovalReply?:SourceMcpApprovalReplyTransport;
   translator: ActivityStatusTranslation;
   getApprovalReviewSummary: (review: AutomaticApprovalReviewSummary) => React.ReactNode;
   getApprovalReviewDetails: (review: AutomaticApprovalReviewSummary) => React.ReactNode;
@@ -166,6 +174,9 @@ export function createConnectedConversationMessageRenderers(host: ConnectedConve
     }
 
     const renderProjectedActivity = (target: ConversationMessageItem): React.ReactNode => {
+      const mcpApproval=host.getMcpApprovalRequest?.(target)??null;
+      if(mcpApproval!=null)return <SourceMcpApprovalRequestCard
+        key={mcpApproval.requestId} request={mcpApproval} onReply={host.onMcpApprovalReply}/>;
       const projection = projectConversationContent(target, host, "activity");
       if (projection.kind === "file-review") {
         const review: ConversationFileReviewData = restrictConversationReviewPermissions(projection.review);
