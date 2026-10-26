@@ -943,3 +943,56 @@ test("real Electron repeated MCP activity collapses with inert children and keyb
   await app.close();await rm(profile,{recursive:true,force:true});
  }
 });
+
+
+test("real Electron keeps source file-review C wrap setting across two real conversation routes",{
+ timeout:100000,
+},async()=>{
+ const profile=await mkdtemp(join(tmpdir(),"agent-web-review-wrap-"));
+ const app=await electron.launch({
+  executablePath,args:[".",...(process.platform==="linux"&&process.env.CI?["--no-sandbox"]:[])],
+  cwd:root,env:{...process.env,AGENT_WEB_DEV_URL:"",AGENT_WEB_USER_DATA_DIR:profile,
+   ELECTRON_DISABLE_SECURITY_WARNINGS:"true"},timeout:40000,
+ });
+ try{
+  const page=await app.firstWindow();
+  await page.locator('[aria-label="演示会话导航"]').waitFor({timeout:20000});
+  const viewport=page.getByTestId("transcript-scroll");
+  async function locate(id){
+   const row=page.locator(`[data-demo-turn-id="${id}"]`);
+   await viewport.evaluate(el=>{el.scrollTop=0;el.dispatchEvent(new Event("scroll",{bubbles:true}));});
+   for(let i=0;i<36&&await row.count()===0;i++){
+     await viewport.evaluate(el=>{el.scrollTop+=180;el.dispatchEvent(new Event("scroll",{bubbles:true}));});
+     await page.waitForTimeout(45);
+   }
+   await row.waitFor({timeout:12000});
+   const review=row.locator("[data-source-inline-review-wrap]");
+   if(await review.count()===0)
+     await row.locator("[data-recovered-agent-activity] button").first().click();
+   await review.waitFor({timeout:12000});
+   return review;
+  }
+  const frontend=await locate("diff");
+  assert.equal(await frontend.getAttribute("data-source-inline-review-wrap"),"scroll");
+  assert.equal(await frontend.getByRole("button",{name:"Edit"}).isDisabled(),true);
+  assert.equal(await frontend.getByRole("button",{name:"Accept"}).isDisabled(),true);
+  await frontend.getByRole("button",{name:"Enable word wrap"}).click();
+  assert.equal(await frontend.getAttribute("data-source-inline-review-wrap"),"wrap");
+  await page.getByRole("button",{name:/工具调用与审批交互/}).click();
+  const second=await locate("review-diff");
+  assert.equal(await second.getAttribute("data-source-inline-review-wrap"),"wrap");
+  assert.equal(await second.getByRole("button",{name:"Disable word wrap"}).getAttribute("aria-pressed"),"true");
+  assert.equal(await second.getByRole("button",{name:"Edit"}).isDisabled(),true);
+  assert.equal(await second.getByRole("button",{name:"Accept"}).isDisabled(),true);
+  await second.scrollIntoViewIfNeeded();
+  await mkdir(resolve(root,"desktop/test-results"),{recursive:true});
+  await page.screenshot({path:resolve(root,"desktop/test-results/source-shared-file-review-wrap.png"),
+   animations:"disabled",fullPage:false});
+  await second.getByRole("button",{name:"Disable word wrap"}).click();
+  await page.getByRole("button",{name:/恢复 Codex 会话界面/}).click();
+  const returned=await locate("diff");
+  assert.equal(await returned.getAttribute("data-source-inline-review-wrap"),"scroll");
+ }finally{
+  await app.close();await rm(profile,{recursive:true,force:true});
+ }
+});
