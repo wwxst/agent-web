@@ -7,6 +7,8 @@
 export type SourceWorkStatus = "loading" | "unknown" | "paused" | "working" | "worked" | "stopped";
 
 export interface SourceWorkStatusInput {
+  /** Host history entities carry other fields; typed source metadata stays optional. */
+  [key: string]: unknown;
   status?: unknown;
   startedAtMs?: unknown;
   completedAtMs?: unknown;
