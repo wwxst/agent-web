@@ -361,15 +361,6 @@ function reviewScenario(): ConversationRenderEntry[] {
         status:"worked",startedAtMs:1_000,completedAtMs:132_000,
       }),
     ]),
-    // This is deliberately fixture content, not a source Codex transcript.
-    // Long enough for the original 20-rendered-line collapse measurement,
-    // with a focusable link beyond the folded viewport for keyboard checks.
-    demoMessageEntry("user", "review-long-user-message", [
-      "核对长用户消息在会话时间线中的收起与展开行为（模拟）。",
-      ...Array.from({length:34},(_,index)=>
-        `第 ${String(index+1).padStart(2,"0")} 段：请保持原版 Codex 的消息间距、Markdown 布局与键盘交互。`),
-      "最后附上 [Codex 原版交互参考链接](https://example.com/codex-reference) 用于测试折叠内容的焦点安全性。",
-    ].join("\n\n")),
     demoMessageEntry("assistant", "review-final", "**演示不会触发真实权限变更。** 与 Agent 后端接入时，需要在宿主层明确实现权限校验、授权请求和执行回调。"),
     // Real source turn.items fixture: commentary, command group, file patch,
     // and final answer share ONE virtualized row, unlike former mock turns.
