@@ -91,3 +91,50 @@ export function sourceMcpApprovalParamText(value:unknown):{
     preview:isTruncated?serialized.slice(0,47)+"…":serialized,
     expandable:isTruncated};
 }
+
+
+/**
+ * Original be/ke/Ae/je/Me generic elicitation presentation:
+ * metadata.reason is a trimmed nonempty string only. A duplicate trailing
+ * "Reason: <reason>" is removed from the visible message; when the remaining
+ * text is the generic approval boilerplate, the reason becomes its title.
+ * No request permissions are inferred from a message or its metadata.
+ */
+export function projectSourceMcpGenericApprovalMessage(
+  message:string,metadata:unknown,
+):{title:string;reason:string|null}{
+  const data=metadata!=null&&typeof metadata==="object"&&!Array.isArray(metadata)
+    ? metadata as Record<string,unknown> : null;
+  const candidate=data?.reason;
+  const reason=typeof candidate==="string"&&candidate.trim().length>0
+    ?candidate.trim():null;
+  const text=message.trim();
+  let title=text;
+  if(reason!=null){
+    const suffix="Reason: "+reason;
+    if(title.endsWith(suffix)){
+      const cleaned=title.slice(0,-suffix.length).trim();
+      if(cleaned.length>0)title=cleaned;
+    }
+  }
+  const boilerplate=title.trim().toLowerCase();
+  if(reason!=null&&
+    (boilerplate==="tool call needs your approval."||
+      boilerplate==="tool call needs your approval")){
+    return {title:reason,reason:null};
+  }
+  return {title,reason};
+}
+
+/** Original Se only transforms this literal MCP approval title shape, and
+ * uses trusted matched connectorName rather than the raw message name. */
+export function projectSourceMcpToolApprovalTitle(
+  message:string,connectorName:string,
+):{prefix:string;toolName:string;suffix:string}|null{
+  const match=/^Allow\s+(.+?)\s+to\s+run\s+tool\s+"([^"]+)"\?$/.exec(message);
+  return match==null?null:{
+    prefix:"Allow "+connectorName+" to run ",
+    toolName:match[2],
+    suffix:" tool?",
+  };
+}
