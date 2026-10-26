@@ -1,0 +1,45 @@
+/* Reconstructed source ye/we approval surface. Uses existing demo theme
+ * variables and source composition; private Nz card/icon design is pending. */
+.codex-source-mcp-approval {
+  min-width:0;display:flex;flex-direction:column;gap:10px;
+  padding:14px 16px;border:1px solid var(--demo-border,#e4e4e4);
+  border-radius:12px;background:var(--demo-surface,#fff);
+  color:var(--demo-text,#292929);font-size:13px;
+}
+.codex-source-mcp-approval__header {display:flex;align-items:center;gap:10px;min-width:0}
+.codex-source-mcp-approval__connector {min-width:0;overflow:hidden;text-overflow:ellipsis;font-weight:600}
+.codex-source-mcp-approval__risk {font-size:12px;font-weight:600;color:var(--color-text-warning,#ac6418)}
+.codex-source-mcp-approval__title {margin:0;font-size:14px;line-height:1.45;font-weight:600}
+.codex-source-mcp-approval__reason,.codex-source-mcp-approval__subtitle,
+.codex-source-mcp-approval__readonly {margin:0;color:var(--demo-dim,#858585)}
+.codex-source-mcp-approval__params {display:flex;flex-direction:column;gap:8px;min-width:0}
+.codex-source-mcp-approval__param {display:grid;grid-template-columns:minmax(95px,24%) minmax(0,1fr);gap:12px;min-width:0}
+.codex-source-mcp-approval__param-name {color:var(--demo-dim,#858585);word-break:break-word}
+.codex-source-mcp-approval__param-value {display:flex;flex-direction:column;align-items:flex-start;min-width:0;gap:2px}
+.codex-source-mcp-approval__param-value pre {
+  min-width:0;max-width:100%;white-space:pre-wrap;overflow-wrap:anywhere;
+  margin:0;font-family:var(--font-mono,ui-monospace,monospace);font-size:12px;
+  max-height:15rem;overflow-y:auto;
+}
+.codex-source-mcp-approval__param-value pre[data-source-mcp-param-preview="preview"].codex-source-mcp-approval__json {
+  max-height:12em;overflow:hidden;
+}
+.codex-source-mcp-approval button {font:inherit;cursor:pointer}
+.codex-source-mcp-approval__params button,
+.codex-source-mcp-approval__param-value button {
+  align-self:flex-start;border:0;padding:1px 0;background:none;
+  color:var(--demo-dim,#858585);font-size:12px;text-decoration:underline;
+}
+.codex-source-mcp-approval__actions {
+  display:flex;flex-wrap:wrap;justify-content:flex-end;gap:7px;
+  border-top:1px solid var(--demo-border,#e4e4e4);padding-top:10px;
+}
+.codex-source-mcp-approval__actions button {
+  border:1px solid var(--demo-border,#e4e4e4);
+  border-radius:7px;padding:6px 10px;background:var(--demo-panel,#f7f7f7);
+}
+.codex-source-mcp-approval__actions button:hover:not(:disabled) {filter:brightness(.97)}
+.codex-source-mcp-approval button:disabled {opacity:.46;cursor:not-allowed}
+.codex-source-mcp-approval button:focus-visible {outline:2px solid var(--demo-accent,#777);outline-offset:2px}
+.codex-source-mcp-approval__error {margin:0;color:var(--color-text-danger,#c03835)}
+.codex-source-mcp-approval [role="status"] {color:var(--demo-dim,#858585);margin:0}
