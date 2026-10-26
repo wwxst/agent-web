@@ -597,3 +597,73 @@ test("real Electron restores original bubble geometry and Markdown heading/list/
   await rm(profile,{recursive:true,force:true});
  }
 });
+
+
+test("real Electron mounts source Rt compact only for explicit isAeonFormatted user item",{
+ timeout:90000,
+},async()=>{
+ const profile=await mkdtemp(join(tmpdir(),"agent-web-source-compact-message-"));
+ const app=await electron.launch({
+   executablePath,
+   args:[".",...(process.platform==="linux"&&process.env.CI?["--no-sandbox"]:[])],
+   cwd:root,
+   env:{...process.env,AGENT_WEB_DEV_URL:"",AGENT_WEB_USER_DATA_DIR:profile,
+     ELECTRON_DISABLE_SECURITY_WARNINGS:"true"},
+   timeout:40000,
+ });
+ try{
+   const page=await app.firstWindow();
+   await page.locator('[aria-label="演示会话导航"]').waitFor({timeout:20000});
+   const viewport=page.locator('[data-testid="transcript-scroll"]');
+   await viewport.evaluate(el=>{el.scrollTop=0;});
+   const standard=page.locator(
+     '[data-demo-turn-id="intro"] [data-conversation-message="user"]');
+   await standard.waitFor({timeout:12000});
+   assert.equal(await standard.getAttribute("data-source-user-message-format"),"standard");
+   const standardStyle=await standard.evaluate(el=>{
+     const st=getComputedStyle(el);
+     const row=el.closest(".demo-row--user");
+     return {radius:st.borderTopLeftRadius,padding:st.paddingLeft,
+       maxWidth:getComputedStyle(row.querySelector(":scope > div:not(.demo-time-marker)")).maxWidth};
+   });
+   assert.deepEqual(standardStyle,{radius:"22px",padding:"16px",maxWidth:"70%"});
+   await page.getByRole("button",{name:/工具调用与审批交互/}).click();
+   await viewport.evaluate(el=>{el.scrollTop=0;});
+   const compact=page.locator(
+     '[data-demo-turn-id="review-intro"] [data-conversation-message="user"]');
+   await compact.waitFor({timeout:12000});
+   assert.equal(await compact.getAttribute("data-source-user-message-format"),"compact");
+   const actual=await compact.evaluate(el=>{
+     const st=getComputedStyle(el);
+     const markdown=el.querySelector(".demo-markdown");
+     const md=getComputedStyle(markdown);
+     const row=el.closest(".demo-row--user");
+     return {
+       radius:st.borderTopLeftRadius,paddingLeft:st.paddingLeft,
+       paddingTop:st.paddingTop,maxWidth:st.maxWidth,
+       wrapperMaxWidth:getComputedStyle(row.querySelector(
+         ":scope > div:not(.demo-time-marker)")).maxWidth,
+       width:el.getBoundingClientRect().width,
+       lineHeight:md.lineHeight,
+       letterSpacing:md.letterSpacing,
+     };
+   });
+   assert.equal(actual.radius,"16px");
+   assert.equal(actual.paddingLeft,"12px");
+   assert.equal(actual.paddingTop,"8px");
+   assert.ok(actual.maxWidth.includes("456px"));
+   assert.ok(actual.wrapperMaxWidth.includes("456px"));
+   assert.ok(actual.width<=456);
+   assert.equal(actual.lineHeight,"17px");
+   assert.ok(Math.abs(Number.parseFloat(actual.letterSpacing)+.13)<.02);
+   await compact.scrollIntoViewIfNeeded();
+   await mkdir(resolve(root,"desktop/test-results"),{recursive:true});
+   await page.screenshot({
+     path:resolve(root,"desktop/test-results/conversation-source-compact-user-message.png"),
+     animations:"disabled",fullPage:false,
+   });
+ }finally{
+   await app.close();
+   await rm(profile,{recursive:true,force:true});
+ }
+});
