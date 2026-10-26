@@ -36,3 +36,21 @@ export function sourceUserMessageVisibleText(
   return collapsed && text.length>sourceUserMessagePrefixLimit(lines)
     ? text.slice(0,sourceUserMessagePrefixLimit(lines)) : text;
 }
+
+/** Source C registers _u's reveal callback against the full original user
+ * text, not the sliced rendering. This host-neutral guard ensures a Find
+ * hit is actually inside this exact user-message text before revealing it.
+ * Turn identity is checked by the caller's owning virtualized row. */
+export function isSourceUserMessageFindTarget(input:{
+  text:string;
+  query:string;
+  sourceOffset:number;
+  sourceLength:number;
+}):boolean {
+  const {text,query,sourceOffset,sourceLength}=input;
+  if(!query || !Number.isInteger(sourceOffset) || sourceOffset<0 ||
+      !Number.isInteger(sourceLength) || sourceLength!==query.length ||
+      sourceOffset+sourceLength>text.length)return false;
+  return text.slice(sourceOffset,sourceOffset+sourceLength).toLocaleLowerCase()
+    ===query.toLocaleLowerCase();
+}
