@@ -6,6 +6,7 @@ import {
   type ConnectedConversationRendererHost,
 } from "../src/components/ConnectedConversationMessageRenderers.js";
 import { createConversationLiveRow } from "../src/components/ConversationMessageBlocks.js";
+import { CodexSourceWorkStatus } from "../src/components/CodexSourceWorkStatus.js";
 import type { ConversationMessageItem, ConversationMessagePlanDependencies } from "../src/conversation/ConversationMessageRenderPlan.js";
 import type { ConversationRenderProjectionDependencies } from "../src/conversation/ConversationRenderEntriesModel.js";
 import type { InlineFileReviewAction, InlineReviewFile } from "../src/conversation/InlineFileReviewModel.js";
@@ -287,7 +288,13 @@ export function makeDemoRow(notify: (message: string) => void) {
         preventAutoCollapse: false,
         hasFollowingFinalAnswer,
       }),
-      renderSummary: (count) => `${count} 项工具活动 · 模拟`,
+      renderSummary: (count,workedForItem) => workedForItem == null
+        ? `${count} 项工具活动 · 模拟`
+        : <CodexSourceWorkStatus item={workedForItem}/>,
+      renderWorkedFor: item => <div data-source-work-status-divider="true"
+        className="codex-source-work-status-divider">
+        <CodexSourceWorkStatus item={item}/>
+      </div>,
       groupHeader: {
         // Je/bg: fixture-only private result safety and bm display signature.
         getRepeatedRows: items => projectSourceRepeatedActivityRows(items, {
