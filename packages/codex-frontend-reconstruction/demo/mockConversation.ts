@@ -43,6 +43,29 @@ export function demoMessageEntry(role: "user" | "assistant", id: string, content
   });
 }
 
+/** Synthetic *host-event* fixture: mutate one canonical assistant item while
+ * preserving its id/turnKey and completed=false, exactly as actual source
+ * subscription updates would. This does not use a fake second transcript. */
+export function demoStreamingCodeEntry(id:string,text:string,completed=false):ConversationRenderEntry {
+  return demoEntry(id,{
+    type:"assistant-message",key:`block:${id}`,
+    item:demoItem(id,"agentMessage",text,{completed}),
+  });
+}
+export function updateDemoStreamingCodeEntry(
+  source:DemoSource,id:string,text:string,completed=false,
+):void {
+  const previous=source.getSnapshot().entries;
+  source.update({entries:previous.map(entry=>{
+    if(entry.turnId!==id)return entry;
+    return {...entry,turn:{
+      ...entry.turn,
+      demoBlocks:[{type:"assistant-message",key:`block:${id}`,
+        item:demoItem(id,"agentMessage",text,{completed})}],
+    }};
+  })});
+}
+
 export function demoActivityEntry(id: string, items: ConversationMessageItem[], title?: string): ConversationRenderEntry {
   return demoEntry(id, { type: "agent-activity", key: `block:${id}`, items: items.map((item) => title == null ? item : { ...item, heading: title }) });
 }
