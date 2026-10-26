@@ -512,3 +512,88 @@ test("native Find maps Markdown link labels but never highlights the hidden iden
   await rm(profile,{recursive:true,force:true});
  }
 });
+
+
+test("real Electron restores original bubble geometry and Markdown heading/list/quote/table presentation",{
+ timeout:90000,
+},async()=>{
+ const profile=await mkdtemp(join(tmpdir(),"agent-web-markdown-source-layout-"));
+ const app=await electron.launch({
+  executablePath,
+  args:[".",...(process.platform==="linux"&&process.env.CI?["--no-sandbox"]:[])],
+  cwd:root,
+  env:{...process.env,AGENT_WEB_DEV_URL:"",AGENT_WEB_USER_DATA_DIR:profile,
+    ELECTRON_DISABLE_SECURITY_WARNINGS:"true"},
+  timeout:40000,
+ });
+ try {
+  const page=await app.firstWindow();
+  await page.locator('[aria-label="演示会话导航"]').waitFor({timeout:20000});
+  const message=[
+    "Restore the original Markdown layout, not a screen-only demo.",
+    "",
+    "## Heading from source",
+    "",
+    "- Alpha",
+    "- Beta",
+    "",
+    "> A real blockquote.",
+    "",
+    "This is `inline-source-code`.",
+    "",
+    "| Part | Width |",
+    "| --- | --- |",
+    "| User bubble | 70% |",
+  ].join("\n");
+  const composer=page.getByTestId("composer");
+  await composer.waitFor({timeout:12000});
+  await composer.fill(message);
+  await page.getByTestId("send-button").click();
+  const row=page.locator('[data-demo-turn-id^="user-"]').last();
+  await row.waitFor({timeout:12000});
+  const user=row.locator('[data-conversation-message="user"]');
+  await user.locator("h2").waitFor({timeout:12000});
+  await user.locator("table").waitFor({timeout:12000});
+  const actual=await row.evaluate(element=>{
+    const bubble=element.querySelector('[data-conversation-message="user"]');
+    const md=bubble?.querySelector(".demo-markdown");
+    const wrapper=element.querySelector(":scope > div:not(.demo-time-marker)");
+    const style=(target,property)=>getComputedStyle(target).getPropertyValue(property).trim();
+    const quote=md.querySelector("blockquote");
+    const table=md.querySelector("table");
+    const inline=[...md.querySelectorAll("code")].find(el=>
+      el.textContent==="inline-source-code");
+    return {
+      maxWidth:style(wrapper,"max-width"),
+      radius:style(bubble,"border-top-left-radius"),
+      horizontalPadding:style(bubble,"padding-left"),
+      headingScale:parseFloat(style(md.querySelector("h2"),"font-size"))/
+        parseFloat(style(md,"font-size")),
+      listMarker:style(md.querySelector("ul"),"list-style-type"),
+      quoteBar:getComputedStyle(quote,"::before").width,
+      quoteIndent:style(quote,"padding-inline-start"),
+      tableCollapse:style(table,"border-collapse"),
+      inlineScale:parseFloat(style(inline,"font-size"))/
+        parseFloat(style(md,"font-size")),
+    };
+  });
+  assert.equal(actual.maxWidth,"70%");
+  assert.equal(actual.radius,"22px");
+  assert.equal(actual.horizontalPadding,"16px");
+  assert.ok(Math.abs(actual.headingScale-1.5)<.02);
+  assert.equal(actual.listMarker,"disc");
+  assert.equal(actual.quoteBar,"4px");
+  assert.equal(actual.quoteIndent,"24px");
+  assert.equal(actual.tableCollapse,"separate");
+  assert.ok(Math.abs(actual.inlineScale-.875)<.02);
+  await row.scrollIntoViewIfNeeded();
+  await mkdir(resolve(root,"desktop/test-results"),{recursive:true});
+  await page.screenshot({
+    path:resolve(root,"desktop/test-results/conversation-original-markdown-layout.png"),
+    fullPage:false,animations:"disabled",
+  });
+ }finally{
+  await app.close();
+  await rm(profile,{recursive:true,force:true});
+ }
+});
