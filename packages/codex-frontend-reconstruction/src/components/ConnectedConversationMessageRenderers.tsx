@@ -2,6 +2,7 @@ import * as React from "react";
 import type { ConversationMessageItem } from "../conversation/ConversationMessageRenderPlan.js";
 import type { AgentActivityUnit, AgentActivityCollapseOptions } from "../conversation/AgentActivityProjection.js";
 import { CodexAgentActivity } from "./CodexAgentActivity.js";
+import { CodexSourceCollapsibleUserMessage } from "./CodexSourceCollapsibleUserMessage.js";
 import { combineSourceActivityTrace } from "../conversation/SourceCombinedActivityTrace.js";
 import { filterSourceLatestActivityUnits } from "../conversation/SourceLatestActivityVisibility.js";
 import type { SourceRepeatedActivityRow } from "../conversation/SourceRepeatedActivityGroups.js";
@@ -230,7 +231,10 @@ export function createConnectedConversationMessageRenderers(host: ConnectedConve
     UserMessage(props) {
       const content = projectConversationContent(props.item, host, "message");
       return <div data-conversation-message="user" className="flex flex-col gap-2">
-        {content.kind === "markdown" ? <host.Markdown text={content.text} role="user" />
+        {content.kind === "markdown"
+          ? <CodexSourceCollapsibleUserMessage text={content.text}>
+              {visibleText=><host.Markdown text={visibleText} role="user" />}
+            </CodexSourceCollapsibleUserMessage>
           : <host.ActivityDetails item={props.item} isActive={false} presentation="ordinary" />}
         {host.UserMessageExtras ? <host.UserMessageExtras {...props} /> : null}
       </div>;
