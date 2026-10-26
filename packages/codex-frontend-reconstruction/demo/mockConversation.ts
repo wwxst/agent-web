@@ -92,6 +92,17 @@ export function updateDemoAutomaticReviewEntry(
   )});
 }
 
+/** Explicitly synthetic MCP pending-request test data.
+ * Never represents a real Agent approval and grants no permission. */
+export function demoMcpApprovalEntry(turnId:string,disabled=false):ConversationRenderEntry{
+  return demoActivityEntry(turnId,[
+    demoItem(turnId+"-request","demo-mcp-approval",undefined,{
+      heading:disabled?"MCP 宿主未授权（演示）":"MCP 请求确认（演示）",
+      state:"Needs input",demoMcpApprovalDisabled:disabled,
+    }),
+  ]);
+}
+
 export function demoActivityEntry(id: string, items: ConversationMessageItem[], title?: string): ConversationRenderEntry {
   return demoEntry(id, { type: "agent-activity", key: `block:${id}`, items: items.map((item) => title == null ? item : { ...item, heading: title }) });
 }
