@@ -511,6 +511,7 @@ export function makeDemoRow(notify: (message: string) => void) {
       if(item.type!=="demo-mcp-approval"||typeof item.id!=="string")return null;
       const disabled=item.demoMcpApprovalDisabled===true;
       return {
+        hostId:"demo-host",conversationId:"frontend",
         requestId:item.id,title:"Allow this MCP tool call? (simulation)",
         connectorName:"Fixture files MCP connector",
         subtitle:"Synthetic request · no Agent backend is connected",
@@ -529,9 +530,14 @@ export function makeDemoRow(notify: (message: string) => void) {
         collapseToolParams:false,
       };
     },
-    onMcpApprovalReply:async(_requestId,_reply)=>{
-      // A rejection makes the failure/retry state inspectable in real
-      // Chromium/Windows/Linux without sending or approving anything.
+    onMcpApprovalReply:async(requestId,reply,context)=>{
+      const desktop=window.agentWebDesktopHost;
+      if(desktop!=null){
+        // Real Electron preload -> main IPC; main has no Agent backend and
+        // MUST reject with MCP_BACKEND_UNAVAILABLE. No success simulation.
+        return desktop.replyToMcpApproval({...context,requestId,response:reply});
+      }
+      // Explicit browser-only fixture; no Agent backend or Electron exists.
       await new Promise<void>(resolve=>setTimeout(resolve,380));
       throw Error("DEMO ONLY: no MCP approval transport configured");
     },
