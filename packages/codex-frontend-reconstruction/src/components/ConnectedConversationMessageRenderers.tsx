@@ -230,11 +230,17 @@ export function createConnectedConversationMessageRenderers(host: ConnectedConve
   return {
     UserMessage(props) {
       const content = projectConversationContent(props.item, host, "message");
+      // Original Rt: I = explicit isAeonFormatted ?? private capability
+      // fallback. This independent host has no private capability provider;
+      // only a genuine typed source item flag may enable the compact variant.
+      const isAeonFormatted=props.item.isAeonFormatted===true;
       return <div data-conversation-message="user"
         data-content-search-unit-key={typeof props.item.id==="string"?props.item.id:undefined}
+        data-source-user-message-format={isAeonFormatted?"compact":"standard"}
         className="flex flex-col gap-2">
         {content.kind === "markdown"
-          ? <CodexSourceCollapsibleUserMessage text={content.text}>
+          ? <CodexSourceCollapsibleUserMessage text={content.text}
+              isAeonFormatted={isAeonFormatted}>
               {visibleText=><host.Markdown text={visibleText} role="user" />}
             </CodexSourceCollapsibleUserMessage>
           : <host.ActivityDetails item={props.item} isActive={false} presentation="ordinary" />}
