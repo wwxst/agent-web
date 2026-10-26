@@ -1,3 +1,8 @@
+import {
+  SOURCE_USER_MESSAGE_FIND_REVEAL_EVENT,
+  type SourceUserMessageFindRevealDetail,
+} from "../src/components/CodexSourceCollapsibleUserMessage.js";
+
 /**
  * Standalone visible-message adapter for source iFt/xFt conversation find.
  *
@@ -67,6 +72,38 @@ export interface DemoThreadFindVisibleTarget {
   query: string;
   ordinalWithinTurn: number;
   expectedRowMatches: number;
+}
+
+/** Source _u reveal registration is owned by the exact user-message
+ * component, not the search provider. Dispatch to that component only
+ * if the original source match's raw offset belongs to its full text.
+ * React flushes the disclosure before the visible Markdown highlight runs.
+ */
+export function revealCollapsedDemoThreadFindMatch(
+  target:Pick<DemoThreadFindVisibleTarget,"viewport"|"turnKey"|"query"> & {
+    sourceOffset:number;
+    sourceLength:number;
+  },
+):boolean {
+  const row=Array.from(target.viewport.querySelectorAll<HTMLElement>("[data-turn-key]"))
+    .find(element=>element.dataset.turnKey===target.turnKey);
+  if(row==null)return false;
+  // Source search may match tool output in the same turn; do not reveal
+  // unrelated user messages, nor guess offsets in non-user blocks.
+  const users=row.querySelectorAll<HTMLElement>(
+    '[data-conversation-message="user"] [data-source-user-message-collapsible="true"]',
+  );
+  if(users.length!==1)return false;
+  const payload:SourceUserMessageFindRevealDetail={
+    query:target.query,sourceOffset:target.sourceOffset,
+    sourceLength:target.sourceLength,
+  };
+  const event=new CustomEvent<SourceUserMessageFindRevealDetail>(
+    SOURCE_USER_MESSAGE_FIND_REVEAL_EVENT,
+    {detail:payload,cancelable:true},
+  );
+  users[0]!.dispatchEvent(event);
+  return event.defaultPrevented;
 }
 
 /**
