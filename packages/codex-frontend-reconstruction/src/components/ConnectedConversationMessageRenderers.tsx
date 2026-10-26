@@ -63,6 +63,8 @@ export interface ConnectedConversationRendererHost extends ConversationContentAd
     getCollapseContext(context: { isActive: boolean; collapseWhenPossible: boolean; renderMode: "latest" | "all"; hasFollowingFinalAnswer: boolean; activityStateKey: string }):
       Omit<AgentActivityCollapseOptions<ConversationMessageItem>, "units">;
     renderSummary?(count: number, workedForItem: ConversationMessageItem | null): React.ReactNode;
+    /** Source SG is selected by Rk after kk extracts a worked-for item. */
+    renderWorkedFor?(item: ConversationMessageItem): React.ReactNode;
     /** Original nk/ak group header; We/Sg, mk/rk and icon metadata remain host-owned. */
     groupHeader?: {
       getStateContext(context: {items: readonly ConversationMessageItem[]; isActive: boolean;
@@ -304,6 +306,7 @@ export function createConnectedConversationMessageRenderers(host: ConnectedConve
         </div>;
       }
       return <CodexAgentActivity {...context} units={units} renderSummary={grouping.renderSummary}
+        {...(grouping.renderWorkedFor == null ? {} : {renderWorkedFor: grouping.renderWorkedFor})}
         persistedCollapsed={collapseStore == null ? undefined : controlledCollapsed}
         onSetCollapsed={collapseStore == null ? undefined :
           (next) => collapseStore.setCollapsed(props.activityStateKey, next)}
