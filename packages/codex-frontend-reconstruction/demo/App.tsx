@@ -14,7 +14,8 @@ import { resolveComposerSubmitDecision } from "../src/conversation/ComposerInter
 import { resolveComposerPrimaryAction } from "../src/conversation/ComposerPrimaryActionModel.js";
 import { SOURCE_CONVERSATION_ITEM_GAP_PX } from "../src/conversation/SourceConversationLayoutTokens.js";
 import { BrowserScrollController } from "./browserScrollController.js";
-import { searchSourceThreadLiteralRows, wrapSourceThreadFindOrdinal } from "../src/conversation/SourceThreadFindModel.js";
+import { searchSourceThreadLiteralRows, sourceThreadFindUnitIdentity,
+  wrapSourceThreadFindOrdinal } from "../src/conversation/SourceThreadFindModel.js";
 import { sourceThreadFindSelectedQuery } from "../src/conversation/SourceThreadFindSelectionModel.js";
 import { projectDemoThreadFindRows } from "./threadFindProjection.js";
 import { buildConversationRenderEntries } from "../src/conversation/ConversationRenderEntriesModel.js";
@@ -297,8 +298,13 @@ export function App() {
     const controller=new AbortController();
     let frame:number|null=null;
     const ordinalWithinTurn=findMatches.slice(0,currentFindOrdinal)
-      .filter(candidate=>candidate.turnKey===match.turnKey).length;
+      .filter(candidate=>candidate.turnKey===match.turnKey &&
+        candidate.unitKey===match.unitKey).length;
     const expectedRowMatches=findResult.totalByTurn.get(match.turnKey)??0;
+    const expectedUnitMatches=match.unitKey==null?undefined:
+      findResult.totalByUnit.get(sourceThreadFindUnitIdentity(
+        match.turnKey,match.unitKey,
+      ))??0;
     // Keep the existing source virtualizer's scroll-to-key. After the target
     // mounts, identify the precise visible Markdown occurrence. The compiled
     // search worker/highlighter is private; collapsed or unmatched source
@@ -314,6 +320,9 @@ export function App() {
           const target={
             viewport:scrollElementRef.current,turnKey:match.turnKey,query:findQuery,
             ordinalWithinTurn,expectedRowMatches,
+            ...(match.unitKey==null?{}:{
+              unitKey:match.unitKey,expectedUnitMatches,
+            }),
           };
           // Original _u's registered reveal callback expands the user
           // content for the exact matched raw offset before finding its DOM
@@ -321,6 +330,7 @@ export function App() {
           revealCollapsedDemoThreadFindMatch({
             viewport:target.viewport,turnKey:target.turnKey,query:target.query,
             sourceOffset:match.offset,sourceLength:match.length,
+            ...(match.unitKey==null?{}:{unitKey:match.unitKey}),
           });
           highlightRenderedDemoThreadFindMatch(target);
         });
