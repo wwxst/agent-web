@@ -230,7 +230,9 @@ export function createConnectedConversationMessageRenderers(host: ConnectedConve
   return {
     UserMessage(props) {
       const content = projectConversationContent(props.item, host, "message");
-      return <div data-conversation-message="user" className="flex flex-col gap-2">
+      return <div data-conversation-message="user"
+        data-content-search-unit-key={typeof props.item.id==="string"?props.item.id:undefined}
+        className="flex flex-col gap-2">
         {content.kind === "markdown"
           ? <CodexSourceCollapsibleUserMessage text={content.text}>
               {visibleText=><host.Markdown text={visibleText} role="user" />}
@@ -241,7 +243,9 @@ export function createConnectedConversationMessageRenderers(host: ConnectedConve
     },
     AssistantMessage(props) {
       const content = projectConversationContent(props.item, host, "message");
-      return <div data-conversation-message="assistant" className="flex flex-col gap-2">
+      return <div data-conversation-message="assistant"
+        data-content-search-unit-key={typeof props.item.id==="string"?props.item.id:undefined}
+        className="flex flex-col gap-2">
         {content.kind === "markdown" ? <host.Markdown text={content.text} role="assistant" />
           : <host.ActivityDetails item={props.item} isActive={false} presentation="ordinary" />}
         {host.AssistantMessageExtras ? <host.AssistantMessageExtras {...props} /> : null}
