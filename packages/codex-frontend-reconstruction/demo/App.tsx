@@ -29,6 +29,7 @@ import {
   demoActivityEntry, demoItem, demoMessageEntry, makeLongHistory,
   demoStreamingCodeEntry, updateDemoStreamingCodeEntry,
   demoAutomaticReviewEntry, updateDemoAutomaticReviewEntry,
+  demoMcpApprovalEntry,
   type DemoConversationId,
 } from "./mockConversation.js";
 
@@ -610,6 +611,18 @@ export function App() {
     },2200);
   }
 
+  function playMcpApprovalFixture() {
+    if(playing)return;
+    markFollow();
+    const id=nextId("mcp-approval");
+    // Test-only pending MCP request in *one canonical conversation source*;
+    // even a clicked Allow action can only get a rejected host Promise.
+    appendDemoEntries(source,[
+      demoMcpApprovalEntry(id),
+      demoMcpApprovalEntry(id+"-disabled",true),
+    ]);
+  }
+
   function stopSample() {
     if (timerRef.current != null) clearTimeout(timerRef.current);
     timerRef.current = null;
@@ -786,6 +799,8 @@ export function App() {
             data-testid="demo-source-streaming-code"><Icon name="play" size={15}/> 演示流式代码（模拟）</button>
           <button type="button" onClick={playAutomaticReviewFixture} disabled={playing}
             data-testid="demo-automatic-review-transition"><Icon name="check" size={15}/> 演示自动审阅状态（模拟）</button>
+          <button type="button" onClick={playMcpApprovalFixture}
+            data-testid="demo-mcp-approval-request"><Icon name="check" size={15}/> 演示 MCP 审批请求（模拟）</button>
           <button type="button" onClick={injectHistory} disabled={historyAdded}><Icon name="plus" size={15}/> 添加 45 条历史</button>
           <button type="button" onClick={() => void virtualizerApiRef.current?.scrollToKey(`history-content:turn:${source.getSnapshot().entries[0]?.turnId ?? ""}`, undefined, {align:"top"})}><Icon name="top" size={15}/> 跳到开头</button>
           <button type="button" onClick={scrollToBottom}><Icon name="bottom" size={15}/> 跳到最新</button>
