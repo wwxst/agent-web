@@ -11,6 +11,7 @@ const OPEN_MENU_CHANNEL="agent-web:open-menu";
 const UI_COMMAND_CHANNEL="agent-web:ui-command";
 const READ_DRAFTS_CHANNEL="agent-web:composer-drafts-read";
 const WRITE_DRAFT_CHANNEL="agent-web:composer-draft-write";
+const MCP_APPROVAL_REPLY_CHANNEL="agent-web:mcp-approval-reply";
 const draftThreadIds=new Set(["frontend","review"]);
 const allowedUiCommands=new Set([
   "toggle-sidebar","previous-thread","next-thread",
@@ -30,6 +31,30 @@ ipcRenderer.on(HOST_EVENT_CHANNEL,(_event,payload)=>{
 });
 contextBridge.exposeInMainWorld("agentWebDesktopHost",Object.freeze({
   getHostInfo:()=>ipcRenderer.invoke(HOST_INFO_CHANNEL),
+  /**
+   * Only this fixed request-scoped MCP reply crosses context isolation.
+   * This check is defense in depth; main must revalidate all fields and
+   * reject when no authenticated Agent backend is connected.
+   */
+  replyToMcpApproval(envelope){
+    if(envelope==null||typeof envelope!=="object"||
+      !["hostId","conversationId","requestId"].every(key=>
+        typeof envelope[key]==="string"&&envelope[key].length>0&&envelope[key].length<=256)||
+      envelope.response==null||typeof envelope.response!=="object"||
+      !["accept","decline"].includes(envelope.response.decision)||
+      (envelope.response.persist!==undefined&&
+        (envelope.response.decision!=="accept"||
+          !["session","always"].includes(envelope.response.persist))))
+      return Promise.reject(new TypeError("MCP_INVALID_REPLY"));
+    return ipcRenderer.invoke(MCP_APPROVAL_REPLY_CHANNEL,{
+      hostId:envelope.hostId,conversationId:envelope.conversationId,
+      requestId:envelope.requestId,
+      response:{
+        decision:envelope.response.decision,
+        ...(envelope.response.persist===undefined?{}:{persist:envelope.response.persist}),
+      },
+    });
+  },
   getComposerDrafts:()=>ipcRenderer.invoke(READ_DRAFTS_CHANNEL),
   setComposerDraft(threadId,text){
     if(!draftThreadIds.has(threadId)||typeof text!=="string"||text.length>65536){
