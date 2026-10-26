@@ -29,11 +29,27 @@ export function projectDemoThreadFindRows(
     // getDemoBlocks uses the SAME Y historical selection and turnItemIds
     // ordering as ConversationMessageBlocks in the live virtualized row.
     const blocks=getDemoBlocks(entry,historical);
-    const text=blocks.map(block=>{
-      const data=block as unknown as Record<string,unknown>;
-      if(Array.isArray(data.items))return data.items.map(itemText).join("\n");
-      return itemText(data.item);
-    }).filter(Boolean).join("\n");
-    return text.length===0?[]:[{turnKey:entry.turnKey??`history-content:turn:${id}`,text}];
+    const units=blocks.flatMap(block=>{
+      if (block.type==="user-message" || block.type==="assistant-message") {
+        const text=typeof block.item.content==="string" ? block.item.content : "";
+        const unitKey=typeof block.item.id==="string" ? block.item.id : block.key;
+        return text ? [{unitKey,text}] : [];
+      }
+      if (block.type==="activity-item") {
+        const text=itemText(block.item);
+        const unitKey=typeof block.item.id==="string" ? block.item.id : block.key;
+        return text ? [{unitKey,text}] : [];
+      }
+      if (block.type==="agent-activity") return block.items.flatMap((item,index)=>{
+        const text=itemText(item);
+        return text ? [{unitKey:typeof item.id==="string"?item.id:`${block.key}:${index}`,text}] : [];
+      });
+      return [];
+    });
+    const text=units.map(unit=>unit.text).join("\n");
+    return text.length===0?[]:[{
+      turnKey:entry.turnKey??`history-content:turn:${id}`,
+      text,units,
+    }];
   });
 }
