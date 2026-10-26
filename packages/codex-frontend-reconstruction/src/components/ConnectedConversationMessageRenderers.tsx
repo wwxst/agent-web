@@ -31,6 +31,7 @@ import {
   type ConversationFileReviewData,
 } from "../conversation/ConversationPresentationAdapterModel.js";
 import type { InlineFileReviewAction, InlineReviewFile } from "../conversation/InlineFileReviewModel.js";
+import type { SourceInlineReviewWrapPreference } from "../conversation/SourceInlineReviewWrapPreference.js";
 import type { AutomaticApprovalReviewSummary } from "../conversation/ActivityStatusPresentation.js";
 import { ActivityStatusLabel, AutomaticApprovalReviewList, type ActivityStatusTranslation } from "./ActivityStatusViews.js";
 import { InlineFileReview } from "./InlineFileReview.js";
@@ -128,6 +129,8 @@ export interface ConnectedConversationRendererHost extends ConversationContentAd
     overflow: "wrap" | "scroll";
     onViewportReady?: ((element: HTMLElement) => void) | undefined;
   }>;
+  /** Private app setting C must be supplied by the real session host. */
+  inlineReviewWrapPreference?:SourceInlineReviewWrapPreference;
   onFileReviewAction: (item: ConversationMessageItem, action: InlineFileReviewAction) => void;
   translator: ActivityStatusTranslation;
   getApprovalReviewSummary: (review: AutomaticApprovalReviewSummary) => React.ReactNode;
@@ -168,6 +171,7 @@ export function createConnectedConversationMessageRenderers(host: ConnectedConve
         const review: ConversationFileReviewData = restrictConversationReviewPermissions(projection.review);
         return <InlineFileReview oldFile={review.oldFile} newFile={review.newFile}
           compact={review.compact} canEdit={review.canEdit} canAccept={review.canAccept}
+          wrapPreference={host.inlineReviewWrapPreference}
           onAction={(action) => host.onFileReviewAction(target, action)} Diff={host.FileDiff} />;
       }
       if (projection.kind === "approval-reviews") {
