@@ -1,3 +1,4 @@
+import {sourceMarkdownVisibleFindOrdinal} from "../src/conversation/SourceMarkdownVisibleFindModel.js";
 import {
   SOURCE_USER_MESSAGE_FIND_REVEAL_EVENT,
   type SourceUserMessageFindRevealDetail,
@@ -75,6 +76,10 @@ export interface DemoThreadFindVisibleTarget {
   /** Original data-content-search-unit-key: match only the selected unit. */
   unitKey?: string;
   expectedUnitMatches?: number;
+  /** Full source unit text for mapping Markdown link labels vs hidden URLs. */
+  sourceText?:string;
+  sourceOffset?:number;
+  sourceLength?:number;
 }
 
 /** Source _u reveal registration is owned by the exact user-message
@@ -136,10 +141,21 @@ export function highlightRenderedDemoThreadFindMatch(target: DemoThreadFindVisib
   if (scoped.length!==1) return false;
   const ranges = Array.from(scoped[0]!.querySelectorAll(".demo-markdown"))
     .flatMap(markdown => findRenderedMarkdownRanges(markdown, target.query));
-  const expected=target.unitKey==null?target.expectedRowMatches:
-    target.expectedUnitMatches;
+  const sourceMapping=target.sourceText!=null&&
+    target.sourceOffset!=null&&target.sourceLength!=null
+    ? sourceMarkdownVisibleFindOrdinal({
+        text:target.sourceText,query:target.query,
+        offset:target.sourceOffset,length:target.sourceLength,
+      }) : undefined;
+  // A raw search hit in the invisible URL of [label](destination), or
+  // in an image alt attribute, has no matching visible text range. Never
+  // map it to an identically spelled label in this or another unit.
+  if(sourceMapping===null)return false;
+  const expected=sourceMapping?.visibleMatches??(
+    target.unitKey==null?target.expectedRowMatches:target.expectedUnitMatches
+  );
   if(expected==null || ranges.length!==expected) return false;
-  const range = ranges[target.ordinalWithinTurn];
+  const range = ranges[sourceMapping?.ordinal??target.ordinalWithinTurn];
   if (range == null) return false;
   api.registry.set(DEMO_ACTIVE_THREAD_FIND_HIGHLIGHT, new api.Constructor(range));
   const rect = range.getBoundingClientRect();
