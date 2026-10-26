@@ -110,6 +110,14 @@ test("real Electron review timeline renders last meaningful PowerShell action an
   // intentional user scroll; otherwise the source controller legitimately
   // follows its pending bottom hold and the screenshot captures another row.
   await page.waitForTimeout(950);
+  const viewport=page.getByTestId("transcript-scroll");
+  // The review fixture now contains a source-backed long user message.
+  // Start at the real first turn rather than assuming the virtualizer mounts
+  // a top-of-history command while the route is holding the last viewport.
+  await viewport.evaluate(element=>{
+    element.scrollTop=0;
+    element.dispatchEvent(new Event("scroll",{bubbles:true}));
+  });
   const activity=page.locator('[data-demo-turn-id="review-exec"]');
   await activity.waitFor({timeout:12000});
   await activity.locator("[data-recovered-agent-activity] button").first().click();
@@ -125,7 +133,6 @@ test("real Electron review timeline renders last meaningful PowerShell action an
   assert.match(await body.locator("pre").first().innerText(),/Get-ChildItem src -File/);
   assert.doesNotMatch(await body.locator("pre").first().innerText(),/powershell\.exe|cmd\.exe/i);
   // Use the EXISTING first review command, not a screenshot-only row.
-  const viewport=page.getByTestId("transcript-scroll");
   await viewport.evaluate(element=>{
     element.scrollTop=0;
     element.dispatchEvent(new Event("scroll",{bubbles:true}));
