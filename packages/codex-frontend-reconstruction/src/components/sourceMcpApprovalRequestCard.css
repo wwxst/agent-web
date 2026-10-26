@@ -8,7 +8,12 @@
 }
 .codex-source-mcp-approval__header {display:flex;align-items:center;gap:10px;min-width:0}
 .codex-source-mcp-approval__connector {min-width:0;overflow:hidden;text-overflow:ellipsis;font-weight:600}
-.codex-source-mcp-approval__risk {font-size:12px;font-weight:600;color:var(--color-text-warning,#ac6418)}
+.codex-source-mcp-approval__risk {
+  display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:600;
+  color:var(--color-text-warning,#ac6418);
+}
+.codex-source-mcp-approval__risk svg {flex-shrink:0}
+.codex-source-mcp-approval__tool-name {font-weight:600}
 .codex-source-mcp-approval__title {margin:0;font-size:14px;line-height:1.45;font-weight:600}
 .codex-source-mcp-approval__reason,.codex-source-mcp-approval__subtitle,
 .codex-source-mcp-approval__readonly {margin:0;color:var(--demo-dim,#858585)}
@@ -19,10 +24,22 @@
 .codex-source-mcp-approval__param-value pre {
   min-width:0;max-width:100%;white-space:pre-wrap;overflow-wrap:anywhere;
   margin:0;font-family:var(--font-mono,ui-monospace,monospace);font-size:12px;
-  max-height:15rem;overflow-y:auto;
+  overflow:visible;
 }
-.codex-source-mcp-approval__param-value pre[data-source-mcp-param-preview="preview"].codex-source-mcp-approval__json {
-  max-height:12em;overflow:hidden;
+/* Original De uses a four-line text preview and twelve-line JSON preview.
+ * Expanded content must not remain clipped by the earlier fixed 15rem cap. */
+.codex-source-mcp-approval__param-value pre[data-source-mcp-param-preview="preview"][data-source-mcp-param-expandable="true"] {
+  display:-webkit-box;-webkit-box-orient:vertical;overflow:hidden;
+  -webkit-line-clamp:4;line-clamp:4;
+}
+.codex-source-mcp-approval__param-value pre.codex-source-mcp-approval__json[data-source-mcp-param-preview="preview"][data-source-mcp-param-expandable="true"] {
+  -webkit-line-clamp:12;line-clamp:12;
+}
+.codex-source-mcp-approval__param-value pre[data-source-mcp-param-preview="expanded"] {
+  display:block;max-height:none;overflow:visible;
+}
+.codex-source-mcp-approval__param-value pre[data-source-mcp-param-preview="preview"][data-source-mcp-param-expandable="true"] {
+  position:relative;
 }
 .codex-source-mcp-approval button {font:inherit;cursor:pointer}
 .codex-source-mcp-approval__params button,
