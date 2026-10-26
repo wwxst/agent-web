@@ -889,3 +889,53 @@ test("real Electron streams one canonical assistant code unit and finalizes Leze
   await rm(profile,{recursive:true,force:true});
  }
 });
+
+
+test("real Electron repeated MCP activity collapses with inert children and keyboard focus returned",{
+ timeout:100000,
+},async()=>{
+ const profile=await mkdtemp(join(tmpdir(),"agent-web-tool-focus-"));
+ const app=await electron.launch({
+  executablePath,args:[".",...(process.platform==="linux"&&process.env.CI?["--no-sandbox"]:[])],
+  cwd:root,env:{...process.env,AGENT_WEB_DEV_URL:"",AGENT_WEB_USER_DATA_DIR:profile,
+   ELECTRON_DISABLE_SECURITY_WARNINGS:"true"},timeout:40000,
+ });
+ try{
+  const page=await app.firstWindow();
+  await page.locator('[aria-label="演示会话导航"]').waitFor({timeout:20000});
+  await page.getByRole("button",{name:/工具调用与审批交互/}).click();
+  const viewport=page.getByTestId("transcript-scroll");
+  await page.waitForTimeout(950);
+  const row=page.locator('[data-demo-turn-id="review-repeated-mcp"]');
+  for(let i=0;i<24&&await row.count()===0;i++){
+   await viewport.evaluate(el=>{el.scrollTop+=230;el.dispatchEvent(new Event("scroll",{bubbles:true}));});
+   await page.waitForTimeout(60);
+  }
+  await row.waitFor({timeout:12000});
+  const outer=row.locator('[data-codex-activity-group] [aria-expanded]').first();
+  await outer.click();
+  const repeated=row.locator('[data-codex-source-repeated-group]').first();
+  await repeated.waitFor({timeout:12000});
+  const toggle=repeated.locator('[data-codex-source-repeated-toggle]');
+  await toggle.click();
+  const motion=repeated.locator('[data-source-disclosure-motion]');
+  await motion.waitFor({timeout:12000});
+  await motion.evaluate(el=>{
+   const probe=document.createElement("button");
+   probe.type="button";probe.textContent="Focus probe";
+   probe.dataset.testFocusProbe="";el.append(probe);probe.focus();
+  });
+  assert.equal(await page.locator('[data-test-focus-probe]').evaluate(el=>document.activeElement===el),true);
+  await toggle.evaluate(el=>el.click());
+  assert.equal(await toggle.getAttribute("aria-expanded"),"false");
+  assert.equal(await motion.getAttribute("inert"),"");
+  assert.equal(await motion.getAttribute("aria-hidden"),"true");
+  assert.equal(await toggle.evaluate(el=>document.activeElement===el),true);
+  await row.scrollIntoViewIfNeeded();
+  await mkdir(resolve(root,"desktop/test-results"),{recursive:true});
+  await page.screenshot({path:resolve(root,"desktop/test-results/source-repeated-tool-focus.png"),
+   animations:"disabled",fullPage:false});
+ }finally{
+  await app.close();await rm(profile,{recursive:true,force:true});
+ }
+});
