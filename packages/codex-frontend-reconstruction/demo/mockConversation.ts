@@ -66,6 +66,32 @@ export function updateDemoStreamingCodeEntry(
   })});
 }
 
+/** Explicit host event fixture for original D's automatic review summary.
+ * This is never an approval *request* or permission grant and sends no RPC. */
+export type DemoAutomaticReviewStatus="inProgress"|"denied";
+export function demoAutomaticReviewEntry(
+  turnId:string,status:DemoAutomaticReviewStatus,
+):ConversationRenderEntry{
+  return demoActivityEntry(turnId,[demoItem(turnId+"-review",
+    "demo-approval-expandable",undefined,{
+      heading:"自动审阅状态（模拟）",
+      state:status==="inProgress"?"Working":"Needs input",
+      demoAutomaticReviewStatus:status,
+      demoAutomaticReviewRiskLevel:"high",
+    })]);
+}
+export function updateDemoAutomaticReviewEntry(
+  source:DemoSource,turnId:string,status:DemoAutomaticReviewStatus,
+):void{
+  const current=source.getSnapshot().entries;
+  const replacement=demoAutomaticReviewEntry(turnId,status);
+  source.update({entries:current.map(entry=>
+    entry.turnId===turnId
+      ? {...entry,turn:{...entry.turn,demoBlocks:replacement.turn?.demoBlocks}}
+      : entry,
+  )});
+}
+
 export function demoActivityEntry(id: string, items: ConversationMessageItem[], title?: string): ConversationRenderEntry {
   return demoEntry(id, { type: "agent-activity", key: `block:${id}`, items: items.map((item) => title == null ? item : { ...item, heading: title }) });
 }
