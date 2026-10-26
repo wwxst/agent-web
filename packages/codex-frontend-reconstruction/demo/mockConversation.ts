@@ -351,6 +351,16 @@ function reviewScenario(): ConversationRenderEntry[] {
     // Original Y history-summary path: its turn content is *removed* from
     // the projected virtual row. A host subscription restores these same items.
     {...demoRawTurnEntry("review-history-hydration",getDemoHistoryTurnItems()),historyEntityKey:"fixture-history-content"},
+    // Source kk/Rk/SG working-time branch: explicitly synthetic timestamps,
+    // not a hardcoded title subtitle or an Agent-derived wall-clock claim.
+    demoActivityEntry("review-work-status",[
+      demoItem("review-work-status-command","exec",undefined,{
+        command:"git diff --stat",state:"Ready",
+      }),
+      demoItem("review-work-status-duration","worked-for",undefined,{
+        status:"worked",startedAtMs:1_000,completedAtMs:132_000,
+      }),
+    ]),
     demoMessageEntry("assistant", "review-final", "**演示不会触发真实权限变更。** 与 Agent 后端接入时，需要在宿主层明确实现权限校验、授权请求和执行回调。"),
     // Real source turn.items fixture: commentary, command group, file patch,
     // and final answer share ONE virtualized row, unlike former mock turns.
