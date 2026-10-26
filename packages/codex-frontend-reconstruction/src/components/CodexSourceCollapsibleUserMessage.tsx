@@ -4,11 +4,21 @@ import {
   SOURCE_USER_MESSAGE_COLLAPSED_LINES,
   shouldCollapseSourceUserMessage,
   sourceUserMessageVisibleText,
+  isSourceUserMessageFindTarget,
 } from "../conversation/SourceCollapsibleUserMessageModel.js";
 
 const FOCUSABLE =
   'a[href],area[href],button,input,select,textarea,summary,audio[controls],video[controls],iframe,[contenteditable]:not([contenteditable="false"]),[tabindex]:not([tabindex="-1"])';
 
+/** Source _u registers a reveal callback for search matches in folded text.
+ * The independent Find host dispatches this event only to the exact
+ * canonical virtualized user message. */
+export const SOURCE_USER_MESSAGE_FIND_REVEAL_EVENT = "codex-source-user-message-find-reveal";
+export interface SourceUserMessageFindRevealDetail {
+  query:string;
+  sourceOffset:number;
+  sourceLength:number;
+}
 type HiddenFocusState={inert:boolean;ariaHidden:string|null};
 
 export interface CodexSourceCollapsibleUserMessageProps {
@@ -31,6 +41,7 @@ export function CodexSourceCollapsibleUserMessage({
   collapseIndicator="ellipsis",isAeonFormatted=false,
 }:CodexSourceCollapsibleUserMessageProps){
   const viewportRef=React.useRef<HTMLDivElement|null>(null);
+  const rootRef=React.useRef<HTMLDivElement|null>(null);
   const previousFocusable=React.useRef(new Map<Element,HiddenFocusState>());
   const [renderedHeight,setRenderedHeight]=React.useState(0);
   const [lineHeight,setLineHeight]=React.useState(0);
@@ -44,6 +55,30 @@ export function CodexSourceCollapsibleUserMessage({
   });
   const collapsed=collapsible&&!expanded&&!printing;
   const shownText=sourceUserMessageVisibleText(text,collapsed,collapsedLineCount);
+  // The private _u highlighter registers {text, isTruncated, reveal}.
+  // Here the same source message owns the reveal action, while the existing
+  // demo Find service still owns the search index and CSS highlight.
+  React.useLayoutEffect(()=>{
+    const root=rootRef.current;
+    if(root==null)return;
+    const reveal=(event:Event)=>{
+      if(!(event instanceof CustomEvent))return;
+      const detail=event.detail as SourceUserMessageFindRevealDetail|null;
+      if(detail==null || !isSourceUserMessageFindTarget({
+        text,query:detail.query,sourceOffset:detail.sourceOffset,
+        sourceLength:detail.sourceLength,
+      }))return;
+      if(collapsed){
+        // Ensure React's real Markdown (and all focusability state) updates
+        // before the host attempts to highlight the selected DOM range.
+        flushSync(()=>setExpanded(true));
+      }
+      // Explicit acknowledgement; don't mark an unrelated message as handled.
+      event.preventDefault();
+    };
+    root.addEventListener(SOURCE_USER_MESSAGE_FIND_REVEAL_EVENT,reveal);
+    return ()=>root.removeEventListener(SOURCE_USER_MESSAGE_FIND_REVEAL_EVENT,reveal);
+  },[text,collapsed]);
   const visibleLines=collapsedLineCount-
     Number(collapsed&&collapseIndicator==="ellipsis"&&collapsedLineCount>2);
   React.useLayoutEffect(()=>{
@@ -139,7 +174,7 @@ export function CodexSourceCollapsibleUserMessage({
     };
   },[collapsed,shownText]);
 
-  return <div className="codex-source-user-message-content"
+  return <div ref={rootRef} className="codex-source-user-message-content"
     data-source-user-message-collapsible={collapsible?"true":"false"}
     data-source-user-message-expanded={!collapsed?"true":"false"}>
     <div className="codex-source-user-message-content__viewport"
