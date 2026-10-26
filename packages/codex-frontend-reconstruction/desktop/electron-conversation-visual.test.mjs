@@ -1155,3 +1155,59 @@ test("native Electron renders original high-risk MCP header and truly expands lo
   });
  }finally{await app.close();await rm(profile,{recursive:true,force:true});}
 });
+
+
+test("native Electron source MCP responsive detail grid retains hidden value expansion",{
+ timeout:100000,
+},async()=>{
+ const profile=await mkdtemp(join(tmpdir(),"agent-web-mcp-detail-grid-"));
+ const app=await electron.launch({
+  executablePath,args:[".",...(process.platform==="linux"&&process.env.CI?["--no-sandbox"]:[])],
+  cwd:root,env:{...process.env,AGENT_WEB_DEV_URL:"",AGENT_WEB_USER_DATA_DIR:profile,
+   ELECTRON_DISABLE_SECURITY_WARNINGS:"true"},timeout:40000,
+ });
+ try{
+  const page=await app.firstWindow();
+  await page.locator('[aria-label="演示会话导航"]').waitFor({timeout:20000});
+  await page.getByRole("button",{name:"打开演示工具"}).click();
+  await page.getByTestId("demo-mcp-approval-request").click();
+  const row=page.locator('[data-demo-turn-id^="mcp-approval-"]').last();
+  const card=row.locator("[data-source-mcp-approval-card]");
+  await card.waitFor({timeout:15000});
+  const pathRow=card.locator('[data-source-mcp-param="path"]');
+  async function cols(width){
+   return pathRow.evaluate((el,w)=>{
+    el.style.width=w+"px";
+    const dt=el.querySelector("dt"),dd=el.querySelector("dd"),grid=el.querySelector(".codex-source-mcp-approval__param-row");
+    return {tag:el.tagName,
+      diff:dd.getBoundingClientRect().x-dt.getBoundingClientRect().x,
+      cols:getComputedStyle(grid).gridTemplateColumns.split(" ").length};
+   },width);
+  }
+  const narrow=await cols(320),wide=await cols(520);
+  assert.equal(narrow.tag,"DL");
+  assert.equal(narrow.cols,1);
+  assert.ok(Math.abs(narrow.diff)<2);
+  assert.equal(wide.cols,2);
+  assert.ok(wide.diff>100);
+  await pathRow.evaluate(el=>el.style.removeProperty("width"));
+  await card.getByRole("button",{name:"Show 2 more items"}).click();
+  const detail=card.locator('[data-source-mcp-param="description"]');
+  await detail.getByRole("button",{name:"Expand description"}).click();
+  assert.equal(await detail.locator("pre").getAttribute("data-source-mcp-param-preview"),"expanded");
+  await card.getByRole("button",{name:"Show fewer items"}).click();
+  assert.equal(await detail.count(),0);
+  await card.getByRole("button",{name:"Show 2 more items"}).click();
+  const restored=detail.getByRole("button",{name:"Collapse description"});
+  await restored.waitFor({timeout:12000});
+  assert.equal(await restored.getAttribute("aria-expanded"),"true");
+  assert.match(await detail.locator("pre").textContent(),/Line 18: long tool argument/);
+  assert.equal(await card.getAttribute("data-source-mcp-reply-phase"),"idle");
+  await row.scrollIntoViewIfNeeded();
+  await mkdir(resolve(root,"desktop/test-results"),{recursive:true});
+  await page.screenshot({
+   path:resolve(root,"desktop/test-results/source-mcp-responsive-details.png"),
+   fullPage:false,animations:"disabled",
+  });
+ }finally{await app.close();await rm(profile,{recursive:true,force:true});}
+});
