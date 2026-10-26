@@ -828,3 +828,64 @@ test("real Electron renders original Lezer token classes in mounted code while p
    await rm(profile,{recursive:true,force:true});
  }
 });
+
+
+test("real Electron streams one canonical assistant code unit and finalizes Lezer",{
+ timeout:100000,
+},async()=>{
+ const profile=await mkdtemp(join(tmpdir(),"agent-web-streaming-code-"));
+ const app=await electron.launch({
+  executablePath,
+  args:[".",...(process.platform==="linux"&&process.env.CI?["--no-sandbox"]:[])],
+  cwd:root,
+  env:{...process.env,AGENT_WEB_DEV_URL:"",AGENT_WEB_USER_DATA_DIR:profile,
+    ELECTRON_DISABLE_SECURITY_WARNINGS:"true"},
+  timeout:40000,
+ });
+ try{
+  const page=await app.firstWindow();
+  await page.locator('[aria-label="演示会话导航"]').waitFor({timeout:20000});
+  await page.getByRole("button",{name:"打开演示工具"}).click();
+  await page.getByTestId("demo-source-streaming-code").click();
+  const row=page.locator('[data-demo-turn-id^="streaming-code-"]').last();
+  const block=row.locator('[data-conversation-code-surface="true"]');
+  await block.waitFor({timeout:15000});
+  assert.equal(await block.getAttribute("data-source-code-streaming"),"true");
+  await page.waitForFunction(()=>
+    [...document.querySelectorAll('[data-demo-turn-id^="streaming-code-"] [data-code-block]')]
+      .some(node=>node.getAttribute("data-source-code-streaming")==="false"&&
+        node.getAttribute("data-source-code-highlight")==="ready"),null,{timeout:15000});
+  const data=await row.evaluate(node=>{
+    const blocks=node.querySelectorAll('[data-conversation-code-surface="true"]');
+    const code=blocks[0]?.querySelector('[data-code-block-source] code');
+    return {
+      count:blocks.length,
+      source:code?.textContent,
+      language:blocks[0]?.querySelector('.demo-markdown-code-language')?.textContent,
+      keywords:code?.querySelectorAll(".text-codex-syntax-keyword").length,
+      pending:blocks[0]?.getAttribute("data-source-code-highlight"),
+    };
+  });
+  assert.equal(data.count,1);
+  assert.equal(data.language,"ts");
+  assert.equal(data.pending,"ready");
+  assert.ok(data.keywords>0);
+  assert.equal(data.source,[
+    "const sourceStreaming = 1;",
+    "const continued = 'source_' + sourceStreaming;",
+    "console.log(continued);",
+    "",
+  ].join("\n"));
+  await block.getByRole("button",{name:"Enable word wrap"}).click();
+  assert.equal(await block.getAttribute("data-source-code-wrap-lines"),"true");
+  await row.scrollIntoViewIfNeeded();
+  await mkdir(resolve(root,"desktop/test-results"),{recursive:true});
+  await page.screenshot({
+    path:resolve(root,"desktop/test-results/conversation-source-streaming-code.png"),
+    animations:"disabled",fullPage:false,
+  });
+ }finally{
+  await app.close();
+  await rm(profile,{recursive:true,force:true});
+ }
+});
