@@ -6,6 +6,7 @@ import {
   getActivityStatusPresentation,
   getExplicitAuthorizationNotice,
   isHighRiskDeniedAutomaticReview,
+  isAutomaticApprovalReviewInProgress,
   type AutomaticApprovalReviewSummary,
   type ActivityStatusInput,
 } from "../conversation/ActivityStatusPresentation.js";
@@ -61,7 +62,7 @@ function AutomaticApprovalReviewRow(props: {
   const warning = isHighRiskDeniedAutomaticReview(review);
   // Original D: the summary runs through qk/S with active=true only while
   // an *expandable* automatic review has status "inProgress".
-  const active = review.status === "inProgress";
+  const active = isAutomaticApprovalReviewInProgress(review);
   const summary = getReviewSummary(review);
   if (!expandable) return <div className="min-w-0 truncate pt-1 text-codex-description/80">{summary}</div>;
   return <div className="flex flex-col pt-1"
