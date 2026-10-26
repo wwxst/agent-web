@@ -42,9 +42,11 @@ Uploaded read-only `frontend.zip`:
   exclusion props on the disclosure.
 - Styles the real message bubble through `demo/codexDesktopShell.css`;
   user message content remains part of the canonical virtualized turn list.
-- Adds one clearly labelled synthetic multi-paragraph user fixture with a
-  link beyond the fold to drive a **real Electron** visibility/interaction
-  acceptance, plus core tests for the original 20/512 thresholds.
+- The real Electron acceptance **types and submits** a 35-paragraph Markdown
+  message through the already-mounted ProseMirror composer. This exercises
+  the same append-to-live-conversation path as ordinary mock sends rather
+  than changing base review fixture rows or replacing the virtualized UI.
+  The submitted message has a link beyond the fold for focus checks.
 - Electron captures `conversation-long-user-collapsed.png` and
   `conversation-long-user-expanded.png`.
 
@@ -58,6 +60,7 @@ Uploaded read-only `frontend.zip`:
   localized button strings are not yet restored.
 - This does not promise identical pixel measurements on all fonts, widths,
   or themes; a same-version original Codex screenshot comparison is required.
-- Synthetic fixture contains no genuine Agent events or backend actions.
+- The submitted message uses the explicitly mock-only send pipeline; it does
+  not represent genuine Agent events or backend actions.
 - Core tests and screenshots require a **successful final branch CI**, not
   just the creation of test files.
