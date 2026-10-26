@@ -747,3 +747,84 @@ test("real Electron shares source code-block Wrap lines across two mounted Markd
   await rm(profile,{recursive:true,force:true});
  }
 });
+
+
+test("real Electron renders original Lezer token classes in mounted code while preserving code content",{
+ timeout:100000,
+},async()=>{
+ const profile=await mkdtemp(join(tmpdir(),"agent-web-lezer-highlight-"));
+ const app=await electron.launch({
+   executablePath,
+   args:[".",...(process.platform==="linux"&&process.env.CI?["--no-sandbox"]:[])],
+   cwd:root,
+   env:{...process.env,AGENT_WEB_DEV_URL:"",AGENT_WEB_USER_DATA_DIR:profile,
+     ELECTRON_DISABLE_SECURITY_WARNINGS:"true"},
+   timeout:40000,
+ });
+ try{
+   const page=await app.firstWindow();
+   await page.locator('[aria-label="演示会话导航"]').waitFor({timeout:20000});
+   const token='const codeSource = "CODEX_LEZER_LIVE";';
+   const plain='host = "unrecognized fallback"';
+   const fence=String.fromCharCode(96).repeat(3);
+   const msg=[
+     "The actual Markdown viewer should highlight syntax by source language.",
+     "",
+     fence+"ts",token,fence,
+     "",
+     fence+"python",'def live():','    return "Codex"',fence,
+     "",
+     fence+"toml",plain,fence,
+   ].join("\n");
+   const composer=page.getByTestId("composer");
+   await composer.waitFor({timeout:12000});
+   await composer.fill(msg);
+   await page.getByTestId("send-button").click();
+   const row=page.locator('[data-demo-turn-id^="user-"]').last();
+   const blocks=row.locator('[data-code-block][data-conversation-code-surface="true"]');
+   await blocks.first().waitFor({timeout:12000});
+   assert.equal(await blocks.count(),3);
+   await page.waitForFunction(()=>{
+     const nodes=[...document.querySelectorAll(
+       '[data-demo-turn-id^="user-"] [data-code-block][data-source-code-highlight]',
+     )];
+     return nodes.some(el=>el.getAttribute("data-source-code-highlight")==="ready")&&
+       nodes.some(el=>el.getAttribute("data-source-code-highlight")==="fallback");
+   },null,{timeout:20000});
+   const state=await blocks.evaluateAll(elements=>elements.map(element=>{
+     const code=element.querySelector('[data-code-block-source] code');
+     const keyword=code.querySelector(".text-codex-syntax-keyword");
+     return {
+       lang:element.querySelector(".demo-markdown-code-language")?.textContent,
+       highlight:element.getAttribute("data-source-code-highlight"),
+       text:code.textContent?.replace(/\n$/,""),
+       tokenCount:code.querySelectorAll('span[class*="text-codex-syntax"]').length,
+       hasKeyword:keyword!=null,
+       keywordColor:keyword?getComputedStyle(keyword).color:null,
+     };
+   }));
+   assert.equal(state[0].lang,"ts");
+   assert.equal(state[0].highlight,"ready");
+   assert.equal(state[0].text,token);
+   assert.ok(state[0].tokenCount>=2&&state[0].hasKeyword);
+   assert.equal(state[0].keywordColor,"rgb(171, 79, 122)");
+   assert.equal(state[1].highlight,"ready");
+   assert.ok(state[1].tokenCount>=2);
+   assert.equal(state[2].highlight,"fallback");
+   assert.equal(state[2].tokenCount,0);
+   assert.equal(state[2].text,plain);
+   await blocks.first().getByRole("button",{name:"Enable word wrap"}).click();
+   await page.waitForFunction(()=>
+     [...document.querySelectorAll('[data-demo-turn-id^="user-"] [data-code-block]')]
+       .filter(el=>el.getAttribute("data-source-code-wrap-lines")==="true").length>=3);
+   await blocks.first().scrollIntoViewIfNeeded();
+   await mkdir(resolve(root,"desktop/test-results"),{recursive:true});
+   await page.screenshot({
+     path:resolve(root,"desktop/test-results/conversation-lezer-source-code-highlighting.png"),
+     animations:"disabled",fullPage:false,
+   });
+ }finally{
+   await app.close();
+   await rm(profile,{recursive:true,force:true});
+ }
+});
