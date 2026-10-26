@@ -37,7 +37,8 @@ test("original user bubble + Markdown structural geometry in sent live turn",asy
     const quote=md.querySelector("blockquote")!,table=md.querySelector("table")!;
     const inline=Array.from(md.querySelectorAll("code"))
       .find(c=>c.textContent==="source-code")!;
-    const wrapper=el.parentElement!;
+    const wrapper=el.closest(".demo-row--user")
+      ?.querySelector(":scope > div:not(.demo-time-marker)")!;
     return {
       bubbleWidth:el.getBoundingClientRect().width,
       wrapperMaxWidth:read(wrapper,"max-width"),
