@@ -19,7 +19,8 @@ import { sourceThreadFindSelectedQuery } from "../src/conversation/SourceThreadF
 import { projectDemoThreadFindRows } from "./threadFindProjection.js";
 import { buildConversationRenderEntries } from "../src/conversation/ConversationRenderEntriesModel.js";
 import { sourceHistoricalTurnQuery } from "../src/conversation/SourceHistoricalTurnContentSource.js";
-import { clearDemoThreadFindHighlight, highlightRenderedDemoThreadFindMatch } from "./threadFindRenderedHighlight.js";
+import { clearDemoThreadFindHighlight, highlightRenderedDemoThreadFindMatch,
+  revealCollapsedDemoThreadFindMatch } from "./threadFindRenderedHighlight.js";
 import { makeDemoRow, demoProjectionDependencies } from "./adapters.js";
 import {
   DEMO_CONVERSATIONS, appendDemoEntries, createDemoSource,
@@ -310,10 +311,18 @@ export function App() {
         if(controller.signal.aborted)return;
         frame=window.requestAnimationFrame(()=>{
           if(controller.signal.aborted||scrollElementRef.current==null)return;
-          highlightRenderedDemoThreadFindMatch({
+          const target={
             viewport:scrollElementRef.current,turnKey:match.turnKey,query:findQuery,
             ordinalWithinTurn,expectedRowMatches,
+          };
+          // Original _u's registered reveal callback expands the user
+          // content for the exact matched raw offset before finding its DOM
+          // text range. Unrelated activity/assistant matches remain unchanged.
+          revealCollapsedDemoThreadFindMatch({
+            viewport:target.viewport,turnKey:target.turnKey,query:target.query,
+            sourceOffset:match.offset,sourceLength:match.length,
           });
+          highlightRenderedDemoThreadFindMatch(target);
         });
       }catch{/* A replaced/removed virtual row must not crash Find. */}
     })();
