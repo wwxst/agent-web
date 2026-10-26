@@ -505,6 +505,36 @@ export function makeDemoRow(notify: (message: string) => void) {
         isExpandable:true,
       };
     },
+    /** Host-only demo transport: every reply rejects. A click can never grant
+     * real permission or pretend a request has settled successfully. */
+    getMcpApprovalRequest:(item)=>{
+      if(item.type!=="demo-mcp-approval"||typeof item.id!=="string")return null;
+      const disabled=item.demoMcpApprovalDisabled===true;
+      return {
+        requestId:item.id,title:"Allow this MCP tool call? (simulation)",
+        connectorName:"Fixture files MCP connector",
+        subtitle:"Synthetic request · no Agent backend is connected",
+        reason:"Read a list of sample project files for display only.",
+        riskLevel:disabled?null:"high",
+        disabled,
+        persist:disabled?[]:["session","always"] as const,
+        toolParams:{
+          path:"/projects/agent-web",
+          query:"codex",
+          count:20,
+          filters:{kinds:["ts","tsx","css"],includeHidden:false},
+          description:"A long tool parameter value ".repeat(10),
+          recursive:true,
+        },
+        collapseToolParams:false,
+      };
+    },
+    onMcpApprovalReply:async(_requestId,_reply)=>{
+      // A rejection makes the failure/retry state inspectable in real
+      // Chromium/Windows/Linux without sending or approving anything.
+      await new Promise<void>(resolve=>setTimeout(resolve,380));
+      throw Error("DEMO ONLY: no MCP approval transport configured");
+    },
     inlineReviewWrapPreference:demoInlineReviewWrapPreference,
     onFileReviewAction: (_item: ConversationMessageItem, action: InlineFileReviewAction) =>
       notify(action === "reject" ? "仅演示：已点击 Reject；没有修改任何文件。" : "操作已禁用：此演示不具备文件修改权限。"),
