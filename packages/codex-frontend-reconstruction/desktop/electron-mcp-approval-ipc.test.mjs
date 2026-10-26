@@ -1,6 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {resolve} from "node:path";
+import {resolve,join} from "node:path";
+import {mkdtemp,rm} from "node:fs/promises";
+import {tmpdir} from "node:os";
 import {fileURLToPath} from "node:url";
 import {_electron as electron} from "playwright";
 
@@ -12,11 +14,12 @@ const executablePath=resolve(root,"node_modules","electron","dist",
 test("real context-isolated Electron preload routes MCP reply into trusted main IPC and fails closed",{
  timeout:90000,
 },async()=>{
+ const profile=await mkdtemp(join(tmpdir(),"agent-web-mcp-ipc-"));
  const app=await electron.launch({
   executablePath,
   args:[".",...(process.platform==="linux"&&process.env.CI?["--no-sandbox"]:[])],
   cwd:root,env:{...process.env,AGENT_WEB_DEV_URL:"",
-    ELECTRON_DISABLE_SECURITY_WARNINGS:"true"},
+    AGENT_WEB_USER_DATA_DIR:profile,ELECTRON_DISABLE_SECURITY_WARNINGS:"true"},
   timeout:40000,
  });
  try{
@@ -52,5 +55,5 @@ test("real context-isolated Electron preload routes MCP reply into trusted main 
     "a real preload-to-main invocation must explicitly reject without verified backend");
   assert.match(observation.decline,/MCP_BACKEND_UNAVAILABLE/,
     "even a denial still requires delivery to a real backend");
- }finally{await app.close();}
+ }finally{await app.close();await rm(profile,{recursive:true,force:true});}
 });
