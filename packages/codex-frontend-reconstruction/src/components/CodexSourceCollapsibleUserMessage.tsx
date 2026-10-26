@@ -36,10 +36,8 @@ export function CodexSourceCollapsibleUserMessage({
   const [lineHeight,setLineHeight]=React.useState(0);
   const [expanded,setExpanded]=React.useState(false);
   const [printing,setPrinting]=React.useState(false);
-  const wasExpanded=React.useRef(false);
   // Forced prefixed render is an original explicit >20*512 branch, not a
   // guessed approximate character/word count.
-  const forced=text.length>collapsedLineCount*512;
   const collapsible=shouldCollapseSourceUserMessage({
     textLength:text.length,renderedContentHeightPx:renderedHeight,
     lineHeightPx,collapsedLines:collapsedLineCount,
@@ -72,7 +70,6 @@ export function CodexSourceCollapsibleUserMessage({
 
   React.useEffect(()=>{
     const before=()=>{
-      wasExpanded.current=expanded;
       flushSync(()=>setPrinting(true));
     };
     const after=()=>flushSync(()=>setPrinting(false));
