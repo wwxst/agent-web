@@ -1047,3 +1047,54 @@ test("native Electron preserves source inProgress approval shimmer and high-risk
    await rm(profile,{recursive:true,force:true});
  }
 });
+
+
+test("native Electron MCP approval request waits for host, fails safely, and allows retry",{
+ timeout:100000,
+},async()=>{
+ const profile=await mkdtemp(join(tmpdir(),"agent-web-mcp-approval-"));
+ const app=await electron.launch({
+  executablePath,args:[".",...(process.platform==="linux"&&process.env.CI?["--no-sandbox"]:[])],
+  cwd:root,env:{...process.env,AGENT_WEB_DEV_URL:"",AGENT_WEB_USER_DATA_DIR:profile,
+    ELECTRON_DISABLE_SECURITY_WARNINGS:"true"},timeout:40000,
+ });
+ try{
+  const page=await app.firstWindow();
+  await page.locator('[aria-label="演示会话导航"]').waitFor({timeout:20000});
+  await page.getByRole("button",{name:"打开演示工具"}).click();
+  await page.getByTestId("demo-mcp-approval-request").click();
+  const row=page.locator('[data-demo-turn-id^="mcp-approval-"]').last();
+  const card=row.locator("[data-source-mcp-approval-card]");
+  await card.waitFor({timeout:15000});
+  assert.equal(await card.getAttribute("data-source-mcp-reply-phase"),"idle");
+  assert.equal(await card.locator("[data-source-mcp-param]").count(),4);
+  await card.getByRole("button",{name:"Show 2 more items"}).click();
+  assert.equal(await card.locator("[data-source-mcp-param]").count(),6);
+  const approve=card.getByRole("button",{name:"Allow for session"});
+  const deny=card.getByRole("button",{name:"Deny"});
+  await approve.click();
+  assert.equal(await card.getAttribute("data-source-mcp-reply-phase"),"submitting");
+  assert.equal(await approve.isDisabled(),true);
+  assert.equal(await deny.isDisabled(),true);
+  await page.waitForFunction(()=>
+    [...document.querySelectorAll("[data-source-mcp-approval-card]")]
+      .some(node=>node.getAttribute("data-source-mcp-reply-phase")==="error"),
+    null,{timeout:12000});
+  assert.equal(await approve.isDisabled(),false);
+  assert.match(await card.getByRole("alert").innerText(),/Unable to send response/);
+  await deny.click();
+  assert.equal(await card.getAttribute("data-source-mcp-reply-phase"),"submitting");
+  await page.waitForFunction(()=>
+    [...document.querySelectorAll("[data-source-mcp-approval-card]")]
+      .some(node=>node.getAttribute("data-source-mcp-reply-phase")==="error"),
+    null,{timeout:12000});
+  assert.equal(await row.count(),1);
+  assert.equal(await card.getByText(/Response sent to host/).count(),0);
+  await row.scrollIntoViewIfNeeded();
+  await mkdir(resolve(root,"desktop/test-results"),{recursive:true});
+  await page.screenshot({
+    path:resolve(root,"desktop/test-results/source-mcp-approval-failed-retry.png"),
+    animations:"disabled",fullPage:false,
+  });
+ }finally{await app.close();await rm(profile,{recursive:true,force:true});}
+});
