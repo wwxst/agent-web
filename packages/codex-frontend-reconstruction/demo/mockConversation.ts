@@ -33,11 +33,13 @@ export function demoItem(id: string, type: string, content?: string, extra: Reco
     ...(type === "exec" && extra.parsedCmd == null ? {parsedCmd} : {}), ...extra };
 }
 
-export function demoMessageEntry(role: "user" | "assistant", id: string, content: string): ConversationRenderEntry {
+export function demoMessageEntry(role: "user" | "assistant", id: string, content: string,
+  sourceFormat?: {isAeonFormatted:boolean}): ConversationRenderEntry {
   return demoEntry(id, {
     type: role === "user" ? "user-message" : "assistant-message",
     key: `block:${id}`,
-    item: demoItem(id, role === "user" ? "userMessage" : "agentMessage", content),
+    item: demoItem(id, role === "user" ? "userMessage" : "agentMessage",
+      content, sourceFormat??{}),
   });
 }
 
@@ -156,7 +158,10 @@ export function getDemoHistoryTurnItems(): TurnItem[] {
 
 function reviewScenario(): ConversationRenderEntry[] {
   return [
-    demoMessageEntry("user", "review-intro", "我想核对工具状态、文件差异和权限审批是否分开展示。"),
+    // Explicit source isAeonFormatted flag: test fixture for original
+    // compact Rt branch, not a claim that every review conversation is Aeon.
+    demoMessageEntry("user", "review-intro", "我想核对工具状态、文件差异和权限审批是否分开展示。",
+      {isAeonFormatted:true}),
     demoMessageEntry("assistant", "review-response", "把任务分成 **工具活动、修改审阅和审批** 三种不同条目，而不是把所有输出混在一段文本里。"),
     demoActivityEntry("review-exec", [demoItem("review-exec1", "exec", undefined, {
       heading: "读取项目结构（模拟）",
