@@ -490,13 +490,21 @@ export function makeDemoRow(notify: (message: string) => void) {
     getFileReview: (item) => item.type === "demo-file-review"
       ? { oldFile, newFile, compact: false, canAccept: false, canEdit: false }
       : null,
-    getApprovalReviews: (item) => item.type === "demo-approval" || item.type === "demo-approval-expandable"
-      ? {
-        reviews: [{ id: "review-permission", status: item.type === "demo-approval" ? "denied" : "pending", riskLevel: "high", summary: "申请修改工作区文件" }],
-        isDeclined: item.type === "demo-approval",
-        isExpandable: true,
-      }
-      : null,
+    getApprovalReviews: (item) => {
+      if(item.type!=="demo-approval" && item.type!=="demo-approval-expandable")return null;
+      // Test host may explicitly deliver a dynamic automatic-review status;
+      // real Agent authorization remains outside this demonstration bridge.
+      const status=item.demoAutomaticReviewStatus==="inProgress"
+        ||item.demoAutomaticReviewStatus==="denied"
+          ? item.demoAutomaticReviewStatus
+          :item.type==="demo-approval"?"denied":"pending";
+      return {
+        reviews:[{id:"review-permission",status,riskLevel:"high",
+          summary:"申请修改工作区文件"}],
+        isDeclined:status==="denied",
+        isExpandable:true,
+      };
+    },
     inlineReviewWrapPreference:demoInlineReviewWrapPreference,
     onFileReviewAction: (_item: ConversationMessageItem, action: InlineFileReviewAction) =>
       notify(action === "reject" ? "仅演示：已点击 Reject；没有修改任何文件。" : "操作已禁用：此演示不具备文件修改权限。"),
