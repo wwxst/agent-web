@@ -260,20 +260,23 @@ test("real Electron folds long user Markdown and restores clipped links, print, 
   const page=await app.firstWindow();
   await page.locator('[aria-label="演示会话导航"]').waitFor({timeout:20000});
   await page.getByRole("button",{name:/工具调用与审批交互/}).click();
-  await page.waitForTimeout(500);
-  const scroll=page.getByTestId("transcript-scroll");
-  const row=page.locator('[data-demo-turn-id="review-long-user-message"]');
-  let mounted=false;
-  for(let position=16;position>=0;position--){
-   await scroll.evaluate((el,index)=>{
-    const max=Math.max(0,el.scrollHeight-el.clientHeight);
-    el.scrollTop=Math.round(max*index/16);
-    el.dispatchEvent(new Event("scroll",{bubbles:true}));
-   },position);
-   await page.waitForTimeout(100);
-   if(await row.count()){mounted=true;break;}
-  }
-  assert.equal(mounted,true,"user-message fixture must mount in the real virtualized turn list");
+  // Exercise the actual ProseMirror composer submit path, not a separately
+  // inserted fixture that would shift unrelated virtualized review rows.
+  const message=[
+   "核对长用户消息在会话时间线中的收起与展开行为（模拟）。",
+   ...Array.from({length:34},(_,index)=>
+     `第 ${index+1} 段：请保持原版 Codex 的消息间距、Markdown 布局与键盘交互。`),
+   "最后附上 [Codex 原版交互参考链接](https://example.com/codex-reference) 用于测试折叠内容的焦点安全性。",
+  ].join("\n\n");
+  const composer=page.getByTestId("composer");
+  await composer.waitFor({timeout:12000});
+  await composer.fill(message);
+  const send=page.getByTestId("send-button");
+  await send.waitFor({timeout:12000});
+  assert.equal(await send.getAttribute("data-composer-action"),"send");
+  await send.click();
+  const row=page.locator('[data-demo-turn-id^="user-"]').last();
+  await row.waitFor({timeout:12000});
   const content=row.locator('[data-source-user-message-collapsible="true"]');
   await content.waitFor({timeout:12000});
   const clipped=content.locator('[data-source-user-message-viewport]');
