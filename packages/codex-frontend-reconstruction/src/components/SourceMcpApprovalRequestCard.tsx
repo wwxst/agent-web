@@ -18,20 +18,27 @@ export interface SourceMcpApprovalRequestCardProps {
   /** Only the host can send MCP elicitation replies. Undefined = readonly. */
   onReply?:SourceMcpApprovalReplyTransport|undefined;
 }
-function Param({entry}:{entry:SourceMcpApprovalParameter}){
-  const [expanded,setExpanded]=React.useState(false);
+function Param({entry,expanded,onToggle}:{
+  entry:SourceMcpApprovalParameter;
+  expanded:boolean;
+  onToggle:()=>void;
+}){
   const content=sourceMcpApprovalParamText(entry.value);
-  return <div className="codex-source-mcp-approval__param" data-source-mcp-param={entry.name}>
-    <span className="codex-source-mcp-approval__param-name">{entry.displayName??entry.name}</span>
-    <div className="codex-source-mcp-approval__param-value">
-      <pre className={"codex-source-mcp-approval__"+content.kind}
-        data-source-mcp-param-preview={expanded?"expanded":"preview"}
-        data-source-mcp-param-expandable={content.expandable?"true":"false"}>{expanded?content.full:content.preview}</pre>
-      {content.expandable?<button type="button" aria-expanded={expanded}
-        aria-label={(expanded?"Collapse ":"Expand ")+(entry.displayName??entry.name)}
-        onClick={()=>setExpanded(value=>!value)}>{expanded?"Collapse":"Expand"}</button>:null}
+  // Original Ibd/Mbd uses a container-query definition list with
+  // a 120px label column at widths >=24rem; smaller rows stack.
+  return <dl className="codex-source-mcp-approval__param" data-source-mcp-param={entry.name}>
+    <div className="codex-source-mcp-approval__param-row">
+      <dt className="codex-source-mcp-approval__param-name">{entry.displayName??entry.name}</dt>
+      <dd className="codex-source-mcp-approval__param-value">
+        <pre className={"codex-source-mcp-approval__"+content.kind}
+          data-source-mcp-param-preview={expanded?"expanded":"preview"}
+          data-source-mcp-param-expandable={content.expandable?"true":"false"}>{expanded?content.full:content.preview}</pre>
+        {content.expandable?<button type="button" aria-expanded={expanded}
+          aria-label={(expanded?"Collapse ":"Expand ")+(entry.displayName??entry.name)}
+          onClick={onToggle}>{expanded?"Collapse":"Expand"}</button>:null}
+      </dd>
     </div>
-  </div>;
+  </dl>;
 }
 /**
  * Real conversation-mounted source ye card. The private Nz design-system card,
@@ -45,6 +52,8 @@ export function SourceMcpApprovalRequestCard({
   const [error,setError]=React.useState<string|null>(null);
   const [expanded,setExpanded]=React.useState(false);
   const [showAll,setShowAll]=React.useState(false);
+  // Original we keeps "name:index" expansion state above lazy/paged rows.
+  const [expandedParams,setExpandedParams]=React.useState<Record<string,boolean>>({});
   const submitting=React.useRef(false);
   const generation=React.useRef(0);
   React.useEffect(()=>{
@@ -54,6 +63,7 @@ export function SourceMcpApprovalRequestCard({
     setError(null);
     setExpanded(false);
     setShowAll(false);
+    setExpandedParams({});
     return ()=>{generation.current++;};
   },[request.requestId]);
   const entries=sourceMcpApprovalParameterEntries(request.toolParams,request.toolParamsDisplay);
@@ -121,7 +131,11 @@ export function SourceMcpApprovalRequestCard({
         onClick={()=>setExpanded(value=>!value)}>{expanded?"Hide details":"Show details"}</button>:null}
       {(!request.collapseToolParams||expanded)?<>
         {visible.map((entry,index)=>
-          <Param key={entry.name+":"+index} entry={entry}/>)}
+          <Param key={entry.name+":"+index} entry={entry}
+            expanded={expandedParams[entry.name+":"+index]===true}
+            onToggle={()=>setExpandedParams(current=>({
+              ...current,[entry.name+":"+index]:current[entry.name+":"+index]!==true,
+            }))}/>)}
         {remaining>0?<button type="button" onClick={()=>setShowAll(true)}>
           Show {remaining} more items
         </button>:null}
