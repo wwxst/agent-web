@@ -357,7 +357,24 @@ test("native Find in Thread reveals the exact hidden long-user match in mounted 
   assert.equal(await folded.getAttribute("data-source-user-message-expanded"),"false");
   // The unique source match is present in indexed host text but hidden in
   // rendered DOM. The original _u callback must reveal it before CSS marks.
-  assert.equal(await row.getByText(needle,{exact:false}).count(),0);
+  // The text can exist in DOM yet be geometrically outside a CSS-clipped
+  // message. Do not confuse DOM absence with rendered visibility.
+  const outsideFold=await folded.locator('[data-source-user-message-viewport]')
+    .evaluate((viewport,value)=>{
+      const walker=document.createTreeWalker(viewport,NodeFilter.SHOW_TEXT);
+      for(let node=walker.nextNode();node;node=walker.nextNode()){
+        if(!(node instanceof Text))continue;
+        const index=node.data.indexOf(value);
+        if(index<0)continue;
+        const range=document.createRange();
+        range.setStart(node,index);
+        range.setEnd(node,index+value.length);
+        return range.getBoundingClientRect().top>=
+          viewport.getBoundingClientRect().bottom;
+      }
+      return true; // >512*20 prefix: absent from the collapsed DOM
+    },needle);
+  assert.equal(outsideFold,true,"source match must be below the 20-line fold");
   await app.evaluate(({Menu})=>
     Menu.getApplicationMenu().getMenuItemById("findInThread").click());
   const input=page.getByRole("searchbox",{name:"Find in chat"});
