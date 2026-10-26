@@ -736,3 +736,32 @@ button:focus-visible, textarea:focus-visible { outline: 2px solid #578cda; outli
 .demo-markdown .demo-markdown-code-scrollport .underline {
   text-decoration-line:underline;
 }
+
+
+/* Original automatic-approval-review-details D -> app-initial qk:
+ * a running automatic review uses dynamic shimmer for summary text.
+ * This host stylesheet approximates the private qk visual primitive
+ * without claiming identical private animation timing/theme. */
+@keyframes source-automatic-approval-review-shimmer {
+  from { background-position-x: 180%; }
+  to { background-position-x: -180%; }
+}
+.codex-source-automatic-review-summary[data-source-automatic-approval-shimmer="true"] {
+  background-image:linear-gradient(105deg,currentColor 30%,var(--demo-dim,#858585) 50%,currentColor 70%);
+  background-size:220% 100%;
+  background-position:180% 0;
+  background-repeat:no-repeat;
+  background-clip:text;
+  -webkit-background-clip:text;
+  color:transparent;
+  -webkit-text-fill-color:transparent;
+  animation:source-automatic-approval-review-shimmer 1.6s linear infinite;
+}
+@media (prefers-reduced-motion:reduce) {
+  .codex-source-automatic-review-summary[data-source-automatic-approval-shimmer="true"] {
+    animation:none;
+    background-image:none;
+    color:var(--demo-dim,#858585);
+    -webkit-text-fill-color:currentColor;
+  }
+}
