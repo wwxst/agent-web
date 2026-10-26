@@ -456,3 +456,56 @@ button:focus-visible, textarea:focus-visible { outline: 2px solid #578cda; outli
   background:transparent;border:0;border-radius:0;
   padding:0;color:inherit;font:inherit;white-space:inherit;
 }
+
+
+/* Original collapsible-user-message C / user-message yt:
+ * the message's actual Markdown is clipped to the source's measured 20-line
+ * limit. Disclosure is below the text, not a duplicate message bubble. */
+.codex-source-user-message-content {
+  display:flex;
+  flex-direction:column;
+  align-items:flex-end;
+  gap:4px;
+  min-width:0;
+  width:100%;
+}
+.codex-source-user-message-content__viewport {
+  position:relative;
+  width:100%;
+  min-width:0;
+  font-size:var(--codex-chat-font-size,13px);
+  line-height:1.75;
+}
+.codex-source-user-message-content__text {
+  width:100%;
+  min-width:0;
+}
+.codex-source-user-message-content__ellipsis {
+  align-self:flex-start;
+  color:var(--demo-dim,#858585);
+}
+.codex-source-user-message-content__toggle {
+  align-self:flex-start;
+  display:inline-flex;
+  align-items:center;
+  gap:3px;
+  padding:0;
+  margin-top:4px;
+  border:0;
+  background:transparent;
+  color:var(--demo-dim,#858585);
+  font-size:var(--codex-chat-font-size,13px);
+  cursor:pointer;
+}
+.codex-source-user-message-content__toggle:hover { color:var(--demo-text,#242424); }
+.codex-source-user-message-content__toggle svg {transition:transform 130ms ease;}
+.codex-source-user-message-content__up {transform:rotate(180deg);}
+@media print {
+  .codex-source-user-message-content__viewport {
+    max-height:none !important;
+    overflow:visible !important;
+    mask-image:none !important;
+  }
+  .codex-source-user-message-content__toggle,
+  .codex-source-user-message-content__ellipsis {display:none !important;}
+}
