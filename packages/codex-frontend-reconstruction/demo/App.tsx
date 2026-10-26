@@ -618,8 +618,8 @@ export function App() {
     // Test-only pending MCP request in *one canonical conversation source*;
     // even a clicked Allow action can only get a rejected host Promise.
     appendDemoEntries(source,[
-      demoMcpApprovalEntry(id),
       demoMcpApprovalEntry(id+"-disabled",true),
+      demoMcpApprovalEntry(id),
     ]);
   }
 
