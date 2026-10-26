@@ -2,7 +2,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   SOURCE_CONVERSATION_FIND_NAVIGATION_LIMIT, findSourceThreadLiteralMatches,
-  searchSourceThreadLiteralRows, wrapSourceThreadFindOrdinal,
+  searchSourceThreadLiteralRows, sourceThreadFindUnitIdentity,
+  wrapSourceThreadFindOrdinal,
 } from "../build/SourceThreadFindModel.js";
 
 test("independent literal conversation search keeps turn anchors and order", () => {
@@ -56,4 +57,46 @@ test("literal fallback never interprets slash delimiters as a regex",()=>{
   const result=searchSourceThreadLiteralRows(rows,"/a.+b/");
   assert.equal(result.totalMatches,1);
   assert.deepEqual(result.matches,[{turnKey:"turn:1",offset:0,length:6}]);
+});
+
+test("source turn.units keep per-message offsets and avoid activity/Markdown ordinal drift",()=>{
+  const turnKey="history-content:turn:complex";
+  const rows=[{
+    turnKey,text:"demo concatenation only",
+    units:[
+      {unitKey:"exec-output",text:"open file TESTKEY"},
+      {unitKey:"user-1",text:"**TESTKEY** markdown"},
+      {unitKey:"assistant-1",text:"TESTKEY ready"},
+    ],
+  }];
+  const result=searchSourceThreadLiteralRows(rows,"testkey");
+  assert.deepEqual(result.matches,[
+    {turnKey,unitKey:"exec-output",offset:10,length:7},
+    {turnKey,unitKey:"user-1",offset:2,length:7},
+    {turnKey,unitKey:"assistant-1",offset:0,length:7},
+  ]);
+  assert.equal(result.totalMatches,3);
+  assert.equal(result.totalByTurn.get(turnKey),3);
+  for(const name of ["exec-output","user-1","assistant-1"]){
+    assert.equal(result.totalByUnit.get(sourceThreadFindUnitIdentity(turnKey,name)),1);
+  }
+  assert.equal(result.totalByUnit.size,3);
+  assert.equal(searchSourceThreadLiteralRows(rows,"concatenation").totalMatches,0,
+    "unrendered concatenation must not become an invented search unit");
+});
+test("source 250-match cap applies across actual units, not separately to each unit",()=>{
+  const turnKey="turn:long";
+  const result=searchSourceThreadLiteralRows([{
+    turnKey,text:"",
+    units:[
+      {unitKey:"a",text:"hit ".repeat(200)},
+      {unitKey:"b",text:"hit ".repeat(100)},
+    ],
+  }],"hit");
+  assert.equal(result.totalMatches,300);
+  assert.equal(result.matches.length,250);
+  assert.equal(result.matches[199]?.unitKey,"a");
+  assert.equal(result.matches[200]?.unitKey,"b");
+  assert.equal(result.matches[200]?.offset,0);
+  assert.equal(result.totalByUnit.get(sourceThreadFindUnitIdentity(turnKey,"b")),100);
 });
