@@ -625,3 +625,30 @@ button:focus-visible, textarea:focus-visible { outline: 2px solid #578cda; outli
   background:var(--alpha-04,#f5f5f5);
   box-shadow:inset 0 0 0 1px var(--alpha-08,#e8e8e8);
 }
+
+
+/* Source user-message Rt / _compactMessageBubble_168sz_15:
+ * isAeonFormatted explicitly enables a distinct 456px intrinsic-width
+ * bubble, 16px rounded/superellipse corners, 12px horizontal + 8px vertical
+ * padding and tighter Markdown tone. Keep standard Rt 70%-width untouched
+ * when the host does not supply the original formatting capability. */
+.demo-row--user:has([data-source-user-message-format="compact"])
+  > div:not(.demo-time-marker) {
+  max-width:min(456px,100%);
+}
+[data-conversation-message="user"][data-source-user-message-format="compact"] {
+  --compact-user-message-bubble-background:var(--color-background-user-message-compact,#f2f2f2);
+  --compact-user-message-bubble-foreground:var(--color-text,#292929);
+  background:var(--compact-user-message-bubble-background);
+  color:var(--compact-user-message-bubble-foreground);
+  width:fit-content;
+  max-width:min(456px,100%);
+  padding:8px 12px;
+  border-radius:calc(var(--spacing,4px) * 4);
+  corner-shape:superellipse(1);
+}
+[data-source-user-message-format="compact"]
+  .codex-source-user-message-content__text .demo-markdown {
+  line-height:calc(var(--codex-chat-font-size,13px) + 4px);
+  letter-spacing:-.01em;
+}
