@@ -667,3 +667,83 @@ test("real Electron mounts source Rt compact only for explicit isAeonFormatted u
    await rm(profile,{recursive:true,force:true});
  }
 });
+
+
+test("real Electron shares source code-block Wrap lines across two mounted Markdown blocks",{
+ timeout:90000,
+},async()=>{
+ const profile=await mkdtemp(join(tmpdir(),"agent-web-code-wrap-"));
+ const app=await electron.launch({
+  executablePath,
+  args:[".",...(process.platform==="linux"&&process.env.CI?["--no-sandbox"]:[])],
+  cwd:root,
+  env:{...process.env,AGENT_WEB_DEV_URL:"",AGENT_WEB_USER_DATA_DIR:profile,
+    ELECTRON_DISABLE_SECURITY_WARNINGS:"true"},
+  timeout:40000,
+ });
+ try{
+  const page=await app.firstWindow();
+  await page.locator('[aria-label="演示会话导航"]').waitFor({timeout:20000});
+  const token="SOURCE_WRAP_MOUNTED_"+("longcode".repeat(65));
+  const markdown=[
+   "Code blocks retain source content with a session-scoped wrap setting.",
+   "",
+   "```tsx",
+   `const component = "${token}";`,
+   "```",
+   "",
+   "```bash",
+   `echo "${token}"`,
+   "```",
+  ].join("\n");
+  const composer=page.getByTestId("composer");
+  await composer.waitFor({timeout:12000});
+  await composer.fill(markdown);
+  await page.getByTestId("send-button").click();
+  const row=page.locator('[data-demo-turn-id^="user-"]').last();
+  const blocks=row.locator("[data-code-block][data-conversation-code-surface='true']");
+  await blocks.first().waitFor({timeout:12000});
+  assert.equal(await blocks.count(),2);
+  const sourceState=()=>blocks.evaluateAll(nodes=>nodes.map(node=>{
+    const bar=node.querySelector("[data-code-block-action-bar]");
+    const scroll=node.querySelector("[data-code-block-source]");
+    const pre=scroll.querySelector("pre");
+    const st=getComputedStyle(pre);
+    return {
+      wrap:node.getAttribute("data-source-code-wrap-lines"),
+      headerHeight:bar.getBoundingClientRect().height,
+      overflowX:getComputedStyle(scroll).overflowX,
+      whitespace:st.whiteSpace,
+      scrollWidth:scroll.scrollWidth,clientWidth:scroll.clientWidth,
+      text:pre.textContent,
+    };
+  }));
+  const before=await sourceState();
+  assert.ok(before.every(v=>v.wrap==="false"&&v.headerHeight>=48&&
+    v.whitespace==="pre"&&v.overflowX==="auto"&&
+    v.scrollWidth>v.clientWidth+20&&v.text.includes(token)));
+  await blocks.first().getByRole("button",{name:"Enable word wrap"}).click();
+  await page.waitForFunction(()=>
+    [...document.querySelectorAll('[data-demo-turn-id^="user-"] [data-code-block]')]
+      .filter(node=>node.getAttribute("data-source-code-wrap-lines")==="true").length>=2);
+  const wrapped=await sourceState();
+  assert.ok(wrapped.every((v,i)=>v.wrap==="true"&&
+    v.whitespace==="pre-wrap"&&v.overflowX==="hidden"&&
+    v.scrollWidth<=v.clientWidth+2&&v.text===before[i].text));
+  await blocks.first().scrollIntoViewIfNeeded();
+  await mkdir(resolve(root,"desktop/test-results"),{recursive:true});
+  await page.screenshot({
+    path:resolve(root,"desktop/test-results/conversation-source-code-word-wrap.png"),
+    animations:"disabled",fullPage:false,
+  });
+  await blocks.nth(1).getByRole("button",{name:"Disable word wrap"}).click();
+  await page.waitForFunction(()=>
+    [...document.querySelectorAll('[data-demo-turn-id^="user-"] [data-code-block]')]
+      .filter(node=>node.getAttribute("data-source-code-wrap-lines")==="false").length>=2);
+  const final=await sourceState();
+  assert.ok(final.every(v=>v.scrollWidth>v.clientWidth+20));
+ }finally{
+  await app.close();
+  await rm(profile,{recursive:true,force:true});
+ }
+});
