@@ -4,9 +4,9 @@ import remarkGfm from "remark-gfm";
 import {createSourceCodeBlockWordWrapPreference,
   sourceCodeBlockWrapState} from "../src/conversation/SourceCodeBlockWordWrapPreference.js";
 import {
-  highlightSourceCodeWithLezer,
-  type SourceCodeHighlightOutput,
-} from "../src/conversation/SourceLezerCodeHighlight.js";
+  createSourceStreamingCodeHighlightController,
+  projectSourceStreamingCodeHighlight,
+} from "../src/conversation/SourceStreamingCodeHighlight.js";
 import {
   createConnectedConversationMessageRenderers,
   type ConnectedConversationRendererHost,
@@ -82,7 +82,9 @@ function markdownCodeText(node:React.ReactNode):string {
     return markdownCodeText(node.props.children);
   return "";
 }
-function MarkdownSourceCodeBlock({children,...preProps}:React.ComponentProps<"pre">){
+function MarkdownSourceCodeBlock({
+  children,isStreaming=false,...preProps
+}:React.ComponentProps<"pre"> & {isStreaming?:boolean}){
   const element=React.Children.toArray(children).find(
     (node):node is React.ReactElement<{className?:string;children?:React.ReactNode}>=>
       React.isValidElement(node)&&node.type==="code",
@@ -91,25 +93,21 @@ function MarkdownSourceCodeBlock({children,...preProps}:React.ComponentProps<"pr
   const language=/\blanguage-([\w.+-]+)/.exec(code?.className??"")?.[1]??null;
   const raw=markdownCodeText(code?.children??children);
   const copyContent=raw.replace(/\n$/,"");
-  const [syntax,setSyntax]=React.useState<{
-    raw:string;language:string|null;output:SourceCodeHighlightOutput;
-  }|null>(null);
+  // One original Bt-style controller per mounted code block. ReactMarkdown
+  // preserves the pre component type during streamed message re-renders.
+  const [controller]=React.useState(createSourceStreamingCodeHighlightController);
+  const snapshot=React.useSyncExternalStore(
+    controller.subscribe,controller.getSnapshot,controller.getSnapshot,
+  );
   React.useEffect(()=>{
-    let subscribed=true;
-    void highlightSourceCodeWithLezer(raw,language).then(output=>{
-      if(subscribed)setSyntax({raw,language,output});
-    });
-    return ()=>{subscribed=false;};
-  },[raw,language]);
-  const parsed=syntax?.raw===raw&&syntax.language===language?syntax.output:null;
-  // The original Lezer spans replace only the existing code children, not
-  // the Markdown parser, enclosing pre, copy action or virtual row DOM.
-  const styledCode=parsed?.highlighted&&element!=null
+    controller.setInput(raw,language,isStreaming);
+  },[controller,raw,language,isStreaming]);
+  React.useEffect(()=>()=>controller.dispose(),[controller]);
+  const visible=projectSourceStreamingCodeHighlight(raw,snapshot);
+  const styledCode=element!=null&&visible.segments.some(p=>p.className!=null)
     ? React.cloneElement(element,{
-        children:parsed.segments.map((segment,index)=>
-          <span key={index} className={segment.className??undefined}>
-            {segment.text}
-          </span>),
+        children:visible.segments.map((part,index)=>
+          <span key={index} className={part.className??undefined}>{part.text}</span>),
       })
     : children;
   const [copyState,setCopyState]=React.useState<"idle"|"copied"|"error">("idle");
@@ -137,7 +135,8 @@ function MarkdownSourceCodeBlock({children,...preProps}:React.ComponentProps<"pr
     data-conversation-code-surface="true"
     data-markdown-copy="code-block"
     data-source-code-wrap-lines={wrap.wrapLines?"true":"false"}
-    data-source-code-highlight={parsed==null?"pending":parsed.highlighted?"ready":"fallback"}>
+    data-source-code-highlight={visible.pending?"pending":snapshot.highlighted?"ready":"fallback"}
+    data-source-code-streaming={isStreaming?"true":"false"}>
     <div className="demo-markdown-code-action-bar"
       data-code-block-action-bar="true" data-markdown-copy="exclude">
       <span className="demo-markdown-code-language">{language??"Code"}</span>
@@ -174,10 +173,18 @@ function MarkdownSourceCodeBlock({children,...preProps}:React.ComponentProps<"pr
     </div>
   </div>;
 }
-function Markdown({ text, role }: { text: string; role: "user" | "assistant" | "activity" }) {
+function Markdown({ text, role, isStreaming=false }: {
+  text:string;role:"user"|"assistant"|"activity";isStreaming?:boolean
+}) {
+  // Keep the custom pre renderer stable across successive streamed Markdown
+  // revisions; changing its function identity would remount and reset Bt.
+  const components=React.useMemo(()=>({
+    pre:(props:React.ComponentProps<"pre">)=>
+      <MarkdownSourceCodeBlock {...props} isStreaming={isStreaming}/>,
+  }),[isStreaming]);
   return <div className={`demo-markdown demo-markdown--${role}`}>
     <ReactMarkdown remarkPlugins={[remarkGfm]}
-      components={{pre:MarkdownSourceCodeBlock}}>{text}</ReactMarkdown>
+      components={components}>{text}</ReactMarkdown>
   </div>;
 }
 
