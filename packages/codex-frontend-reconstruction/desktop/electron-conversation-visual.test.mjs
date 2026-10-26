@@ -235,3 +235,80 @@ test("real Electron mounts source Worked for status in its tool disclosure, neve
   await rm(profile,{recursive:true,force:true});
  }
 });
+
+
+test("real Electron folds long user Markdown and restores clipped links, print, and expansion",{
+ timeout:100000,
+},async()=>{
+ const profile=await mkdtemp(join(tmpdir(),"agent-web-user-fold-"));
+ const app=await electron.launch({
+  executablePath,
+  args:[".",...(process.platform==="linux"&&process.env.CI?["--no-sandbox"]:[])],
+  cwd:root,
+  env:{...process.env,AGENT_WEB_DEV_URL:"",AGENT_WEB_USER_DATA_DIR:profile,
+    ELECTRON_DISABLE_SECURITY_WARNINGS:"true"},
+  timeout:40000,
+ });
+ try{
+  const page=await app.firstWindow();
+  await page.locator('[aria-label="演示会话导航"]').waitFor({timeout:20000});
+  await page.getByRole("button",{name:/工具调用与审批交互/}).click();
+  await page.waitForTimeout(500);
+  const scroll=page.getByTestId("transcript-scroll");
+  const row=page.locator('[data-demo-turn-id="review-long-user-message"]');
+  let mounted=false;
+  for(let position=16;position>=0;position--){
+   await scroll.evaluate((el,index)=>{
+    const max=Math.max(0,el.scrollHeight-el.clientHeight);
+    el.scrollTop=Math.round(max*index/16);
+    el.dispatchEvent(new Event("scroll",{bubbles:true}));
+   },position);
+   await page.waitForTimeout(100);
+   if(await row.count()){mounted=true;break;}
+  }
+  assert.equal(mounted,true,"user-message fixture must mount in the real virtualized turn list");
+  const content=row.locator('[data-source-user-message-collapsible="true"]');
+  await content.waitFor({timeout:12000});
+  const clipped=content.locator('[data-source-user-message-viewport]');
+  const toggle=content.getByRole("button",{name:"Show more"});
+  await toggle.waitFor({timeout:12000});
+  assert.equal(await toggle.getAttribute("aria-expanded"),"false");
+  const heightCollapsed=await clipped.evaluate(el=>el.getBoundingClientRect().height);
+  const lineHeight=await clipped.evaluate(el=>parseFloat(getComputedStyle(el).lineHeight));
+  assert.ok(heightCollapsed<=lineHeight*20+3,
+   "source user message must clip to at most the default 20 line heights");
+  const link=content.locator('a[href*="codex-reference"]');
+  await link.waitFor({timeout:12000});
+  assert.equal(await link.getAttribute("aria-hidden"),"true");
+  assert.equal(await link.evaluate(el=>el.inert),true);
+  await row.scrollIntoViewIfNeeded();
+  await mkdir(resolve(root,"desktop/test-results"),{recursive:true});
+  await page.screenshot({path:resolve(root,
+    "desktop/test-results/conversation-long-user-collapsed.png"),
+    fullPage:false,animations:"disabled"});
+
+  await toggle.click();
+  const less=content.getByRole("button",{name:"Show less"});
+  await less.waitFor({timeout:12000});
+  assert.equal(await less.getAttribute("aria-expanded"),"true");
+  const heightExpanded=await clipped.evaluate(el=>el.getBoundingClientRect().height);
+  assert.ok(heightExpanded>heightCollapsed+50);
+  assert.equal(await link.getAttribute("aria-hidden"),null);
+  assert.equal(await link.evaluate(el=>el.inert),false);
+  await page.screenshot({path:resolve(root,
+    "desktop/test-results/conversation-long-user-expanded.png"),
+    fullPage:false,animations:"disabled"});
+
+  await page.evaluate(()=>window.dispatchEvent(new Event("beforeprint")));
+  assert.equal(await content.locator('.codex-source-user-message-content__toggle').count(),0);
+  assert.equal(await clipped.evaluate(el=>el.style.maxHeight),"");
+  await page.evaluate(()=>window.dispatchEvent(new Event("afterprint")));
+  await less.waitFor({timeout:12000});
+  await less.click();
+  await toggle.waitFor({timeout:12000});
+  assert.equal(await link.getAttribute("aria-hidden"),"true");
+ }finally{
+  await app.close();
+  await rm(profile,{recursive:true,force:true});
+ }
+});
