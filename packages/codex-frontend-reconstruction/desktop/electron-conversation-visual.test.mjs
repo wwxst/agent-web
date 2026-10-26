@@ -912,6 +912,10 @@ test("real Electron repeated MCP activity collapses with inert children and keyb
    await page.waitForTimeout(60);
   }
   await row.waitFor({timeout:12000});
+  // A prior completed activity slice first uses the original Rk wrapper.
+  // Expand the outer historical group before inspecting nk repeated rows.
+  const historyToggle=row.locator('[data-recovered-agent-activity] button').first();
+  await historyToggle.click();
   const outer=row.locator('[data-codex-activity-group] [aria-expanded]').first();
   await outer.click();
   const repeated=row.locator('[data-codex-source-repeated-group]').first();
