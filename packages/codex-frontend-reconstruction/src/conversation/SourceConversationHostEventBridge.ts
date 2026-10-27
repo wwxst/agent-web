@@ -11,6 +11,12 @@
  */
 import type {ConversationMessageItem} from "./ConversationMessageRenderPlan.js";
 import {
+  createSourcePendingElicitationRequestStore,
+  validateSourcePendingElicitationKey,validateSourcePendingElicitationRecord,
+  type SourcePendingElicitationKey,type SourcePendingElicitationRecord,
+  type SourcePendingElicitationStore,
+} from "./SourcePendingElicitationRequestStore.js";
+import {
  createSourceHistoricalTurnStore,
  type SourceHistoricalTurnPayload,
  type SourceHistoricalTurnQuery,
@@ -42,6 +48,8 @@ export type SourceConversationHostEvent =
       entity:ToolActivityHistoryEntity|null|undefined}
   | {type:"assistant-message-presence";query:ToolActivityHistoryEntityQuery;
       presence:unknown}
+  | {type:"pending-elicitation";request:SourcePendingElicitationRecord}
+  | {type:"elicitation-settled";query:SourcePendingElicitationKey}
   | {type:"clear-thread";hostId:string;threadId:string};
 
 export interface SourceConversationHostEventTransport {
@@ -54,6 +62,7 @@ export interface SourceConversationHostEventBridge {
  readonly historicalTurns:SourceHistoricalTurnStore<ConversationMessageItem>;
  readonly turnRuntime:SourceTurnRuntimeStatusStore;
  readonly toolHistory:ToolActivityHistoryEntityStore;
+ readonly pendingElicitations:SourcePendingElicitationStore;
  publish(event:SourceConversationHostEvent):void;
  /** Replacing an upstream transport invalidates late callbacks from it. */
  connect(transport:SourceConversationHostEventTransport):void;
@@ -65,6 +74,14 @@ const validId=(id:unknown)=>typeof id==="string"&&id.length>0;
 function validateEvent(event:SourceConversationHostEvent):void {
  if(event==null||typeof event!=="object"||typeof event.type!=="string")
    throw new TypeError("invalid host event");
+ if(event.type==="pending-elicitation"){
+   validateSourcePendingElicitationRecord(event.request);
+   return;
+ }
+ if(event.type==="elicitation-settled"){
+   validateSourcePendingElicitationKey(event.query);
+   return;
+ }
  if(event.type==="clear-thread"){
    if(!validId(event.hostId)||!validId(event.threadId))
      throw new TypeError("clear-thread requires hostId and threadId");
@@ -84,6 +101,7 @@ export function createSourceConversationHostEventBridge():SourceConversationHost
  const historicalTurns=createSourceHistoricalTurnStore<ConversationMessageItem>();
  const turnRuntime=createSourceTurnRuntimeStatusStore();
  const toolHistory=createToolActivityHistoryEntityStore();
+ const pendingElicitations=createSourcePendingElicitationRequestStore();
  let closed=false,epoch=0;
  let upstream:(()=>void)|null=null;
 
@@ -111,7 +129,14 @@ export function createSourceConversationHostEventBridge():SourceConversationHost
      case "assistant-message-presence":
        toolHistory.publishAssistantMessagePresence(event.query,event.presence);
        return;
+     case "pending-elicitation":
+       pendingElicitations.upsert(event.request);
+       return;
+     case "elicitation-settled":
+       pendingElicitations.settle(event.query);
+       return;
      case "clear-thread":
+       pendingElicitations.clearThread(event.hostId,event.threadId);
        historicalTurns.clearThread(event.hostId,event.threadId);
        turnRuntime.clearThread(event.hostId,event.threadId);
        toolHistory.clearThread(event.hostId,event.threadId);
@@ -143,7 +168,7 @@ export function createSourceConversationHostEventBridge():SourceConversationHost
    else upstream=stop;
  }
  return {
-   historicalTurns,turnRuntime,toolHistory,publish,connect,disconnect,
+   historicalTurns,turnRuntime,toolHistory,pendingElicitations,publish,connect,disconnect,
    dispose(){
      if(closed)return;
      closed=true;
@@ -151,6 +176,7 @@ export function createSourceConversationHostEventBridge():SourceConversationHost
      historicalTurns.dispose();
      turnRuntime.dispose();
      toolHistory.dispose();
+     pendingElicitations.dispose();
    },
  };
 }
