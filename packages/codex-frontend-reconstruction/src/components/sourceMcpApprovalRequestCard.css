@@ -4,7 +4,9 @@
   container-type:inline-size;
   container-name:approval-card;
   display:flex;flex-direction:column;min-width:0;max-height:min(80vh,640px);
-  padding:0;gap:0;overflow:visible;
+  /* KZu's original overflow-hidden can now be restored: the scoped
+   * dropdown is portaled outside the clipping hierarchy. */
+  padding:0;gap:0;overflow:hidden;
   /* Original KZu approval variant: rounded-3xl border border-default
    * bg-surface-elevated-secondary. Token-backed, with local preview
    * fallbacks until the private Codex theme contract is restored. */
@@ -65,9 +67,12 @@
   color:var(--demo-surface,#fff);background:var(--demo-text,#292929);
 }
 .codex-source-mcp-approval__scope-menu {
-  position:absolute;right:0;bottom:calc(100% + 6px);z-index:20;
-  min-width:204px;max-width:min(280px,80vw);
+  /* Mae dropdown content is outside the source KZu clipped card.
+   * top/left/max-height are bounded to the viewport by the portal. */
+  position:fixed;right:auto;bottom:auto;z-index:1000;
+  min-width:204px;max-width:min(280px,calc(100vw - 16px));
   display:flex;flex-direction:column;padding:4px;
+  overflow-y:auto;overscroll-behavior:contain;
   border:1px solid var(--border-default,var(--demo-border,#dedede));
   border-radius:12px;
   box-shadow:0 8px 28px #0002;background:var(--surface-elevated,#fff);
