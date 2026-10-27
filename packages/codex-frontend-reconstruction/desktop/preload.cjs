@@ -41,6 +41,8 @@ contextBridge.exposeInMainWorld("agentWebDesktopHost",Object.freeze({
       !["hostId","conversationId","requestId"].every(key=>
         typeof envelope[key]==="string"&&envelope[key].length>0&&envelope[key].length<=256)||
       envelope.response==null||typeof envelope.response!=="object"||
+      Object.keys(envelope).some(key=>!["hostId","conversationId","requestId","response"].includes(key))||
+      Object.keys(envelope.response).some(key=>!["decision","persist"].includes(key))||
       !["accept","decline"].includes(envelope.response.decision)||
       (envelope.response.persist!==undefined&&
         (envelope.response.decision!=="accept"||
