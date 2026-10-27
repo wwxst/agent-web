@@ -19,6 +19,9 @@ test("real review timeline keeps collapsing repeated tool details outside keyboa
   const outer=row.locator('[data-codex-activity-group] [aria-expanded]').first();
   await outer.click();
   await expect(outer).toHaveAttribute("aria-expanded","true");
+  // Keep the target virtualized row visible BEFORE probing the close motion;
+  // a historical row otherwise can be recycled after its height shrinks.
+  await row.scrollIntoViewIfNeeded();
   const repeated=row.locator('[data-codex-source-repeated-group]').first();
   await expect(repeated).toHaveCount(1);
   const toggle=repeated.locator('[data-codex-source-repeated-toggle]');
