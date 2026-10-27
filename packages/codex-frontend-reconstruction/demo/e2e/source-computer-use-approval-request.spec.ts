@@ -47,8 +47,20 @@ test("source Computer Use elevated risk header replaces connector, no unsupporte
  await page.goto("/");
  await page.getByRole("button",{name:"打开演示工具"}).click();
  await page.getByTestId("demo-computer-use-approval-request").click();
- const card=page.locator('[data-demo-turn-id*="-high-risk"]')
-   .locator("[data-source-computer-use-approval-card]");
+ const row=page.locator('[data-demo-turn-id*="-high-risk"]');
+ const viewport=page.getByTestId("transcript-scroll");
+ // The earlier (high-risk) request can be outside the virtualized
+ // conversation window after the later tall first-use disclosure appends.
+ // Find it by scrolling the *real* transcript, never mounting a fake card.
+ for(let step=0;step<18&&await row.count()===0;step++){
+   await viewport.evaluate(el=>{
+     el.scrollTop-=180;
+     el.dispatchEvent(new Event("scroll",{bubbles:true}));
+   });
+   await page.waitForTimeout(75);
+ }
+ await expect(row).toHaveCount(1);
+ const card=row.locator("[data-source-computer-use-approval-card]");
  await expect(card).toHaveCount(1);
  await expect(card.getByText("Allow ChatGPT to use Terminal?")).toBeVisible();
  await expect(card.locator('[data-source-computer-use-header="high"]')).toContainText("Elevated Risk");
