@@ -15,19 +15,24 @@ test("source MCP approval in real transcript enforces scopes, pending lock, and 
   await card.getByRole("button",{name:"Expand description"}).click();
   await expect(card.locator('[data-source-mcp-param="description"] pre'))
     .toHaveAttribute("data-source-mcp-param-preview","expanded");
-  const session=card.getByRole("button",{name:"Allow for session"});
+  const options=card.getByRole("button",{name:"Approval options"});
   const always=card.getByRole("button",{name:"Always allow"});
   const deny=card.getByRole("button",{name:"Deny"});
-  await expect(session).toBeEnabled();
+  await expect(options).toBeEnabled();
   await expect(always).toBeEnabled();
+  await expect(card.getByRole("menu")).toHaveCount(0);
+  await options.click();
+  const session=card.getByRole("menuitem",{name:"Allow this conversation"});
+  await expect(session).toBeVisible();
   await session.click();
   await expect(card).toHaveAttribute("data-source-mcp-reply-phase","submitting");
-  await expect(session).toBeDisabled();
+  await expect(options).toBeDisabled();
   await expect(always).toBeDisabled();
   await expect(deny).toBeDisabled();
+  await expect(card.getByRole("menu")).toHaveCount(0);
   await expect(card).toHaveAttribute("data-source-mcp-reply-phase","error",{timeout:9000});
   await expect(card.getByRole("alert")).toContainText("Unable to send response");
-  await expect(session).toBeEnabled();
+  await expect(options).toBeEnabled();
   await deny.click();
   await expect(card).toHaveAttribute("data-source-mcp-reply-phase","submitting");
   await expect(card).toHaveAttribute("data-source-mcp-reply-phase","error",{timeout:9000});
