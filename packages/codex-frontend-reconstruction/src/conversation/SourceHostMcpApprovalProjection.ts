@@ -105,7 +105,7 @@ export function projectSourceHostMcpApproval(
  const persist=persistence(approval.persist);
  const parameters=params(approval.tool_params);
  const paramDisplay=displayParams(data.toolParamsDisplay);
- if(persist==null||parameters==null||paramDisplay==null)return null;
+ if(persist==null||parameters==null||paramDisplay===null)return null;
  const connectorName=optionalText(approval.connector_name)||
    optionalText(approval.connector_id)||"Connector";
  // Original pe resolves display name/logo from trusted host connector metadata.
