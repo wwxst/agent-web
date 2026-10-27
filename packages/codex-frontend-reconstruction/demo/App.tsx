@@ -256,6 +256,10 @@ export function App() {
     // remounts virtual rows, so historical Rk choices remain host-owned.
     const DemoRow = React.useMemo(() => makeDemoRow(notify), [notify, generation]);
     React.useEffect(() => () => DemoRow.dispose(), [DemoRow]);
+    // On real native host pending/settled events, mutate this SAME source
+    // consumed by ConnectedLiveConversationTranscript and its virtualizer.
+    React.useEffect(()=>DemoRow.bindHostElicitations(source,active),
+      [DemoRow,source,active]);
   // Search the SAME source-Y-projected entries as the mounted virtualizer.
   // The canonical historical-turn source belongs to DemoRow's existing host
   // event bridge; its subscription survives virtual row unmount and clears

@@ -48,7 +48,12 @@ export function bindSourcePendingElicitationsToTimeline({
      });
    }
    const prior=source.getSnapshot().entries;
-   const surviving=prior.filter(entry=>entry.turnId==null||!managed.has(entry.turnId));
+   const threadPrefix="host-elicitation:"+
+     JSON.stringify([hostId,threadId]).slice(0,-1)+",";
+   // Rebinding after a thread switch must replace prior rows for this exact
+   // host/thread rather than append duplicate request cards.
+   const surviving=prior.filter(entry=>
+     entry.turnId==null||!entry.turnId.startsWith(threadPrefix));
    const additions=[...next.values()].map(x=>x.entry);
    const sameManaged=next.size===managed.size&&[...next].every(
      ([id,current])=>managed.get(id)?.entry===current.entry);

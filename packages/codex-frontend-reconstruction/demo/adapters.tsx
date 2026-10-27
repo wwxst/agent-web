@@ -20,6 +20,10 @@ import {projectSourceMcpGenericApprovalMessage}
   from "../src/conversation/SourceMcpApprovalRequestModel.js";
 import {projectSourceBrowserWebsiteApproval} from "../src/conversation/SourceBrowserWebsiteApprovalModel.js";
 import {projectSourceUrlActionRequest} from "../src/conversation/SourceUrlActionRequestModel.js";
+import {bindSourcePendingElicitationsToTimeline}
+  from "../src/conversation/SourcePendingElicitationTimelineBinder.js";
+import {demoActivityEntry,demoItem,type DemoSource,type DemoConversationId}
+  from "./mockConversation.js";
 import {createSourceInlineReviewWrapPreference}
   from "../src/conversation/SourceInlineReviewWrapPreference.js";
 import { getDemoBlocks, getDemoHistoryTurnItems } from "./mockConversation.js";
@@ -203,7 +207,7 @@ function ActivityDetails({ item }: { item: ConversationMessageItem; isActive: bo
     <button type="button" className="demo-activity-toggle" aria-expanded={expanded} onClick={() => setExpanded((value) => !value)}>
       <span className="demo-activity-icon" aria-hidden="true">›</span>
       <span>{heading}</span>
-      <span className="demo-activity-state">{item.state === "Working" ? "运行中" : "已完成 · 模拟"}</span>
+      <span className="demo-activity-state">{item.type==="host-pending-elicitation"?"等待宿主处理":item.state === "Working" ? "运行中" : "已完成 · 模拟"}</span>
     </button>
     {expanded && (command != null || output != null) && <div className="demo-activity-detail">
       {command != null && <pre><span className="demo-command-prefix">$ </span>{command}</pre>}
@@ -240,6 +244,15 @@ export function makeDemoRow(notify: (message: string) => void) {
   // the synthetic browser preview on its existing deterministic event feed.
   connectDesktopHostEventBridge(eventBridge);
   const historyStore=eventBridge.toolHistory;
+  const pendingStore=eventBridge.pendingElicitations;
+  const hostPending=(item:ConversationMessageItem)=>{
+    if(item.type!=="host-pending-elicitation"||
+      typeof item.id!=="string"||typeof item.pendingHostId!=="string"||
+      typeof item.pendingThreadId!=="string")return null;
+    return pendingStore.get({
+      hostId:item.pendingHostId,threadId:item.pendingThreadId,requestId:item.id,
+    });
+  };
   const collapseState = createSourceActivityCollapseState();
   const demoMcpLabelHost = {
     isFailedResult: (input:import("../src/conversation/SourceMcpToolActivityLabel.js").SourceMcpToolActivityLabelInput)=>
@@ -513,6 +526,10 @@ export function makeDemoRow(notify: (message: string) => void) {
      * Browser fixture is intentionally readonly for external opens. Native
      * Electron uses its real (validated) isolated openExternalUrl bridge. */
     getUrlActionRequest:(item)=>{
+      const live=hostPending(item);
+      if(live!=null)return projectSourceUrlActionRequest(live.elicitation,{
+        hostId:live.hostId,conversationId:live.threadId,requestId:live.requestId,
+      });
       if(item.type!=="demo-url-action"||typeof item.id!=="string")return null;
       return projectSourceUrlActionRequest({
         kind:"urlAction",action:{
@@ -527,6 +544,11 @@ export function makeDemoRow(notify: (message: string) => void) {
     /** Source ft/Ge: recognition is from an exact synthetic browser MCP
      * request and host policy, not UI classification. All replies fail closed. */
     getBrowserWebsiteApprovalRequest:(item)=>{
+      const live=hostPending(item);
+      if(live!=null)return projectSourceBrowserWebsiteApproval(live.elicitation,{
+        hostId:live.hostId,conversationId:live.threadId,
+        requestId:live.requestId,allowAllSites:false,
+      });
       if(item.type!=="demo-browser-website-approval"||typeof item.id!=="string")return null;
       const allowAllSites=item.demoBrowserWebsiteAllSites===true;
       return projectSourceBrowserWebsiteApproval({
@@ -673,6 +695,23 @@ export function makeDemoRow(notify: (message: string) => void) {
     </div>;
   };
   return Object.assign(DemoRow, {
+    /** One host-event ingress -> one canonical LiveConversationSource. No
+     * separate list, synthetic grant, or cross-thread mounting. */
+    bindHostElicitations(source:DemoSource,threadId:DemoConversationId){
+      return bindSourcePendingElicitationsToTimeline({
+        store:pendingStore,source,hostId:"demo-host",threadId,
+        createEntry(request,turnId){
+          const kind=String(request.elicitation.kind);
+          return demoActivityEntry(turnId,[
+            demoItem(request.requestId,"host-pending-elicitation",undefined,{
+              heading:"宿主待处理请求 · "+kind,
+              state:"Needs input",pendingHostId:request.hostId,
+              pendingThreadId:request.threadId,
+            }),
+          ]);
+        },
+      });
+    },
     findHistory: {source: findHistorySource, query: historyTurnQuery},
     dispose() {
       for (const source of historySources.values()) source.dispose();
