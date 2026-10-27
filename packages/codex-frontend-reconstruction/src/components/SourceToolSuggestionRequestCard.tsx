@@ -97,7 +97,7 @@ export function SourceToolSuggestionRequestCard({
         setError("Unable to complete tool setup in this host. No action was approved.");
       }
     }finally{
-      if(version===generation.current&&phase!=="submitted"){
+      if(version===generation.current){
         submitting.current=false;setBusy(false);
       }
     }
