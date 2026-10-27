@@ -12,6 +12,7 @@ const UI_COMMAND_CHANNEL="agent-web:ui-command";
 const READ_DRAFTS_CHANNEL="agent-web:composer-drafts-read";
 const WRITE_DRAFT_CHANNEL="agent-web:composer-draft-write";
 const MCP_APPROVAL_REPLY_CHANNEL="agent-web:mcp-approval-reply";
+const OPEN_EXTERNAL_URL_CHANNEL="agent-web:open-external-url";
 const draftThreadIds=new Set(["frontend","review"]);
 const allowedUiCommands=new Set([
   "toggle-sidebar","previous-thread","next-thread",
@@ -56,6 +57,24 @@ contextBridge.exposeInMainWorld("agentWebDesktopHost",Object.freeze({
         ...(envelope.response.persist===undefined?{}:{persist:envelope.response.persist}),
       },
     });
+  },
+  /**
+   * Open a single HTTPS URL through authenticated main frame -> native shell.
+   * No navigation, generic shell/IPC exposure, permission or response sent.
+   */
+  openExternalUrl(url){
+    if(typeof url!=="string"||url.length>2048||
+      /[\u0000-\u001f\u007f]/u.test(url)){
+      return Promise.reject(new TypeError("EXTERNAL_URL_INVALID"));
+    }
+    let parsed;
+    try{parsed=new URL(url);}catch{
+      return Promise.reject(new TypeError("EXTERNAL_URL_INVALID"));
+    }
+    if(parsed.protocol!=="https:"||!parsed.hostname||parsed.username||parsed.password){
+      return Promise.reject(new TypeError("EXTERNAL_URL_INVALID"));
+    }
+    return ipcRenderer.invoke(OPEN_EXTERNAL_URL_CHANNEL,url);
   },
   getComposerDrafts:()=>ipcRenderer.invoke(READ_DRAFTS_CHANNEL),
   setComposerDraft(threadId,text){

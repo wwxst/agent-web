@@ -18,6 +18,7 @@ const {buildSourceNativeMenus,isAllowedMenuId,sanitizeMenuAnchor}=require("./nat
 const {isAllowedNavigation:allowedNavigation}=require("./navigationPolicy.cjs");
 const {readComposerDrafts,writeComposerDraft}=require("./composerDraftStore.cjs");
 const {handleMcpApprovalReply}=require("./mcpApprovalReply.cjs");
+const {handleExternalUrlOpen,sourceSafeExternalHttpsUrl}=require("./externalUrlAction.cjs");
 
 const HOST_INFO_CHANNEL = "agent-web:host-info";
 const HOST_EVENT_CHANNEL = "agent-web:host-event";
@@ -26,6 +27,7 @@ const OPEN_MENU_CHANNEL = "agent-web:open-menu";
 const READ_DRAFTS_CHANNEL="agent-web:composer-drafts-read";
 const WRITE_DRAFT_CHANNEL="agent-web:composer-draft-write";
 const MCP_APPROVAL_REPLY_CHANNEL="agent-web:mcp-approval-reply";
+const OPEN_EXTERNAL_URL_CHANNEL="agent-web:open-external-url";
 const devUrl=process.env.AGENT_WEB_DEV_URL || "";
 const devMode=devUrl.length>0;
 const indexPath=path.resolve(__dirname,"../demo-dist/index.html");
@@ -84,7 +86,8 @@ function createWindow(){
     });
   });
   win.webContents.setWindowOpenHandler(({url})=>{
-    if(/^https:\/\//i.test(url))void shell.openExternal(url);
+    const safe=sourceSafeExternalHttpsUrl(url);
+    if(safe!=null)void shell.openExternal(safe).catch(()=>{});
     return {action:"deny"};
   });
   win.webContents.on("will-navigate",(event,url)=>{
@@ -157,6 +160,9 @@ function setupIpc(){
   // existing main-frame navigation/sender guards and fail closed.
   ipcMain.handle(MCP_APPROVAL_REPLY_CHANNEL,(event,envelope)=>
     handleMcpApprovalReply({isTrustedRenderer},event,envelope));
+  // URL action opens a web resource; it does NOT accept/settle any permission.
+  ipcMain.handle(OPEN_EXTERNAL_URL_CHANNEL,(event,url)=>
+    handleExternalUrlOpen({isTrustedRenderer,openExternal:safe=>shell.openExternal(safe)},event,url));
   ipcMain.handle(READ_DRAFTS_CHANNEL,event=>
     isTrustedRenderer(event)?readComposerDrafts(app.getPath("userData")):{});
   ipcMain.handle(WRITE_DRAFT_CHANNEL,(event,threadId,text)=>
@@ -188,7 +194,7 @@ app.on("window-all-closed",()=>{if(process.platform!=="darwin")app.quit();});
 app.on("activate",()=>{if(BrowserWindow.getAllWindows().length===0)createWindow();});
 app.whenReady().then(()=>{setupIpc();createWindow();});
 app.on("before-quit",()=>{
-  for(const channel of [HOST_INFO_CHANNEL,OPEN_MENU_CHANNEL,READ_DRAFTS_CHANNEL,WRITE_DRAFT_CHANNEL,MCP_APPROVAL_REPLY_CHANNEL]){
+  for(const channel of [HOST_INFO_CHANNEL,OPEN_MENU_CHANNEL,READ_DRAFTS_CHANNEL,WRITE_DRAFT_CHANNEL,MCP_APPROVAL_REPLY_CHANNEL,OPEN_EXTERNAL_URL_CHANNEL]){
     ipcMain.removeHandler(channel);
   }
 });
