@@ -41,6 +41,10 @@ import {SourceBrowserWebsiteApprovalCard} from "./SourceBrowserWebsiteApprovalCa
 import {SourceUrlActionRequestCard} from "./SourceUrlActionRequestCard.js";
 import {SourceToolSuggestionRequestCard} from "./SourceToolSuggestionRequestCard.js";
 import {SourceUserVerificationCard} from "./SourceUserVerificationCard.js";
+import {SourceUnsupportedOpenAIFormCard} from "./SourceUnsupportedOpenAIFormCard.js";
+import type {
+ SourceUnsupportedOpenAIFormRequest,SourceUnsupportedOpenAIFormReplyTransport,
+} from "../conversation/SourceUnsupportedOpenAIFormModel.js";
 import type {
  SourceUserVerificationRequest,SourceUserVerificationCancelTransport,
 } from "../conversation/SourceUserVerificationModel.js";
@@ -167,6 +171,10 @@ export interface ConnectedConversationRendererHost extends ConversationContentAd
   getToolSuggestionRequest?:(item:ConversationMessageItem)=>SourceToolSuggestionRequest|null;
   /** Original at.userVerification invokes Ke/ Re, not generic MCP ye. */
   getUserVerificationRequest?:(item:ConversationMessageItem)=>SourceUserVerificationRequest|null;
+  /** Exact original at.unsupportedOpenAIForm -> request-panel bn. */
+  getUnsupportedOpenAIFormRequest?:(item:ConversationMessageItem)=>SourceUnsupportedOpenAIFormRequest|null;
+  /** Native-specific cancel / decline, not a generic MCP grant. */
+  onUnsupportedOpenAIFormReply?:SourceUnsupportedOpenAIFormReplyTransport;
   /** Native cancel is separate from MCP accept/decline and never biometric approval. */
   onUserVerificationCancel?:SourceUserVerificationCancelTransport;
   /** Real host-owned install/enable + independently verified readiness ONLY. */
@@ -207,6 +215,10 @@ export function createConnectedConversationMessageRenderers(host: ConnectedConve
     }
 
     const renderProjectedActivity = (target: ConversationMessageItem): React.ReactNode => {
+      const unsupportedForm=host.getUnsupportedOpenAIFormRequest?.(target)??null;
+      if(unsupportedForm!=null)return <SourceUnsupportedOpenAIFormCard
+        key={JSON.stringify([unsupportedForm.hostId,unsupportedForm.conversationId,unsupportedForm.requestId])}
+        request={unsupportedForm} onReply={host.onUnsupportedOpenAIFormReply}/>;
       const verification=host.getUserVerificationRequest?.(target)??null;
       if(verification!=null)return <SourceUserVerificationCard
         key={JSON.stringify([verification.hostId,verification.conversationId,verification.requestId])}

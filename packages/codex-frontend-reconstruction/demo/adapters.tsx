@@ -23,6 +23,8 @@ import {projectSourceUrlActionRequest} from "../src/conversation/SourceUrlAction
 import {projectSourceToolSuggestion} from "../src/conversation/SourceToolSuggestionRequestModel.js";
 import {projectSourceUserVerificationRequest}
   from "../src/conversation/SourceUserVerificationModel.js";
+import {projectSourceUnsupportedOpenAIForm}
+  from "../src/conversation/SourceUnsupportedOpenAIFormModel.js";
 import {projectSourceHostMcpApproval} from "../src/conversation/SourceHostMcpApprovalProjection.js";
 import {bindSourcePendingElicitationsToTimeline}
   from "../src/conversation/SourcePendingElicitationTimelineBinder.js";
@@ -529,6 +531,21 @@ export function makeDemoRow(notify: (message: string) => void) {
     /** Original at dispatch only recognizes the explicit urlAction kind.
      * Browser fixture is intentionally readonly for external opens. Native
      * Electron uses its real (validated) isolated openExternalUrl bridge. */
+    getUnsupportedOpenAIFormRequest:(item)=>{
+      const live=hostPending(item);
+      if(live!=null)return projectSourceUnsupportedOpenAIForm(live.elicitation,{
+        hostId:live.hostId,conversationId:live.threadId,requestId:live.requestId,
+      });
+      if(item.type!=="demo-unsupported-openai-form"||typeof item.id!=="string")
+        return null;
+      return projectSourceUnsupportedOpenAIForm({
+        kind:"unsupportedOpenAIForm",
+        serverName:"Sample MCP form server (synthetic)",
+      },{hostId:"demo-host",conversationId:"frontend",requestId:item.id});
+    },
+    onUnsupportedOpenAIFormReply:window.agentWebDesktopHost!=null
+      ?envelope=>window.agentWebDesktopHost!.replyToUnsupportedForm(envelope)
+      :undefined,
     getUserVerificationRequest:(item)=>{
       const live=hostPending(item);
       if(live!=null)return projectSourceUserVerificationRequest(live.elicitation,{

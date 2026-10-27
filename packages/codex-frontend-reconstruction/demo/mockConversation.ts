@@ -109,6 +109,14 @@ export function demoMcpApprovalEntry(turnId:string,disabled=false):ConversationR
 /** Original inline tool suggestion in the SAME canonical transcript.
  * This fixture is a visual test only; it cannot install or enable an app. */
 /** Source Re biometric surface; browser fixture has no native provider. */
+/** Source unsupported OpenAI form, explicitly a synthetic visual fixture. */
+export function demoUnsupportedOpenAIFormEntry(turnId:string):ConversationRenderEntry{
+ return demoActivityEntry(turnId,[
+   demoItem(turnId+"-request","demo-unsupported-openai-form",undefined,{
+     heading:"不支持的 MCP 表单（模拟）",state:"Needs input",
+   }),
+ ]);
+}
 export function demoUserVerificationEntry(turnId:string):ConversationRenderEntry{
  return demoActivityEntry(turnId,[
    demoItem(turnId+"-request","demo-user-verification",undefined,{
