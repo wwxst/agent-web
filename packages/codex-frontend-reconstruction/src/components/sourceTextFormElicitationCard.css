@@ -1,0 +1,39 @@
+/* Source request-panel ei/Yr/Wr/wn: one-question form and split footer. */
+.codex-source-text-form{
+ display:flex;min-width:0;overflow:hidden;border:1px solid var(--demo-border,#dedede);
+ border-radius:12px;background:var(--demo-panel,#fff);color:var(--demo-text,#222);
+}
+.codex-source-text-form__form{display:flex;flex-direction:column;width:100%;min-width:0}
+.codex-source-text-form__header{
+ display:flex;align-items:flex-start;justify-content:space-between;gap:12px;
+ padding:16px 16px 12px;
+}
+.codex-source-text-form__heading{
+ font-size:16px;line-height:22px;font-weight:500;white-space:pre-wrap;
+ overflow-wrap:anywhere;flex:1;min-width:0;
+}
+.codex-source-text-form__navigation{display:flex;gap:4px;align-items:center;flex-shrink:0}
+.codex-source-text-form__navigation button{min-width:28px;min-height:28px}
+.codex-source-text-form__progress{font-size:12px;color:var(--demo-muted,#666);white-space:nowrap}
+.codex-source-text-form__content{
+ display:flex;flex-direction:column;gap:8px;padding:8px 16px 16px;
+ max-height:384px;min-width:0;overflow:auto;
+}
+.codex-source-text-form__field-title{font-size:14px;line-height:20px;font-weight:500;overflow-wrap:anywhere}
+.codex-source-text-form__description{font-size:12px;line-height:18px;white-space:pre-wrap;color:var(--demo-muted,#777)}
+.codex-source-text-form textarea{
+ resize:vertical;min-height:80px;max-height:200px;border:1px solid var(--demo-border,#ccc);
+ border-radius:10px;padding:10px 12px;background:transparent;color:inherit;font:inherit;
+ width:100%;box-sizing:border-box;
+}
+.codex-source-text-form textarea[aria-invalid="true"]{border-color:var(--demo-danger,#b42318)}
+.codex-source-text-form textarea:focus-visible,.codex-source-text-form button:focus-visible{outline:2px solid var(--demo-link,#3265bd);outline-offset:2px}
+.codex-source-text-form button{border:1px solid transparent;background:transparent;color:inherit;border-radius:9px;padding:7px 12px;min-height:32px;font:inherit;cursor:pointer}
+.codex-source-text-form button:disabled{opacity:.5;cursor:not-allowed}
+.codex-source-text-form__footer{
+ border-top:1px solid var(--demo-border,#dedede);
+ display:flex;align-items:center;justify-content:flex-end;gap:8px;padding:12px 16px;
+}
+.codex-source-text-form__primary{background:var(--demo-text,#242424)!important;color:var(--demo-panel,#fff)!important}
+.codex-source-text-form__error{color:var(--demo-danger,#b42318);font-size:12px;margin:0}
+.codex-source-text-form__readonly{color:var(--demo-muted,#666);font-size:12px;margin:0}
