@@ -14,7 +14,7 @@ import "./sourceComputerUseApprovalRequestCard.css";
 export interface SourceComputerUseApprovalRequestCardProps {
   request:SourceComputerUseApprovalRequest;
   /** Only an authenticated host may supply reply delivery. No callback is readonly. */
-  onReply?:SourceComputerUseReplyTransport;
+  onReply?:SourceComputerUseReplyTransport|undefined;
 }
 /**
  * Original E is a distinct approval family sharing source qbd, not ye's
