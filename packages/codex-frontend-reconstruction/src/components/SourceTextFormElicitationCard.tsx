@@ -36,12 +36,13 @@ export function SourceTextFormElicitationCard({
    return ()=>{generation.current++;};
  },[key,schemaKey]);
  const busy=phase==="submitting"||phase==="submitted";
- const disabled=busy||onReply==null;
+ const disabled=busy;
+ const replyDisabled=busy||onReply==null;
  const currentValue=values[active.name]??"";
  const hasError=invalid.includes(active.name);
  const validation=sourceTextFormValidate(request,values);
  async function send(action:"accept"|"decline"|"cancel",content:Record<string,string>|null=null){
-   if(disabled||pending.current||onReply==null)return;
+   if(replyDisabled||pending.current||onReply==null)return;
    pending.current=true;setPhase("submitting");setError(null);
    const version=generation.current;
    try{
@@ -113,7 +114,7 @@ export function SourceTextFormElicitationCard({
              onClick={()=>{setFieldIndex(i=>Math.min(request.fields.length-1,i+1));setInvalid([]);}}>›</button>
          </>:null}
          <button type="button" aria-label="Cancel" title="Cancel"
-           disabled={disabled} onClick={()=>{void send("cancel");}}>×</button>
+           disabled={replyDisabled} onClick={()=>{void send("cancel");}}>×</button>
        </div>
      </header>
      <div className="codex-source-text-form__content">
@@ -149,12 +150,12 @@ export function SourceTextFormElicitationCard({
      <footer className="codex-source-text-form__footer">
        {request.fields.length===1
          ?<button type="button" className="codex-source-text-form__secondary"
-           onClick={()=>{void send("cancel");}} disabled={disabled}>Cancel</button>
+           onClick={()=>{void send("cancel");}} disabled={replyDisabled}>Cancel</button>
          :!last?<button type="button" className="codex-source-text-form__secondary"
            disabled={busy} onClick={()=>{setInvalid([]);setFieldIndex(i=>
              Math.min(request.fields.length-1,i+1));}}>Skip for now</button>:null}
        <button type="submit" className="codex-source-text-form__primary"
-         disabled={disabled}>{last?"Continue":"Next"}</button>
+         disabled={disabled||(last&&onReply==null)}>{last?"Continue":"Next"}</button>
      </footer>
    </form>
  </section>;

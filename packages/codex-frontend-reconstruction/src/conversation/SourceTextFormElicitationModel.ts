@@ -29,7 +29,7 @@ const string=(v:unknown,max:number):v is string=>
  !/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/u.test(v);
 const id=(v:unknown)=>typeof v==="string"&&v.length>0&&v.length<=256&&
  v.trim()===v&&!/[\u0000-\u001f\u007f]/u.test(v);
-const lengthBound=(v:unknown)=>v===undefined||v===null||
+const lengthBound=(v:unknown)=>v===undefined||
  Number.isInteger(v)&&typeof v==="number"&&v>=0&&v<=16384;
 const ALLOWED_FIELD_KEYS=new Set([
  "type","title","description","minLength","maxLength",
@@ -67,7 +67,7 @@ export function projectSourceTextFormElicitation(
  if([...required].some(k=>!Object.hasOwn(props,k)))return null;
  const fields:SourceTextFormField[]=[];
  for(const [name,value] of entries){
-   if(!id(name))return null;
+   if(!id(name)||["__proto__","constructor","prototype"].includes(name))return null;
    const field=object(value);
    if(!field||field.type!=="string"||
      Object.keys(field).some(k=>!ALLOWED_FIELD_KEYS.has(k))||
