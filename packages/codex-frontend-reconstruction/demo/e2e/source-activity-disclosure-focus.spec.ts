@@ -48,6 +48,10 @@ test("real review timeline keeps collapsing repeated tool details outside keyboa
   // Either hidden-and-exiting or already-unmounted is a valid state.
   await expect(repeated).toHaveAttribute("data-source-disclosure-phase",/closing|collapsed/);
   await expect.poll(async()=>{
+    // A virtualized row may be recycled while its collapsing body shrinks.
+    // In that case no descendant remains in the document or tab order.
+    if(await repeated.count()===0)
+      return await page.locator('[data-test-focus-probe]').count()===0;
     if(await motion.count()===0){
       return await repeated.getAttribute("data-source-disclosure-phase")==="collapsed";
     }
