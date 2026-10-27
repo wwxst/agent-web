@@ -16,7 +16,7 @@ test("original approval dropdown supports source menu-style keyboard focus witho
  const options=card.getByRole("button",{name:"Approval options"});
  await options.focus();
  await options.press("ArrowUp");
- const menu=card.getByRole("menu",{name:"Approval options"});
+ const menu=page.getByRole("menu",{name:"Approval options"});
  await expect(menu).toBeVisible();
  const once=menu.getByRole("menuitem",{name:"Allow once"});
  const conversation=menu.getByRole("menuitem",{name:"Allow this conversation"});
