@@ -33,7 +33,7 @@ test("malformed/other form envelopes remain read-only pending rather than fake f
   {kind:"unsupportedOpenAIForm",serverName:" "},
   {kind:"unsupportedOpenAIForm",serverName:null},
   {kind:"unsupportedOpenAIForm",serverName:23},
-  {kind:"unsupportedOpenAIForm",serverName:" bad\\n line"},
+  {kind:"unsupportedOpenAIForm",serverName:" bad\n line"},
   {kind:"unsupportedOpenAIForm",serverName:"x".repeat(257)},
  ]){
   assert.equal(projectSourceUnsupportedOpenAIForm(value,ids),null);

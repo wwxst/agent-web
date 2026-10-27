@@ -12,7 +12,7 @@ test("source q2t unsupported forms permit only decline or cancel under scoped id
  for(const candidate of [
   null,{}, {...payload,action:"accept"}, {...payload,action:"deny"},
   {...payload,action:"userCancelled"}, {...payload,requestId:""},
-  {...payload,hostId:" other "}, {...payload,requestId:"id\\nline"},
+  {...payload,hostId:" other "}, {...payload,requestId:"id\nline"},
   {...payload,conversationId:55},
   {...payload,response:{decision:"accept"}},
   {hostId:payload.hostId,conversationId:payload.conversationId,requestId:payload.requestId},
