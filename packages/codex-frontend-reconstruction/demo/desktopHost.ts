@@ -5,6 +5,8 @@ import type {SourceUserVerificationCancelEnvelope}
   from "../src/conversation/SourceUserVerificationModel.js";
 import type {SourceUnsupportedOpenAIFormReply}
   from "../src/conversation/SourceUnsupportedOpenAIFormModel.js";
+import type {SourceTextFormReply}
+  from "../src/conversation/SourceTextFormElicitationModel.js";
 import type {
  SourceConversationHostEvent,
  SourceConversationHostEventBridge,
@@ -29,6 +31,8 @@ declare global {
       /** Only exact source cancel/decline from unsupported form; main rejects
        * without a real Agent backend. */
       replyToUnsupportedForm(envelope:SourceUnsupportedOpenAIFormReply):Promise<void>;
+      /** Source ei text-only form envelope, no backend => explicit rejection. */
+      replyToTextForm(envelope:SourceTextFormReply):Promise<void>;
       getHostInfo():Promise<{
         windowType:"electron";platform:string;theme:string;backendConnected:false
       }>;
