@@ -1388,3 +1388,52 @@ test("native Electron KZu clipped approval card keeps portaled Mae menu visible,
   });
  }finally{await app.close();await rm(profile,{recursive:true,force:true});}
 });
+
+
+test("native Electron renders source Computer Use first-use card and rejects approval through actual main IPC",{
+ timeout:100000,
+},async()=>{
+ const profile=await mkdtemp(join(tmpdir(),"agent-web-computer-use-approval-"));
+ const app=await electron.launch({
+  executablePath,args:[".",...(process.platform==="linux"&&process.env.CI?["--no-sandbox"]:[])],
+  cwd:root,env:{...process.env,AGENT_WEB_DEV_URL:"",AGENT_WEB_USER_DATA_DIR:profile,
+    ELECTRON_DISABLE_SECURITY_WARNINGS:"true"},timeout:40000,
+ });
+ try{
+  const page=await app.firstWindow();
+  await page.locator('[aria-label="演示会话导航"]').waitFor({timeout:20000});
+  await page.getByRole("button",{name:"打开演示工具"}).click();
+  await page.getByTestId("demo-computer-use-approval-request").click();
+  const row=page.locator('[data-demo-turn-id^="computer-use-approval-"]').last();
+  const card=row.locator("[data-source-computer-use-approval-card]");
+  await card.waitFor({timeout:15000});
+  assert.equal(await card.getAttribute("data-source-computer-use-reply-phase"),"idle");
+  assert.match(await card.innerText(),/Allow ChatGPT to use Visual Studio Code\?/);
+  assert.match(await card.locator('[data-source-computer-use-first-disclosure="true"]').innerText(),
+    /It may take screenshots of app contents/);
+  assert.equal(await card.getByRole("button",{name:"Always allow"}).count(),1);
+  assert.equal(await card.getByRole("button",{name:"Allow once"}).count(),0);
+  const approve=card.getByRole("button",{name:"Allow this conversation"});
+  await approve.click();
+  // Real Electron IPC rejects immediately; never assume browser fixture delay.
+  assert.ok(["submitting","error"].includes(
+    await card.getAttribute("data-source-computer-use-reply-phase")));
+  await card.locator(".codex-source-mcp-approval__error").waitFor({timeout:15000});
+  assert.match(await card.locator(".codex-source-mcp-approval__error").innerText(),
+    /backend unavailable/);
+  assert.equal(await approve.isDisabled(),false);
+  assert.match(await card.locator('[data-source-computer-use-first-disclosure="true"]').innerText(),
+    /It may take screenshots/);
+  await card.getByRole("button",{name:"Deny"}).click();
+  await card.locator(".codex-source-mcp-approval__error").waitFor({timeout:15000});
+  assert.equal(await card.getAttribute("data-source-computer-use-reply-phase"),"error");
+  assert.equal(await card.getByText(/Response sent to host/).count(),0);
+  assert.equal(await row.count(),1);
+  await row.scrollIntoViewIfNeeded();
+  await mkdir(resolve(root,"desktop/test-results"),{recursive:true});
+  await page.screenshot({
+    path:resolve(root,"desktop/test-results/source-computer-use-approval-backend-unavailable.png"),
+    animations:"disabled",fullPage:false,
+  });
+ }finally{await app.close();await rm(profile,{recursive:true,force:true});}
+});
