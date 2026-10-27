@@ -43,7 +43,7 @@ test("original qbd shared approval surface has scroll body, semantic reason and 
   await card.evaluate(el=>el.style.removeProperty("width"));
   const options=footer.getByRole("button",{name:"Approval options"});
   await options.click();
-  const menu=footer.getByRole("menu",{name:"Approval options"});
+  const menu=page.getByRole("menu",{name:"Approval options"});
   await expect(menu.getByRole("menuitem",{name:"Allow once"})).toBeVisible();
   await expect(menu.getByRole("menuitem",{name:"Allow this conversation"})).toBeVisible();
   await expect(menu.getByRole("menuitem",{name:"Allow once"})).toBeFocused();
