@@ -12,6 +12,7 @@ import {
   type SourceMcpApprovalParameter,
 } from "../conversation/SourceMcpApprovalRequestModel.js";
 import { SourceApprovalCardSurface } from "./SourceApprovalCardSurface.js";
+import { SourceApprovalDropdownPortal } from "./SourceApprovalDropdownPortal.js";
 import {
   nextSourceApprovalMenuIndex,
   type SourceApprovalMenuMoveKey,
@@ -59,7 +60,10 @@ export function SourceMcpApprovalRequestCard({
   const [showAll,setShowAll]=React.useState(false);
   const [scopeMenuOpen,setScopeMenuOpen]=React.useState(false);
   const scopeMenuRef=React.useRef<HTMLDivElement|null>(null);
+  const portaledMenuRef=React.useRef<HTMLDivElement|null>(null);
   const scopeTriggerRef=React.useRef<HTMLButtonElement|null>(null);
+  const scopeMenuId=React.useId();
+  const closeOffscreenMenu=React.useCallback(()=>setScopeMenuOpen(false),[]);
   const firstMenuItemRef=React.useRef<HTMLButtonElement|null>(null);
   const lastMenuItemRef=React.useRef<HTMLButtonElement|null>(null);
   const pendingMenuFocusRef=React.useRef<0|1>(0);
@@ -117,7 +121,9 @@ export function SourceMcpApprovalRequestCard({
     if(!scopeMenuOpen)return;
     (pendingMenuFocusRef.current===1?lastMenuItemRef:firstMenuItemRef).current?.focus();
     const closeOutside=(event:PointerEvent)=>{
-      if(event.target instanceof Node&&!scopeMenuRef.current?.contains(event.target))
+      if(event.target instanceof Node&&
+        !scopeMenuRef.current?.contains(event.target)&&
+        !portaledMenuRef.current?.contains(event.target))
         setScopeMenuOpen(false);
     };
     document.addEventListener("pointerdown",closeOutside);
@@ -219,6 +225,7 @@ export function SourceMcpApprovalRequestCard({
           ref={scopeTriggerRef}
           className="codex-source-mcp-approval__action codex-source-mcp-approval__action--dropdown"
           aria-label="Approval options" aria-haspopup="menu"
+          aria-controls={scopeMenuOpen?scopeMenuId:undefined}
           aria-expanded={scopeMenuOpen} disabled={!canApprove}
           onClick={()=>{if(scopeMenuOpen)closeMenu();else openMenu();}}
           onKeyDown={event=>{
@@ -229,17 +236,19 @@ export function SourceMcpApprovalRequestCard({
           }}>
           <span aria-hidden="true">⌄</span>
         </button>:null}
-        {hasSessionScope&&scopeMenuOpen?<div role="menu"
-          aria-label="Approval options"
-          className="codex-source-mcp-approval__scope-menu"
-          onKeyDown={menuKeyDown}>
+        {hasSessionScope&&scopeMenuOpen?<SourceApprovalDropdownPortal
+          triggerRef={scopeTriggerRef}
+          menuRef={portaledMenuRef}
+          menuId={scopeMenuId}
+          onKeyDown={menuKeyDown}
+          onAnchorUnavailable={closeOffscreenMenu}>
           <button type="button" role="menuitem" ref={firstMenuItemRef}
             onClick={()=>{closeMenu(false);void respond("accept");}}>Allow once</button>
           <button type="button" role="menuitem" ref={lastMenuItemRef}
             onClick={()=>{closeMenu(false);void respond("accept","session");}}>
             Allow this conversation
           </button>
-        </div>:null}
+        </SourceApprovalDropdownPortal>:null}
       </div>
     </div>
   </>;
