@@ -36,7 +36,7 @@ export function SourceCompactElicitationCard({
         </span>
         <div className="codex-source-compact-request__content">
           <div className="codex-source-compact-request__title">{title}</div>
-          <div className="codex-source-compact-request__description">{description}</div>
+          {description!=null?<div className="codex-source-compact-request__description">{description}</div>:null}
           {status}
         </div>
       </div>

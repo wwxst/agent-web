@@ -9,6 +9,7 @@ test("original toolSuggestion ct mounts as distinct compact request in canonical
  await expect(card).toHaveCount(1);
  await expect(card.getByText("Sample Files (synthetic)")).toBeVisible();
  await expect(card.getByRole("button",{name:"Install"})).toBeDisabled();
+ await expect(card.locator(".codex-source-compact-request__description")).toHaveCount(0);
  await expect(card.getByRole("button",{name:"Continue"})).toHaveCount(0);
  await expect(card).toContainText("Tool installation and activation are unavailable in this host.");
  await expect(card).toHaveAttribute("data-source-tool-suggestion-phase","idle");
