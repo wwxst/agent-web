@@ -38,6 +38,16 @@ test("source Browser Chrome connection cannot enable global policy, but has site
  await page.getByTestId("demo-browser-website-approval-request").click();
  const card=page.locator('[data-demo-turn-id*="-policy-denied"]')
    .locator("[data-source-browser-website-approval-card]");
+ // The virtualized transcript is following the newest (Browser) request.
+ // Move the *real* scroll viewport up until this preceding Chrome turn mounts.
+ const viewport=page.locator("[data-thread-scroll-viewport]");
+ await expect.poll(async()=>{
+   if(await card.count()===1)return 1;
+   await viewport.evaluate(element=>{
+     element.scrollTop=Math.max(0,element.scrollTop-element.clientHeight/2);
+   });
+   return card.count();
+ },{timeout:9000}).toBe(1);
  await expect(card.locator('[data-source-browser-website-source="connection"]')).toContainText("Chrome");
  await expect(card.getByRole("button",{name:"Allow for all sites"})).toHaveCount(0);
  await expect(card.getByRole("button",{name:"Allow once"})).toBeEnabled();
