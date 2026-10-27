@@ -29,7 +29,7 @@ import {
   demoActivityEntry, demoItem, demoMessageEntry, makeLongHistory,
   demoStreamingCodeEntry, updateDemoStreamingCodeEntry,
   demoAutomaticReviewEntry, updateDemoAutomaticReviewEntry,
-  demoMcpApprovalEntry, demoComputerUseApprovalEntry, demoBrowserWebsiteApprovalEntry, demoUrlActionEntry,
+  demoMcpApprovalEntry, demoComputerUseApprovalEntry, demoBrowserWebsiteApprovalEntry, demoUrlActionEntry, demoToolSuggestionEntry, demoUserVerificationEntry, demoUnsupportedOpenAIFormEntry, demoTextFormElicitationEntry,
   type DemoConversationId,
 } from "./mockConversation.js";
 
@@ -639,6 +639,38 @@ export function App() {
     ]);
   }
 
+  function playTextFormFixture() {
+    if(playing)return;
+    markFollow();
+    appendDemoEntries(source,[
+      demoTextFormElicitationEntry(nextId("text-form-elicitation")),
+    ]);
+  }
+
+  function playUnsupportedFormFixture() {
+    if(playing)return;
+    markFollow();
+    appendDemoEntries(source,[
+      demoUnsupportedOpenAIFormEntry(nextId("unsupported-openai-form")),
+    ]);
+  }
+
+  function playUserVerificationFixture() {
+    if(playing)return;
+    markFollow();
+    appendDemoEntries(source,[
+      demoUserVerificationEntry(nextId("user-verification")),
+    ]);
+  }
+
+  function playToolSuggestionFixture() {
+    if(playing)return;
+    markFollow();
+    appendDemoEntries(source,[
+      demoToolSuggestionEntry(nextId("tool-suggestion"),"connector","install"),
+    ]);
+  }
+
   function playUrlActionFixture() {
     if(playing)return;
     markFollow();
@@ -849,6 +881,22 @@ export function App() {
           <button type="button" onClick={playBrowserWebsiteApprovalFixture}
             data-testid="demo-browser-website-approval-request">
             <Icon name="panel" size={15}/> 演示 Browser 网站授权请求（模拟）
+          </button>
+          <button type="button" onClick={playTextFormFixture}
+            data-testid="demo-text-form-elicitation-request">
+            <Icon name="panel" size={15}/> 演示 MCP 文本表单（模拟）
+          </button>
+          <button type="button" onClick={playUnsupportedFormFixture}
+            data-testid="demo-unsupported-openai-form-request">
+            <Icon name="panel" size={15}/> 演示不支持的 MCP 表单（模拟）
+          </button>
+          <button type="button" onClick={playUserVerificationFixture}
+            data-testid="demo-user-verification-request">
+            <Icon name="check" size={15}/> 演示身份验证请求（模拟）
+          </button>
+          <button type="button" onClick={playToolSuggestionFixture}
+            data-testid="demo-tool-suggestion-request">
+            <Icon name="plugin" size={15}/> 演示工具安装建议（模拟）
           </button>
           <button type="button" onClick={playUrlActionFixture}
             data-testid="demo-url-action-request">

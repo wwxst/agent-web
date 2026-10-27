@@ -11,6 +11,9 @@
  */
 import type {ConversationMessageItem} from "./ConversationMessageRenderPlan.js";
 import {
+ createSourceTextFormDraftStore,type SourceTextFormDraftStore,
+} from "./SourceTextFormDraftStore.js";
+import {
   createSourcePendingElicitationRequestStore,
   validateSourcePendingElicitationKey,validateSourcePendingElicitationRecord,
   type SourcePendingElicitationKey,type SourcePendingElicitationRecord,
@@ -63,6 +66,7 @@ export interface SourceConversationHostEventBridge {
  readonly turnRuntime:SourceTurnRuntimeStatusStore;
  readonly toolHistory:ToolActivityHistoryEntityStore;
  readonly pendingElicitations:SourcePendingElicitationStore;
+ readonly textFormDrafts:SourceTextFormDraftStore;
  publish(event:SourceConversationHostEvent):void;
  /** Replacing an upstream transport invalidates late callbacks from it. */
  connect(transport:SourceConversationHostEventTransport):void;
@@ -102,6 +106,7 @@ export function createSourceConversationHostEventBridge():SourceConversationHost
  const turnRuntime=createSourceTurnRuntimeStatusStore();
  const toolHistory=createToolActivityHistoryEntityStore();
  const pendingElicitations=createSourcePendingElicitationRequestStore();
+ const textFormDrafts=createSourceTextFormDraftStore();
  let closed=false,epoch=0;
  let upstream:(()=>void)|null=null;
 
@@ -133,9 +138,14 @@ export function createSourceConversationHostEventBridge():SourceConversationHost
        pendingElicitations.upsert(event.request);
        return;
      case "elicitation-settled":
+       textFormDrafts.settle({
+         hostId:event.query.hostId,conversationId:event.query.threadId,
+         requestId:event.query.requestId,
+       });
        pendingElicitations.settle(event.query);
        return;
      case "clear-thread":
+       textFormDrafts.clearThread(event.hostId,event.threadId);
        pendingElicitations.clearThread(event.hostId,event.threadId);
        historicalTurns.clearThread(event.hostId,event.threadId);
        turnRuntime.clearThread(event.hostId,event.threadId);
@@ -168,7 +178,7 @@ export function createSourceConversationHostEventBridge():SourceConversationHost
    else upstream=stop;
  }
  return {
-   historicalTurns,turnRuntime,toolHistory,pendingElicitations,publish,connect,disconnect,
+   historicalTurns,turnRuntime,toolHistory,pendingElicitations,textFormDrafts,publish,connect,disconnect,
    dispose(){
      if(closed)return;
      closed=true;
@@ -177,6 +187,7 @@ export function createSourceConversationHostEventBridge():SourceConversationHost
      turnRuntime.dispose();
      toolHistory.dispose();
      pendingElicitations.dispose();
+     textFormDrafts.dispose();
    },
  };
 }

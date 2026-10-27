@@ -20,6 +20,13 @@ import {projectSourceMcpGenericApprovalMessage}
   from "../src/conversation/SourceMcpApprovalRequestModel.js";
 import {projectSourceBrowserWebsiteApproval} from "../src/conversation/SourceBrowserWebsiteApprovalModel.js";
 import {projectSourceUrlActionRequest} from "../src/conversation/SourceUrlActionRequestModel.js";
+import {projectSourceToolSuggestion} from "../src/conversation/SourceToolSuggestionRequestModel.js";
+import {projectSourceUserVerificationRequest}
+  from "../src/conversation/SourceUserVerificationModel.js";
+import {projectSourceUnsupportedOpenAIForm}
+  from "../src/conversation/SourceUnsupportedOpenAIFormModel.js";
+import {projectSourceTextFormElicitation}
+  from "../src/conversation/SourceTextFormElicitationModel.js";
 import {projectSourceHostMcpApproval} from "../src/conversation/SourceHostMcpApprovalProjection.js";
 import {bindSourcePendingElicitationsToTimeline}
   from "../src/conversation/SourcePendingElicitationTimelineBinder.js";
@@ -526,6 +533,75 @@ export function makeDemoRow(notify: (message: string) => void) {
     /** Original at dispatch only recognizes the explicit urlAction kind.
      * Browser fixture is intentionally readonly for external opens. Native
      * Electron uses its real (validated) isolated openExternalUrl bridge. */
+    getTextFormElicitationRequest:(item)=>{
+      const live=hostPending(item);
+      if(live!=null)return projectSourceTextFormElicitation(live.elicitation,{
+        hostId:live.hostId,conversationId:live.threadId,requestId:live.requestId,
+      });
+      if(item.type!=="demo-text-form-elicitation"||typeof item.id!=="string")return null;
+      return projectSourceTextFormElicitation({
+        kind:"formElicitation",serverName:"Sample MCP form server (synthetic)",
+        message:"Share project information (synthetic)",
+        schema:{type:"object",properties:{
+          project:{type:"string",title:"Project name",description:"Enter the project label"},
+          purpose:{type:"string",title:"Purpose",description:"Describe what to accomplish",
+            minLength:3,maxLength:120},
+        },required:["project","purpose"],additionalProperties:false},
+      },{hostId:"demo-host",conversationId:"frontend",requestId:item.id});
+    },
+    getTextFormDraft:request=>eventBridge.textFormDrafts.get(request),
+    onTextFormDraftChange:(request,draft)=>eventBridge.textFormDrafts.save(request,draft),
+    onTextFormElicitationReply:window.agentWebDesktopHost!=null
+      ?reply=>window.agentWebDesktopHost!.replyToTextForm(reply)
+      :undefined,
+    getUnsupportedOpenAIFormRequest:(item)=>{
+      const live=hostPending(item);
+      if(live!=null)return projectSourceUnsupportedOpenAIForm(live.elicitation,{
+        hostId:live.hostId,conversationId:live.threadId,requestId:live.requestId,
+      });
+      if(item.type!=="demo-unsupported-openai-form"||typeof item.id!=="string")
+        return null;
+      return projectSourceUnsupportedOpenAIForm({
+        kind:"unsupportedOpenAIForm",
+        serverName:"Sample MCP form server (synthetic)",
+      },{hostId:"demo-host",conversationId:"frontend",requestId:item.id});
+    },
+    onUnsupportedOpenAIFormReply:window.agentWebDesktopHost!=null
+      ?envelope=>window.agentWebDesktopHost!.replyToUnsupportedForm(envelope)
+      :undefined,
+    getUserVerificationRequest:(item)=>{
+      const live=hostPending(item);
+      if(live!=null)return projectSourceUserVerificationRequest(live.elicitation,{
+        hostId:live.hostId,conversationId:live.threadId,requestId:live.requestId,
+      });
+      if(item.type!=="demo-user-verification"||typeof item.id!=="string")
+        return null;
+      return projectSourceUserVerificationRequest({
+        kind:"userVerification",
+        title:"Confirm access to workspace files (synthetic)",
+        serverName:"Sample Files MCP (synthetic)",
+        description:"This is a visual fixture. No biometric verification is performed.",
+      },{hostId:"demo-host",conversationId:"frontend",requestId:item.id});
+    },
+    onUserVerificationCancel:window.agentWebDesktopHost!=null
+      ?envelope=>window.agentWebDesktopHost!.cancelUserVerification(envelope)
+      :undefined,
+    getToolSuggestionRequest:(item)=>{
+      const live=hostPending(item);
+      if(live!=null)return projectSourceToolSuggestion(live.elicitation,{
+        hostId:live.hostId,conversationId:live.threadId,requestId:live.requestId,
+      });
+      if(item.type!=="demo-tool-suggestion"||typeof item.id!=="string")return null;
+      return projectSourceToolSuggestion({
+        kind:"toolSuggestion",suggestion:{
+          tool_type:item.demoToolSuggestionType==="plugin"?"plugin":"connector",
+          suggest_type:item.demoToolSuggestionAction==="enable"?"enable":"install",
+          tool_id:"sample-files-tool",tool_name:"Sample Files (synthetic)",
+        },
+      },{hostId:"demo-host",conversationId:"frontend",requestId:item.id});
+    },
+    // Intentionally no onStartToolSuggestion/onCheckToolSuggestionReady:
+    // verified host app/plugin service does not exist yet.
     getUrlActionRequest:(item)=>{
       const live=hostPending(item);
       if(live!=null)return projectSourceUrlActionRequest(live.elicitation,{

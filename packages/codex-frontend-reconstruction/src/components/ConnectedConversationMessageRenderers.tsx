@@ -39,6 +39,24 @@ import { SourceMcpApprovalRequestCard } from "./SourceMcpApprovalRequestCard.js"
 import {SourceComputerUseApprovalRequestCard} from "./SourceComputerUseApprovalRequestCard.js";
 import {SourceBrowserWebsiteApprovalCard} from "./SourceBrowserWebsiteApprovalCard.js";
 import {SourceUrlActionRequestCard} from "./SourceUrlActionRequestCard.js";
+import {SourceToolSuggestionRequestCard} from "./SourceToolSuggestionRequestCard.js";
+import {SourceUserVerificationCard} from "./SourceUserVerificationCard.js";
+import {SourceUnsupportedOpenAIFormCard} from "./SourceUnsupportedOpenAIFormCard.js";
+import {SourceTextFormElicitationCard} from "./SourceTextFormElicitationCard.js";
+import type {
+ SourceTextFormRequest,SourceTextFormReplyTransport,
+} from "../conversation/SourceTextFormElicitationModel.js";
+import type {SourceTextFormDraft}
+ from "../conversation/SourceTextFormDraftStore.js";
+import type {
+ SourceUnsupportedOpenAIFormRequest,SourceUnsupportedOpenAIFormReplyTransport,
+} from "../conversation/SourceUnsupportedOpenAIFormModel.js";
+import type {
+ SourceUserVerificationRequest,SourceUserVerificationCancelTransport,
+} from "../conversation/SourceUserVerificationModel.js";
+import type {
+ SourceToolSuggestionRequest,SourceToolSuggestionStart,SourceToolSuggestionCheckReady,
+} from "../conversation/SourceToolSuggestionRequestModel.js";
 import type {SourceUrlActionRequest} from "../conversation/SourceUrlActionRequestModel.js";
 import type {SourceBrowserWebsiteApprovalRequest} from "../conversation/SourceBrowserWebsiteApprovalModel.js";
 import type {SourceComputerUseApprovalRequest} from "../conversation/SourceComputerUseApprovalModel.js";
@@ -155,6 +173,24 @@ export interface ConnectedConversationRendererHost extends ConversationContentAd
   /** Native shell owns external HTTPS open; opening alone never replies or grants. */
   onUrlActionOpenExternal?:(url:string)=>Promise<boolean>;
   getUrlActionOpenInThread?:(item:ConversationMessageItem)=>(()=>void)|null;
+  /** Original at.toolSuggestion -> inline-tool-suggestion-request-card J. */
+  getToolSuggestionRequest?:(item:ConversationMessageItem)=>SourceToolSuggestionRequest|null;
+  /** Original at.userVerification invokes Ke/ Re, not generic MCP ye. */
+  getUserVerificationRequest?:(item:ConversationMessageItem)=>SourceUserVerificationRequest|null;
+  /** Exact original at.unsupportedOpenAIForm -> request-panel bn. */
+  getUnsupportedOpenAIFormRequest?:(item:ConversationMessageItem)=>SourceUnsupportedOpenAIFormRequest|null;
+  /** Source ei formElicitation -> Yr/Wr/ur/wn text-only, other types remain pending. */
+  getTextFormElicitationRequest?:(item:ConversationMessageItem)=>SourceTextFormRequest|null;
+  onTextFormElicitationReply?:SourceTextFormReplyTransport;
+  getTextFormDraft?:(request:SourceTextFormRequest)=>SourceTextFormDraft|null;
+  onTextFormDraftChange?:(request:SourceTextFormRequest,draft:SourceTextFormDraft)=>void;
+  /** Native-specific cancel / decline, not a generic MCP grant. */
+  onUnsupportedOpenAIFormReply?:SourceUnsupportedOpenAIFormReplyTransport;
+  /** Native cancel is separate from MCP accept/decline and never biometric approval. */
+  onUserVerificationCancel?:SourceUserVerificationCancelTransport;
+  /** Real host-owned install/enable + independently verified readiness ONLY. */
+  onStartToolSuggestion?:SourceToolSuggestionStart;
+  onCheckToolSuggestionReady?:SourceToolSuggestionCheckReady;
   onMcpApprovalReply?:SourceMcpApprovalReplyTransport;
   translator: ActivityStatusTranslation;
   getApprovalReviewSummary: (review: AutomaticApprovalReviewSummary) => React.ReactNode;
@@ -190,6 +226,26 @@ export function createConnectedConversationMessageRenderers(host: ConnectedConve
     }
 
     const renderProjectedActivity = (target: ConversationMessageItem): React.ReactNode => {
+      const textForm=host.getTextFormElicitationRequest?.(target)??null;
+      if(textForm!=null)return <SourceTextFormElicitationCard
+        key={JSON.stringify([textForm.hostId,textForm.conversationId,textForm.requestId])}
+        request={textForm} onReply={host.onTextFormElicitationReply}
+        initialDraft={host.getTextFormDraft?.(textForm)??null}
+        onDraftChange={draft=>host.onTextFormDraftChange?.(textForm,draft)}/>;
+      const unsupportedForm=host.getUnsupportedOpenAIFormRequest?.(target)??null;
+      if(unsupportedForm!=null)return <SourceUnsupportedOpenAIFormCard
+        key={JSON.stringify([unsupportedForm.hostId,unsupportedForm.conversationId,unsupportedForm.requestId])}
+        request={unsupportedForm} onReply={host.onUnsupportedOpenAIFormReply}/>;
+      const verification=host.getUserVerificationRequest?.(target)??null;
+      if(verification!=null)return <SourceUserVerificationCard
+        key={JSON.stringify([verification.hostId,verification.conversationId,verification.requestId])}
+        request={verification} onCancel={host.onUserVerificationCancel}/>;
+      const toolSuggestion=host.getToolSuggestionRequest?.(target)??null;
+      if(toolSuggestion!=null)return <SourceToolSuggestionRequestCard
+        key={JSON.stringify([toolSuggestion.hostId,toolSuggestion.conversationId,toolSuggestion.requestId])}
+        request={toolSuggestion} onReply={host.onMcpApprovalReply}
+        onStartSetup={host.onStartToolSuggestion}
+        onCheckReady={host.onCheckToolSuggestionReady}/>;
       const urlAction=host.getUrlActionRequest?.(target)??null;
       if(urlAction!=null)return <SourceUrlActionRequestCard
         key={JSON.stringify([urlAction.hostId,urlAction.conversationId,urlAction.requestId])}

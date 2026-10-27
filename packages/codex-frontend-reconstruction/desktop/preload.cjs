@@ -12,6 +12,9 @@ const UI_COMMAND_CHANNEL="agent-web:ui-command";
 const READ_DRAFTS_CHANNEL="agent-web:composer-drafts-read";
 const WRITE_DRAFT_CHANNEL="agent-web:composer-draft-write";
 const MCP_APPROVAL_REPLY_CHANNEL="agent-web:mcp-approval-reply";
+const USER_VERIFICATION_CANCEL_CHANNEL="agent-web:user-verification-cancel";
+const UNSUPPORTED_FORM_REPLY_CHANNEL="agent-web:unsupported-form-reply";
+const TEXT_FORM_REPLY_CHANNEL="agent-web:text-form-reply";
 const OPEN_EXTERNAL_URL_CHANNEL="agent-web:open-external-url";
 const draftThreadIds=new Set(["frontend","review"]);
 const allowedUiCommands=new Set([
@@ -62,6 +65,66 @@ contextBridge.exposeInMainWorld("agentWebDesktopHost",Object.freeze({
    * Open a single HTTPS URL through authenticated main frame -> native shell.
    * No navigation, generic shell/IPC exposure, permission or response sent.
    */
+  /** Original biometric cancel is NOT a generic MCP deny response. */
+  /** Source bn uses q2t("cancel"|"decline") with null content, not
+   * generic MCP approval. Never expose raw invoke or accept. */
+  /** Scoped string-only form transport, never a generic IPC send.
+   * A real Agent backend must revalidate the authoritative field schema. */
+  replyToTextForm(envelope){
+    const id=v=>typeof v==="string"&&v.length>0&&v.length<=256&&
+      v.trim()===v&&!/[\u0000-\u001f\u007f]/.test(v);
+    const object=v=>v!=null&&typeof v==="object"&&!Array.isArray(v);
+    const validContent=object(envelope?.content)&&
+      Object.keys(envelope.content).length<=12&&
+      Object.entries(envelope.content).every(([name,value])=>
+        id(name)&&!["__proto__","constructor","prototype"].includes(name)&&
+        typeof value==="string"&&value.length<=16384&&
+        !/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/.test(value));
+    if(!object(envelope)||Object.keys(envelope).length!==5||
+      !["hostId","conversationId","requestId","action","content"]
+        .every(k=>Object.hasOwn(envelope,k))||
+      ![envelope.hostId,envelope.conversationId,envelope.requestId].every(id)||
+      !["accept","decline","cancel"].includes(envelope.action)||
+      (envelope.action==="accept"?!validContent:envelope.content!==null)||
+      JSON.stringify(envelope).length>32768)
+      return Promise.reject(new TypeError("TEXT_FORM_INVALID_REPLY"));
+    return ipcRenderer.invoke(TEXT_FORM_REPLY_CHANNEL,{
+      hostId:envelope.hostId,conversationId:envelope.conversationId,
+      requestId:envelope.requestId,action:envelope.action,
+      content:envelope.action==="accept"?envelope.content:null,
+    });
+  },
+  replyToUnsupportedForm(envelope){
+    if(envelope==null||typeof envelope!=="object"||Array.isArray(envelope)||
+      Object.keys(envelope).length!==4||
+      !["hostId","conversationId","requestId","action"].every(k=>Object.hasOwn(envelope,k))||
+      !["hostId","conversationId","requestId"].every(k=>
+        typeof envelope[k]==="string"&&envelope[k].trim()===envelope[k]&&
+        envelope[k].length>0&&envelope[k].length<=256&&
+        !/[\u0000-\u001f\u007f]/.test(envelope[k]))||
+      !["cancel","decline"].includes(envelope.action))
+      return Promise.reject(new TypeError("UNSUPPORTED_FORM_INVALID_REPLY"));
+    return ipcRenderer.invoke(UNSUPPORTED_FORM_REPLY_CHANNEL,{
+      hostId:envelope.hostId,conversationId:envelope.conversationId,
+      requestId:envelope.requestId,action:envelope.action,
+    });
+  },
+  cancelUserVerification(envelope){
+    if(envelope==null||typeof envelope!=="object"||Array.isArray(envelope)||
+      Object.keys(envelope).length!==4||
+      !["hostId","conversationId","requestId","reason"].every(key=>
+        Object.hasOwn(envelope,key))||
+      !["hostId","conversationId","requestId"].every(key=>
+        typeof envelope[key]==="string"&&envelope[key].length>0&&
+        envelope[key].length<=256&&envelope[key].trim()===envelope[key]&&
+        !/[\u0000-\u001f\u007f]/.test(envelope[key]))||
+      envelope.reason!=="userCancelled")
+      return Promise.reject(new TypeError("USER_VERIFICATION_INVALID_CANCEL"));
+    return ipcRenderer.invoke(USER_VERIFICATION_CANCEL_CHANNEL,{
+      hostId:envelope.hostId,conversationId:envelope.conversationId,
+      requestId:envelope.requestId,reason:envelope.reason,
+    });
+  },
   openExternalUrl(url){
     if(typeof url!=="string"||url.length>2048||
       /[\u0000-\u001f\u007f]/u.test(url)){
