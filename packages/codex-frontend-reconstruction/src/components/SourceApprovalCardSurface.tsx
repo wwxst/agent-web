@@ -18,17 +18,21 @@ export interface SourceApprovalCardSurfaceProps {
   onSubmit:(event:React.FormEvent<HTMLFormElement>)=>void;
   requestId:string;
   phase:string;
+  kind?:"mcp"|"computer-use";
 }
 export function SourceApprovalCardSurface({
   headerContent,title,subtitle,reason,details,status,actions,onSubmit,
-  requestId,phase,
+  requestId,phase,kind="mcp",
 }:SourceApprovalCardSurfaceProps){
   return <section className="codex-source-mcp-approval"
     data-codex-approval-surface="true"
-    data-source-mcp-approval-card=""
-    data-source-mcp-request-id={requestId}
-    data-source-mcp-reply-phase={phase}
-    aria-label="MCP tool approval request">
+    data-source-mcp-approval-card={kind==="mcp"?"":undefined}
+    data-source-computer-use-approval-card={kind==="computer-use"?"":undefined}
+    data-source-mcp-request-id={kind==="mcp"?requestId:undefined}
+    data-source-mcp-reply-phase={kind==="mcp"?phase:undefined}
+    data-source-computer-use-request-id={kind==="computer-use"?requestId:undefined}
+    data-source-computer-use-reply-phase={kind==="computer-use"?phase:undefined}
+    aria-label={kind==="computer-use"?"Computer Use app approval request":"MCP tool approval request"}>
     <div className="codex-source-mcp-approval__body">
       <div role="alert" aria-atomic="true" className="codex-source-mcp-approval__heading">
         {headerContent!=null
