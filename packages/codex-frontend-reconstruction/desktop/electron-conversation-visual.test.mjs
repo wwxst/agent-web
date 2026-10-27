@@ -1416,6 +1416,13 @@ test("native Electron shows source E Computer Use first-use and high-risk reques
    assert.equal(await firstUse.getByRole("button",{name:"Approval options"}).count(),0);
    assert.equal(await firstUse.getByRole("button",{name:"Allow once"}).count(),0);
    assert.match(await firstUse.innerText(),/No Computer Use reply transport is connected/);
+   assert.equal(await firstUse.getAttribute("data-source-computer-use-reply-phase"),"idle");
+   await firstUse.scrollIntoViewIfNeeded();
+   await mkdir(resolve(root,"desktop/test-results"),{recursive:true});
+   await page.screenshot({
+     path:resolve(root,"desktop/test-results/source-computer-use-first-use-readonly.png"),
+     animations:"disabled",fullPage:false,
+   });
    // A preceding request can move outside the virtualized viewport after
    // the tall first-use disclosure is appended. Inspect it in the REAL
    // canonical transcript, not a standalone synthetic component.
@@ -1444,15 +1451,8 @@ test("native Electron shows source E Computer Use first-use and high-risk reques
    assert.equal(await highRisk.locator("[data-source-computer-use-first-disclosure]").count(),0);
    assert.equal(await highRisk.getByRole("button",{name:"Always allow"}).count(),0);
    assert.equal(await highRisk.getByRole("button",{name:"Deny"}).isDisabled(),true);
-   assert.equal(await firstUse.getAttribute("data-source-computer-use-reply-phase"),"idle");
    assert.equal(await highRisk.getAttribute("data-source-computer-use-reply-phase"),"idle");
    assert.equal(await page.locator("[data-source-computer-use-reply-phase='submitted']").count(),0);
-   await firstUse.scrollIntoViewIfNeeded();
-   await mkdir(resolve(root,"desktop/test-results"),{recursive:true});
-   await page.screenshot({
-     path:resolve(root,"desktop/test-results/source-computer-use-first-use-readonly.png"),
-     animations:"disabled",fullPage:false,
-   });
    await highRisk.scrollIntoViewIfNeeded();
    await page.screenshot({
      path:resolve(root,"desktop/test-results/source-computer-use-high-risk-readonly.png"),
