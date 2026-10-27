@@ -6,6 +6,8 @@ import {
   sourceLocalSubagentSections,
   sourceLocalSubagentPreview,
   sourceLocalSubagentLastActivityMs,
+  isSourceLocalSubagentChildVerified,
+  sourceLocalSubagentRelativeTime,
 } from "../build/SourceLocalSubagentsPanelModel.js";
 
 test("original I groups only done separately and counts waiting among active",()=>{
@@ -43,4 +45,12 @@ test("original V/W fallback and timestamp precedence are preserved",()=>{
     conversationId:"f",displayName:"F",status:"done",recencyAtMs:200}),200);
   assert.equal(sourceLocalSubagentLastActivityMs({
     conversationId:"g",displayName:"G",status:"done"}),null);
+  assert.equal(sourceLocalSubagentRelativeTime(0,2*3600000),"2 hours ago");
+});
+
+test("a nested transcript cannot open if not in the parent's verified summary",()=>{
+  const rows=[{conversationId:"child-one",displayName:"Child one",status:"running"}];
+  assert.equal(isSourceLocalSubagentChildVerified(rows,"child-one"),true);
+  assert.equal(isSourceLocalSubagentChildVerified(rows,"other-thread"),false);
+  assert.equal(isSourceLocalSubagentChildVerified([],"child-one"),false);
 });
