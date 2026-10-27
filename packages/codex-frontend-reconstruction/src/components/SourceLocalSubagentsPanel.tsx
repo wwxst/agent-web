@@ -3,6 +3,8 @@ import {
   SOURCE_SUBAGENTS_ACTIVE_VISIBLE_LIMIT,
   SOURCE_SUBAGENTS_DONE_VISIBLE_LIMIT,
   sourceLocalSubagentLastActivityMs,
+  sourceLocalSubagentRelativeTime,
+  isSourceLocalSubagentChildVerified,
   sourceLocalSubagentPreview,
   sourceLocalSubagentSections,
   type SourceLocalSubagent,
@@ -87,7 +89,7 @@ function SourceSubagentSection({
                 {item.status==="done"&&doneAt!=null
                   ?<time className="codex-subagents__trailing"
                     dateTime={new Date(doneAt).toISOString()}>
-                    {formatRelativeTime?.(doneAt)??new Date(doneAt).toLocaleDateString()}
+                    {formatRelativeTime?.(doneAt)??sourceLocalSubagentRelativeTime(doneAt)}
                   </time>:null}
               </span>
               {preview!=null
@@ -114,6 +116,8 @@ export function SourceLocalSubagentsPanel({
   const sections=sourceLocalSubagentSections(subagents);
   const selected=selectedConversationId==null?null:
     subagents.find(entry=>entry.conversationId===selectedConversationId)??null;
+  const childVerified=selectedConversationId!=null&&
+    isSourceLocalSubagentChildVerified(subagents,selectedConversationId);
   const back=React.useCallback(()=>onSelect(null,null),[onSelect]);
   return <aside className="codex-subagents"
     role="complementary" aria-label="Subagents"
@@ -143,7 +147,10 @@ export function SourceLocalSubagentsPanel({
         </div>
         <div className="codex-subagents__detail-content">
           {isLoading?<div role="status">Loading subagent transcript…</div>:
-            renderTranscript!=null
+            !childVerified
+            ?<div role="status" data-source-subagent-unverified="">
+              Subagent is not verified as a child of the current conversation.
+            </div>:renderTranscript!=null
             ?renderTranscript({hostId,conversationId:selectedConversationId,
               canInteract:selected?.canInteract===true,
               onOpenBackgroundAgent:(id,name)=>onSelect(id,name)})
