@@ -46,6 +46,8 @@ import {SourceTextFormElicitationCard} from "./SourceTextFormElicitationCard.js"
 import type {
  SourceTextFormRequest,SourceTextFormReplyTransport,
 } from "../conversation/SourceTextFormElicitationModel.js";
+import type {SourceTextFormDraft}
+ from "../conversation/SourceTextFormDraftStore.js";
 import type {
  SourceUnsupportedOpenAIFormRequest,SourceUnsupportedOpenAIFormReplyTransport,
 } from "../conversation/SourceUnsupportedOpenAIFormModel.js";
@@ -180,6 +182,8 @@ export interface ConnectedConversationRendererHost extends ConversationContentAd
   /** Source ei formElicitation -> Yr/Wr/ur/wn text-only, other types remain pending. */
   getTextFormElicitationRequest?:(item:ConversationMessageItem)=>SourceTextFormRequest|null;
   onTextFormElicitationReply?:SourceTextFormReplyTransport;
+  getTextFormDraft?:(request:SourceTextFormRequest)=>SourceTextFormDraft|null;
+  onTextFormDraftChange?:(request:SourceTextFormRequest,draft:SourceTextFormDraft)=>void;
   /** Native-specific cancel / decline, not a generic MCP grant. */
   onUnsupportedOpenAIFormReply?:SourceUnsupportedOpenAIFormReplyTransport;
   /** Native cancel is separate from MCP accept/decline and never biometric approval. */
@@ -225,7 +229,9 @@ export function createConnectedConversationMessageRenderers(host: ConnectedConve
       const textForm=host.getTextFormElicitationRequest?.(target)??null;
       if(textForm!=null)return <SourceTextFormElicitationCard
         key={JSON.stringify([textForm.hostId,textForm.conversationId,textForm.requestId])}
-        request={textForm} onReply={host.onTextFormElicitationReply}/>;
+        request={textForm} onReply={host.onTextFormElicitationReply}
+        initialDraft={host.getTextFormDraft?.(textForm)??null}
+        onDraftChange={draft=>host.onTextFormDraftChange?.(textForm,draft)}/>;
       const unsupportedForm=host.getUnsupportedOpenAIFormRequest?.(target)??null;
       if(unsupportedForm!=null)return <SourceUnsupportedOpenAIFormCard
         key={JSON.stringify([unsupportedForm.hostId,unsupportedForm.conversationId,unsupportedForm.requestId])}

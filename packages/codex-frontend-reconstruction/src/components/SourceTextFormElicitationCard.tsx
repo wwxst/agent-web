@@ -3,11 +3,14 @@ import {
  sourceTextFormKey,sourceTextFormReply,sourceTextFormValidate,
  type SourceTextFormRequest,type SourceTextFormReplyTransport,
 } from "../conversation/SourceTextFormElicitationModel.js";
+import type {SourceTextFormDraft} from "../conversation/SourceTextFormDraftStore.js";
 import "./sourceTextFormElicitationCard.css";
 
 export interface SourceTextFormElicitationCardProps{
  request:SourceTextFormRequest;
  onReply?:SourceTextFormReplyTransport;
+ initialDraft?:SourceTextFormDraft|null;
+ onDraftChange?:(draft:SourceTextFormDraft)=>void;
 }
 /**
  * Extracted from original request-panel ei/Yr/Wr/ur/wn: one active question,
@@ -16,12 +19,14 @@ export interface SourceTextFormElicitationCardProps{
  * removal; local submit does not create a fake successful Agent response.
  */
 export function SourceTextFormElicitationCard({
- request,onReply,
+ request,onReply,initialDraft,onDraftChange,
 }:SourceTextFormElicitationCardProps){
  const key=sourceTextFormKey(request);
  const schemaKey=JSON.stringify(request.fields);
- const [values,setValues]=React.useState<Record<string,string>>({});
- const [fieldIndex,setFieldIndex]=React.useState(0);
+ const [values,setValues]=React.useState<Record<string,string>>(
+   ()=>({...initialDraft?.values}));
+ const [fieldIndex,setFieldIndex]=React.useState(
+   ()=>initialDraft?.fieldIndex??0);
  const [invalid,setInvalid]=React.useState<readonly string[]>([]);
  const [phase,setPhase]=React.useState<"idle"|"submitting"|"error"|"submitted">("idle");
  const [error,setError]=React.useState<string|null>(null);
@@ -32,7 +37,8 @@ export function SourceTextFormElicitationCard({
  const last=fieldIndex===request.fields.length-1;
  React.useEffect(()=>{
    generation.current++;pending.current=false;
-   setValues({});setFieldIndex(0);setInvalid([]);
+   setValues({...initialDraft?.values});
+   setFieldIndex(initialDraft?.fieldIndex??0);setInvalid([]);
    setPhase("idle");setError(null);
    return ()=>{generation.current++;};
  },[key,schemaKey]);
@@ -57,6 +63,11 @@ export function SourceTextFormElicitationCard({
        :"Unable to send form response. Answers were not accepted by the host.");
    }
  }
+ function changeQuestion(next:number){
+   const bounded=Math.max(0,Math.min(next,request.fields.length-1));
+   setFieldIndex(bounded);
+   onDraftChange?.({fieldIndex:bounded,values});
+ }
  function handleNext(){
    if(disabled)return;
    if(!last){
@@ -69,20 +80,22 @@ export function SourceTextFormElicitationCard({
      if(result.invalidFieldNames.includes(active.name)){
        setInvalid([active.name]);return;
      }
-     setInvalid([]);setFieldIndex(i=>Math.min(i+1,request.fields.length-1));
+     setInvalid([]);changeQuestion(fieldIndex+1);
      return;
    }
    if(validation.content==null){
      setInvalid(validation.invalidFieldNames);
      const next=request.fields.findIndex(f=>validation.invalidFieldNames.includes(f.name));
-     if(next>=0)setFieldIndex(next);
+     if(next>=0)changeQuestion(next);
      return;
    }
    setInvalid([]);void send("accept",validation.content);
  }
  function setCurrent(value:string){
    if(disabled)return;
-   setValues(current=>({...current,[active.name]:value}));
+   const next={...values,[active.name]:value};
+   setValues(next);
+   onDraftChange?.({fieldIndex,values:next});
    if(hasError)setInvalid(current=>current.filter(name=>name!==active.name));
  }
  return <section className="codex-source-text-form" data-source-text-form-request-id={key}
@@ -106,13 +119,13 @@ export function SourceTextFormElicitationCard({
          {request.fields.length>1?<>
            <button type="button" aria-label="Previous question"
              disabled={disabled||fieldIndex===0}
-             onClick={()=>{setFieldIndex(i=>Math.max(0,i-1));setInvalid([]);}}>‹</button>
+             onClick={()=>{changeQuestion(fieldIndex-1);setInvalid([]);}}>‹</button>
            <span role="status" className="codex-source-text-form__progress">
              {fieldIndex+1} of {request.fields.length}
            </span>
            <button type="button" aria-label="Next question"
              disabled={disabled||last}
-             onClick={()=>{setFieldIndex(i=>Math.min(request.fields.length-1,i+1));setInvalid([]);}}>›</button>
+             onClick={()=>{changeQuestion(fieldIndex+1);setInvalid([]);}}>›</button>
          </>:null}
          <button type="button" aria-label="Cancel" title="Cancel"
            disabled={replyDisabled} onClick={()=>{void send("cancel");}}>×</button>
@@ -153,8 +166,7 @@ export function SourceTextFormElicitationCard({
          ?<button type="button" className="codex-source-text-form__secondary"
            onClick={()=>{void send("cancel");}} disabled={replyDisabled}>Cancel</button>
          :!last?<button type="button" className="codex-source-text-form__secondary"
-           disabled={busy} onClick={()=>{setInvalid([]);setFieldIndex(i=>
-             Math.min(request.fields.length-1,i+1));}}>Skip for now</button>:null}
+           disabled={busy} onClick={()=>{setInvalid([]);changeQuestion(fieldIndex+1);}}>Skip for now</button>:null}
        <button type="submit" className="codex-source-text-form__primary"
          disabled={disabled||(last&&onReply==null)}>{last?"Continue":"Next"}</button>
      </footer>

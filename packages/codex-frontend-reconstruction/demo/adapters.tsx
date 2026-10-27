@@ -549,6 +549,8 @@ export function makeDemoRow(notify: (message: string) => void) {
         },required:["project","purpose"],additionalProperties:false},
       },{hostId:"demo-host",conversationId:"frontend",requestId:item.id});
     },
+    getTextFormDraft:request=>eventBridge.textFormDrafts.get(request),
+    onTextFormDraftChange:(request,draft)=>eventBridge.textFormDrafts.save(request,draft),
     onTextFormElicitationReply:window.agentWebDesktopHost!=null
       ?reply=>window.agentWebDesktopHost!.replyToTextForm(reply)
       :undefined,
