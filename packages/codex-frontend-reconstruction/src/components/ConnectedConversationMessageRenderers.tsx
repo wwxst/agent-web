@@ -42,6 +42,10 @@ import {SourceUrlActionRequestCard} from "./SourceUrlActionRequestCard.js";
 import {SourceToolSuggestionRequestCard} from "./SourceToolSuggestionRequestCard.js";
 import {SourceUserVerificationCard} from "./SourceUserVerificationCard.js";
 import {SourceUnsupportedOpenAIFormCard} from "./SourceUnsupportedOpenAIFormCard.js";
+import {SourceTextFormElicitationCard} from "./SourceTextFormElicitationCard.js";
+import type {
+ SourceTextFormRequest,SourceTextFormReplyTransport,
+} from "../conversation/SourceTextFormElicitationModel.js";
 import type {
  SourceUnsupportedOpenAIFormRequest,SourceUnsupportedOpenAIFormReplyTransport,
 } from "../conversation/SourceUnsupportedOpenAIFormModel.js";
@@ -173,6 +177,9 @@ export interface ConnectedConversationRendererHost extends ConversationContentAd
   getUserVerificationRequest?:(item:ConversationMessageItem)=>SourceUserVerificationRequest|null;
   /** Exact original at.unsupportedOpenAIForm -> request-panel bn. */
   getUnsupportedOpenAIFormRequest?:(item:ConversationMessageItem)=>SourceUnsupportedOpenAIFormRequest|null;
+  /** Source ei formElicitation -> Yr/Wr/ur/wn text-only, other types remain pending. */
+  getTextFormElicitationRequest?:(item:ConversationMessageItem)=>SourceTextFormRequest|null;
+  onTextFormElicitationReply?:SourceTextFormReplyTransport;
   /** Native-specific cancel / decline, not a generic MCP grant. */
   onUnsupportedOpenAIFormReply?:SourceUnsupportedOpenAIFormReplyTransport;
   /** Native cancel is separate from MCP accept/decline and never biometric approval. */
@@ -215,6 +222,10 @@ export function createConnectedConversationMessageRenderers(host: ConnectedConve
     }
 
     const renderProjectedActivity = (target: ConversationMessageItem): React.ReactNode => {
+      const textForm=host.getTextFormElicitationRequest?.(target)??null;
+      if(textForm!=null)return <SourceTextFormElicitationCard
+        key={JSON.stringify([textForm.hostId,textForm.conversationId,textForm.requestId])}
+        request={textForm} onReply={host.onTextFormElicitationReply}/>;
       const unsupportedForm=host.getUnsupportedOpenAIFormRequest?.(target)??null;
       if(unsupportedForm!=null)return <SourceUnsupportedOpenAIFormCard
         key={JSON.stringify([unsupportedForm.hostId,unsupportedForm.conversationId,unsupportedForm.requestId])}

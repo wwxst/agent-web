@@ -29,7 +29,7 @@ import {
   demoActivityEntry, demoItem, demoMessageEntry, makeLongHistory,
   demoStreamingCodeEntry, updateDemoStreamingCodeEntry,
   demoAutomaticReviewEntry, updateDemoAutomaticReviewEntry,
-  demoMcpApprovalEntry, demoComputerUseApprovalEntry, demoBrowserWebsiteApprovalEntry, demoUrlActionEntry, demoToolSuggestionEntry, demoUserVerificationEntry, demoUnsupportedOpenAIFormEntry,
+  demoMcpApprovalEntry, demoComputerUseApprovalEntry, demoBrowserWebsiteApprovalEntry, demoUrlActionEntry, demoToolSuggestionEntry, demoUserVerificationEntry, demoUnsupportedOpenAIFormEntry, demoTextFormElicitationEntry,
   type DemoConversationId,
 } from "./mockConversation.js";
 
@@ -639,6 +639,14 @@ export function App() {
     ]);
   }
 
+  function playTextFormFixture() {
+    if(playing)return;
+    markFollow();
+    appendDemoEntries(source,[
+      demoTextFormElicitationEntry(nextId("text-form-elicitation")),
+    ]);
+  }
+
   function playUnsupportedFormFixture() {
     if(playing)return;
     markFollow();
@@ -873,6 +881,10 @@ export function App() {
           <button type="button" onClick={playBrowserWebsiteApprovalFixture}
             data-testid="demo-browser-website-approval-request">
             <Icon name="panel" size={15}/> 演示 Browser 网站授权请求（模拟）
+          </button>
+          <button type="button" onClick={playTextFormFixture}
+            data-testid="demo-text-form-elicitation-request">
+            <Icon name="panel" size={15}/> 演示 MCP 文本表单（模拟）
           </button>
           <button type="button" onClick={playUnsupportedFormFixture}
             data-testid="demo-unsupported-openai-form-request">

@@ -25,6 +25,8 @@ import {projectSourceUserVerificationRequest}
   from "../src/conversation/SourceUserVerificationModel.js";
 import {projectSourceUnsupportedOpenAIForm}
   from "../src/conversation/SourceUnsupportedOpenAIFormModel.js";
+import {projectSourceTextFormElicitation}
+  from "../src/conversation/SourceTextFormElicitationModel.js";
 import {projectSourceHostMcpApproval} from "../src/conversation/SourceHostMcpApprovalProjection.js";
 import {bindSourcePendingElicitationsToTimeline}
   from "../src/conversation/SourcePendingElicitationTimelineBinder.js";
@@ -531,6 +533,25 @@ export function makeDemoRow(notify: (message: string) => void) {
     /** Original at dispatch only recognizes the explicit urlAction kind.
      * Browser fixture is intentionally readonly for external opens. Native
      * Electron uses its real (validated) isolated openExternalUrl bridge. */
+    getTextFormElicitationRequest:(item)=>{
+      const live=hostPending(item);
+      if(live!=null)return projectSourceTextFormElicitation(live.elicitation,{
+        hostId:live.hostId,conversationId:live.threadId,requestId:live.requestId,
+      });
+      if(item.type!=="demo-text-form-elicitation"||typeof item.id!=="string")return null;
+      return projectSourceTextFormElicitation({
+        kind:"formElicitation",serverName:"Sample MCP form server (synthetic)",
+        message:"Share project information (synthetic)",
+        schema:{type:"object",properties:{
+          project:{type:"string",title:"Project name",description:"Enter the project label"},
+          purpose:{type:"string",title:"Purpose",description:"Describe what to accomplish",
+            minLength:3,maxLength:120},
+        },required:["project","purpose"],additionalProperties:false},
+      },{hostId:"demo-host",conversationId:"frontend",requestId:item.id});
+    },
+    onTextFormElicitationReply:window.agentWebDesktopHost!=null
+      ?reply=>window.agentWebDesktopHost!.replyToTextForm(reply)
+      :undefined,
     getUnsupportedOpenAIFormRequest:(item)=>{
       const live=hostPending(item);
       if(live!=null)return projectSourceUnsupportedOpenAIForm(live.elicitation,{
