@@ -25,8 +25,8 @@ function persistence(v:unknown):readonly SourceMcpApprovalPersistence[]|null {
   if(!Array.isArray(v)||v.some(x=>x!=="session"&&x!=="always"))return null;
   return [...new Set(v as SourceMcpApprovalPersistence[])];
 }
-function displayParams(v:unknown):readonly SourceMcpApprovalParameter[]|null{
-  if(v==null)return [];
+function displayParams(v:unknown):readonly SourceMcpApprovalParameter[]|null|undefined{
+  if(v==null)return undefined;
   if(!Array.isArray(v)||v.length>80)return null;
   const result:SourceMcpApprovalParameter[]=[];
   for(const candidate of v){
@@ -83,7 +83,7 @@ export function projectSourceHostMcpApproval(
    const persist=persistence(data.persist);
    const parameters=params(data.toolParams);
    const paramDisplay=displayParams(data.toolParamsDisplay);
-   if(persist==null||parameters==null||paramDisplay==null)return null;
+   if(persist==null||parameters==null||paramDisplay===null)return null;
    const presented=projectSourceMcpGenericApprovalMessage(
      data.message,data.metadata);
    // Original Oe removes connector_/connector- before fallback to "Server".
@@ -92,7 +92,8 @@ export function projectSourceHostMcpApproval(
      ...context,title:presented.title,connectorName,
      reason:presented.reason,subtitle,riskLevel:risk,
      disabled,approveDisabled,
-     persist,toolParams:parameters,toolParamsDisplay:paramDisplay,
+     persist,toolParams:parameters,
+     ...(paramDisplay===undefined?{}:{toolParamsDisplay:paramDisplay}),
      collapseToolParams:false,
    };
  }
@@ -113,7 +114,8 @@ export function projectSourceHostMcpApproval(
  return {
    ...context,title:data.message,connectorName,
    subtitle,riskLevel:risk,disabled,approveDisabled,
-   persist,toolParams:parameters,toolParamsDisplay:paramDisplay,
+   persist,toolParams:parameters,
+   ...(paramDisplay===undefined?{}:{toolParamsDisplay:paramDisplay}),
    // Source be applies collapseToolParams only when real approval
    // presentation re(...) is available. Do not infer it from tool kind.
    collapseToolParams:false,
