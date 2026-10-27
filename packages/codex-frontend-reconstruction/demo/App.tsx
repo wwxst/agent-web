@@ -5,6 +5,7 @@ import {SourceLocalSubagentsPanel} from "../src/components/SourceLocalSubagentsP
 import type {SourceLocalSubagent} from "../src/conversation/SourceLocalSubagentsPanelModel.js";
 import {makeSyntheticSubagentsFixture} from "./demoSubagentsFixture.js";
 import {DemoSubagentTranscript} from "./DemoSubagentTranscript.js";
+import "./subagentsDemoShell.css";
 import { CodexSourceComposerHostForm } from "../src/components/CodexSourceComposerHostForm.js";
 import { CodexSourceScrollToBottomButton } from "../src/components/CodexSourceScrollToBottomButton.js";
 import { DemoProseMirrorComposerEditor } from "./DemoProseMirrorComposerEditor.js";
