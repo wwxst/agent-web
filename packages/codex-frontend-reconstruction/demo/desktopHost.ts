@@ -1,6 +1,8 @@
 import type {
   SourceMcpApprovalContext,SourceMcpApprovalReply,
 } from "../src/conversation/SourceMcpApprovalRequestModel.js";
+import type {SourceUserVerificationCancelEnvelope}
+  from "../src/conversation/SourceUserVerificationModel.js";
 import type {
  SourceConversationHostEvent,
  SourceConversationHostEventBridge,
@@ -19,6 +21,9 @@ declare global {
       openMenu(id:"file"|"edit"|"view"|"help",anchor:{x:number;y:number}):Promise<boolean>;
       /** Real native external HTTPS open. Never grants or settles an Agent request. */
       openExternalUrl(url:string):Promise<boolean>;
+      /** A typed native cancel only. The absence of a verified Agent
+       * backend rejects with USER_VERIFICATION_BACKEND_UNAVAILABLE. */
+      cancelUserVerification(envelope:SourceUserVerificationCancelEnvelope):Promise<void>;
       getHostInfo():Promise<{
         windowType:"electron";platform:string;theme:string;backendConnected:false
       }>;

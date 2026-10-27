@@ -12,6 +12,7 @@ const UI_COMMAND_CHANNEL="agent-web:ui-command";
 const READ_DRAFTS_CHANNEL="agent-web:composer-drafts-read";
 const WRITE_DRAFT_CHANNEL="agent-web:composer-draft-write";
 const MCP_APPROVAL_REPLY_CHANNEL="agent-web:mcp-approval-reply";
+const USER_VERIFICATION_CANCEL_CHANNEL="agent-web:user-verification-cancel";
 const OPEN_EXTERNAL_URL_CHANNEL="agent-web:open-external-url";
 const draftThreadIds=new Set(["frontend","review"]);
 const allowedUiCommands=new Set([
@@ -62,6 +63,23 @@ contextBridge.exposeInMainWorld("agentWebDesktopHost",Object.freeze({
    * Open a single HTTPS URL through authenticated main frame -> native shell.
    * No navigation, generic shell/IPC exposure, permission or response sent.
    */
+  /** Original biometric cancel is NOT a generic MCP deny response. */
+  cancelUserVerification(envelope){
+    if(envelope==null||typeof envelope!=="object"||Array.isArray(envelope)||
+      Object.keys(envelope).length!==4||
+      !["hostId","conversationId","requestId","reason"].every(key=>
+        Object.hasOwn(envelope,key))||
+      !["hostId","conversationId","requestId"].every(key=>
+        typeof envelope[key]==="string"&&envelope[key].length>0&&
+        envelope[key].length<=256&&envelope[key].trim()===envelope[key]&&
+        !/[\u0000-\u001f\u007f]/.test(envelope[key]))||
+      envelope.reason!=="userCancelled")
+      return Promise.reject(new TypeError("USER_VERIFICATION_INVALID_CANCEL"));
+    return ipcRenderer.invoke(USER_VERIFICATION_CANCEL_CHANNEL,{
+      hostId:envelope.hostId,conversationId:envelope.conversationId,
+      requestId:envelope.requestId,reason:envelope.reason,
+    });
+  },
   openExternalUrl(url){
     if(typeof url!=="string"||url.length>2048||
       /[\u0000-\u001f\u007f]/u.test(url)){
