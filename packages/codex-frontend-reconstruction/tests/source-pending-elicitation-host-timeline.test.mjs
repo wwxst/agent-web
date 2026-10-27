@@ -136,3 +136,21 @@ test("remount after thread switch rehydrates without duplicating pending host ro
  assert.equal(source.getSnapshot().entries.length,1);
  release2();bridge.dispose();source.dispose();
 });
+
+test("settlement while unsubscribed is reconciled on remount, never leaves stale card",()=>{
+ const bridge=createSourceConversationHostEventBridge();
+ const source=makeSource();
+ bridge.publish({type:"pending-elicitation",request:urlAction()});
+ const bind=()=>bindSourcePendingElicitationsToTimeline({
+  source,store:bridge.pendingElicitations,hostId:"demo-host",threadId:"frontend",
+  createEntry:makeEntry,
+ });
+ const off=bind();
+ assert.equal(source.getSnapshot().entries.length,2);
+ off();
+ bridge.publish({type:"elicitation-settled",query:one});
+ assert.equal(source.getSnapshot().entries.length,2,"detached source has not yet consumed an event");
+ const off2=bind();
+ assert.equal(source.getSnapshot().entries.length,1,"reattach must remove the stale row");
+ off2();bridge.dispose();source.dispose();
+});

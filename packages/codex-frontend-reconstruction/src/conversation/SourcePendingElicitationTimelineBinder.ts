@@ -57,8 +57,11 @@ export function bindSourcePendingElicitationsToTimeline({
    const additions=[...next.values()].map(x=>x.entry);
    const sameManaged=next.size===managed.size&&[...next].every(
      ([id,current])=>managed.get(id)?.entry===current.entry);
-   if(sameManaged&&additions.every((entry,index)=>
-     prior[prior.length-additions.length+index]===entry))return;
+   const currentlyMounted=prior.filter(entry=>entry.turnId?.startsWith(threadPrefix));
+   if(sameManaged&&currentlyMounted.length===additions.length&&
+     additions.every((entry,index)=>currentlyMounted[index]===entry)&&
+     additions.every((entry,index)=>
+       prior[prior.length-additions.length+index]===entry))return;
    managed.clear();
    for(const [id,item] of next)managed.set(id,item);
    const updated=[...surviving,...additions];
