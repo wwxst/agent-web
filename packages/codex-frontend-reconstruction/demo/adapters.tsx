@@ -507,6 +507,23 @@ export function makeDemoRow(notify: (message: string) => void) {
         isExpandable:true,
       };
     },
+    /** Source E Computer Use request is distinct from generic MCP tool ye.
+     * Both use the same host-scoped MCP elicitation *reply transport*.
+     * Demo records are explicitly synthetic; native Electron main rejects. */
+    getComputerUseApprovalRequest:(item)=>{
+      if(item.type!=="demo-computer-use-approval"||typeof item.id!=="string")return null;
+      const highRisk=item.demoComputerUseHighRisk===true;
+      return {
+        hostId:"demo-host",conversationId:"frontend",
+        requestId:item.id,
+        appDisplayName:highRisk?"Terminal":"Visual Studio Code",
+        connectorName:"Computer Use (synthetic fixture)",
+        riskLevel:highRisk?"high":null,
+        subtitle:"Synthetic request · no Computer Use backend is connected",
+        persistModes:highRisk?["session"] as const:["session","always"] as const,
+        hasPreviouslyApproved:highRisk,
+      };
+    },
     /** Host-only demo transport: every reply rejects. A click can never grant
      * real permission or pretend a request has settled successfully. */
     getMcpApprovalRequest:(item)=>{
