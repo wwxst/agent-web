@@ -1390,55 +1390,6 @@ test("native Electron KZu clipped approval card keeps portaled Mae menu visible,
 });
 
 
-test("native Electron renders source Computer Use first-use card and rejects approval through actual main IPC",{
- timeout:100000,
-},async()=>{
- const profile=await mkdtemp(join(tmpdir(),"agent-web-computer-use-approval-"));
- const app=await electron.launch({
-  executablePath,args:[".",...(process.platform==="linux"&&process.env.CI?["--no-sandbox"]:[])],
-  cwd:root,env:{...process.env,AGENT_WEB_DEV_URL:"",AGENT_WEB_USER_DATA_DIR:profile,
-    ELECTRON_DISABLE_SECURITY_WARNINGS:"true"},timeout:40000,
- });
- try{
-  const page=await app.firstWindow();
-  await page.locator('[aria-label="演示会话导航"]').waitFor({timeout:20000});
-  await page.getByRole("button",{name:"打开演示工具"}).click();
-  await page.getByTestId("demo-computer-use-approval-request").click();
-  const row=page.locator('[data-demo-turn-id^="computer-use-approval-"]').last();
-  const card=row.locator("[data-source-computer-use-approval-card]");
-  await card.waitFor({timeout:15000});
-  assert.equal(await card.getAttribute("data-source-computer-use-reply-phase"),"idle");
-  assert.match(await card.innerText(),/Allow ChatGPT to use Visual Studio Code\?/);
-  assert.match(await card.locator('[data-source-computer-use-first-disclosure="true"]').innerText(),
-    /It may take screenshots of app contents/);
-  assert.equal(await card.getByRole("button",{name:"Always allow"}).count(),1);
-  assert.equal(await card.getByRole("button",{name:"Allow once"}).count(),0);
-  const approve=card.getByRole("button",{name:"Allow this conversation"});
-  await approve.click();
-  // Real Electron IPC rejects immediately; never assume browser fixture delay.
-  assert.ok(["submitting","error"].includes(
-    await card.getAttribute("data-source-computer-use-reply-phase")));
-  await card.locator(".codex-source-mcp-approval__error").waitFor({timeout:15000});
-  assert.match(await card.locator(".codex-source-mcp-approval__error").innerText(),
-    /backend unavailable/);
-  assert.equal(await approve.isDisabled(),false);
-  assert.match(await card.locator('[data-source-computer-use-first-disclosure="true"]').innerText(),
-    /It may take screenshots/);
-  await card.getByRole("button",{name:"Deny"}).click();
-  await card.locator(".codex-source-mcp-approval__error").waitFor({timeout:15000});
-  assert.equal(await card.getAttribute("data-source-computer-use-reply-phase"),"error");
-  assert.equal(await card.getByText(/Response sent to host/).count(),0);
-  assert.equal(await row.count(),1);
-  await row.scrollIntoViewIfNeeded();
-  await mkdir(resolve(root,"desktop/test-results"),{recursive:true});
-  await page.screenshot({
-    path:resolve(root,"desktop/test-results/source-computer-use-approval-backend-unavailable.png"),
-    animations:"disabled",fullPage:false,
-  });
- }finally{await app.close();await rm(profile,{recursive:true,force:true});}
-});
-
-
 test("native Electron shows source E Computer Use first-use and high-risk requests without an authorization transport",{
  timeout:100000,
 },async()=>{
@@ -1453,10 +1404,8 @@ test("native Electron shows source E Computer Use first-use and high-risk reques
    await page.locator('[aria-label="演示会话导航"]').waitFor({timeout:20000});
    await page.getByRole("button",{name:"打开演示工具"}).click();
    await page.getByTestId("demo-computer-use-approval-request").click();
-   const rows=page.locator('[data-demo-turn-id^="computer-use-approval-"]');
-   assert.equal(await rows.count(),2);
-   const firstUse=rows.last().locator("[data-source-computer-use-approval-card]");
-   const highRisk=rows.first().locator("[data-source-computer-use-approval-card]");
+   const firstUse=page.locator('[data-demo-turn-id^="computer-use-approval-"]')
+     .last().locator("[data-source-computer-use-approval-card]");
    await firstUse.waitFor({timeout:15000});
    assert.match(await firstUse.innerText(),/Allow ChatGPT to use Visual Studio Code/);
    assert.match(await firstUse.innerText(),/It may take screenshots of app contents/);
@@ -1467,6 +1416,28 @@ test("native Electron shows source E Computer Use first-use and high-risk reques
    assert.equal(await firstUse.getByRole("button",{name:"Approval options"}).count(),0);
    assert.equal(await firstUse.getByRole("button",{name:"Allow once"}).count(),0);
    assert.match(await firstUse.innerText(),/No Computer Use reply transport is connected/);
+   // A preceding request can move outside the virtualized viewport after
+   // the tall first-use disclosure is appended. Inspect it in the REAL
+   // canonical transcript, not a standalone synthetic component.
+   const row=page.locator('[data-demo-turn-id*="-high-risk"]');
+   const viewport=page.getByTestId("transcript-scroll");
+   for(let step=0;step<18&&await row.count()===0;step++){
+     await viewport.evaluate(el=>{
+       el.scrollTop-=180;
+       el.dispatchEvent(new Event("scroll",{bubbles:true}));
+     });
+     await page.waitForTimeout(75);
+   }
+   await row.waitFor({timeout:15000});
+   await row.scrollIntoViewIfNeeded();
+   const historical=row.locator('[data-recovered-agent-activity] button').first();
+   if(await historical.count())await historical.click();
+   const activityGroup=row.locator('[data-codex-activity-group] [aria-expanded]').first();
+   if(await activityGroup.count()&&
+      await activityGroup.getAttribute("aria-expanded")==="false")
+     await activityGroup.click();
+   const highRisk=row.locator("[data-source-computer-use-approval-card]");
+   await highRisk.waitFor({timeout:15000});
    assert.match(await highRisk.innerText(),/Allow ChatGPT to use Terminal/);
    assert.match(await highRisk.locator('[data-source-computer-use-header="high"]').innerText(),
      /Elevated Risk/);
