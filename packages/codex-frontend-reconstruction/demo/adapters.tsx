@@ -508,8 +508,9 @@ export function makeDemoRow(notify: (message: string) => void) {
       };
     },
     /** Source E Computer Use request is distinct from generic MCP tool ye.
-     * Both use the same host-scoped MCP elicitation *reply transport*.
-     * Demo records are explicitly synthetic; native Electron main rejects. */
+     * Demo deliberately does NOT provide onComputerUseApprovalReply.
+     * The generic MCP reply transport must not be assumed to authorize apps,
+     * even though original Codex delegates both to one private RPC. */
     getComputerUseApprovalRequest:(item)=>{
       if(item.type!=="demo-computer-use-approval"||typeof item.id!=="string")return null;
       const highRisk=item.demoComputerUseHighRisk===true;
