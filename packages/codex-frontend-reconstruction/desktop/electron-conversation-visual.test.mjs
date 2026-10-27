@@ -1073,7 +1073,7 @@ test("native Electron MCP approval request waits for host, fails safely, and all
   const options=card.getByRole("button",{name:"Approval options"});
   const deny=card.getByRole("button",{name:"Deny"});
   await options.click();
-  const session=card.getByRole("menuitem",{name:"Allow this conversation"});
+  const session=page.getByRole("menuitem",{name:"Allow this conversation"});
   await session.click();
   // Real IPC fails immediately when no Agent backend is connected. The
   // already tested browser fixture holds the pending phase for 380ms,
@@ -1261,7 +1261,7 @@ test("native Electron mounts original qbd approval shell and scoped split-button
   await card.evaluate(el=>el.style.removeProperty("width"));
   const options=footer.getByRole("button",{name:"Approval options"});
   await options.click();
-  const menu=footer.getByRole("menu",{name:"Approval options"});
+  const menu=page.getByRole("menu",{name:"Approval options"});
   await menu.waitFor({timeout:12000});
   assert.equal(await menu.getByRole("menuitem").count(),2);
   assert.equal(await menu.getByRole("menuitem",{name:"Allow once"}).evaluate(
@@ -1301,7 +1301,7 @@ test("native Electron scoped approval menu roves focus by arrow keys and never s
   const options=card.getByRole("button",{name:"Approval options"});
   await options.focus();
   await options.press("ArrowUp");
-  const menu=card.getByRole("menu",{name:"Approval options"});
+  const menu=page.getByRole("menu",{name:"Approval options"});
   await menu.waitFor({timeout:10000});
   const once=menu.getByRole("menuitem",{name:"Allow once"});
   const session=menu.getByRole("menuitem",{name:"Allow this conversation"});
