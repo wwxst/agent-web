@@ -815,7 +815,7 @@ export function App() {
             data-testid="demo-mcp-approval-request"><Icon name="check" size={15}/> 演示 MCP 审批请求（模拟）</button>
           <button type="button" onClick={playComputerUseApprovalFixture}
             data-testid="demo-computer-use-approval-request">
-            <Icon name="monitor" size={15}/> 演示 Computer Use 授权请求（模拟）
+            <Icon name="panel" size={15}/> 演示 Computer Use 授权请求（模拟）
           </button>
           <button type="button" onClick={injectHistory} disabled={historyAdded}><Icon name="plus" size={15}/> 添加 45 条历史</button>
           <button type="button" onClick={() => void virtualizerApiRef.current?.scrollToKey(`history-content:turn:${source.getSnapshot().entries[0]?.turnId ?? ""}`, undefined, {align:"top"})}><Icon name="top" size={15}/> 跳到开头</button>
