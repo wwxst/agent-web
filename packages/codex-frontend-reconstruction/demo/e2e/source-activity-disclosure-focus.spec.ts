@@ -40,9 +40,17 @@ test("real review timeline keeps collapsing repeated tool details outside keyboa
   await toggle.evaluate((el:HTMLButtonElement)=>el.click());
   await expect(toggle).toHaveAttribute("aria-expanded","false");
   await expect(toggle).toBeFocused();
-  await expect(motion).toHaveAttribute("inert","");
-  await expect(motion).toHaveAttribute("aria-hidden","true");
+  // Source disclosure keeps exiting content inert/aria-hidden until its
+  // grid transition completes; after that the lazy body is unmounted.
+  // Either hidden-and-exiting or already-unmounted is a valid state.
   await expect(repeated).toHaveAttribute("data-source-disclosure-phase",/closing|collapsed/);
+  await expect.poll(async()=>{
+    if(await motion.count()===0){
+      return await repeated.getAttribute("data-source-disclosure-phase")==="collapsed";
+    }
+    return await motion.getAttribute("inert")===""&&
+      await motion.getAttribute("aria-hidden")==="true";
+  }).toBe(true);
   await row.scrollIntoViewIfNeeded();
   await page.screenshot({path:testInfo.outputPath("repeated-tool-disclosure-keyboard.png"),
     animations:"disabled"});
