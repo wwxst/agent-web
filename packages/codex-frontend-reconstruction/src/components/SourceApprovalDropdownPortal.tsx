@@ -7,6 +7,7 @@ export interface SourceApprovalDropdownPortalProps {
   menuId:string;
   onKeyDown:React.KeyboardEventHandler<HTMLDivElement>;
   onAnchorUnavailable:()=>void;
+  onPositioned:()=>void;
   children:React.ReactNode;
 }
 
@@ -25,9 +26,18 @@ const TRIGGER_GAP=6;
  * No generic Electron IPC, host approval callback or permission state here.
  */
 export function SourceApprovalDropdownPortal({
-  triggerRef,menuRef,menuId,onKeyDown,onAnchorUnavailable,children,
+  triggerRef,menuRef,menuId,onKeyDown,onAnchorUnavailable,onPositioned,children,
 }:SourceApprovalDropdownPortalProps){
   const [position,setPosition]=React.useState<MenuPosition|null>(null);
+  const didSetInitialFocus=React.useRef(false);
+  React.useLayoutEffect(()=>{
+    // The initial portal is intentionally visibility:hidden while measuring.
+    // Focusing it earlier silently fails. Focus only once after placement,
+    // never again on scroll/resize re-anchoring.
+    if(position==null||didSetInitialFocus.current)return;
+    didSetInitialFocus.current=true;
+    onPositioned();
+  },[position,onPositioned]);
   React.useLayoutEffect(()=>{
     const update=()=>{
       const trigger=triggerRef.current,menu=menuRef.current;
