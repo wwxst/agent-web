@@ -47,7 +47,9 @@ test("source KZu clips its content while portaled Mae approval options stay visi
      next.overlay.x>=7&&next.overlay.bottom<=713;
  }).toBe(true);
  await expect(menu.getByRole("menuitem",{name:"Allow this conversation"})).toBeVisible();
- await expect(options).toHaveAttribute("aria-controls",await menu.getAttribute("id"));
+ const menuId=await menu.getAttribute("id");
+ expect(menuId).not.toBeNull();
+ await expect(options).toHaveAttribute("aria-controls",menuId!);
  await row.scrollIntoViewIfNeeded();
  await page.screenshot({path:testInfo.outputPath("source-clipped-card-portaled-menu.png"),animations:"disabled"});
  await page.keyboard.press("Escape");
