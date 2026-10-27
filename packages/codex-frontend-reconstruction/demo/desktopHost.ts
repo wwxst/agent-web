@@ -3,6 +3,8 @@ import type {
 } from "../src/conversation/SourceMcpApprovalRequestModel.js";
 import type {SourceUserVerificationCancelEnvelope}
   from "../src/conversation/SourceUserVerificationModel.js";
+import type {SourceUnsupportedOpenAIFormReply}
+  from "../src/conversation/SourceUnsupportedOpenAIFormModel.js";
 import type {
  SourceConversationHostEvent,
  SourceConversationHostEventBridge,
@@ -24,6 +26,9 @@ declare global {
       /** A typed native cancel only. The absence of a verified Agent
        * backend rejects with USER_VERIFICATION_BACKEND_UNAVAILABLE. */
       cancelUserVerification(envelope:SourceUserVerificationCancelEnvelope):Promise<void>;
+      /** Only exact source cancel/decline from unsupported form; main rejects
+       * without a real Agent backend. */
+      replyToUnsupportedForm(envelope:SourceUnsupportedOpenAIFormReply):Promise<void>;
       getHostInfo():Promise<{
         windowType:"electron";platform:string;theme:string;backendConnected:false
       }>;

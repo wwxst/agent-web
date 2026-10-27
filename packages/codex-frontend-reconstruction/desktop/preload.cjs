@@ -13,6 +13,7 @@ const READ_DRAFTS_CHANNEL="agent-web:composer-drafts-read";
 const WRITE_DRAFT_CHANNEL="agent-web:composer-draft-write";
 const MCP_APPROVAL_REPLY_CHANNEL="agent-web:mcp-approval-reply";
 const USER_VERIFICATION_CANCEL_CHANNEL="agent-web:user-verification-cancel";
+const UNSUPPORTED_FORM_REPLY_CHANNEL="agent-web:unsupported-form-reply";
 const OPEN_EXTERNAL_URL_CHANNEL="agent-web:open-external-url";
 const draftThreadIds=new Set(["frontend","review"]);
 const allowedUiCommands=new Set([
@@ -64,6 +65,23 @@ contextBridge.exposeInMainWorld("agentWebDesktopHost",Object.freeze({
    * No navigation, generic shell/IPC exposure, permission or response sent.
    */
   /** Original biometric cancel is NOT a generic MCP deny response. */
+  /** Source bn uses q2t("cancel"|"decline") with null content, not
+   * generic MCP approval. Never expose raw invoke or accept. */
+  replyToUnsupportedForm(envelope){
+    if(envelope==null||typeof envelope!=="object"||Array.isArray(envelope)||
+      Object.keys(envelope).length!==4||
+      !["hostId","conversationId","requestId","action"].every(k=>Object.hasOwn(envelope,k))||
+      !["hostId","conversationId","requestId"].every(k=>
+        typeof envelope[k]==="string"&&envelope[k].trim()===envelope[k]&&
+        envelope[k].length>0&&envelope[k].length<=256&&
+        !/[\u0000-\u001f\u007f]/.test(envelope[k]))||
+      !["cancel","decline"].includes(envelope.action))
+      return Promise.reject(new TypeError("UNSUPPORTED_FORM_INVALID_REPLY"));
+    return ipcRenderer.invoke(UNSUPPORTED_FORM_REPLY_CHANNEL,{
+      hostId:envelope.hostId,conversationId:envelope.conversationId,
+      requestId:envelope.requestId,action:envelope.action,
+    });
+  },
   cancelUserVerification(envelope){
     if(envelope==null||typeof envelope!=="object"||Array.isArray(envelope)||
       Object.keys(envelope).length!==4||

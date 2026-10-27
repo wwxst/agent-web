@@ -19,6 +19,7 @@ const {isAllowedNavigation:allowedNavigation}=require("./navigationPolicy.cjs");
 const {readComposerDrafts,writeComposerDraft}=require("./composerDraftStore.cjs");
 const {handleMcpApprovalReply}=require("./mcpApprovalReply.cjs");
 const {handleUserVerificationCancel}=require("./userVerificationCancel.cjs");
+const {handleUnsupportedFormReply}=require("./unsupportedFormReply.cjs");
 const {handleExternalUrlOpen,sourceSafeExternalHttpsUrl}=require("./externalUrlAction.cjs");
 
 const HOST_INFO_CHANNEL = "agent-web:host-info";
@@ -29,6 +30,7 @@ const READ_DRAFTS_CHANNEL="agent-web:composer-drafts-read";
 const WRITE_DRAFT_CHANNEL="agent-web:composer-draft-write";
 const MCP_APPROVAL_REPLY_CHANNEL="agent-web:mcp-approval-reply";
 const USER_VERIFICATION_CANCEL_CHANNEL="agent-web:user-verification-cancel";
+const UNSUPPORTED_FORM_REPLY_CHANNEL="agent-web:unsupported-form-reply";
 const OPEN_EXTERNAL_URL_CHANNEL="agent-web:open-external-url";
 const devUrl=process.env.AGENT_WEB_DEV_URL || "";
 const devMode=devUrl.length>0;
@@ -166,6 +168,9 @@ function setupIpc(){
   // MCP generic decline; main has no authenticated verification backend.
   ipcMain.handle(USER_VERIFICATION_CANCEL_CHANNEL,(event,envelope)=>
     handleUserVerificationCancel({isTrustedRenderer},event,envelope));
+  // Source unsupported form responses are cancel/decline, not MCP grants.
+  ipcMain.handle(UNSUPPORTED_FORM_REPLY_CHANNEL,(event,envelope)=>
+    handleUnsupportedFormReply({isTrustedRenderer},event,envelope));
   // URL action opens a web resource; it does NOT accept/settle any permission.
   ipcMain.handle(OPEN_EXTERNAL_URL_CHANNEL,(event,url)=>
     handleExternalUrlOpen({isTrustedRenderer,openExternal:safe=>shell.openExternal(safe)},event,url));
@@ -200,7 +205,7 @@ app.on("window-all-closed",()=>{if(process.platform!=="darwin")app.quit();});
 app.on("activate",()=>{if(BrowserWindow.getAllWindows().length===0)createWindow();});
 app.whenReady().then(()=>{setupIpc();createWindow();});
 app.on("before-quit",()=>{
-  for(const channel of [HOST_INFO_CHANNEL,OPEN_MENU_CHANNEL,READ_DRAFTS_CHANNEL,WRITE_DRAFT_CHANNEL,MCP_APPROVAL_REPLY_CHANNEL,OPEN_EXTERNAL_URL_CHANNEL,USER_VERIFICATION_CANCEL_CHANNEL]){
+  for(const channel of [HOST_INFO_CHANNEL,OPEN_MENU_CHANNEL,READ_DRAFTS_CHANNEL,WRITE_DRAFT_CHANNEL,MCP_APPROVAL_REPLY_CHANNEL,OPEN_EXTERNAL_URL_CHANNEL,USER_VERIFICATION_CANCEL_CHANNEL,UNSUPPORTED_FORM_REPLY_CHANNEL]){
     ipcMain.removeHandler(channel);
   }
 });
