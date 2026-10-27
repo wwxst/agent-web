@@ -29,7 +29,7 @@ import {
   demoActivityEntry, demoItem, demoMessageEntry, makeLongHistory,
   demoStreamingCodeEntry, updateDemoStreamingCodeEntry,
   demoAutomaticReviewEntry, updateDemoAutomaticReviewEntry,
-  demoMcpApprovalEntry, demoComputerUseApprovalEntry, demoBrowserWebsiteApprovalEntry,
+  demoMcpApprovalEntry, demoComputerUseApprovalEntry, demoBrowserWebsiteApprovalEntry, demoUrlActionEntry,
   type DemoConversationId,
 } from "./mockConversation.js";
 
@@ -635,6 +635,13 @@ export function App() {
     ]);
   }
 
+  function playUrlActionFixture() {
+    if(playing)return;
+    markFollow();
+    // Original URL-action two-stage flow, explicitly synthetic request.
+    appendDemoEntries(source,[demoUrlActionEntry(nextId("url-action"))]);
+  }
+
   function playChromeWebsiteApprovalFixture() {
     if(playing)return;
     markFollow();
@@ -838,6 +845,10 @@ export function App() {
           <button type="button" onClick={playBrowserWebsiteApprovalFixture}
             data-testid="demo-browser-website-approval-request">
             <Icon name="panel" size={15}/> 演示 Browser 网站授权请求（模拟）
+          </button>
+          <button type="button" onClick={playUrlActionFixture}
+            data-testid="demo-url-action-request">
+            <Icon name="plugin" size={15}/> 演示 URL action 请求（模拟）
           </button>
           <button type="button" onClick={playChromeWebsiteApprovalFixture}
             data-testid="demo-chrome-website-approval-request">

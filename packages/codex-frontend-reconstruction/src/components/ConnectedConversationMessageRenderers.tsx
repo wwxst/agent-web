@@ -38,6 +38,8 @@ import { InlineFileReview } from "./InlineFileReview.js";
 import { SourceMcpApprovalRequestCard } from "./SourceMcpApprovalRequestCard.js";
 import {SourceComputerUseApprovalRequestCard} from "./SourceComputerUseApprovalRequestCard.js";
 import {SourceBrowserWebsiteApprovalCard} from "./SourceBrowserWebsiteApprovalCard.js";
+import {SourceUrlActionRequestCard} from "./SourceUrlActionRequestCard.js";
+import type {SourceUrlActionRequest} from "../conversation/SourceUrlActionRequestModel.js";
 import type {SourceBrowserWebsiteApprovalRequest} from "../conversation/SourceBrowserWebsiteApprovalModel.js";
 import type {SourceComputerUseApprovalRequest} from "../conversation/SourceComputerUseApprovalModel.js";
 import type {
@@ -148,6 +150,11 @@ export interface ConnectedConversationRendererHost extends ConversationContentAd
   getComputerUseApprovalRequest?:(item:ConversationMessageItem)=>SourceComputerUseApprovalRequest|null;
   /** Original ft/Ge: the host projects verified Browser/Chrome website access requests. */
   getBrowserWebsiteApprovalRequest?:(item:ConversationMessageItem)=>SourceBrowserWebsiteApprovalRequest|null;
+  /** Original at/urlAction dispatch; never infer pending requests from URLs in Markdown. */
+  getUrlActionRequest?:(item:ConversationMessageItem)=>SourceUrlActionRequest|null;
+  /** Native shell owns external HTTPS open; opening alone never replies or grants. */
+  onUrlActionOpenExternal?:(url:string)=>Promise<boolean>;
+  getUrlActionOpenInThread?:(item:ConversationMessageItem)=>(()=>void)|null;
   onMcpApprovalReply?:SourceMcpApprovalReplyTransport;
   translator: ActivityStatusTranslation;
   getApprovalReviewSummary: (review: AutomaticApprovalReviewSummary) => React.ReactNode;
@@ -183,6 +190,12 @@ export function createConnectedConversationMessageRenderers(host: ConnectedConve
     }
 
     const renderProjectedActivity = (target: ConversationMessageItem): React.ReactNode => {
+      const urlAction=host.getUrlActionRequest?.(target)??null;
+      if(urlAction!=null)return <SourceUrlActionRequestCard
+        key={JSON.stringify([urlAction.hostId,urlAction.conversationId,urlAction.requestId])}
+        request={urlAction} onReply={host.onMcpApprovalReply}
+        onOpenExternal={host.onUrlActionOpenExternal}
+        onOpenInThread={host.getUrlActionOpenInThread?.(target)??undefined}/>;
       const browserWebsiteApproval=host.getBrowserWebsiteApprovalRequest?.(target)??null;
       if(browserWebsiteApproval!=null)return <SourceBrowserWebsiteApprovalCard
         key={JSON.stringify([browserWebsiteApproval.hostId,browserWebsiteApproval.conversationId,browserWebsiteApproval.requestId])}

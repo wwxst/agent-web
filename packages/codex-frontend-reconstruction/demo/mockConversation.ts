@@ -105,6 +105,16 @@ export function demoMcpApprovalEntry(turnId:string,disabled=false):ConversationR
 
 /** Source E Computer Use approval samples in the *existing* canonical
  * timeline. Metadata is synthetic and grants no real application access. */
+/** Original at/urlAction mock request inside the canonical turn list. */
+export function demoUrlActionEntry(turnId:string):ConversationRenderEntry{
+  return demoActivityEntry(turnId,[
+    demoItem(turnId+"-request","demo-url-action",undefined,{
+      heading:"URL action（模拟）",
+      state:"Needs input",
+    }),
+  ]);
+}
+
 export function demoBrowserWebsiteApprovalEntry(
   turnId:string,allowAllSites:boolean,
 ):ConversationRenderEntry{

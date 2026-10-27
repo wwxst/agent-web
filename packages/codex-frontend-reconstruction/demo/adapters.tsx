@@ -19,6 +19,7 @@ import type { InlineFileReviewAction, InlineReviewFile } from "../src/conversati
 import {projectSourceMcpGenericApprovalMessage}
   from "../src/conversation/SourceMcpApprovalRequestModel.js";
 import {projectSourceBrowserWebsiteApproval} from "../src/conversation/SourceBrowserWebsiteApprovalModel.js";
+import {projectSourceUrlActionRequest} from "../src/conversation/SourceUrlActionRequestModel.js";
 import {createSourceInlineReviewWrapPreference}
   from "../src/conversation/SourceInlineReviewWrapPreference.js";
 import { getDemoBlocks, getDemoHistoryTurnItems } from "./mockConversation.js";
@@ -508,6 +509,21 @@ export function makeDemoRow(notify: (message: string) => void) {
         isExpandable:true,
       };
     },
+    /** Original at dispatch only recognizes the explicit urlAction kind.
+     * Browser fixture is intentionally readonly for external opens. Native
+     * Electron uses its real (validated) isolated openExternalUrl bridge. */
+    getUrlActionRequest:(item)=>{
+      if(item.type!=="demo-url-action"||typeof item.id!=="string")return null;
+      return projectSourceUrlActionRequest({
+        kind:"urlAction",action:{
+          message:"Complete the browser step, then continue (synthetic).",
+          url:"https://example.org/account/verify",
+        },
+      },{hostId:"demo-host",conversationId:"frontend",requestId:item.id});
+    },
+    onUrlActionOpenExternal:window.agentWebDesktopHost!=null
+      ?url=>window.agentWebDesktopHost!.openExternalUrl(url)
+      :undefined,
     /** Source ft/Ge: recognition is from an exact synthetic browser MCP
      * request and host policy, not UI classification. All replies fail closed. */
     getBrowserWebsiteApprovalRequest:(item)=>{
