@@ -1326,3 +1326,65 @@ test("native Electron scoped approval menu roves focus by arrow keys and never s
   });
  }finally{await app.close();await rm(profile,{recursive:true,force:true});}
 });
+
+
+test("native Electron KZu clipped approval card keeps portaled Mae menu visible, anchored and focus safe",{
+ timeout:100000,
+},async()=>{
+ const profile=await mkdtemp(join(tmpdir(),"agent-web-source-approval-portal-"));
+ const app=await electron.launch({
+  executablePath,args:[".",...(process.platform==="linux"&&process.env.CI?["--no-sandbox"]:[])],
+  cwd:root,env:{...process.env,AGENT_WEB_DEV_URL:"",AGENT_WEB_USER_DATA_DIR:profile,
+    ELECTRON_DISABLE_SECURITY_WARNINGS:"true"},timeout:40000,
+ });
+ try{
+  const page=await app.firstWindow();
+  await page.locator('[aria-label="演示会话导航"]').waitFor({timeout:20000});
+  await page.getByRole("button",{name:"打开演示工具"}).click();
+  await page.getByTestId("demo-mcp-approval-request").click();
+  const card=page.locator('[data-demo-turn-id^="mcp-approval-"]').last()
+    .locator("[data-codex-approval-surface]");
+  const options=card.getByRole("button",{name:"Approval options"});
+  await options.click();
+  const menu=page.getByRole("menu",{name:"Approval options"});
+  await menu.waitFor({timeout:12000});
+  const overlay=await page.evaluate(()=>{
+    const card=document.querySelector("[data-codex-approval-surface][data-source-mcp-reply-phase='idle']");
+    const trigger=card?.querySelector('[aria-label="Approval options"]');
+    const portal=document.querySelector("[data-source-approval-menu-portal]");
+    if(!card||!trigger||!portal)return null;
+    const a=trigger.getBoundingClientRect(),b=portal.getBoundingClientRect();
+    return {clipped:getComputedStyle(card).overflowX,
+      outOfCard:!card.contains(portal),
+      bodyPortal:portal.parentElement===document.body,
+      x:b.x,y:b.y,right:b.right,bottom:b.bottom,
+      triggerTop:a.top,triggerBottom:a.bottom,
+      side:portal.getAttribute("data-source-approval-menu-placement"),
+      windowWidth:innerWidth,windowHeight:innerHeight};
+  });
+  assert.ok(overlay,"actual mounted approval portal is present");
+  assert.equal(overlay.clipped,"hidden");
+  assert.equal(overlay.bodyPortal,true);
+  assert.equal(overlay.outOfCard,true);
+  assert.ok(overlay.x>=7&&overlay.y>=7);
+  assert.ok(overlay.right<=overlay.windowWidth-7);
+  assert.ok(overlay.bottom<=overlay.windowHeight-7);
+  if(overlay.side==="top")assert.ok(overlay.bottom<=overlay.triggerTop-4);
+  else assert.ok(overlay.y>=overlay.triggerBottom+4);
+  const session=menu.getByRole("menuitem",{name:"Allow this conversation"});
+  assert.equal(await session.isVisible(),true);
+  await page.keyboard.press("End");
+  assert.equal(await session.evaluate(el=>el===document.activeElement),true);
+  await page.keyboard.press("Escape");
+  assert.equal(await menu.count(),0);
+  assert.equal(await options.evaluate(el=>el===document.activeElement),true);
+  assert.equal(await card.getAttribute("data-source-mcp-reply-phase"),"idle");
+  await options.click();
+  await menu.waitFor({timeout:10000});
+  await mkdir(resolve(root,"desktop/test-results"),{recursive:true});
+  await page.screenshot({
+    path:resolve(root,"desktop/test-results/source-approval-clipped-card-portal.png"),
+    animations:"disabled",fullPage:false,
+  });
+ }finally{await app.close();await rm(profile,{recursive:true,force:true});}
+});
