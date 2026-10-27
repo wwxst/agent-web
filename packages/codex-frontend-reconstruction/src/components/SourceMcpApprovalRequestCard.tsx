@@ -11,6 +11,7 @@ import {
   type SourceMcpApprovalReplyTransport,
   type SourceMcpApprovalParameter,
 } from "../conversation/SourceMcpApprovalRequestModel.js";
+import { SourceApprovalCardSurface } from "./SourceApprovalCardSurface.js";
 import "./sourceMcpApprovalRequestCard.css";
 
 export interface SourceMcpApprovalRequestCardProps {
@@ -52,6 +53,10 @@ export function SourceMcpApprovalRequestCard({
   const [error,setError]=React.useState<string|null>(null);
   const [expanded,setExpanded]=React.useState(false);
   const [showAll,setShowAll]=React.useState(false);
+  const [scopeMenuOpen,setScopeMenuOpen]=React.useState(false);
+  const scopeMenuRef=React.useRef<HTMLDivElement|null>(null);
+  const scopeTriggerRef=React.useRef<HTMLButtonElement|null>(null);
+  const firstMenuItemRef=React.useRef<HTMLButtonElement|null>(null);
   // Original we keeps "name:index" expansion state above lazy/paged rows.
   const [expandedParams,setExpandedParams]=React.useState<Record<string,boolean>>({});
   const submitting=React.useRef(false);
@@ -64,6 +69,7 @@ export function SourceMcpApprovalRequestCard({
     setExpanded(false);
     setShowAll(false);
     setExpandedParams({});
+    setScopeMenuOpen(false);
     return ()=>{generation.current++;};
   },[request.requestId]);
   const entries=sourceMcpApprovalParameterEntries(request.toolParams,request.toolParamsDisplay);
@@ -98,68 +104,110 @@ export function SourceMcpApprovalRequestCard({
         :"Unable to send response. Retry or contact the host.");
     }
   }
-  return <section className="codex-source-mcp-approval"
-    data-source-mcp-approval-card=""
-    data-source-mcp-request-id={request.requestId}
-    data-source-mcp-reply-phase={phase}
-    aria-label="MCP tool approval request">
-    <div className="codex-source-mcp-approval__header"
-      data-source-mcp-header-variant={highRisk?"elevated-risk":"connector"}>
-      {highRisk
-        ?<span className="codex-source-mcp-approval__risk">
-          <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16"
-            fill="none" stroke="currentColor" strokeWidth="1.8"
-            strokeLinecap="round" strokeLinejoin="round">
-            <path d="M10.3 3.5a2 2 0 0 1 3.4 0l8 14A2 2 0 0 1 20 20.5H4a2 2 0 0 1-1.7-3z"/>
-            <path d="M12 9v4.2M12 16.6h.01"/>
-          </svg>
-          Elevated Risk
-        </span>
-        :<span className="codex-source-mcp-approval__connector">{request.connectorName}</span>}
-    </div>
-    <h3 className="codex-source-mcp-approval__title">
-      {parsedTitle
-        ?<>{parsedTitle.prefix}<span className="codex-source-mcp-approval__tool-name">
-          {parsedTitle.toolName}</span>{parsedTitle.suffix}</>
-        :request.title}
-    </h3>
-    {request.subtitle?<p className="codex-source-mcp-approval__subtitle">{request.subtitle}</p>:null}
-    {request.reason?<p className="codex-source-mcp-approval__reason">{request.reason}</p>:null}
-    {entries.length>0?<div className="codex-source-mcp-approval__params"
-      data-source-mcp-parameter-count={entries.length}>
-      {request.collapseToolParams?<button type="button" aria-expanded={expanded}
-        onClick={()=>setExpanded(value=>!value)}>{expanded?"Hide details":"Show details"}</button>:null}
-      {(!request.collapseToolParams||expanded)?<>
-        {visible.map((entry,index)=>
-          <Param key={entry.name+":"+index} entry={entry}
-            expanded={expandedParams[entry.name+":"+index]===true}
-            onToggle={()=>setExpandedParams(current=>({
-              ...current,[entry.name+":"+index]:current[entry.name+":"+index]!==true,
-            }))}/>)}
-        {remaining>0?<button type="button" onClick={()=>setShowAll(true)}>
-          Show {remaining} more items
-        </button>:null}
-        {showAll&&entries.length>SOURCE_MCP_INITIAL_PARAMETER_COUNT
-          ?<button type="button" onClick={()=>setShowAll(false)}>Show fewer items</button>:null}
-      </>:null}
-    </div>:null}
+  React.useEffect(()=>{
+    if(!scopeMenuOpen)return;
+    firstMenuItemRef.current?.focus();
+    const closeOutside=(event:PointerEvent)=>{
+      if(event.target instanceof Node&&!scopeMenuRef.current?.contains(event.target))
+        setScopeMenuOpen(false);
+    };
+    document.addEventListener("pointerdown",closeOutside);
+    return ()=>document.removeEventListener("pointerdown",closeOutside);
+  },[scopeMenuOpen]);
+  const hasSessionScope=request.persist?.includes("session")===true&&
+    request.approveDisabled!==true;
+  const hasAlwaysScope=request.persist?.includes("always")===true&&
+    request.approveDisabled!==true;
+  const headerContent=<div className="codex-source-mcp-approval__header-inner"
+    data-source-mcp-header-variant={highRisk?"elevated-risk":"connector"}>
+    {highRisk
+      ?<span className="codex-source-mcp-approval__risk">
+        <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16"
+          fill="none" stroke="currentColor" strokeWidth="1.8"
+          strokeLinecap="round" strokeLinejoin="round">
+          <path d="M10.3 3.5a2 2 0 0 1 3.4 0l8 14A2 2 0 0 1 20 20.5H4a2 2 0 0 1-1.7-3z"/>
+          <path d="M12 9v4.2M12 16.6h.01"/>
+        </svg>
+        Elevated Risk
+      </span>
+      :<span className="codex-source-mcp-approval__connector">{request.connectorName}</span>}
+  </div>;
+  const title=parsedTitle
+    ?<>{parsedTitle.prefix}<span className="codex-source-mcp-approval__tool-name">
+      {parsedTitle.toolName}</span>{parsedTitle.suffix}</>
+    :request.title;
+  const details=entries.length>0?<div className="codex-source-mcp-approval__params"
+    data-source-mcp-parameter-count={entries.length}>
+    {request.collapseToolParams?<button type="button" aria-expanded={expanded}
+      onClick={()=>setExpanded(value=>!value)}>{expanded?"Hide details":"Show details"}</button>:null}
+    {(!request.collapseToolParams||expanded)?<>
+      {visible.map((entry,index)=>
+        <Param key={entry.name+":"+index} entry={entry}
+          expanded={expandedParams[entry.name+":"+index]===true}
+          onToggle={()=>setExpandedParams(current=>({
+            ...current,[entry.name+":"+index]:current[entry.name+":"+index]!==true,
+          }))}/>)}
+      {remaining>0?<button type="button" onClick={()=>setShowAll(true)}>
+        Show {remaining} more items
+      </button>:null}
+      {showAll&&entries.length>SOURCE_MCP_INITIAL_PARAMETER_COUNT
+        ?<button type="button" onClick={()=>setShowAll(false)}>Show fewer items</button>:null}
+    </>:null}
+  </div>:null;
+  const status=<>
     {error?<p role="alert" className="codex-source-mcp-approval__error">{error}</p>:null}
     {phase==="submitting"?<p role="status">Submitting response to host…</p>:null}
     {phase==="submitted"?<p role="status">Response sent to host; awaiting request settlement.</p>:null}
     {onReply==null?<p className="codex-source-mcp-approval__readonly">
       No approval transport is connected. This request is read-only.
     </p>:null}
-    <div className="codex-source-mcp-approval__actions">
-      <button type="button" disabled={disabled} onClick={()=>{void respond("decline");}}>
-        Deny
-      </button>
-      {request.persist?.includes("session")?<button type="button" disabled={!canApprove}
-        onClick={()=>{void respond("accept","session");}}>Allow for session</button>:null}
-      {request.persist?.includes("always")?<button type="button" disabled={!canApprove}
-        onClick={()=>{void respond("accept","always");}}>Always allow</button>:null}
-      <button type="button" disabled={!canApprove} onClick={()=>{void respond("accept");}}>
-        Allow once
-      </button>
+  </>;
+  const closeMenu=()=>{setScopeMenuOpen(false);scopeTriggerRef.current?.focus();};
+  const actions=<>
+    {hasAlwaysScope?<button type="button"
+      className="codex-source-mcp-approval__action codex-source-mcp-approval__action--leading"
+      disabled={!canApprove} onClick={()=>{void respond("accept","always");}}>
+      Always allow
+    </button>:null}
+    <div className="codex-source-mcp-approval__trailing">
+      <button type="button" className="codex-source-mcp-approval__action"
+        disabled={disabled} onClick={()=>{void respond("decline");}}>Deny</button>
+      <div className="codex-source-mcp-approval__split" ref={scopeMenuRef}>
+        <button type="submit"
+          className="codex-source-mcp-approval__action codex-source-mcp-approval__action--primary"
+          disabled={!canApprove}>Allow once</button>
+        {hasSessionScope?<button type="button"
+          ref={scopeTriggerRef}
+          className="codex-source-mcp-approval__action codex-source-mcp-approval__action--dropdown"
+          aria-label="Approval options" aria-haspopup="menu"
+          aria-expanded={scopeMenuOpen} disabled={!canApprove}
+          onClick={()=>setScopeMenuOpen(current=>!current)}>
+          <span aria-hidden="true">⌄</span>
+        </button>:null}
+        {hasSessionScope&&scopeMenuOpen?<div role="menu"
+          aria-label="Approval options"
+          className="codex-source-mcp-approval__scope-menu"
+          onKeyDown={event=>{
+            if(event.key==="Escape"){event.preventDefault();closeMenu();}
+          }}>
+          <button type="button" role="menuitem" ref={firstMenuItemRef}
+            onClick={()=>{closeMenu();void respond("accept");}}>Allow once</button>
+          <button type="button" role="menuitem"
+            onClick={()=>{closeMenu();void respond("accept","session");}}>
+            Allow this conversation
+          </button>
+        </div>:null}
+      </div>
     </div>
-  </section>;
+  </>;
+  return <SourceApprovalCardSurface
+    requestId={request.requestId} phase={phase}
+    headerContent={headerContent} title={title}
+    subtitle={request.subtitle} reason={request.reason}
+    details={details} status={status} actions={actions}
+    onSubmit={event=>{
+      event.preventDefault();
+      void respond("accept");
+    }}
+  />;
 }
