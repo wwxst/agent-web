@@ -21,6 +21,8 @@ import {projectSourceMcpGenericApprovalMessage}
 import {projectSourceBrowserWebsiteApproval} from "../src/conversation/SourceBrowserWebsiteApprovalModel.js";
 import {projectSourceUrlActionRequest} from "../src/conversation/SourceUrlActionRequestModel.js";
 import {projectSourceToolSuggestion} from "../src/conversation/SourceToolSuggestionRequestModel.js";
+import {projectSourceUserVerificationRequest}
+  from "../src/conversation/SourceUserVerificationModel.js";
 import {projectSourceHostMcpApproval} from "../src/conversation/SourceHostMcpApprovalProjection.js";
 import {bindSourcePendingElicitationsToTimeline}
   from "../src/conversation/SourcePendingElicitationTimelineBinder.js";
@@ -527,6 +529,23 @@ export function makeDemoRow(notify: (message: string) => void) {
     /** Original at dispatch only recognizes the explicit urlAction kind.
      * Browser fixture is intentionally readonly for external opens. Native
      * Electron uses its real (validated) isolated openExternalUrl bridge. */
+    getUserVerificationRequest:(item)=>{
+      const live=hostPending(item);
+      if(live!=null)return projectSourceUserVerificationRequest(live.elicitation,{
+        hostId:live.hostId,conversationId:live.threadId,requestId:live.requestId,
+      });
+      if(item.type!=="demo-user-verification"||typeof item.id!=="string")
+        return null;
+      return projectSourceUserVerificationRequest({
+        kind:"userVerification",
+        title:"Confirm access to workspace files (synthetic)",
+        serverName:"Sample Files MCP (synthetic)",
+        description:"This is a visual fixture. No biometric verification is performed.",
+      },{hostId:"demo-host",conversationId:"frontend",requestId:item.id});
+    },
+    onUserVerificationCancel:window.agentWebDesktopHost!=null
+      ?envelope=>window.agentWebDesktopHost!.cancelUserVerification(envelope)
+      :undefined,
     getToolSuggestionRequest:(item)=>{
       const live=hostPending(item);
       if(live!=null)return projectSourceToolSuggestion(live.elicitation,{

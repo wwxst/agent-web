@@ -108,6 +108,14 @@ export function demoMcpApprovalEntry(turnId:string,disabled=false):ConversationR
 /** Original at/urlAction mock request inside the canonical turn list. */
 /** Original inline tool suggestion in the SAME canonical transcript.
  * This fixture is a visual test only; it cannot install or enable an app. */
+/** Source Re biometric surface; browser fixture has no native provider. */
+export function demoUserVerificationEntry(turnId:string):ConversationRenderEntry{
+ return demoActivityEntry(turnId,[
+   demoItem(turnId+"-request","demo-user-verification",undefined,{
+     heading:"身份验证请求（模拟）",state:"Needs input",
+   }),
+ ]);
+}
 export function demoToolSuggestionEntry(
  turnId:string,target:"connector"|"plugin"="connector",
  action:"install"|"enable"="install",

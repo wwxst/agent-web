@@ -29,7 +29,7 @@ import {
   demoActivityEntry, demoItem, demoMessageEntry, makeLongHistory,
   demoStreamingCodeEntry, updateDemoStreamingCodeEntry,
   demoAutomaticReviewEntry, updateDemoAutomaticReviewEntry,
-  demoMcpApprovalEntry, demoComputerUseApprovalEntry, demoBrowserWebsiteApprovalEntry, demoUrlActionEntry, demoToolSuggestionEntry,
+  demoMcpApprovalEntry, demoComputerUseApprovalEntry, demoBrowserWebsiteApprovalEntry, demoUrlActionEntry, demoToolSuggestionEntry, demoUserVerificationEntry,
   type DemoConversationId,
 } from "./mockConversation.js";
 
@@ -639,6 +639,14 @@ export function App() {
     ]);
   }
 
+  function playUserVerificationFixture() {
+    if(playing)return;
+    markFollow();
+    appendDemoEntries(source,[
+      demoUserVerificationEntry(nextId("user-verification")),
+    ]);
+  }
+
   function playToolSuggestionFixture() {
     if(playing)return;
     markFollow();
@@ -857,6 +865,10 @@ export function App() {
           <button type="button" onClick={playBrowserWebsiteApprovalFixture}
             data-testid="demo-browser-website-approval-request">
             <Icon name="panel" size={15}/> 演示 Browser 网站授权请求（模拟）
+          </button>
+          <button type="button" onClick={playUserVerificationFixture}
+            data-testid="demo-user-verification-request">
+            <Icon name="check" size={15}/> 演示身份验证请求（模拟）
           </button>
           <button type="button" onClick={playToolSuggestionFixture}
             data-testid="demo-tool-suggestion-request">

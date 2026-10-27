@@ -40,6 +40,10 @@ import {SourceComputerUseApprovalRequestCard} from "./SourceComputerUseApprovalR
 import {SourceBrowserWebsiteApprovalCard} from "./SourceBrowserWebsiteApprovalCard.js";
 import {SourceUrlActionRequestCard} from "./SourceUrlActionRequestCard.js";
 import {SourceToolSuggestionRequestCard} from "./SourceToolSuggestionRequestCard.js";
+import {SourceUserVerificationCard} from "./SourceUserVerificationCard.js";
+import type {
+ SourceUserVerificationRequest,SourceUserVerificationCancelTransport,
+} from "../conversation/SourceUserVerificationModel.js";
 import type {
  SourceToolSuggestionRequest,SourceToolSuggestionStart,SourceToolSuggestionCheckReady,
 } from "../conversation/SourceToolSuggestionRequestModel.js";
@@ -161,6 +165,10 @@ export interface ConnectedConversationRendererHost extends ConversationContentAd
   getUrlActionOpenInThread?:(item:ConversationMessageItem)=>(()=>void)|null;
   /** Original at.toolSuggestion -> inline-tool-suggestion-request-card J. */
   getToolSuggestionRequest?:(item:ConversationMessageItem)=>SourceToolSuggestionRequest|null;
+  /** Original at.userVerification invokes Ke/ Re, not generic MCP ye. */
+  getUserVerificationRequest?:(item:ConversationMessageItem)=>SourceUserVerificationRequest|null;
+  /** Native cancel is separate from MCP accept/decline and never biometric approval. */
+  onUserVerificationCancel?:SourceUserVerificationCancelTransport;
   /** Real host-owned install/enable + independently verified readiness ONLY. */
   onStartToolSuggestion?:SourceToolSuggestionStart;
   onCheckToolSuggestionReady?:SourceToolSuggestionCheckReady;
@@ -199,6 +207,10 @@ export function createConnectedConversationMessageRenderers(host: ConnectedConve
     }
 
     const renderProjectedActivity = (target: ConversationMessageItem): React.ReactNode => {
+      const verification=host.getUserVerificationRequest?.(target)??null;
+      if(verification!=null)return <SourceUserVerificationCard
+        key={JSON.stringify([verification.hostId,verification.conversationId,verification.requestId])}
+        request={verification} onCancel={host.onUserVerificationCancel}/>;
       const toolSuggestion=host.getToolSuggestionRequest?.(target)??null;
       if(toolSuggestion!=null)return <SourceToolSuggestionRequestCard
         key={JSON.stringify([toolSuggestion.hostId,toolSuggestion.conversationId,toolSuggestion.requestId])}
