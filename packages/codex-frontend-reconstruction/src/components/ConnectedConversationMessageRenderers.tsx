@@ -206,7 +206,8 @@ export function createConnectedConversationMessageRenderers(host: ConnectedConve
         request={computerUseApproval} onReply={host.onMcpApprovalReply}/>;
       const mcpApproval=host.getMcpApprovalRequest?.(target)??null;
       if(mcpApproval!=null)return <SourceMcpApprovalRequestCard
-        key={mcpApproval.requestId} request={mcpApproval} onReply={host.onMcpApprovalReply}/>;
+        key={JSON.stringify([mcpApproval.hostId,mcpApproval.conversationId,mcpApproval.requestId])}
+        request={mcpApproval} onReply={host.onMcpApprovalReply}/>;
       const projection = projectConversationContent(target, host, "activity");
       if (projection.kind === "file-review") {
         const review: ConversationFileReviewData = restrictConversationReviewPermissions(projection.review);

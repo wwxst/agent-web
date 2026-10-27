@@ -20,6 +20,7 @@ import {projectSourceMcpGenericApprovalMessage}
   from "../src/conversation/SourceMcpApprovalRequestModel.js";
 import {projectSourceBrowserWebsiteApproval} from "../src/conversation/SourceBrowserWebsiteApprovalModel.js";
 import {projectSourceUrlActionRequest} from "../src/conversation/SourceUrlActionRequestModel.js";
+import {projectSourceHostMcpApproval} from "../src/conversation/SourceHostMcpApprovalProjection.js";
 import {bindSourcePendingElicitationsToTimeline}
   from "../src/conversation/SourcePendingElicitationTimelineBinder.js";
 import {demoActivityEntry,demoItem,type DemoSource,type DemoConversationId}
@@ -583,6 +584,12 @@ export function makeDemoRow(notify: (message: string) => void) {
     /** Host-only demo transport: every reply rejects. A click can never grant
      * real permission or pretend a request has settled successfully. */
     getMcpApprovalRequest:(item)=>{
+      const live=hostPending(item);
+      if(live!=null){
+        return projectSourceHostMcpApproval(live.elicitation,{
+          hostId:live.hostId,conversationId:live.threadId,requestId:live.requestId,
+        });
+      }
       if(item.type!=="demo-mcp-approval"||typeof item.id!=="string")return null;
       const disabled=item.demoMcpApprovalDisabled===true;
       // Original be/ke generic-message title logic is exercised by the
