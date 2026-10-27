@@ -1086,7 +1086,7 @@ test("native Electron MCP approval request waits for host, fails safely, and all
       .some(node=>node.getAttribute("data-source-mcp-reply-phase")==="error"),
     null,{timeout:12000});
   assert.equal(await options.isDisabled(),false);
-  assert.match(await card.getByRole("alert").innerText(),
+  assert.match(await card.locator(".codex-source-mcp-approval__error").innerText(),
     /MCP backend unavailable/);
   await deny.click();
   assert.ok(["submitting","error"].includes(
