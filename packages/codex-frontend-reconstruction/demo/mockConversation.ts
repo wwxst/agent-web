@@ -106,6 +106,20 @@ export function demoMcpApprovalEntry(turnId:string,disabled=false):ConversationR
 /** Source E Computer Use approval samples in the *existing* canonical
  * timeline. Metadata is synthetic and grants no real application access. */
 /** Original at/urlAction mock request inside the canonical turn list. */
+/** Original inline tool suggestion in the SAME canonical transcript.
+ * This fixture is a visual test only; it cannot install or enable an app. */
+export function demoToolSuggestionEntry(
+ turnId:string,target:"connector"|"plugin"="connector",
+ action:"install"|"enable"="install",
+):ConversationRenderEntry{
+ return demoActivityEntry(turnId,[
+   demoItem(turnId+"-request","demo-tool-suggestion",undefined,{
+     heading:"工具建议（模拟）",state:"Needs input",
+     demoToolSuggestionType:target,demoToolSuggestionAction:action,
+   }),
+ ]);
+}
+
 export function demoUrlActionEntry(turnId:string):ConversationRenderEntry{
   return demoActivityEntry(turnId,[
     demoItem(turnId+"-request","demo-url-action",undefined,{

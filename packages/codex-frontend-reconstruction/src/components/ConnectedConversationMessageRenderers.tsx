@@ -39,6 +39,10 @@ import { SourceMcpApprovalRequestCard } from "./SourceMcpApprovalRequestCard.js"
 import {SourceComputerUseApprovalRequestCard} from "./SourceComputerUseApprovalRequestCard.js";
 import {SourceBrowserWebsiteApprovalCard} from "./SourceBrowserWebsiteApprovalCard.js";
 import {SourceUrlActionRequestCard} from "./SourceUrlActionRequestCard.js";
+import {SourceToolSuggestionRequestCard} from "./SourceToolSuggestionRequestCard.js";
+import type {
+ SourceToolSuggestionRequest,SourceToolSuggestionStart,SourceToolSuggestionCheckReady,
+} from "../conversation/SourceToolSuggestionRequestModel.js";
 import type {SourceUrlActionRequest} from "../conversation/SourceUrlActionRequestModel.js";
 import type {SourceBrowserWebsiteApprovalRequest} from "../conversation/SourceBrowserWebsiteApprovalModel.js";
 import type {SourceComputerUseApprovalRequest} from "../conversation/SourceComputerUseApprovalModel.js";
@@ -155,6 +159,11 @@ export interface ConnectedConversationRendererHost extends ConversationContentAd
   /** Native shell owns external HTTPS open; opening alone never replies or grants. */
   onUrlActionOpenExternal?:(url:string)=>Promise<boolean>;
   getUrlActionOpenInThread?:(item:ConversationMessageItem)=>(()=>void)|null;
+  /** Original at.toolSuggestion -> inline-tool-suggestion-request-card J. */
+  getToolSuggestionRequest?:(item:ConversationMessageItem)=>SourceToolSuggestionRequest|null;
+  /** Real host-owned install/enable + independently verified readiness ONLY. */
+  onStartToolSuggestion?:SourceToolSuggestionStart;
+  onCheckToolSuggestionReady?:SourceToolSuggestionCheckReady;
   onMcpApprovalReply?:SourceMcpApprovalReplyTransport;
   translator: ActivityStatusTranslation;
   getApprovalReviewSummary: (review: AutomaticApprovalReviewSummary) => React.ReactNode;
@@ -190,6 +199,12 @@ export function createConnectedConversationMessageRenderers(host: ConnectedConve
     }
 
     const renderProjectedActivity = (target: ConversationMessageItem): React.ReactNode => {
+      const toolSuggestion=host.getToolSuggestionRequest?.(target)??null;
+      if(toolSuggestion!=null)return <SourceToolSuggestionRequestCard
+        key={JSON.stringify([toolSuggestion.hostId,toolSuggestion.conversationId,toolSuggestion.requestId])}
+        request={toolSuggestion} onReply={host.onMcpApprovalReply}
+        onStartSetup={host.onStartToolSuggestion}
+        onCheckReady={host.onCheckToolSuggestionReady}/>;
       const urlAction=host.getUrlActionRequest?.(target)??null;
       if(urlAction!=null)return <SourceUrlActionRequestCard
         key={JSON.stringify([urlAction.hostId,urlAction.conversationId,urlAction.requestId])}

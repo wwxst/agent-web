@@ -20,6 +20,7 @@ import {projectSourceMcpGenericApprovalMessage}
   from "../src/conversation/SourceMcpApprovalRequestModel.js";
 import {projectSourceBrowserWebsiteApproval} from "../src/conversation/SourceBrowserWebsiteApprovalModel.js";
 import {projectSourceUrlActionRequest} from "../src/conversation/SourceUrlActionRequestModel.js";
+import {projectSourceToolSuggestion} from "../src/conversation/SourceToolSuggestionRequestModel.js";
 import {projectSourceHostMcpApproval} from "../src/conversation/SourceHostMcpApprovalProjection.js";
 import {bindSourcePendingElicitationsToTimeline}
   from "../src/conversation/SourcePendingElicitationTimelineBinder.js";
@@ -526,6 +527,22 @@ export function makeDemoRow(notify: (message: string) => void) {
     /** Original at dispatch only recognizes the explicit urlAction kind.
      * Browser fixture is intentionally readonly for external opens. Native
      * Electron uses its real (validated) isolated openExternalUrl bridge. */
+    getToolSuggestionRequest:(item)=>{
+      const live=hostPending(item);
+      if(live!=null)return projectSourceToolSuggestion(live.elicitation,{
+        hostId:live.hostId,conversationId:live.threadId,requestId:live.requestId,
+      });
+      if(item.type!=="demo-tool-suggestion"||typeof item.id!=="string")return null;
+      return projectSourceToolSuggestion({
+        kind:"toolSuggestion",suggestion:{
+          tool_type:item.demoToolSuggestionType==="plugin"?"plugin":"connector",
+          suggest_type:item.demoToolSuggestionAction==="enable"?"enable":"install",
+          tool_id:"sample-files-tool",tool_name:"Sample Files (synthetic)",
+        },
+      },{hostId:"demo-host",conversationId:"frontend",requestId:item.id});
+    },
+    // Intentionally no onStartToolSuggestion/onCheckToolSuggestionReady:
+    // verified host app/plugin service does not exist yet.
     getUrlActionRequest:(item)=>{
       const live=hostPending(item);
       if(live!=null)return projectSourceUrlActionRequest(live.elicitation,{
