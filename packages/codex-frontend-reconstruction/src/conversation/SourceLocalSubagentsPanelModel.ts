@@ -42,6 +42,27 @@ export function sourceLocalSubagentPreview(item:SourceLocalSubagent):string|null
   }
   return item.statusSummary??(item.status==="done"?null:"Working");
 }
+/** The private opener verify-descendant must never be replaced with a guess.
+ * Until host hydration is available, only children in the verified parent
+ * summary may mount a nested conversation source. */
+export function isSourceLocalSubagentChildVerified(
+  ordered:readonly SourceLocalSubagent[],conversationId:string,
+):boolean{
+  return ordered.some(item=>item.conversationId===conversationId);
+}
+/** Source original j$ formats completed time relatively, not a date stamp.
+ * The host can override this locale fallback with its own original formatter. */
+export function sourceLocalSubagentRelativeTime(lastAtMs:number,nowMs=Date.now()):string{
+  if(!Number.isFinite(lastAtMs)||!Number.isFinite(nowMs))return "";
+  const seconds=Math.max(0,Math.floor((nowMs-lastAtMs)/1000));
+  const relative=new Intl.RelativeTimeFormat("en",{numeric:"auto"});
+  if(seconds<60)return relative.format(-seconds,"second");
+  const minutes=Math.floor(seconds/60);
+  if(minutes<60)return relative.format(-minutes,"minute");
+  const hours=Math.floor(minutes/60);
+  if(hours<24)return relative.format(-hours,"hour");
+  return relative.format(-Math.floor(hours/24),"day");
+}
 export function sourceLocalSubagentLastActivityMs(item:SourceLocalSubagent):number|null{
   return item.lastAssistantMessageAtMs??item.recencyAtMs??null;
 }
