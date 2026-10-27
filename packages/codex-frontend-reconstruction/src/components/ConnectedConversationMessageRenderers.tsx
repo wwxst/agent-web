@@ -2,6 +2,7 @@ import * as React from "react";
 import type { ConversationMessageItem } from "../conversation/ConversationMessageRenderPlan.js";
 import type { AgentActivityUnit, AgentActivityCollapseOptions } from "../conversation/AgentActivityProjection.js";
 import { CodexAgentActivity } from "./CodexAgentActivity.js";
+import { CodexSourceCollapsibleUserMessage } from "./CodexSourceCollapsibleUserMessage.js";
 import { combineSourceActivityTrace } from "../conversation/SourceCombinedActivityTrace.js";
 import { filterSourceLatestActivityUnits } from "../conversation/SourceLatestActivityVisibility.js";
 import type { SourceRepeatedActivityRow } from "../conversation/SourceRepeatedActivityGroups.js";
@@ -30,9 +31,14 @@ import {
   type ConversationFileReviewData,
 } from "../conversation/ConversationPresentationAdapterModel.js";
 import type { InlineFileReviewAction, InlineReviewFile } from "../conversation/InlineFileReviewModel.js";
+import type { SourceInlineReviewWrapPreference } from "../conversation/SourceInlineReviewWrapPreference.js";
 import type { AutomaticApprovalReviewSummary } from "../conversation/ActivityStatusPresentation.js";
 import { ActivityStatusLabel, AutomaticApprovalReviewList, type ActivityStatusTranslation } from "./ActivityStatusViews.js";
 import { InlineFileReview } from "./InlineFileReview.js";
+import { SourceMcpApprovalRequestCard } from "./SourceMcpApprovalRequestCard.js";
+import type {
+  SourceMcpApprovalRequest, SourceMcpApprovalReplyTransport,
+} from "../conversation/SourceMcpApprovalRequestModel.js";
 import type { ConversationMessageRenderers } from "./ConversationMessageBlocks.js";
 
 /**
@@ -43,7 +49,7 @@ import type { ConversationMessageRenderers } from "./ConversationMessageBlocks.j
  * those missing subsystems or granting permission on the host's behalf.
  */
 export interface ConnectedConversationRendererHost extends ConversationContentAdapters {
-  Markdown: React.ComponentType<{ text: string; role: "user" | "assistant" | "activity" }>;
+  Markdown: React.ComponentType<{ text: string; role: "user" | "assistant" | "activity"; isStreaming?:boolean }>;
   /** The private Wa unit factory and turn-level Rk state must be host-provided.
    * Without them, preserve the existing ActivityGroup layout unchanged. */
   agentActivity?: {
@@ -63,6 +69,8 @@ export interface ConnectedConversationRendererHost extends ConversationContentAd
     getCollapseContext(context: { isActive: boolean; collapseWhenPossible: boolean; renderMode: "latest" | "all"; hasFollowingFinalAnswer: boolean; activityStateKey: string }):
       Omit<AgentActivityCollapseOptions<ConversationMessageItem>, "units">;
     renderSummary?(count: number, workedForItem: ConversationMessageItem | null): React.ReactNode;
+    /** Source SG is selected by Rk after kk extracts a worked-for item. */
+    renderWorkedFor?(item: ConversationMessageItem): React.ReactNode;
     /** Original nk/ak group header; We/Sg, mk/rk and icon metadata remain host-owned. */
     groupHeader?: {
       getStateContext(context: {items: readonly ConversationMessageItem[]; isActive: boolean;
@@ -125,7 +133,13 @@ export interface ConnectedConversationRendererHost extends ConversationContentAd
     overflow: "wrap" | "scroll";
     onViewportReady?: ((element: HTMLElement) => void) | undefined;
   }>;
+  /** Private app setting C must be supplied by the real session host. */
+  inlineReviewWrapPreference?:SourceInlineReviewWrapPreference;
   onFileReviewAction: (item: ConversationMessageItem, action: InlineFileReviewAction) => void;
+  /** Host is solely responsible for resolving real MCP pending request ids.
+   * Absent callback = explicit readonly request, never simulated permission. */
+  getMcpApprovalRequest?:(item:ConversationMessageItem)=>SourceMcpApprovalRequest|null;
+  onMcpApprovalReply?:SourceMcpApprovalReplyTransport;
   translator: ActivityStatusTranslation;
   getApprovalReviewSummary: (review: AutomaticApprovalReviewSummary) => React.ReactNode;
   getApprovalReviewDetails: (review: AutomaticApprovalReviewSummary) => React.ReactNode;
@@ -160,11 +174,15 @@ export function createConnectedConversationMessageRenderers(host: ConnectedConve
     }
 
     const renderProjectedActivity = (target: ConversationMessageItem): React.ReactNode => {
+      const mcpApproval=host.getMcpApprovalRequest?.(target)??null;
+      if(mcpApproval!=null)return <SourceMcpApprovalRequestCard
+        key={mcpApproval.requestId} request={mcpApproval} onReply={host.onMcpApprovalReply}/>;
       const projection = projectConversationContent(target, host, "activity");
       if (projection.kind === "file-review") {
         const review: ConversationFileReviewData = restrictConversationReviewPermissions(projection.review);
         return <InlineFileReview oldFile={review.oldFile} newFile={review.newFile}
           compact={review.compact} canEdit={review.canEdit} canAccept={review.canAccept}
+          wrapPreference={host.inlineReviewWrapPreference}
           onAction={(action) => host.onFileReviewAction(target, action)} Diff={host.FileDiff} />;
       }
       if (projection.kind === "approval-reviews") {
@@ -227,16 +245,30 @@ export function createConnectedConversationMessageRenderers(host: ConnectedConve
   return {
     UserMessage(props) {
       const content = projectConversationContent(props.item, host, "message");
-      return <div data-conversation-message="user" className="flex flex-col gap-2">
-        {content.kind === "markdown" ? <host.Markdown text={content.text} role="user" />
+      // Original Rt: I = explicit isAeonFormatted ?? private capability
+      // fallback. This independent host has no private capability provider;
+      // only a genuine typed source item flag may enable the compact variant.
+      const isAeonFormatted=props.item.isAeonFormatted===true;
+      return <div data-conversation-message="user"
+        data-content-search-unit-key={typeof props.item.id==="string"?props.item.id:undefined}
+        data-source-user-message-format={isAeonFormatted?"compact":"standard"}
+        className="flex flex-col gap-2">
+        {content.kind === "markdown"
+          ? <CodexSourceCollapsibleUserMessage text={content.text}
+              isAeonFormatted={isAeonFormatted}>
+              {visibleText=><host.Markdown text={visibleText} role="user" />}
+            </CodexSourceCollapsibleUserMessage>
           : <host.ActivityDetails item={props.item} isActive={false} presentation="ordinary" />}
         {host.UserMessageExtras ? <host.UserMessageExtras {...props} /> : null}
       </div>;
     },
     AssistantMessage(props) {
       const content = projectConversationContent(props.item, host, "message");
-      return <div data-conversation-message="assistant" className="flex flex-col gap-2">
-        {content.kind === "markdown" ? <host.Markdown text={content.text} role="assistant" />
+      return <div data-conversation-message="assistant"
+        data-content-search-unit-key={typeof props.item.id==="string"?props.item.id:undefined}
+        className="flex flex-col gap-2">
+        {content.kind === "markdown" ? <host.Markdown text={content.text} role="assistant"
+            isStreaming={props.item.completed===false} />
           : <host.ActivityDetails item={props.item} isActive={false} presentation="ordinary" />}
         {host.AssistantMessageExtras ? <host.AssistantMessageExtras {...props} /> : null}
       </div>;
@@ -304,6 +336,7 @@ export function createConnectedConversationMessageRenderers(host: ConnectedConve
         </div>;
       }
       return <CodexAgentActivity {...context} units={units} renderSummary={grouping.renderSummary}
+        {...(grouping.renderWorkedFor == null ? {} : {renderWorkedFor: grouping.renderWorkedFor})}
         persistedCollapsed={collapseStore == null ? undefined : controlledCollapsed}
         onSetCollapsed={collapseStore == null ? undefined :
           (next) => collapseStore.setCollapsed(props.activityStateKey, next)}

@@ -140,11 +140,25 @@ button:focus-visible, textarea:focus-visible { outline: 2px solid #578cda; outli
 .demo-conversation-intro {padding:24px 0 12px;}
 /* The thread title belongs to the real header surface, not an extra hero block. */
 .demo-conversation-intro h1 {position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;}
-.demo-worked-label {display:flex;align-items:center;gap:5px;color:#989898;font-size:12.5px;padding:0 0 8px;border-bottom:1px solid #e9e9e9;}
-.demo-worked-label span{font-size:10px;color:#b1b1b1;}
+/* Original SG renders work status inside Rk's expanded activity section,
+ * not as a fabricated global title subtitle. */
+.codex-source-work-status {color:#898989;font-size:12.5px;font-variant-numeric:tabular-nums;}
+.codex-source-work-status-divider {display:flex;align-items:center;gap:8px;padding:5px 0 7px;}
+.codex-source-work-status-divider::after {content:"";height:1px;flex:1;background:#e9e9e9;}
 .demo-row{font-size:var(--codex-chat-font-size);line-height:1.65;}
-.demo-row--user > div:not(.demo-time-marker){max-width:84%;}
-[data-conversation-message="user"] {background:#f2f2f2;color:#323232;padding:10px 14px;border-radius:15px;}
+/* Original user-message Rt uses max-w-(--user-chat-width) on its
+ * bubble; original user-message CSS sets 70% for the non-compact variant. */
+.demo-row--user > div:not(.demo-time-marker){max-width:70%;}
+/* Original Rt: px-(--thread-content-margin)=16px, py-2.5=10px,
+ * rounded-2xl => 22px. The compact 456px / 16px mode is conditional and
+ * must not be activated without a real upstream context flag. */
+[data-conversation-message="user"] {
+  background:#f2f2f2;
+  color:#323232;
+  padding:10px 16px;
+  border-radius:calc(var(--spacing,4px) * 5.5);
+  overflow-wrap:anywhere;
+}
 .demo-row--assistant {padding:1px 0 2px;}
 .demo-markdown,.demo-markdown--user {font-size:var(--codex-chat-font-size);line-height:1.75;color:#292929;}
 .demo-markdown strong {color:#242424;}
@@ -198,6 +212,52 @@ button:focus-visible, textarea:focus-visible { outline: 2px solid #578cda; outli
   position:relative;
   z-index:10;
   pointer-events:auto;
+}
+
+/* Original thread-scroll-layout Ae + app-initial UYl:
+ * zero-height footer anchor, centered 32px circular button positioned
+ * 6 spacing units above the composer. The hidden element stays mounted,
+ * but has no hit target or tab stop. No second scroll container. */
+.codex-source-scroll-to-bottom-anchor {
+  position:relative;
+  z-index:30;
+  height:0;
+  width:min(100%,var(--thread-content-max-width));
+  margin-inline:auto;
+  pointer-events:none;
+}
+.codex-source-scroll-to-bottom-button {
+  position:absolute;
+  inset-inline-end:50%;
+  bottom:calc(100% + 6 * var(--spacing,4px));
+  transform:translateX(50%);
+  z-index:30;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  width:32px;
+  height:32px;
+  padding:0;
+  border:1px solid var(--demo-border,#e7e7e7);
+  border-radius:50%;
+  background:var(--color-surface,#fff);
+  color:#777;
+  opacity:0;
+  pointer-events:none;
+  cursor:pointer;
+  transition:opacity .15s ease-in-out;
+}
+.codex-source-scroll-to-bottom-button[data-visible="true"] {
+  opacity:1;
+  pointer-events:auto;
+}
+.codex-source-scroll-to-bottom-button:hover { color:#333; background:#fafafa; }
+.codex-source-scroll-to-bottom-button:focus-visible {
+  outline:2px solid #578cda;
+  outline-offset:2px;
+}
+@media print {
+  .codex-source-scroll-to-bottom-anchor { display:none; }
 }
 
 .demo-composer-wrap {width:min(100%,var(--thread-content-max-width));}
@@ -406,4 +466,302 @@ button:focus-visible, textarea:focus-visible { outline: 2px solid #578cda; outli
 .demo-markdown .demo-markdown-code-scrollport pre code{
   background:transparent;border:0;border-radius:0;
   padding:0;color:inherit;font:inherit;white-space:inherit;
+}
+
+
+/* Original collapsible-user-message C / user-message yt:
+ * the message's actual Markdown is clipped to the source's measured 20-line
+ * limit. Disclosure is below the text, not a duplicate message bubble. */
+.codex-source-user-message-content {
+  display:flex;
+  flex-direction:column;
+  align-items:flex-end;
+  gap:4px;
+  min-width:0;
+  width:100%;
+}
+.codex-source-user-message-content__viewport {
+  position:relative;
+  width:100%;
+  min-width:0;
+  font-size:var(--codex-chat-font-size,13px);
+  line-height:1.75;
+}
+.codex-source-user-message-content__text {
+  width:100%;
+  min-width:0;
+}
+.codex-source-user-message-content__ellipsis {
+  align-self:flex-start;
+  color:var(--demo-dim,#858585);
+}
+.codex-source-user-message-content__toggle {
+  align-self:flex-start;
+  display:inline-flex;
+  align-items:center;
+  gap:3px;
+  padding:0;
+  margin-top:4px;
+  border:0;
+  background:transparent;
+  color:var(--demo-dim,#858585);
+  font-size:var(--codex-chat-font-size,13px);
+  cursor:pointer;
+}
+.codex-source-user-message-content__toggle:hover { color:var(--demo-text,#242424); }
+.codex-source-user-message-content__toggle svg {transition:transform 130ms ease;}
+.codex-source-user-message-content__up {transform:rotate(180deg);}
+@media print {
+  .codex-source-user-message-content__viewport {
+    max-height:none !important;
+    overflow:visible !important;
+    mask-image:none !important;
+  }
+  .codex-source-user-message-content__toggle,
+  .codex-source-user-message-content__ellipsis {display:none !important;}
+}
+
+
+/*
+ * Source-backported semantic Markdown presentation (real mounted host).
+ * Evidence: original markdown-de681c624464.css > _MarkdownContent_yl0of_2.
+ * This is NOT an additional Markdown renderer: react-markdown/remark-gfm
+ * remains the existing owner of the actual DOM and message lifecycle.
+ *
+ * Avoid copying the original hashed CSS modules. These stable scoped rules
+ * recover their exposed geometry; theme tokens use the existing demo theme
+ * fallbacks until host palette reconstruction is complete.
+ */
+.demo-markdown {overflow-wrap:anywhere;}
+.demo-markdown :first-child {margin-top:0;}
+.demo-markdown :last-child {margin-bottom:0;}
+.demo-markdown h1 {
+  font-size:1.75em;font-weight:600;letter-spacing:-.04rem;
+  line-height:1.222;margin-bottom:.5rem;
+}
+.demo-markdown h2 {
+  font-size:1.5em;font-weight:600;line-height:1.222;
+  margin-top:2rem;margin-bottom:1rem;
+}
+.demo-markdown h3 {
+  font-size:1.25em;font-weight:600;line-height:1.3;
+  margin-top:1.125rem;margin-bottom:.625rem;
+}
+.demo-markdown h4 {
+  font-size:1em;font-weight:600;line-height:1.5;
+  margin-top:1rem;margin-bottom:.5rem;
+}
+.demo-markdown h5 {font-size:1em;font-weight:600;line-height:1.5;}
+.demo-markdown h6 {font-size:1em;line-height:1.5;}
+.demo-markdown ul,.demo-markdown ol {margin:.5em 0 1em;}
+.demo-markdown ul {padding-inline-start:1.625em;list-style-type:disc;}
+.demo-markdown ol {padding-inline-start:1.625em;list-style-type:decimal;}
+.demo-markdown ul>li,.demo-markdown ol>li {
+  margin:.5em 0;padding-inline-start:.375em;
+}
+.demo-markdown li {min-height:1.5em;}
+.demo-markdown ul>li::marker,.demo-markdown ol>li::marker {
+  color:var(--color-text-secondary,#858585);
+  font-size:1em;font-weight:500;
+}
+.demo-markdown :is(ul,ol)>li>:first-child {margin-top:0;margin-bottom:0;}
+.demo-markdown :is(ul,ol)>li :is(ul,ol){margin-top:.25em;}
+.demo-markdown .contains-task-list {padding-inline-start:.25em;}
+.demo-markdown .contains-task-list>li {
+  display:flex;align-items:baseline;gap:calc(var(--spacing,4px) * 2);
+  padding-inline-start:0;list-style:none;
+}
+.demo-markdown .contains-task-list input[type="checkbox"] {
+  appearance:auto;flex:none;margin:0;width:auto;height:auto;
+  background:initial;border:initial;border-radius:initial;
+}
+.demo-markdown p {margin:1em 0;}
+.demo-markdown strong {font-weight:600;}
+.demo-markdown em {font-style:italic;}
+.demo-markdown blockquote {
+  color:var(--color-text-secondary,#777);
+  font-weight:400;
+  padding:.25em 0 .25rem calc(var(--spacing,4px) * 6);
+  border:0;
+  position:relative;
+}
+.demo-markdown blockquote::before {
+  content:"";position:absolute;inset-block:0;inset-inline-start:0;
+  width:.25rem;border-radius:2px;
+  background:var(--alpha-15,#d9d9d9);
+}
+.demo-markdown blockquote p {margin:.5em 0 0;}
+.demo-markdown blockquote p:first-child {margin-top:0;}
+.demo-markdown hr {
+  border:0;border-top:1px solid var(--alpha-10,#e7e7e7);
+  margin:2em 0;
+}
+.demo-markdown table {
+  border-collapse:separate;border-spacing:0;table-layout:auto;
+  border:0;width:100%;margin:2em 0;
+  font-size:.875em;line-height:1.71429;
+}
+.demo-markdown th {
+  border:0;border-bottom:1px solid var(--color-border-strong,#b9b9b9);
+  line-height:1.5;padding-block:calc(var(--spacing,4px) * 2);
+  padding-inline:calc(var(--spacing,4px) * 2);
+  text-align:start;
+}
+.demo-markdown td {
+  border:0;border-bottom:1px solid var(--color-border,#dedede);
+  padding-block:calc(var(--spacing,4px) * 2.5);
+  padding-inline:calc(var(--spacing,4px) * 2);
+}
+.demo-markdown :is(th,td):first-child {padding-inline-start:0;}
+.demo-markdown :is(th,td):last-child {padding-inline-end:0;}
+.demo-markdown tbody tr:last-child td {border-bottom:0;}
+/* The original inline-code component (_InlineCode_yl0of_2) uses 0.875em,
+ * 1px / .3rem, a 4px radius and a subtle inner border, not a separate grey
+ * text color. The existing chatgpt-code-block host keeps its own code style. */
+.demo-markdown :not(pre)>code {
+  font-size:.875em;font-weight:500;
+  color:inherit;
+  padding:1px .3rem;border-radius:.25rem;
+  background:var(--alpha-04,#f5f5f5);
+  box-shadow:inset 0 0 0 1px var(--alpha-08,#e8e8e8);
+}
+
+
+/* Source user-message Rt / _compactMessageBubble_168sz_15:
+ * isAeonFormatted explicitly enables a distinct 456px intrinsic-width
+ * bubble, 16px rounded/superellipse corners, 12px horizontal + 8px vertical
+ * padding and tighter Markdown tone. Keep standard Rt 70%-width untouched
+ * when the host does not supply the original formatting capability. */
+.demo-row--user:has([data-source-user-message-format="compact"])
+  > div:not(.demo-time-marker) {
+  max-width:min(456px,100%);
+}
+[data-conversation-message="user"][data-source-user-message-format="compact"] {
+  --compact-user-message-bubble-background:var(--color-background-user-message-compact,#f2f2f2);
+  --compact-user-message-bubble-foreground:var(--color-text,#292929);
+  background:var(--compact-user-message-bubble-background);
+  color:var(--compact-user-message-bubble-foreground);
+  width:fit-content;
+  max-width:min(456px,100%);
+  padding:8px 12px;
+  border-radius:calc(var(--spacing,4px) * 4);
+  corner-shape:superellipse(1);
+}
+[data-source-user-message-format="compact"]
+  .codex-source-user-message-content__text .demo-markdown {
+  line-height:calc(var(--codex-chat-font-size,13px) + 4px);
+  letter-spacing:-.01em;
+}
+
+
+/* Original app-shared zzn / Vzn code snippet action bar: normal variant
+ * min-h-12, ps-4, pe-1.5, py-1.5. Ht viewer switches overflow-x and
+ * whitespace modes using the single Ce/ord user-controlled preference.
+ * The existing code-copy surface and React-owned Markdown remain intact. */
+.demo-markdown-code-action-bar {
+  min-height:calc(var(--spacing,4px) * 12);
+  padding:calc(var(--spacing,4px) * 1.5);
+  padding-inline-start:calc(var(--spacing,4px) * 4);
+  gap:calc(var(--spacing,4px) * 2);
+  font-weight:500;
+}
+.demo-markdown-code-controls {
+  display:flex;align-items:center;gap:1px;min-width:0;flex-shrink:0;
+}
+.demo-markdown-code-wrap {
+  display:inline-flex;align-items:center;justify-content:center;
+  width:28px;height:28px;min-width:28px;
+  border:0;border-radius:6px;padding:0;
+  background:transparent;color:var(--demo-dim);
+  cursor:pointer;
+}
+.demo-markdown-code-wrap:hover,.demo-markdown-code-wrap:focus-visible {
+  background:var(--demo-panel);color:var(--demo-text);
+}
+.demo-markdown-code-wrap[aria-pressed="true"] {
+  color:var(--demo-text);
+}
+.demo-markdown-code-surface[data-source-code-wrap-lines="false"]
+  .demo-markdown-code-scrollport {
+  overflow-x:auto;
+}
+.demo-markdown-code-surface[data-source-code-wrap-lines="false"]
+  .demo-markdown-code-scrollport pre {
+  min-width:max-content;white-space:pre;overflow-wrap:normal;
+}
+.demo-markdown-code-surface[data-source-code-wrap-lines="false"]
+  .demo-markdown-code-scrollport pre code {white-space:inherit;}
+.demo-markdown-code-surface[data-source-code-wrap-lines="true"]
+  .demo-markdown-code-scrollport {
+  overflow-x:hidden;
+}
+.demo-markdown-code-surface[data-source-code-wrap-lines="true"]
+  .demo-markdown-code-scrollport pre {
+  min-width:0;white-space:pre-wrap;overflow-wrap:anywhere;
+}
+.demo-markdown-code-surface[data-source-code-wrap-lines="true"]
+  .demo-markdown-code-scrollport pre code {
+  white-space:inherit;overflow-wrap:inherit;
+}
+
+
+/* Original chatgpt-code-block-highlighting 72144295f264 + app-shared
+ * Codex syntax palette. Lezer HighlightStyle supplies these exact source
+ * class names; keep fallback theme tokens so unsupported grammars do not
+ * inherit fake token colors. No proprietary CSS is copied verbatim. */
+.demo-markdown .demo-markdown-code-scrollport .text-codex-syntax-comment {
+  color:var(--color-text-secondary,#858585);
+}
+.demo-markdown .demo-markdown-code-scrollport .text-codex-syntax-keyword {
+  color:var(--color-codex-syntax-keyword,#ab4f7a);
+}
+.demo-markdown .demo-markdown-code-scrollport .text-codex-syntax-literal {
+  color:var(--color-codex-syntax-literal,#ac4f23);
+}
+.demo-markdown .demo-markdown-code-scrollport .text-codex-syntax-string {
+  color:var(--color-codex-syntax-string,#3a843f);
+}
+.demo-markdown .demo-markdown-code-scrollport .text-codex-syntax-variable {
+  color:var(--color-codex-syntax-variable,#643cae);
+}
+.demo-markdown .demo-markdown-code-scrollport .text-codex-syntax-attribute {
+  color:var(--color-codex-syntax-attribute,#b8802b);
+}
+.demo-markdown .demo-markdown-code-scrollport .text-codex-syntax-name {
+  color:var(--color-codex-syntax-name,#1f4e94);
+}
+.demo-markdown .demo-markdown-code-scrollport .text-codex-syntax-error {
+  color:var(--color-codex-syntax-error,#cd3739);
+}
+.demo-markdown .demo-markdown-code-scrollport .underline {
+  text-decoration-line:underline;
+}
+
+
+/* Original automatic-approval-review-details D -> app-initial qk:
+ * a running automatic review uses dynamic shimmer for summary text.
+ * This host stylesheet approximates the private qk visual primitive
+ * without claiming identical private animation timing/theme. */
+@keyframes source-automatic-approval-review-shimmer {
+  from { background-position-x: 180%; }
+  to { background-position-x: -180%; }
+}
+.codex-source-automatic-review-summary[data-source-automatic-approval-shimmer="true"] {
+  background-image:linear-gradient(105deg,currentColor 30%,var(--demo-dim,#858585) 50%,currentColor 70%);
+  background-size:220% 100%;
+  background-position:180% 0;
+  background-repeat:no-repeat;
+  background-clip:text;
+  -webkit-background-clip:text;
+  color:transparent;
+  -webkit-text-fill-color:transparent;
+  animation:source-automatic-approval-review-shimmer 1.6s linear infinite;
+}
+@media (prefers-reduced-motion:reduce) {
+  .codex-source-automatic-review-summary[data-source-automatic-approval-shimmer="true"] {
+    animation:none;
+    background-image:none;
+    color:var(--demo-dim,#858585);
+    -webkit-text-fill-color:currentColor;
+  }
 }

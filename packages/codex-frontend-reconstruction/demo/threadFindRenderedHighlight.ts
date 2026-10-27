@@ -1,3 +1,9 @@
+import {sourceMarkdownVisibleFindOrdinal} from "../src/conversation/SourceMarkdownVisibleFindModel.js";
+import {
+  SOURCE_USER_MESSAGE_FIND_REVEAL_EVENT,
+  type SourceUserMessageFindRevealDetail,
+} from "../src/components/CodexSourceCollapsibleUserMessage.js";
+
 /**
  * Standalone visible-message adapter for source iFt/xFt conversation find.
  *
@@ -67,6 +73,51 @@ export interface DemoThreadFindVisibleTarget {
   query: string;
   ordinalWithinTurn: number;
   expectedRowMatches: number;
+  /** Original data-content-search-unit-key: match only the selected unit. */
+  unitKey?: string;
+  expectedUnitMatches?: number;
+  /** Full source unit text for mapping Markdown link labels vs hidden URLs. */
+  sourceText?:string;
+  sourceOffset?:number;
+  sourceLength?:number;
+}
+
+/** Source _u reveal registration is owned by the exact user-message
+ * component, not the search provider. Dispatch to that component only
+ * if the original source match's raw offset belongs to its full text.
+ * React flushes the disclosure before the visible Markdown highlight runs.
+ */
+export function revealCollapsedDemoThreadFindMatch(
+  target:Pick<DemoThreadFindVisibleTarget,"viewport"|"turnKey"|"query"> & {
+    sourceOffset:number;
+    sourceLength:number;
+    unitKey?:string;
+  },
+):boolean {
+  const row=Array.from(target.viewport.querySelectorAll<HTMLElement>("[data-turn-key]"))
+    .find(element=>element.dataset.turnKey===target.turnKey);
+  if(row==null)return false;
+  // Source search may match tool output in the same turn; do not reveal
+  // unrelated user messages, nor guess offsets in non-user blocks.
+  const users=Array.from(row.querySelectorAll<HTMLElement>(
+    '[data-conversation-message="user"]',
+  )).filter(message=>
+    target.unitKey==null ||
+    message.dataset.contentSearchUnitKey===target.unitKey,
+  ).flatMap(message=>Array.from(message.querySelectorAll<HTMLElement>(
+    '[data-source-user-message-collapsible="true"]',
+  )));
+  if(users.length!==1)return false;
+  const payload:SourceUserMessageFindRevealDetail={
+    query:target.query,sourceOffset:target.sourceOffset,
+    sourceLength:target.sourceLength,
+  };
+  const event=new CustomEvent<SourceUserMessageFindRevealDetail>(
+    SOURCE_USER_MESSAGE_FIND_REVEAL_EVENT,
+    {detail:payload,cancelable:true},
+  );
+  users[0]!.dispatchEvent(event);
+  return event.defaultPrevented;
 }
 
 /**
@@ -81,10 +132,30 @@ export function highlightRenderedDemoThreadFindMatch(target: DemoThreadFindVisib
   const virtualRow = Array.from(target.viewport.querySelectorAll<HTMLElement>("[data-turn-key]"))
     .find(element => element.getAttribute("data-turn-key") === target.turnKey);
   if (virtualRow == null) return false;
-  const ranges = Array.from(virtualRow.querySelectorAll(".demo-markdown"))
+  // Source Y maps matches by unit ID. A tool output containing the same
+  // query must not shift a user-message or assistant-message highlight.
+  const scoped = target.unitKey == null ? [virtualRow]
+    : Array.from(virtualRow.querySelectorAll<HTMLElement>(
+        '[data-content-search-unit-key]',
+      )).filter(unit=>unit.dataset.contentSearchUnitKey===target.unitKey);
+  if (scoped.length!==1) return false;
+  const ranges = Array.from(scoped[0]!.querySelectorAll(".demo-markdown"))
     .flatMap(markdown => findRenderedMarkdownRanges(markdown, target.query));
-  if (ranges.length !== target.expectedRowMatches) return false;
-  const range = ranges[target.ordinalWithinTurn];
+  const sourceMapping=target.sourceText!=null&&
+    target.sourceOffset!=null&&target.sourceLength!=null
+    ? sourceMarkdownVisibleFindOrdinal({
+        text:target.sourceText,query:target.query,
+        offset:target.sourceOffset,length:target.sourceLength,
+      }) : undefined;
+  // A raw search hit in the invisible URL of [label](destination), or
+  // in an image alt attribute, has no matching visible text range. Never
+  // map it to an identically spelled label in this or another unit.
+  if(sourceMapping===null)return false;
+  const expected=sourceMapping?.visibleMatches??(
+    target.unitKey==null?target.expectedRowMatches:target.expectedUnitMatches
+  );
+  if(expected==null || ranges.length!==expected) return false;
+  const range = ranges[sourceMapping?.ordinal??target.ordinalWithinTurn];
   if (range == null) return false;
   api.registry.set(DEMO_ACTIVE_THREAD_FIND_HIGHLIGHT, new api.Constructor(range));
   const rect = range.getBoundingClientRect();

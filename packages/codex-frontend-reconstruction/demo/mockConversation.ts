@@ -33,12 +33,74 @@ export function demoItem(id: string, type: string, content?: string, extra: Reco
     ...(type === "exec" && extra.parsedCmd == null ? {parsedCmd} : {}), ...extra };
 }
 
-export function demoMessageEntry(role: "user" | "assistant", id: string, content: string): ConversationRenderEntry {
+export function demoMessageEntry(role: "user" | "assistant", id: string, content: string,
+  sourceFormat?: {isAeonFormatted:boolean}): ConversationRenderEntry {
   return demoEntry(id, {
     type: role === "user" ? "user-message" : "assistant-message",
     key: `block:${id}`,
-    item: demoItem(id, role === "user" ? "userMessage" : "agentMessage", content),
+    item: demoItem(id, role === "user" ? "userMessage" : "agentMessage",
+      content, sourceFormat??{}),
   });
+}
+
+/** Synthetic *host-event* fixture: mutate one canonical assistant item while
+ * preserving its id/turnKey and completed=false, exactly as actual source
+ * subscription updates would. This does not use a fake second transcript. */
+export function demoStreamingCodeEntry(id:string,text:string,completed=false):ConversationRenderEntry {
+  return demoEntry(id,{
+    type:"assistant-message",key:`block:${id}`,
+    item:demoItem(id,"agentMessage",text,{completed}),
+  });
+}
+export function updateDemoStreamingCodeEntry(
+  source:DemoSource,id:string,text:string,completed=false,
+):void {
+  const previous=source.getSnapshot().entries;
+  source.update({entries:previous.map(entry=>{
+    if(entry.turnId!==id)return entry;
+    return {...entry,turn:{
+      ...entry.turn,
+      demoBlocks:[{type:"assistant-message",key:`block:${id}`,
+        item:demoItem(id,"agentMessage",text,{completed})}],
+    }};
+  })});
+}
+
+/** Explicit host event fixture for original D's automatic review summary.
+ * This is never an approval *request* or permission grant and sends no RPC. */
+export type DemoAutomaticReviewStatus="inProgress"|"denied";
+export function demoAutomaticReviewEntry(
+  turnId:string,status:DemoAutomaticReviewStatus,
+):ConversationRenderEntry{
+  return demoActivityEntry(turnId,[demoItem(turnId+"-review",
+    "demo-approval-expandable",undefined,{
+      heading:"自动审阅状态（模拟）",
+      state:status==="inProgress"?"Working":"Needs input",
+      demoAutomaticReviewStatus:status,
+      demoAutomaticReviewRiskLevel:"high",
+    })]);
+}
+export function updateDemoAutomaticReviewEntry(
+  source:DemoSource,turnId:string,status:DemoAutomaticReviewStatus,
+):void{
+  const current=source.getSnapshot().entries;
+  const replacement=demoAutomaticReviewEntry(turnId,status);
+  source.update({entries:current.map(entry=>
+    entry.turnId===turnId
+      ? {...entry,turn:{...entry.turn,demoBlocks:replacement.turn?.demoBlocks}}
+      : entry,
+  )});
+}
+
+/** Explicitly synthetic MCP pending-request test data.
+ * Never represents a real Agent approval and grants no permission. */
+export function demoMcpApprovalEntry(turnId:string,disabled=false):ConversationRenderEntry{
+  return demoActivityEntry(turnId,[
+    demoItem(turnId+"-request","demo-mcp-approval",undefined,{
+      heading:disabled?"MCP 宿主未授权（演示）":"MCP 请求确认（演示）",
+      state:"Needs input",demoMcpApprovalDisabled:disabled,
+    }),
+  ]);
 }
 
 export function demoActivityEntry(id: string, items: ConversationMessageItem[], title?: string): ConversationRenderEntry {
@@ -156,7 +218,10 @@ export function getDemoHistoryTurnItems(): TurnItem[] {
 
 function reviewScenario(): ConversationRenderEntry[] {
   return [
-    demoMessageEntry("user", "review-intro", "我想核对工具状态、文件差异和权限审批是否分开展示。"),
+    // Explicit source isAeonFormatted flag: test fixture for original
+    // compact Rt branch, not a claim that every review conversation is Aeon.
+    demoMessageEntry("user", "review-intro", "我想核对工具状态、文件差异和权限审批是否分开展示。",
+      {isAeonFormatted:true}),
     demoMessageEntry("assistant", "review-response", "把任务分成 **工具活动、修改审阅和审批** 三种不同条目，而不是把所有输出混在一段文本里。"),
     demoActivityEntry("review-exec", [demoItem("review-exec1", "exec", undefined, {
       heading: "读取项目结构（模拟）",
@@ -351,6 +416,16 @@ function reviewScenario(): ConversationRenderEntry[] {
     // Original Y history-summary path: its turn content is *removed* from
     // the projected virtual row. A host subscription restores these same items.
     {...demoRawTurnEntry("review-history-hydration",getDemoHistoryTurnItems()),historyEntityKey:"fixture-history-content"},
+    // Source kk/Rk/SG working-time branch: explicitly synthetic timestamps,
+    // not a hardcoded title subtitle or an Agent-derived wall-clock claim.
+    demoActivityEntry("review-work-status",[
+      demoItem("review-work-status-command","exec",undefined,{
+        command:"git diff --stat",state:"Ready",
+      }),
+      demoItem("review-work-status-duration","worked-for",undefined,{
+        status:"worked",startedAtMs:1_000,completedAtMs:132_000,
+      }),
+    ]),
     demoMessageEntry("assistant", "review-final", "**演示不会触发真实权限变更。** 与 Agent 后端接入时，需要在宿主层明确实现权限校验、授权请求和执行回调。"),
     // Real source turn.items fixture: commentary, command group, file patch,
     // and final answer share ONE virtualized row, unlike former mock turns.

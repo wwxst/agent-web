@@ -168,6 +168,46 @@ test("independent Electron file renderer starts, isolates preload and routes Fc 
     ?.textContent?.includes("工具调用与审批交互")===true);
   await page.waitForFunction(()=>document.querySelector('[aria-label="演示消息输入"]')?.textContent?.includes("审阅会话自己的草稿")===true);
   await retainedDraft.fill("");
+  // Original app-primary cFt forwards the selected DOM text into the SAME
+  // mounted Find portal through the native View menu. The previous incorrectly
+  // escaped regex rejected normal selections containing an "r" or "n".
+  const selectedForFind=await page.evaluate(()=>{
+    // Source app-primary cFt always prioritizes a focused input/textarea
+    // over the document Selection. This is explicitly the DOM-selection
+    // branch: blur the previously edited draft before selecting heading text.
+    // Otherwise an empty focused draft correctly wins and Find has no prefill.
+    if(document.activeElement instanceof HTMLElement)document.activeElement.blur();
+    const heading=document.querySelector(".demo-project-heading");
+    const node=Array.from(heading?.childNodes??[]).find(node=>
+      node.nodeType===Node.TEXT_NODE&&node.textContent?.includes("agent web"));
+    if(node==null)return null;
+    const range=document.createRange();
+    range.selectNodeContents(node);
+    const selection=window.getSelection();
+    selection?.removeAllRanges();
+    selection?.addRange(range);
+    return selection?.toString().trim()??null;
+  });
+  assert.equal(selectedForFind,"agent web");
+  await app.evaluate(({Menu})=>
+    Menu.getApplicationMenu().getMenuItemById("findInThread").click());
+  const findSelectionInput=page.getByRole("searchbox",{name:"Find in chat"});
+  await findSelectionInput.waitFor({timeout:10000});
+  // Native View-menu events and React state can commit the search input
+  // before the selection prefill has settled on a slower Windows runner.
+  await page.waitForFunction(()=>{
+    const input=document.querySelector('input[aria-label="Find in chat"]');
+    return input instanceof HTMLInputElement && input.value==="agent web";
+  },null,{timeout:10000});
+  assert.equal(await findSelectionInput.inputValue(),"agent web");
+  await mkdir(resolve(root,"desktop/test-results"),{recursive:true});
+  await page.screenshot({
+    path:resolve(root,"desktop/test-results/electron-find-selection-prefill.png"),
+    animations:"disabled",
+  });
+  await findSelectionInput.press("Escape");
+  await findSelectionInput.waitFor({state:"detached",timeout:10000});
+  await page.evaluate(()=>window.getSelection()?.removeAllRanges());
   // Y history content is a host-keyed subscription, not the raw demo turn.
   // Find must reflect hydration and clear-thread while using the SAME
   // mounted virtual row (no separate search/transcript renderer).
@@ -410,6 +450,46 @@ test("independent Electron file renderer starts, isolates preload and routes Fc 
     const actual=Math.max(0,el.scrollHeight-el.clientHeight-el.scrollTop);
     return Math.abs(actual-expected)<170;
   },restoredDistance,{timeout:12000});
+  // Original thread-scroll-layout Ae / app-initial UYl: the mounted footer
+  // exposes a 32px button when >24px away from bottom, even after native
+  // thread navigation restores an old virtualized viewport.
+  const latest=page.locator("[data-source-scroll-to-bottom-button]");
+  await latest.waitFor({timeout:12000});
+  await page.waitForFunction(()=>
+    document.querySelector("[data-source-scroll-to-bottom-button]")
+      ?.getAttribute("data-visible")==="true");
+  assert.equal(await latest.getAttribute("aria-hidden"),"false");
+  assert.equal(await latest.getAttribute("tabindex"),"0");
+  const sourceButtonGeometry=await latest.evaluate(button=>{
+    const r=button.getBoundingClientRect();
+    const composer=document.querySelector(".demo-composer-wrap")?.getBoundingClientRect();
+    return {
+      width:r.width,height:r.height,
+      centerX:r.left+r.width/2,
+      composerCenterX:composer==null?null:composer.left+composer.width/2,
+      distanceAboveComposer:composer==null?null:composer.top-r.bottom,
+    };
+  });
+  assert.deepEqual([sourceButtonGeometry.width,sourceButtonGeometry.height],[32,32]);
+  assert.ok(Math.abs(sourceButtonGeometry.centerX-sourceButtonGeometry.composerCenterX)<3);
+  assert.ok(Math.abs(sourceButtonGeometry.distanceAboveComposer-24)<4);
+  await mkdir(resolve(root,"desktop/test-results"),{recursive:true});
+  await page.screenshot({path:resolve(root,
+    "desktop/test-results/conversation-scroll-to-bottom-visible.png"),
+    fullPage:false,animations:"disabled"});
+  await latest.click();
+  await page.waitForFunction(()=>{
+    const e=document.querySelector('[data-testid="transcript-scroll"]');
+    return e!=null && e.scrollHeight-e.clientHeight-e.scrollTop<=24;
+  },null,{timeout:12000});
+  await page.waitForFunction(()=>
+    document.querySelector("[data-source-scroll-to-bottom-button]")
+      ?.getAttribute("data-visible")==="false");
+  assert.equal(await latest.getAttribute("aria-hidden"),"true");
+  assert.equal(await latest.getAttribute("tabindex"),"-1");
+  await page.screenshot({path:resolve(root,
+    "desktop/test-results/conversation-scroll-to-bottom-hidden.png"),
+    fullPage:false,animations:"disabled"});
   // Zoom testing happens after the real source activity DOM interaction.
   // Linux/Xvfb's offscreen compositor can keep an in-progress zoom
   // relayout unstable for Playwright pointer actionability checks.

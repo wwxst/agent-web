@@ -34,6 +34,8 @@ export function SourceActivityDisclosure({
     () => initialSourceDisclosurePhase({canExpand,defaultExpanded,hasLazyChildren:true}),
   );
   const contentId = React.useId();
+  const bodyRef=React.useRef<HTMLDivElement|null>(null);
+  const toggleRef=React.useRef<HTMLButtonElement|null>(null);
   const effectivePhase = canExpand ? phase : "collapsed";
   const visible = isSourceDisclosureOpen(effectivePhase);
   const mounted = canExpand && isSourceDisclosureMounted(effectivePhase);
@@ -47,6 +49,13 @@ export function SourceActivityDisclosure({
   }, [phase]);
 
   const toggle = () => {
+    // The original disclosure keeps exit-motion children mounted briefly.
+    // Move focus to the persistent summary before making the exiting body
+    // inert, otherwise keyboard focus can remain inside a hidden tool row.
+    if(visible && typeof document!=="undefined" &&
+      bodyRef.current?.contains(document.activeElement)){
+      toggleRef.current?.focus();
+    }
     const next = toggleSourceDisclosurePhase(effectivePhase,canExpand);
     if (next.invokeOnExpand) onExpand?.();
     setPhase(next.phase);
@@ -65,7 +74,7 @@ export function SourceActivityDisclosure({
     <div className="codex-activity-group-row__repeated-header">
       {icon != null ? <span className="codex-activity-group-row__repeated-icon"
         aria-hidden="true">{icon}</span> : null}
-      <button type="button" className="codex-activity-group-row__repeated-toggle"
+      <button ref={toggleRef} type="button" className="codex-activity-group-row__repeated-toggle"
         data-codex-source-repeated-toggle=""
         aria-expanded={visible} aria-controls={contentId}
         disabled={!canExpand} onClick={toggle}>
@@ -74,10 +83,11 @@ export function SourceActivityDisclosure({
           aria-hidden="true">›</span>
       </button>
     </div>
-    {mounted ? <div id={contentId}
+    {mounted ? <div id={contentId} ref={bodyRef}
       className="codex-activity-group-row__repeated-motion"
       data-source-disclosure-motion=""
       aria-hidden={!open}
+      inert={!open}
       onTransitionEnd={endTransition}>
       <div className="codex-activity-group-row__repeated-motion-inner">
         <div className="codex-activity-group-row__repeated-body"

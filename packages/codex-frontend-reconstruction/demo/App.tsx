@@ -2,6 +2,7 @@ import * as React from "react";
 import { createPortal } from "react-dom";
 import { CodexComposerLayout } from "../src/components/CodexComposerLayout.js";
 import { CodexSourceComposerHostForm } from "../src/components/CodexSourceComposerHostForm.js";
+import { CodexSourceScrollToBottomButton } from "../src/components/CodexSourceScrollToBottomButton.js";
 import { DemoProseMirrorComposerEditor } from "./DemoProseMirrorComposerEditor.js";
 import { CodexNavigationRail, type CodexRailDestination } from "../src/components/CodexNavigationRail.js";
 import { CodexSourceSidebarResizeHandle } from "../src/components/CodexSourceSidebarResizeHandle.js";
@@ -13,15 +14,22 @@ import { resolveComposerSubmitDecision } from "../src/conversation/ComposerInter
 import { resolveComposerPrimaryAction } from "../src/conversation/ComposerPrimaryActionModel.js";
 import { SOURCE_CONVERSATION_ITEM_GAP_PX } from "../src/conversation/SourceConversationLayoutTokens.js";
 import { BrowserScrollController } from "./browserScrollController.js";
-import { searchSourceThreadLiteralRows, wrapSourceThreadFindOrdinal } from "../src/conversation/SourceThreadFindModel.js";
+import { searchSourceThreadLiteralRows, sourceThreadFindUnitIdentity,
+  wrapSourceThreadFindOrdinal } from "../src/conversation/SourceThreadFindModel.js";
+import {sourceMarkdownVisibleFindOrdinal} from "../src/conversation/SourceMarkdownVisibleFindModel.js";
+import { sourceThreadFindSelectedQuery } from "../src/conversation/SourceThreadFindSelectionModel.js";
 import { projectDemoThreadFindRows } from "./threadFindProjection.js";
 import { buildConversationRenderEntries } from "../src/conversation/ConversationRenderEntriesModel.js";
 import { sourceHistoricalTurnQuery } from "../src/conversation/SourceHistoricalTurnContentSource.js";
-import { clearDemoThreadFindHighlight, highlightRenderedDemoThreadFindMatch } from "./threadFindRenderedHighlight.js";
+import { clearDemoThreadFindHighlight, highlightRenderedDemoThreadFindMatch,
+  revealCollapsedDemoThreadFindMatch } from "./threadFindRenderedHighlight.js";
 import { makeDemoRow, demoProjectionDependencies } from "./adapters.js";
 import {
   DEMO_CONVERSATIONS, appendDemoEntries, createDemoSource,
   demoActivityEntry, demoItem, demoMessageEntry, makeLongHistory,
+  demoStreamingCodeEntry, updateDemoStreamingCodeEntry,
+  demoAutomaticReviewEntry, updateDemoAutomaticReviewEntry,
+  demoMcpApprovalEntry,
   type DemoConversationId,
 } from "./mockConversation.js";
 
@@ -294,8 +302,21 @@ export function App() {
     const controller=new AbortController();
     let frame:number|null=null;
     const ordinalWithinTurn=findMatches.slice(0,currentFindOrdinal)
-      .filter(candidate=>candidate.turnKey===match.turnKey).length;
+      .filter(candidate=>candidate.turnKey===match.turnKey &&
+        candidate.unitKey===match.unitKey).length;
     const expectedRowMatches=findResult.totalByTurn.get(match.turnKey)??0;
+    const expectedUnitMatches=match.unitKey==null?undefined:
+      findResult.totalByUnit.get(sourceThreadFindUnitIdentity(
+        match.turnKey,match.unitKey,
+      ))??0;
+    const sourceText=match.unitKey==null?undefined:findRows.find(row=>
+      row.turnKey===match.turnKey)?.units?.find(unit=>
+        unit.unitKey===match.unitKey)?.text;
+    // A source match in an invisible Markdown link URL must not unfold
+    // a different visible label in this message.
+    const mappedVisible=sourceText==null?undefined:sourceMarkdownVisibleFindOrdinal({
+      text:sourceText,query:findQuery,offset:match.offset,length:match.length,
+    });
     // Keep the existing source virtualizer's scroll-to-key. After the target
     // mounts, identify the precise visible Markdown occurrence. The compiled
     // search worker/highlighter is private; collapsed or unmatched source
@@ -308,10 +329,27 @@ export function App() {
         if(controller.signal.aborted)return;
         frame=window.requestAnimationFrame(()=>{
           if(controller.signal.aborted||scrollElementRef.current==null)return;
-          highlightRenderedDemoThreadFindMatch({
+          const target={
             viewport:scrollElementRef.current,turnKey:match.turnKey,query:findQuery,
             ordinalWithinTurn,expectedRowMatches,
-          });
+            ...(match.unitKey==null?{}:{
+              unitKey:match.unitKey,expectedUnitMatches,
+            }),
+            ...(sourceText==null?{}:{
+              sourceText,sourceOffset:match.offset,sourceLength:match.length,
+            }),
+          };
+          // Original _u's registered reveal callback expands the user
+          // content for the exact matched raw offset before finding its DOM
+          // text range. Unrelated activity/assistant matches remain unchanged.
+          if(mappedVisible!==null){
+            revealCollapsedDemoThreadFindMatch({
+              viewport:target.viewport,turnKey:target.turnKey,query:target.query,
+              sourceOffset:match.offset,sourceLength:match.length,
+              ...(match.unitKey==null?{}:{unitKey:match.unitKey}),
+            });
+          }
+          highlightRenderedDemoThreadFindMatch(target);
         });
       }catch{/* A replaced/removed virtual row must not crash Find. */}
     })();
@@ -323,8 +361,15 @@ export function App() {
   },[findOpen,findQuery,findMatches,currentFindOrdinal]);
   function openFind(){
     if(!findOpen){
-      const selected=window.getSelection()?.toString().trim()??"";
-      if(selected.length>0 && !/[\\r\\n]/.test(selected))setFindQuery(selected);
+      // Original app-primary cFt: a focused text control owns its selection.
+      // Otherwise use the document selection. CR/LF clears the current query;
+      // no selection preserves it. This is the actual mounted Find action.
+      const focused=document.activeElement;
+      const control=focused instanceof HTMLInputElement ||
+        focused instanceof HTMLTextAreaElement ? focused : null;
+      const selected=sourceThreadFindSelectedQuery(
+        control,control==null?window.getSelection()?.toString():null);
+      if(selected!==undefined)setFindQuery(selected);
       setFindOrdinal(0);
       setFindOpen(true);
     } else {
@@ -336,11 +381,25 @@ export function App() {
     setFindOrdinal(index=>wrapSourceThreadFindOrdinal(index,findMatches.length,direction));
   }
   const scrollController = React.useMemo(() => new BrowserScrollController(() => scrollElementRef.current), []);
+  // Source Ae: with no private response spacer, show the floating footer
+  // button only when the canonical scroll controller is >24px from bottom.
+  const [showScrollToBottom,setShowScrollToBottom]=React.useState(false);
+  const updateScrollToBottomVisibility=React.useCallback(()=>{
+    setShowScrollToBottom(scrollController.getLastScrollDistanceFromBottomPx()>24);
+  },[scrollController]);
+  const scrollToLatest=React.useCallback(()=>{
+    // Explicit navigation must supersede an unfinished route viewport hold.
+    cancelPendingViewportOnUserScroll();
+    shouldFollowRef.current=true;
+    scrollController.scrollToBottomFromSource();
+  },[scrollController,cancelPendingViewportOnUserScroll]);
 
   const onApiChange = React.useCallback((api: VirtualizedTurnListApi | null) => { virtualizerApiRef.current = api; }, []);
   const scrollToBottom = React.useCallback(() => {
+    scrollController.cancelSourceScrollToBottomAnimation();
     shouldFollowRef.current = true;
     scrollController.scrollToDistanceFromBottomPx(0, "instant");
+    setShowScrollToBottom(false);
   }, [scrollController]);
   // Original thread-scroll-layout (Wt/Gt) measures the default footer and
   // writes its real height + 16px onto the active scroll container.
@@ -383,27 +442,32 @@ export function App() {
     if(content==null||typeof ResizeObserver==="undefined")return;
     const observer=new ResizeObserver(()=>{
       const pending=pendingViewportRestoreRef.current;
-      if(pending?.id!==active)return;
-      scrollController.scrollToDistanceFromBottomPx(pending.distance,"instant");
-      finishViewportRestore(pending);
+      if(pending?.id===active){
+        scrollController.scrollToDistanceFromBottomPx(pending.distance,"instant");
+        finishViewportRestore(pending);
+      }
+      // Virtualized row measurements change scrollHeight without scroll.
+      updateScrollToBottomVisibility();
     });
     observer.observe(content);
     return ()=>observer.disconnect();
-  },[active,scrollController,finishViewportRestore]);
+  },[active,scrollController,finishViewportRestore,updateScrollToBottomVisibility]);
   const onVisibleContentReady = React.useCallback(() => {
     const pending=pendingViewportRestoreRef.current;
     if(pending?.id===active){
       scrollController.scrollToDistanceFromBottomPx(pending.distance,"instant");
       finishViewportRestore(pending);
+      updateScrollToBottomVisibility();
       return;
     }
+    updateScrollToBottomVisibility();
     // The one retained canonical Find target continues to own the viewport
     // while its historic activity or full-file review is being inspected,
     // even if the search bar itself has been dismissed.
     if(retainedFindTurnKeys.length>0)return;
     if (shouldFollowRef.current) scrollToBottom();
   }, [active,scrollController,scrollToBottom,finishViewportRestore,
-      retainedFindTurnKeys]);
+      retainedFindTurnKeys,updateScrollToBottomVisibility]);
 
   React.useEffect(() => {
     const pending=pendingViewportRestoreRef.current;
@@ -501,6 +565,64 @@ export function App() {
       }, 900);
     }, 650);
   }
+  function playStreamingCodeFixture() {
+    if(playing)return;
+    markFollow();
+    setPlaying(true);
+    const id=nextId("streaming-code");
+    // DEMO-ONLY source updates, not a fake Agent transport. The same item
+    // remains mounted in the canonical virtualizer across all revisions.
+    const fence="```ts";
+    const prefix="const sourceStreaming = 1;";
+    const code=(lines:readonly string[])=>
+      [fence,...lines,"```"].join("\n");
+    appendDemoEntries(source,[demoStreamingCodeEntry(id,code([prefix]))]);
+    timerRef.current=setTimeout(()=>{
+      updateDemoStreamingCodeEntry(source,id,
+        code([prefix,"const continued = 'source_' + sourceStreaming;"]));
+      timerRef.current=setTimeout(()=>{
+        updateDemoStreamingCodeEntry(source,id,
+          code([prefix,"const continued = 'source_' + sourceStreaming;",
+            "console.log(continued);"]));
+        timerRef.current=setTimeout(()=>{
+          updateDemoStreamingCodeEntry(source,id,
+            code([prefix,"const continued = 'source_' + sourceStreaming;",
+              "console.log(continued);"]),true);
+          timerRef.current=null;
+          setPlaying(false);
+        },900);
+      },90);
+    },150);
+  }
+
+  function playAutomaticReviewFixture(){
+    if(playing)return;
+    markFollow();
+    setPlaying(true);
+    const id=nextId("automatic-review");
+    // DEMO ONLY: exercise the original automatic-review status view using
+    // immutable updates to the same canonical activity turn. This is not
+    // an approval submission or backend permission request.
+    appendDemoEntries(source,[demoAutomaticReviewEntry(id,"inProgress")]);
+    timerRef.current=setTimeout(()=>{
+      updateDemoAutomaticReviewEntry(source,id,"denied");
+      timerRef.current=null;
+      setPlaying(false);
+    },2200);
+  }
+
+  function playMcpApprovalFixture() {
+    if(playing)return;
+    markFollow();
+    const id=nextId("mcp-approval");
+    // Test-only pending MCP request in *one canonical conversation source*;
+    // even a clicked Allow action can only get a rejected host Promise.
+    appendDemoEntries(source,[
+      demoMcpApprovalEntry(id+"-disabled",true),
+      demoMcpApprovalEntry(id),
+    ]);
+  }
+
   function stopSample() {
     if (timerRef.current != null) clearTimeout(timerRef.current);
     timerRef.current = null;
@@ -517,6 +639,7 @@ export function App() {
     notify("已加入 45 条模拟消息。可滚动检查虚拟列表。");
   }
   function reset() {
+    scrollController.cancelSourceScrollToBottomAnimation();
     if (timerRef.current != null) clearTimeout(timerRef.current);
     timerRef.current = null;
     // Explicit reset is the only UI path that replaces the active source.
@@ -529,6 +652,7 @@ export function App() {
     // Reset must not revive a viewport from a previous lifetime of this turn.
     threadViewportDistanceRef.current.delete(active);
     pendingViewportRestoreRef.current={id:active,distance:0};
+    setShowScrollToBottom(false);
     setPlaying(false);
     setHistoryAdded(false);
     setDraft("");
@@ -536,6 +660,7 @@ export function App() {
   }
   function switchConversation(id: DemoConversationId) {
     if (id === active) return;
+    scrollController.cancelSourceScrollToBottomAnimation();
     // Snapshot the existing controller before React remounts the source
     // virtualizer. The outgoing viewport and its follow policy are owned by
     // its thread identity, not a global scrollTop from the incoming thread.
@@ -544,6 +669,7 @@ export function App() {
     const incoming=threadViewportDistanceRef.current.get(id)??0;
     pendingViewportRestoreRef.current={id,distance:incoming};
     shouldFollowRef.current=incoming<120;
+    setShowScrollToBottom(incoming>24);
     // Preserve the current editor value before ProseMirror is replaced.
     saveDraftNow(active,draftByConversationRef.current.get(active)??"");
     if (timerRef.current != null) clearTimeout(timerRef.current);
@@ -669,6 +795,12 @@ export function App() {
         <p>本地演示工具 · 不执行真实 Agent 请求</p>
         <div className="demo-toolbar">
           <button type="button" onClick={playSample} disabled={playing}><Icon name="play" size={15}/> 模拟运行</button>
+          <button type="button" onClick={playStreamingCodeFixture} disabled={playing}
+            data-testid="demo-source-streaming-code"><Icon name="play" size={15}/> 演示流式代码（模拟）</button>
+          <button type="button" onClick={playAutomaticReviewFixture} disabled={playing}
+            data-testid="demo-automatic-review-transition"><Icon name="check" size={15}/> 演示自动审阅状态（模拟）</button>
+          <button type="button" onClick={playMcpApprovalFixture}
+            data-testid="demo-mcp-approval-request"><Icon name="check" size={15}/> 演示 MCP 审批请求（模拟）</button>
           <button type="button" onClick={injectHistory} disabled={historyAdded}><Icon name="plus" size={15}/> 添加 45 条历史</button>
           <button type="button" onClick={() => void virtualizerApiRef.current?.scrollToKey(`history-content:turn:${source.getSnapshot().entries[0]?.turnId ?? ""}`, undefined, {align:"top"})}><Icon name="top" size={15}/> 跳到开头</button>
           <button type="button" onClick={scrollToBottom}><Icon name="bottom" size={15}/> 跳到最新</button>
@@ -683,11 +815,13 @@ export function App() {
         // override a real wheel operation with a stale pending restore.
         onWheel={event=>{
           if(event.deltaY===0)return;
+          scrollController.cancelSourceScrollToBottomAnimation();
           cancelPendingViewportOnUserScroll();
           shouldFollowRef.current=false;
         }}
         onScroll={() => {
         scrollController.notifyScroll();
+        updateScrollToBottomVisibility();
         // Mount/measurement scroll events during a thread handoff are NOT a
         // user request to follow the new thread's bottom.
         if(pendingViewportRestoreRef.current?.id!==active){
@@ -696,7 +830,7 @@ export function App() {
       }} data-testid="transcript-scroll">
         <div className="demo-thread-scroll-content" data-source-thread-scroll-content="">
         <div className="demo-transcript-column">
-          <div className="demo-conversation-intro"><h1>{DEMO_CONVERSATIONS.find((c) => c.id === active)?.title}</h1><div className="demo-worked-label">Worked for 2m 11s <Icon name="chevron" size={12}/><span> · mock</span></div></div>
+          <div className="demo-conversation-intro"><h1>{DEMO_CONVERSATIONS.find((c) => c.id === active)?.title}</h1></div>
           <ConnectedLiveConversationTranscript
             key={`${active}-${generation}`}
             source={source}
@@ -721,6 +855,8 @@ export function App() {
       <div className="demo-composer-zone" ref={composerFooterRef}
         data-thread-scroll-footer="true" data-thread-footer-placement="bottom">
         <div className="demo-thread-footer-surface" data-thread-footer-background-part="surface" aria-hidden="true"/>
+        <CodexSourceScrollToBottomButton
+          visible={showScrollToBottom} onClick={scrollToLatest}/>
         <CodexSourceComposerHostForm className="demo-composer-wrap"
           integratedVoiceModeActive={false} hasUploadPolicy={false}
           onSubmit={() => { if (composerAction.kind === "send") sendMessage(); }}>

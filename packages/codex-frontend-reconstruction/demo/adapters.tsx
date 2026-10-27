@@ -1,14 +1,25 @@
 import * as React from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import {createSourceCodeBlockWordWrapPreference,
+  sourceCodeBlockWrapState} from "../src/conversation/SourceCodeBlockWordWrapPreference.js";
+import {
+  createSourceStreamingCodeHighlightController,
+  projectSourceStreamingCodeHighlight,
+} from "../src/conversation/SourceStreamingCodeHighlight.js";
 import {
   createConnectedConversationMessageRenderers,
   type ConnectedConversationRendererHost,
 } from "../src/components/ConnectedConversationMessageRenderers.js";
 import { createConversationLiveRow } from "../src/components/ConversationMessageBlocks.js";
+import { CodexSourceWorkStatus } from "../src/components/CodexSourceWorkStatus.js";
 import type { ConversationMessageItem, ConversationMessagePlanDependencies } from "../src/conversation/ConversationMessageRenderPlan.js";
 import type { ConversationRenderProjectionDependencies } from "../src/conversation/ConversationRenderEntriesModel.js";
 import type { InlineFileReviewAction, InlineReviewFile } from "../src/conversation/InlineFileReviewModel.js";
+import {projectSourceMcpGenericApprovalMessage}
+  from "../src/conversation/SourceMcpApprovalRequestModel.js";
+import {createSourceInlineReviewWrapPreference}
+  from "../src/conversation/SourceInlineReviewWrapPreference.js";
 import { getDemoBlocks, getDemoHistoryTurnItems } from "./mockConversation.js";
 import {connectDesktopHostEventBridge} from "./desktopHost.js";
 import { projectCompletedGroupHeaderParts } from "../src/conversation/AgentActivityGroupPresentation.js";
@@ -60,6 +71,11 @@ export const demoPlanDependencies: ConversationMessagePlanDependencies = {
   shouldRenderActivityAsUnit: () => false,
 };
 
+/** Original shared Ce/ord preference is host-owned and has no private
+ * persistence in this reconstructed frontend. Every mounted code block
+ * observes the same session-scoped user-controlled setting. */
+const demoCodeBlockWordWrapPreference=createSourceCodeBlockWordWrapPreference();
+
 /** Original chatgpt-code-block source layout: a dedicated code surface,
  * independent scrollport and onCopyCode. This is intentionally NOT a port
  * of the private CodeMirror/highlighter, preview or executable code paths. */
@@ -70,7 +86,9 @@ function markdownCodeText(node:React.ReactNode):string {
     return markdownCodeText(node.props.children);
   return "";
 }
-function MarkdownSourceCodeBlock({children,...preProps}:React.ComponentProps<"pre">){
+function MarkdownSourceCodeBlock({
+  children,isStreaming=false,...preProps
+}:React.ComponentProps<"pre"> & {isStreaming?:boolean}){
   const element=React.Children.toArray(children).find(
     (node):node is React.ReactElement<{className?:string;children?:React.ReactNode}>=>
       React.isValidElement(node)&&node.type==="code",
@@ -79,7 +97,30 @@ function MarkdownSourceCodeBlock({children,...preProps}:React.ComponentProps<"pr
   const language=/\blanguage-([\w.+-]+)/.exec(code?.className??"")?.[1]??null;
   const raw=markdownCodeText(code?.children??children);
   const copyContent=raw.replace(/\n$/,"");
+  // One original Bt-style controller per mounted code block. ReactMarkdown
+  // preserves the pre component type during streamed message re-renders.
+  const [controller]=React.useState(createSourceStreamingCodeHighlightController);
+  const snapshot=React.useSyncExternalStore(
+    controller.subscribe,controller.getSnapshot,controller.getSnapshot,
+  );
+  React.useEffect(()=>{
+    controller.setInput(raw,language,isStreaming);
+  },[controller,raw,language,isStreaming]);
+  React.useEffect(()=>()=>controller.dispose(),[controller]);
+  const visible=projectSourceStreamingCodeHighlight(raw,snapshot);
+  const styledCode=element!=null&&visible.segments.some(p=>p.className!=null)
+    ? React.cloneElement(element,{
+        children:visible.segments.map((part,index)=>
+          <span key={index} className={part.className??undefined}>{part.text}</span>),
+      })
+    : children;
   const [copyState,setCopyState]=React.useState<"idle"|"copied"|"error">("idle");
+  const preference=React.useSyncExternalStore(
+    demoCodeBlockWordWrapPreference.subscribe,
+    demoCodeBlockWordWrapPreference.getSnapshot,
+    demoCodeBlockWordWrapPreference.getSnapshot,
+  );
+  const wrap=sourceCodeBlockWrapState({policy:"user-controlled",preference});
   const copyTimeout=React.useRef<ReturnType<typeof setTimeout>|null>(null);
   React.useEffect(()=>()=>{if(copyTimeout.current!=null)clearTimeout(copyTimeout.current);},[]);
   async function copyCode(){
@@ -93,31 +134,61 @@ function MarkdownSourceCodeBlock({children,...preProps}:React.ComponentProps<"pr
     if(copyTimeout.current!=null)clearTimeout(copyTimeout.current);
     copyTimeout.current=setTimeout(()=>setCopyState("idle"),1800);
   }
-  return <div className="demo-markdown-code-surface" data-conversation-code-surface="true">
-    <div className="demo-markdown-code-action-bar" data-code-block-action-bar="true">
+  return <div className="demo-markdown-code-surface"
+    data-code-block=""
+    data-conversation-code-surface="true"
+    data-markdown-copy="code-block"
+    data-source-code-wrap-lines={wrap.wrapLines?"true":"false"}
+    data-source-code-highlight={visible.pending?"pending":snapshot.highlighted?"ready":"fallback"}
+    data-source-code-streaming={isStreaming?"true":"false"}>
+    <div className="demo-markdown-code-action-bar"
+      data-code-block-action-bar="true" data-markdown-copy="exclude">
       <span className="demo-markdown-code-language">{language??"Code"}</span>
-      <button type="button" className="demo-markdown-code-copy"
-        aria-label={copyState==="copied"?"已复制代码":copyState==="error"?"复制失败":"复制代码"}
-        title={copyState==="copied"?"已复制":copyState==="error"?"无法复制":"复制代码"}
-        onClick={()=>{void copyCode();}}>
-        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor"
-          strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-          <rect x="8" y="8" width="11" height="11" rx="2"/>
-          <path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/>
-        </svg>
-        <span>{copyState==="copied"?"已复制":copyState==="error"?"无法复制":"复制"}</span>
-      </button>
+      <div className="demo-markdown-code-controls" data-code-block-controls="" role="presentation">
+        {wrap.canToggle?<button type="button" className="demo-markdown-code-wrap"
+          aria-label={wrap.wrapLines?"Disable word wrap":"Enable word wrap"}
+          title={wrap.wrapLines?"Disable word wrap":"Enable word wrap"}
+          aria-pressed={wrap.wrapLines}
+          onClick={()=>demoCodeBlockWordWrapPreference.setEnabled(!wrap.wrapLines)}>
+          <svg viewBox="0 0 24 24" width="16" height="16"
+            fill="none" stroke="currentColor" strokeWidth="1.7"
+            strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M4 6h16M4 10h13a3 3 0 0 1 0 6h-4"/>
+            <path d="m16 13-3 3 3 3M4 18h6"/>
+          </svg>
+        </button>:null}
+        <button type="button" className="demo-markdown-code-copy"
+          aria-label={copyState==="copied"?"已复制代码":copyState==="error"?"复制失败":"复制代码"}
+          title={copyState==="copied"?"已复制":copyState==="error"?"无法复制":"复制代码"}
+          onClick={()=>{void copyCode();}}>
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none"
+            stroke="currentColor" strokeWidth="1.75" strokeLinecap="round"
+            strokeLinejoin="round" aria-hidden="true">
+            <rect x="8" y="8" width="11" height="11" rx="2"/>
+            <path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/>
+          </svg>
+          <span>{copyState==="copied"?"已复制":copyState==="error"?"复制失败":"复制"}</span>
+        </button>
+      </div>
     </div>
     <div className="demo-markdown-code-scrollport chatgpt-code-scrollport"
-      data-code-block-source="true">
-      <pre {...preProps}>{children}</pre>
+      data-code-block-source="true" dir="ltr">
+      <pre {...preProps}>{styledCode}</pre>
     </div>
   </div>;
 }
-function Markdown({ text, role }: { text: string; role: "user" | "assistant" | "activity" }) {
+function Markdown({ text, role, isStreaming=false }: {
+  text:string;role:"user"|"assistant"|"activity";isStreaming?:boolean
+}) {
+  // Keep the custom pre renderer stable across successive streamed Markdown
+  // revisions; changing its function identity would remount and reset Bt.
+  const components=React.useMemo(()=>({
+    pre:(props:React.ComponentProps<"pre">)=>
+      <MarkdownSourceCodeBlock {...props} isStreaming={isStreaming}/>,
+  }),[isStreaming]);
   return <div className={`demo-markdown demo-markdown--${role}`}>
     <ReactMarkdown remarkPlugins={[remarkGfm]}
-      components={{pre:MarkdownSourceCodeBlock}}>{text}</ReactMarkdown>
+      components={components}>{text}</ReactMarkdown>
   </div>;
 }
 
@@ -147,6 +218,10 @@ function DemoCommandLeaf(props: ExecCommandLeafProps) {
     <CodexSourceExecCommandLeaf {...props} />
   </div>;
 }
+
+/** Demo host's persistent-in-session C preference, separate from code-snippet
+ * word wrap. It survives conversation/source remounts, with no backend claim. */
+const demoInlineReviewWrapPreference=createSourceInlineReviewWrapPreference();
 
 const oldFile: InlineReviewFile = {
   name: "LiveConversationSource.ts",
@@ -287,7 +362,13 @@ export function makeDemoRow(notify: (message: string) => void) {
         preventAutoCollapse: false,
         hasFollowingFinalAnswer,
       }),
-      renderSummary: (count) => `${count} 项工具活动 · 模拟`,
+      renderSummary: (count,workedForItem) => workedForItem == null
+        ? `${count} 项工具活动 · 模拟`
+        : <CodexSourceWorkStatus item={workedForItem}/>,
+      renderWorkedFor: item => <div data-source-work-status-divider="true"
+        className="codex-source-work-status-divider">
+        <CodexSourceWorkStatus item={item}/>
+      </div>,
       groupHeader: {
         // Je/bg: fixture-only private result safety and bm display signature.
         getRepeatedRows: items => projectSourceRepeatedActivityRows(items, {
@@ -411,13 +492,66 @@ export function makeDemoRow(notify: (message: string) => void) {
     getFileReview: (item) => item.type === "demo-file-review"
       ? { oldFile, newFile, compact: false, canAccept: false, canEdit: false }
       : null,
-    getApprovalReviews: (item) => item.type === "demo-approval" || item.type === "demo-approval-expandable"
-      ? {
-        reviews: [{ id: "review-permission", status: item.type === "demo-approval" ? "denied" : "pending", riskLevel: "high", summary: "申请修改工作区文件" }],
-        isDeclined: item.type === "demo-approval",
-        isExpandable: true,
+    getApprovalReviews: (item) => {
+      if(item.type!=="demo-approval" && item.type!=="demo-approval-expandable")return null;
+      // Test host may explicitly deliver a dynamic automatic-review status;
+      // real Agent authorization remains outside this demonstration bridge.
+      const status=item.demoAutomaticReviewStatus==="inProgress"
+        ||item.demoAutomaticReviewStatus==="denied"
+          ? item.demoAutomaticReviewStatus
+          :item.type==="demo-approval"?"denied":"pending";
+      return {
+        reviews:[{id:"review-permission",status,riskLevel:"high",
+          summary:"申请修改工作区文件"}],
+        isDeclined:status==="denied",
+        isExpandable:true,
+      };
+    },
+    /** Host-only demo transport: every reply rejects. A click can never grant
+     * real permission or pretend a request has settled successfully. */
+    getMcpApprovalRequest:(item)=>{
+      if(item.type!=="demo-mcp-approval"||typeof item.id!=="string")return null;
+      const disabled=item.demoMcpApprovalDisabled===true;
+      // Original be/ke generic-message title logic is exercised by the
+      // secondary readonly fixture; the active tool-call fixture exercises Se.
+      const generic=projectSourceMcpGenericApprovalMessage(
+        "Tool call needs your approval. Reason: Host approval is unavailable",
+        {reason:"Host approval is unavailable"});
+      return {
+        hostId:"demo-host",conversationId:"frontend",
+        requestId:item.id,
+        title:disabled?generic.title:'Allow sample files app to run tool "files.search"?',
+        connectorName:"Fixture files MCP connector",
+        subtitle:"Synthetic request · no Agent backend is connected",
+        reason:disabled?generic.reason:"Read a list of sample project files for display only.",
+        riskLevel:disabled?null:"high",
+        disabled,
+        persist:disabled?[]:["session","always"] as const,
+        toolParams:{
+          path:"/projects/agent-web",
+          query:"codex",
+          count:20,
+          filters:{kinds:["ts","tsx","css"],includeHidden:false},
+          description:Array.from({length:18},(_,index)=>
+            "Line "+String(index+1).padStart(2,"0")+
+            ": long tool argument, retained after expansion").join("\n"),
+          recursive:true,
+        },
+        collapseToolParams:false,
+      };
+    },
+    onMcpApprovalReply:async(requestId,reply,context)=>{
+      const desktop=window.agentWebDesktopHost;
+      if(desktop!=null){
+        // Real Electron preload -> main IPC; main has no Agent backend and
+        // MUST reject with MCP_BACKEND_UNAVAILABLE. No success simulation.
+        return desktop.replyToMcpApproval({...context,requestId,response:reply});
       }
-      : null,
+      // Explicit browser-only fixture; no Agent backend or Electron exists.
+      await new Promise<void>(resolve=>setTimeout(resolve,380));
+      throw Error("DEMO ONLY: no MCP approval transport configured");
+    },
+    inlineReviewWrapPreference:demoInlineReviewWrapPreference,
     onFileReviewAction: (_item: ConversationMessageItem, action: InlineFileReviewAction) =>
       notify(action === "reject" ? "仅演示：已点击 Reject；没有修改任何文件。" : "操作已禁用：此演示不具备文件修改权限。"),
     translator: {

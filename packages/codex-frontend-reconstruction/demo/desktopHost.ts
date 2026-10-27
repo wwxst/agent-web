@@ -1,4 +1,7 @@
 import type {
+  SourceMcpApprovalContext,SourceMcpApprovalReply,
+} from "../src/conversation/SourceMcpApprovalRequestModel.js";
+import type {
  SourceConversationHostEvent,
  SourceConversationHostEventBridge,
  SourceConversationHostEventTransport,
@@ -21,6 +24,10 @@ declare global {
       getComposerDrafts():Promise<Partial<Record<"frontend"|"review",string>>>;
       setComposerDraft(threadId:"frontend"|"review",text:string):Promise<boolean>;
       subscribeHostEvents(listener:(event:SourceConversationHostEvent)=>void):()=>void;
+      /** Bounded Electron IPC. Main rejects without a verified Agent reply backend. */
+      replyToMcpApproval(envelope:SourceMcpApprovalContext & {
+        requestId:string;response:SourceMcpApprovalReply;
+      }):Promise<void>;
     };
   }
 }

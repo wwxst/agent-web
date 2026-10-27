@@ -34,6 +34,12 @@ export function getActivityStatusPresentation(input: ActivityStatusInput):
   return { kind: "state", value: state };
 }
 
+/** Source automatic-approval-review-details D passes active=true to qk
+ * solely for an expandable review with status exactly "inProgress". */
+export function isAutomaticApprovalReviewInProgress(review: AutomaticApprovalReviewSummary):boolean{
+  return review.status==="inProgress";
+}
+
 export function isHighRiskDeniedAutomaticReview(review: AutomaticApprovalReviewSummary): boolean {
   return review.status === "denied" && review.riskLevel === "high";
 }

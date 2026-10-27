@@ -6,6 +6,7 @@ import {
   getActivityStatusPresentation,
   getExplicitAuthorizationNotice,
   isHighRiskDeniedAutomaticReview,
+  isAutomaticApprovalReviewInProgress,
   type AutomaticApprovalReviewSummary,
   type ActivityStatusInput,
 } from "../conversation/ActivityStatusPresentation.js";
@@ -59,12 +60,17 @@ function AutomaticApprovalReviewRow(props: {
   const { review, expandable, getReviewDetails, getReviewSummary } = props;
   const [expanded, setExpanded] = React.useState(false);
   const warning = isHighRiskDeniedAutomaticReview(review);
+  // Original D: the summary runs through qk/S with active=true only while
+  // an *expandable* automatic review has status "inProgress".
+  const active = isAutomaticApprovalReviewInProgress(review);
   const summary = getReviewSummary(review);
   if (!expandable) return <div className="min-w-0 truncate pt-1 text-codex-description/80">{summary}</div>;
-  return <div className="flex flex-col pt-1">
+  return <div className="flex flex-col pt-1"
+    data-source-automatic-approval-status={review.status ?? "unknown"}>
     <button type="button" aria-expanded={expanded} onClick={() => setExpanded((value) => !value)}
       className="group/automatic-approval-review inline-flex w-fit max-w-full gap-1.5 text-start">
-      <span className={`min-w-0 truncate ${warning ? "text-warning" : "text-codex-description/80 group-hover/automatic-approval-review:text-default"}`}>
+      <span data-source-automatic-approval-shimmer={active ? "true" : "false"}
+        className={`codex-source-automatic-review-summary min-w-0 truncate ${warning ? "text-warning" : "text-codex-description/80 group-hover/automatic-approval-review:text-default"}`}>
         {summary}
       </span>
       <span aria-hidden="true" className={`icon-2xs shrink-0 text-tertiary transition-[opacity,transform] duration-basic ${expanded ? "rotate-90 opacity-100" : "opacity-0 group-hover/automatic-approval-review:opacity-100"}`}>›</span>

@@ -1,6 +1,10 @@
 import * as React from "react";
 import { MultiFileDiff } from "@pierre/diffs/react";
 import {
+  createSourceInlineReviewWrapPreference,
+  type SourceInlineReviewWrapPreference,
+} from "../conversation/SourceInlineReviewWrapPreference.js";
+import {
   canExecuteInlineReviewAction,
   chooseInlineFileReviewDisplay,
   type InlineFileReviewAction,
@@ -14,6 +18,8 @@ export interface InlineFileReviewProps {
   canEdit?: boolean | undefined;
   canAccept?: boolean | undefined;
   onAction: (action: InlineFileReviewAction) => void;
+  /** Original k reads one app-wide diff wrap setting C, not local per-card state. */
+  wrapPreference?:SourceInlineReviewWrapPreference | undefined;
   onViewportReady?: ((element: HTMLElement) => void) | undefined;
   /** Source O/k full-view renderer; optional host override for private implementations. */
   Diff?: React.ComponentType<{
@@ -121,14 +127,21 @@ const messages = {
  * This component intentionally never applies a file change itself. Accept,
  * reject and edit must be wired to the host's explicit action handler.
  */
+// The standalone component also needs one shared default source setting;
+// connected hosts should pass an explicitly owned preference instead.
+const fallbackWrapPreference=createSourceInlineReviewWrapPreference();
+
 export function InlineFileReview(props: InlineFileReviewProps) {
   const {
     oldFile, newFile, compact = false,
     canAccept = true, canEdit = false, onAction, onViewportReady,
-    Diff, translate = (message) => message.defaultMessage,
+    Diff, wrapPreference=fallbackWrapPreference,
+    translate = (message) => message.defaultMessage,
     Button,
   } = props;
-  const [wrapLines, setWrapLines] = React.useState(false);
+  const wrapLines=React.useSyncExternalStore(
+    wrapPreference.subscribe,wrapPreference.getSnapshot,wrapPreference.getSnapshot,
+  );
   const display = chooseInlineFileReviewDisplay({ oldFile, newFile, compact, canAccept, canEdit });
 
   function act(action: InlineFileReviewAction) {
@@ -148,8 +161,9 @@ export function InlineFileReview(props: InlineFileReviewProps) {
 
   const controls = <div className="flex min-w-0 flex-wrap items-center justify-end gap-2 font-sans">
     {display === "full" ? <button type="button" className="shrink-0"
+      aria-pressed={wrapLines}
       aria-label={translate(wrapLines ? messages.unwrap : messages.wrap)}
-      onClick={() => setWrapLines((value) => !value)}>{wrapLines ? "↪" : "↩"}</button> : null}
+      onClick={() => wrapPreference.setEnabled(!wrapLines)}>{wrapLines ? "↪" : "↩"}</button> : null}
     <Control action="edit" disabled={!canEdit} />
     <Control action="reject" className="!text-danger" />
     <Control action="accept" disabled={!canAccept} className="!text-chart-green" />
@@ -175,7 +189,8 @@ export function InlineFileReview(props: InlineFileReviewProps) {
   // Source O -> k full view now uses the same real Pierre diff engine as
   // the already integrated IT/VT patch view. Host rendering overrides remain
   // explicit; this never accepts/rejects or writes the file itself.
-  return <div className="relative flex h-full min-h-0 flex-col">
+  return <div className="relative flex h-full min-h-0 flex-col"
+    data-source-inline-review-wrap={wrapLines?"wrap":"scroll"}>
     <div className="min-h-0 flex-1 overflow-y-auto pe-4 pt-4 pb-4" data-inline-file-diff-review-viewport="">
       {Diff ? <Diff oldFile={oldFile} newFile={newFile}
         overflow={wrapLines ? "wrap" : "scroll"} onViewportReady={onViewportReady} />

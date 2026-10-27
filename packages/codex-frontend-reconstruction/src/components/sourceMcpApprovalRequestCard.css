@@ -1,0 +1,168 @@
+/* Original qbd/eQu shared approval shell; private design token and
+ * Button components remain approximated by independently-owned styles. */
+.codex-source-mcp-approval {
+  container-type:inline-size;
+  container-name:approval-card;
+  display:flex;flex-direction:column;min-width:0;max-height:min(80vh,640px);
+  /* KZu's original overflow-hidden can now be restored: the scoped
+   * dropdown is portaled outside the clipping hierarchy. */
+  padding:0;gap:0;overflow:hidden;
+  /* Original KZu approval variant: rounded-3xl border border-default
+   * bg-surface-elevated-secondary. Token-backed, with local preview
+   * fallbacks until the private Codex theme contract is restored. */
+  border:1px solid var(--border-default,var(--demo-border,#dedede));
+  border-radius:24px;
+  background:var(--surface-elevated-secondary,var(--demo-panel,#fafafa));
+  color:var(--text-default,var(--demo-text,#292929));font-size:13px;
+}
+.codex-source-mcp-approval__body {
+  display:flex;min-width:0;min-height:0;flex-direction:column;gap:8px;
+  overflow-y:auto;overscroll-behavior:contain;padding:16px 16px 12px;
+}
+.codex-source-mcp-approval__heading {
+  display:flex;min-width:0;flex-direction:column;gap:8px;
+}
+.codex-source-mcp-approval__heading-group {
+  display:flex;min-width:0;flex-direction:column;gap:2px;
+}
+.codex-source-mcp-approval__header,
+.codex-source-mcp-approval__header-inner {
+  display:flex;align-items:center;gap:8px;min-width:0;
+  font-size:12px;line-height:20px;font-weight:400;
+}
+.codex-source-mcp-approval__details {
+  display:flex;flex-direction:column;gap:4px;min-width:0;
+}
+.codex-source-mcp-approval__reason-row {
+  container-type:inline-size;display:block;width:100%;min-width:0;margin:0;
+}
+.codex-source-mcp-approval__footer {
+  display:flex;align-items:center;flex-shrink:0;gap:8px;
+  margin:0;padding:8px 16px 16px;
+}
+.codex-source-mcp-approval__trailing {
+  display:flex;align-items:center;gap:8px;min-width:0;margin-left:auto;
+}
+.codex-source-mcp-approval__split {position:relative;display:flex;min-width:0;}
+.codex-source-mcp-approval__action {
+  min-width:0;display:inline-flex;align-items:center;justify-content:center;
+  border:1px solid var(--demo-border,#dedede);background:var(--demo-surface,#fff);
+  color:var(--demo-text,#292929);border-radius:8px;
+  padding:7px 12px;font-size:13px;line-height:20px;font-weight:500;
+  cursor:pointer;white-space:nowrap;
+}
+.codex-source-mcp-approval__action--leading {margin-right:auto;max-width:100%;}
+.codex-source-mcp-approval__action--primary {
+  color:var(--demo-surface,#fff);background:var(--demo-text,#292929);
+  border-color:var(--demo-text,#292929);
+}
+.codex-source-mcp-approval__split:has(.codex-source-mcp-approval__action--dropdown)
+  .codex-source-mcp-approval__action--primary {
+  border-radius:8px 0 0 8px;
+}
+.codex-source-mcp-approval__action--dropdown {
+  border-radius:0 8px 8px 0;padding:7px 10px;
+  border-color:var(--demo-text,#292929);
+  border-left:1px solid color-mix(in srgb,var(--demo-surface,#fff) 35%,transparent);
+  color:var(--demo-surface,#fff);background:var(--demo-text,#292929);
+}
+.codex-source-mcp-approval__scope-menu {
+  /* Mae dropdown content is outside the source KZu clipped card.
+   * top/left/max-height are bounded to the viewport by the portal. */
+  position:fixed;right:auto;bottom:auto;z-index:1000;
+  min-width:204px;max-width:min(280px,calc(100vw - 16px));
+  display:flex;flex-direction:column;padding:4px;
+  overflow-y:auto;overscroll-behavior:contain;
+  border:1px solid var(--border-default,var(--demo-border,#dedede));
+  border-radius:12px;
+  box-shadow:0 8px 28px #0002;background:var(--surface-elevated,#fff);
+}
+.codex-source-mcp-approval__scope-menu button {
+  border:0;text-align:left;padding:8px 10px;background:transparent;
+  border-radius:6px;color:var(--demo-text,#292929);font-size:13px;
+}
+.codex-source-mcp-approval__scope-menu button:hover,
+.codex-source-mcp-approval__scope-menu button:focus-visible {
+  background:var(--demo-panel,#f1f1f1);
+}
+@container approval-card (max-width:28rem) {
+  .codex-source-mcp-approval__footer,
+  .codex-source-mcp-approval__trailing {
+    align-items:stretch;flex-direction:column;width:100%;
+  }
+  .codex-source-mcp-approval__trailing {margin-left:0;}
+  .codex-source-mcp-approval__action--leading {margin-right:0;}
+  .codex-source-mcp-approval__split {width:100%;}
+  .codex-source-mcp-approval__split .codex-source-mcp-approval__action--primary {
+    flex:1;
+  }
+}
+
+.codex-source-mcp-approval__connector {min-width:0;overflow:hidden;text-overflow:ellipsis;font-weight:600}
+.codex-source-mcp-approval__risk {
+  display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:600;
+  color:var(--color-text-warning,#ac6418);
+}
+.codex-source-mcp-approval__risk svg {flex-shrink:0}
+.codex-source-mcp-approval__tool-name {font-weight:600}
+.codex-source-mcp-approval__title {min-width:0;overflow-wrap:anywhere;margin:0;font-size:14px;line-height:20px;font-weight:500}
+.codex-source-mcp-approval__subtitle,
+.codex-source-mcp-approval__readonly {margin:0;color:var(--demo-dim,#858585)}
+.codex-source-mcp-approval__params {display:flex;flex-direction:column;gap:8px;min-width:0}
+/* Original Ibd renders <dl class="@container"> wrapping Mbd's
+ * one-column grid; Mbd switches to a 120px label at container >=24rem.
+ * Unlike our former unconditional percentage column, narrow cards now
+ * stack dt/dd without compressing values beyond legibility. */
+.codex-source-mcp-approval__param {container-type:inline-size;display:block;width:100%;min-width:0;margin:0}
+.codex-source-mcp-approval__param-row {
+  display:grid;grid-template-columns:minmax(0,1fr);
+  align-items:start;column-gap:12px;row-gap:2px;
+  min-height:var(--height-token-row,24px);
+  min-width:0;line-height:20px;font-size:var(--codex-chat-font-size,13px);
+}
+.codex-source-mcp-approval__param-name {
+  display:flex;align-items:center;min-width:0;
+  color:var(--demo-dim,#858585);overflow-wrap:anywhere;
+}
+.codex-source-mcp-approval__param-value {
+  display:flex;flex-direction:column;align-items:flex-start;
+  min-width:0;margin:0;gap:2px;overflow-wrap:anywhere;
+}
+@container (min-width:24rem) {
+  .codex-source-mcp-approval__param-row {
+    grid-template-columns:var(--detail-property-label-width,120px) minmax(0,1fr);
+    align-items:center;
+  }
+}
+.codex-source-mcp-approval__param-value pre {
+  min-width:0;max-width:100%;white-space:pre-wrap;overflow-wrap:anywhere;
+  margin:0;font-family:var(--font-mono,ui-monospace,monospace);font-size:12px;
+  overflow:visible;
+}
+/* Original De uses a four-line text preview and twelve-line JSON preview.
+ * Expanded content must not remain clipped by the earlier fixed 15rem cap. */
+.codex-source-mcp-approval__param-value pre[data-source-mcp-param-preview="preview"][data-source-mcp-param-expandable="true"] {
+  display:-webkit-box;-webkit-box-orient:vertical;overflow:hidden;
+  -webkit-line-clamp:4;line-clamp:4;
+}
+.codex-source-mcp-approval__param-value pre.codex-source-mcp-approval__json[data-source-mcp-param-preview="preview"][data-source-mcp-param-expandable="true"] {
+  -webkit-line-clamp:12;line-clamp:12;
+}
+.codex-source-mcp-approval__param-value pre[data-source-mcp-param-preview="expanded"] {
+  display:block;max-height:none;overflow:visible;
+}
+.codex-source-mcp-approval__param-value pre[data-source-mcp-param-preview="preview"][data-source-mcp-param-expandable="true"] {
+  position:relative;
+}
+.codex-source-mcp-approval button {font:inherit;cursor:pointer}
+.codex-source-mcp-approval__params button,
+.codex-source-mcp-approval__param-value button {
+  align-self:flex-start;border:0;padding:1px 0;background:none;
+  color:var(--demo-dim,#858585);font-size:12px;text-decoration:underline;
+}
+.codex-source-mcp-approval__action:hover:not(:disabled) {filter:brightness(.97)}
+.codex-source-mcp-approval__scope-menu button:disabled {opacity:.46}
+.codex-source-mcp-approval button:disabled {opacity:.46;cursor:not-allowed}
+.codex-source-mcp-approval button:focus-visible {outline:2px solid var(--demo-accent,#777);outline-offset:2px}
+.codex-source-mcp-approval__error {margin:0;color:var(--color-text-danger,#c03835)}
+.codex-source-mcp-approval [role="status"] {color:var(--demo-dim,#858585);margin:0}
