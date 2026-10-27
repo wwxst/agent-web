@@ -58,8 +58,9 @@ test("source KZu clips its content while portaled Mae approval options stay visi
  await expect(card).toHaveAttribute("data-source-mcp-reply-phase","idle");
  await options.click();
  await expect(menu).toBeVisible();
- // The menu is not a leftover screen-level element after clicking outside.
- await page.getByRole("button",{name:"打开演示工具"}).click();
+ // Click outside the split trigger and its document-level portal.
+ // The demo-tools opener may be labeled "关闭演示工具" while expanded.
+ await page.mouse.click(8,80);
  await expect(menu).toHaveCount(0);
  await expect(card).toHaveAttribute("data-source-mcp-reply-phase","idle");
 });
