@@ -37,7 +37,9 @@ import { ActivityStatusLabel, AutomaticApprovalReviewList, type ActivityStatusTr
 import { InlineFileReview } from "./InlineFileReview.js";
 import { SourceMcpApprovalRequestCard } from "./SourceMcpApprovalRequestCard.js";
 import {SourceComputerUseApprovalRequestCard} from "./SourceComputerUseApprovalRequestCard.js";
-import type {SourceComputerUseApprovalRequest} from "../conversation/SourceComputerUseApprovalModel.js";
+import type {
+  SourceComputerUseApprovalRequest, SourceComputerUseReplyTransport,
+} from "../conversation/SourceComputerUseApprovalModel.js";
 import type {
   SourceMcpApprovalRequest, SourceMcpApprovalReplyTransport,
 } from "../conversation/SourceMcpApprovalRequestModel.js";
@@ -144,6 +146,9 @@ export interface ConnectedConversationRendererHost extends ConversationContentAd
   /** Original E shares the scoped MCP elicitation response transport,
    * but has distinct title/disclosure/persistence UI. */
   getComputerUseApprovalRequest?:(item:ConversationMessageItem)=>SourceComputerUseApprovalRequest|null;
+  /** Explicit separate host capability. Do not reuse a generic MCP reply
+   * transport without verifying Computer Use request authority. */
+  onComputerUseApprovalReply?:SourceComputerUseReplyTransport;
   onMcpApprovalReply?:SourceMcpApprovalReplyTransport;
   translator: ActivityStatusTranslation;
   getApprovalReviewSummary: (review: AutomaticApprovalReviewSummary) => React.ReactNode;
@@ -182,7 +187,7 @@ export function createConnectedConversationMessageRenderers(host: ConnectedConve
       const computerUseApproval=host.getComputerUseApprovalRequest?.(target)??null;
       if(computerUseApproval!=null)return <SourceComputerUseApprovalRequestCard
         key={JSON.stringify([computerUseApproval.hostId,computerUseApproval.conversationId,computerUseApproval.requestId])}
-        request={computerUseApproval} onReply={host.onMcpApprovalReply}/>;
+        request={computerUseApproval} onReply={host.onComputerUseApprovalReply}/>;
       const mcpApproval=host.getMcpApprovalRequest?.(target)??null;
       if(mcpApproval!=null)return <SourceMcpApprovalRequestCard
         key={mcpApproval.requestId} request={mcpApproval} onReply={host.onMcpApprovalReply}/>;
