@@ -31,7 +31,7 @@ test("source MCP approval in real transcript enforces scopes, pending lock, and 
   await expect(deny).toBeDisabled();
   await expect(card.getByRole("menu")).toHaveCount(0);
   await expect(card).toHaveAttribute("data-source-mcp-reply-phase","error",{timeout:9000});
-  await expect(card.getByRole("alert")).toContainText("Unable to send response");
+  await expect(card.locator(".codex-source-mcp-approval__error")).toContainText("Unable to send response");
   await expect(options).toBeEnabled();
   await deny.click();
   await expect(card).toHaveAttribute("data-source-mcp-reply-phase","submitting");
