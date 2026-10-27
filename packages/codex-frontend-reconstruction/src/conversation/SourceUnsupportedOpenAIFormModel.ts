@@ -46,7 +46,8 @@ export function sourceUnsupportedOpenAIFormReply(
  request:Pick<SourceUnsupportedOpenAIFormRequest,"hostId"|"conversationId"|"requestId">,
  action:"decline"|"cancel",
 ):SourceUnsupportedOpenAIFormReply{
- return {...request,action};
+ return {hostId:request.hostId,conversationId:request.conversationId,
+  requestId:request.requestId,action};
 }
 export function sourceUnsupportedOpenAIFormWireResponse(
  action:"decline"|"cancel",
