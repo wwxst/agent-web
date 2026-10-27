@@ -15,7 +15,7 @@ The original ft detects browser website access only for a recognized Browser/Chr
 - Origin links are restricted to HTTP(S). All app grants remain host-authoritative; delivered is not granted.
 - Existing Electron preload/main IPC stays fail-closed. In particular, the strict main process currently rejects the global extra field; real site/global authorization requires a verified Agent backend protocol. No backend changes or fake grants.
 - Synthetic policy-allowed Browser and policy-denied Chrome requests are inserted into the existing canonical LiveConversationSource, not an isolated page.
-- Core model and mounted Chromium browser tests cover classifiers, scope guards, policy gate, menu, dialog, pending and error paths.
+- Core model and mounted Chromium browser tests cover classifiers, scope guards, policy gate, menu, dialog, pending and error paths. A native Windows/Linux Electron conversation test also exercises the actual Browser global-confirmation and Chrome site-scoped IPC rejection without granting permission.
 
 ## Limits and follow-up
 
