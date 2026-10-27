@@ -37,9 +37,15 @@ hydrate RPC are private and cannot be faked.
   `ConnectedLiveConversationTranscript` and existing React row
   rendering for its synthetic child. Absent host entries shows
   `No active subagents`, not invented activity.
-- Tests mount the real shell, check section counts/limits and source
-  navigation, parent transcript continuity and child canonical
-  virtualized assistant row.
+- Tests mount the real shell in Chromium and a native Electron BrowserWindow,
+  check section counts/limits, list/detail/back navigation, parent transcript
+  continuity and the child canonical virtualized assistant row.
+- The original opener performs host-backed `verify-descendant` and
+  parent-history hydration. Until those capabilities exist, the panel
+  enforces a narrower **fail-closed membership check**: the selected child
+  must be present in the current parent-scoped summary before a caller-provided
+  thread renderer may mount. Membership does **not** authenticate remote
+  permissions, and is not presented as a replacement for host authorization.
 
 ## Boundaries
 
