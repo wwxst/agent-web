@@ -1498,3 +1498,46 @@ test("native Electron Browser website access remains fail-closed across site and
   });
  }finally{await app.close();await rm(profile,{recursive:true,force:true});}
 });
+
+test("native Electron mounts original F/I Subagents right tab and retains canonical child transcript",{
+ timeout:100000,
+},async()=>{
+ const profile=await mkdtemp(join(tmpdir(),"agent-web-subagents-panel-"));
+ const app=await electron.launch({
+   executablePath,args:[".",...(process.platform==="linux"&&process.env.CI?["--no-sandbox"]:[])],
+   cwd:root,env:{...process.env,AGENT_WEB_DEV_URL:"",AGENT_WEB_USER_DATA_DIR:profile,
+     ELECTRON_DISABLE_SECURITY_WARNINGS:"true"},timeout:40000,
+ });
+ try{
+   const page=await app.firstWindow();
+   await page.locator('[aria-label="演示会话导航"]').waitFor({timeout:20000});
+   assert.equal(await page.getByRole("complementary",{name:"Subagents"}).count(),0);
+   await page.getByRole("button",{name:"打开演示工具"}).click();
+   await page.getByTestId("demo-source-subagents-panel").click();
+   const panel=page.getByRole("complementary",{name:"Subagents"});
+   await panel.waitFor({timeout:15000});
+   assert.equal(await panel.locator('[data-source-subagents-section="active"] [data-source-subagent-id]').count(),4);
+   assert.equal(await panel.locator('[data-source-subagents-section="done"] [data-source-subagent-id]').count(),10);
+   assert.match(await panel.innerText(),/1 waiting/);
+   await panel.locator('[data-source-subagent-id="demo-subagent-review"]').click();
+   const child=panel.locator('[data-demo-subagent-transcript="demo-subagent-review"]');
+   await child.waitFor({timeout:15000});
+   await child.locator('[data-conversation-message="assistant"]').first().waitFor({timeout:15000});
+   assert.match(await child.innerText(),/Synthetic subagent transcript/);
+   assert.equal(await page.getByRole("region",{name:"对话"}).count(),1);
+   await mkdir(resolve(root,"desktop/test-results"),{recursive:true});
+   await page.screenshot({
+     path:resolve(root,"desktop/test-results/source-subagents-right-tab.png"),
+     animations:"disabled",fullPage:false,
+   });
+   await panel.getByRole("button",{name:"Back to subagents"}).click();
+   assert.equal(await panel.locator('[data-source-subagents-overview]').count(),1);
+   await panel.getByRole("button",{name:"Close Subagents"}).click();
+   assert.equal(await panel.count(),0);
+   // The main conversation was never replaced with the nested subagent.
+   assert.equal(await page.locator('[data-demo-role="assistant"]').count()>0,true);
+ }finally{
+   await app.close();
+   await rm(profile,{recursive:true,force:true});
+ }
+});
