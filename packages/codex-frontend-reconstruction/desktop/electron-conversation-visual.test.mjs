@@ -1278,3 +1278,51 @@ test("native Electron mounts original qbd approval shell and scoped split-button
   });
  }finally{await app.close();await rm(profile,{recursive:true,force:true});}
 });
+
+
+test("native Electron scoped approval menu roves focus by arrow keys and never sends a decision",{
+ timeout:100000,
+},async()=>{
+ const profile=await mkdtemp(join(tmpdir(),"agent-web-approval-menu-keyboard-"));
+ const app=await electron.launch({
+  executablePath,args:[".",...(process.platform==="linux"&&process.env.CI?["--no-sandbox"]:[])],
+  cwd:root,env:{...process.env,AGENT_WEB_DEV_URL:"",AGENT_WEB_USER_DATA_DIR:profile,
+    ELECTRON_DISABLE_SECURITY_WARNINGS:"true"},timeout:40000,
+ });
+ try{
+  const page=await app.firstWindow();
+  await page.locator('[aria-label="演示会话导航"]').waitFor({timeout:20000});
+  await page.getByRole("button",{name:"打开演示工具"}).click();
+  await page.getByTestId("demo-mcp-approval-request").click();
+  const card=page.locator('[data-demo-turn-id^="mcp-approval-"]').last()
+    .locator("[data-codex-approval-surface]");
+  await card.waitFor({timeout:15000});
+  assert.equal(await card.evaluate(el=>getComputedStyle(el).borderTopLeftRadius),"24px");
+  const options=card.getByRole("button",{name:"Approval options"});
+  await options.focus();
+  await options.press("ArrowUp");
+  const menu=card.getByRole("menu",{name:"Approval options"});
+  await menu.waitFor({timeout:10000});
+  const once=menu.getByRole("menuitem",{name:"Allow once"});
+  const session=menu.getByRole("menuitem",{name:"Allow this conversation"});
+  const focused=el=>el.evaluate(node=>node===document.activeElement);
+  assert.equal(await focused(session),true);
+  await page.keyboard.press("ArrowDown");
+  assert.equal(await focused(once),true);
+  await page.keyboard.press("End");
+  assert.equal(await focused(session),true);
+  await page.keyboard.press("Home");
+  assert.equal(await focused(once),true);
+  await page.keyboard.press("Escape");
+  assert.equal(await menu.count(),0);
+  assert.equal(await focused(options),true);
+  assert.equal(await card.getAttribute("data-source-mcp-reply-phase"),"idle");
+  assert.equal(await card.locator(".codex-source-mcp-approval__error").count(),0);
+  await card.scrollIntoViewIfNeeded();
+  await mkdir(resolve(root,"desktop/test-results"),{recursive:true});
+  await page.screenshot({
+   path:resolve(root,"desktop/test-results/source-approval-menu-keyboard.png"),
+   animations:"disabled",fullPage:false,
+  });
+ }finally{await app.close();await rm(profile,{recursive:true,force:true});}
+});
