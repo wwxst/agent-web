@@ -103,6 +103,38 @@ export function demoMcpApprovalEntry(turnId:string,disabled=false):ConversationR
   ]);
 }
 
+/** Source E Computer Use approval samples in the *existing* canonical
+ * timeline. Metadata is synthetic and grants no real application access. */
+/** Original at/urlAction mock request inside the canonical turn list. */
+export function demoUrlActionEntry(turnId:string):ConversationRenderEntry{
+  return demoActivityEntry(turnId,[
+    demoItem(turnId+"-request","demo-url-action",undefined,{
+      heading:"URL action（模拟）",
+      state:"Needs input",
+    }),
+  ]);
+}
+
+export function demoBrowserWebsiteApprovalEntry(
+  turnId:string,allowAllSites:boolean,
+):ConversationRenderEntry{
+  return demoActivityEntry(turnId,[
+    demoItem(turnId+"-request","demo-browser-website-approval",undefined,{
+      heading:"Browser 网站访问授权（模拟）",
+      state:"Needs input",demoBrowserWebsiteAllSites:allowAllSites,
+    }),
+  ]);
+}
+
+export function demoComputerUseApprovalEntry(turnId:string,highRisk=false):ConversationRenderEntry{
+  return demoActivityEntry(turnId,[
+    demoItem(turnId+"-request","demo-computer-use-approval",undefined,{
+      heading:highRisk?"Computer Use 高风险请求（模拟）":"Computer Use 首次授权（模拟）",
+      state:"Needs input",demoComputerUseHighRisk:highRisk,
+    }),
+  ]);
+}
+
 export function demoActivityEntry(id: string, items: ConversationMessageItem[], title?: string): ConversationRenderEntry {
   return demoEntry(id, { type: "agent-activity", key: `block:${id}`, items: items.map((item) => title == null ? item : { ...item, heading: title }) });
 }

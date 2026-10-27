@@ -36,6 +36,12 @@ import type { AutomaticApprovalReviewSummary } from "../conversation/ActivitySta
 import { ActivityStatusLabel, AutomaticApprovalReviewList, type ActivityStatusTranslation } from "./ActivityStatusViews.js";
 import { InlineFileReview } from "./InlineFileReview.js";
 import { SourceMcpApprovalRequestCard } from "./SourceMcpApprovalRequestCard.js";
+import {SourceComputerUseApprovalRequestCard} from "./SourceComputerUseApprovalRequestCard.js";
+import {SourceBrowserWebsiteApprovalCard} from "./SourceBrowserWebsiteApprovalCard.js";
+import {SourceUrlActionRequestCard} from "./SourceUrlActionRequestCard.js";
+import type {SourceUrlActionRequest} from "../conversation/SourceUrlActionRequestModel.js";
+import type {SourceBrowserWebsiteApprovalRequest} from "../conversation/SourceBrowserWebsiteApprovalModel.js";
+import type {SourceComputerUseApprovalRequest} from "../conversation/SourceComputerUseApprovalModel.js";
 import type {
   SourceMcpApprovalRequest, SourceMcpApprovalReplyTransport,
 } from "../conversation/SourceMcpApprovalRequestModel.js";
@@ -139,6 +145,16 @@ export interface ConnectedConversationRendererHost extends ConversationContentAd
   /** Host is solely responsible for resolving real MCP pending request ids.
    * Absent callback = explicit readonly request, never simulated permission. */
   getMcpApprovalRequest?:(item:ConversationMessageItem)=>SourceMcpApprovalRequest|null;
+  /** Original E shares the scoped MCP elicitation response transport,
+   * but has distinct title/disclosure/persistence UI. */
+  getComputerUseApprovalRequest?:(item:ConversationMessageItem)=>SourceComputerUseApprovalRequest|null;
+  /** Original ft/Ge: the host projects verified Browser/Chrome website access requests. */
+  getBrowserWebsiteApprovalRequest?:(item:ConversationMessageItem)=>SourceBrowserWebsiteApprovalRequest|null;
+  /** Original at/urlAction dispatch; never infer pending requests from URLs in Markdown. */
+  getUrlActionRequest?:(item:ConversationMessageItem)=>SourceUrlActionRequest|null;
+  /** Native shell owns external HTTPS open; opening alone never replies or grants. */
+  onUrlActionOpenExternal?:(url:string)=>Promise<boolean>;
+  getUrlActionOpenInThread?:(item:ConversationMessageItem)=>(()=>void)|null;
   onMcpApprovalReply?:SourceMcpApprovalReplyTransport;
   translator: ActivityStatusTranslation;
   getApprovalReviewSummary: (review: AutomaticApprovalReviewSummary) => React.ReactNode;
@@ -174,9 +190,24 @@ export function createConnectedConversationMessageRenderers(host: ConnectedConve
     }
 
     const renderProjectedActivity = (target: ConversationMessageItem): React.ReactNode => {
+      const urlAction=host.getUrlActionRequest?.(target)??null;
+      if(urlAction!=null)return <SourceUrlActionRequestCard
+        key={JSON.stringify([urlAction.hostId,urlAction.conversationId,urlAction.requestId])}
+        request={urlAction} onReply={host.onMcpApprovalReply}
+        onOpenExternal={host.onUrlActionOpenExternal}
+        onOpenInThread={host.getUrlActionOpenInThread?.(target)??undefined}/>;
+      const browserWebsiteApproval=host.getBrowserWebsiteApprovalRequest?.(target)??null;
+      if(browserWebsiteApproval!=null)return <SourceBrowserWebsiteApprovalCard
+        key={JSON.stringify([browserWebsiteApproval.hostId,browserWebsiteApproval.conversationId,browserWebsiteApproval.requestId])}
+        request={browserWebsiteApproval} onReply={host.onMcpApprovalReply}/>;
+      const computerUseApproval=host.getComputerUseApprovalRequest?.(target)??null;
+      if(computerUseApproval!=null)return <SourceComputerUseApprovalRequestCard
+        key={JSON.stringify([computerUseApproval.hostId,computerUseApproval.conversationId,computerUseApproval.requestId])}
+        request={computerUseApproval} onReply={host.onMcpApprovalReply}/>;
       const mcpApproval=host.getMcpApprovalRequest?.(target)??null;
       if(mcpApproval!=null)return <SourceMcpApprovalRequestCard
-        key={mcpApproval.requestId} request={mcpApproval} onReply={host.onMcpApprovalReply}/>;
+        key={JSON.stringify([mcpApproval.hostId,mcpApproval.conversationId,mcpApproval.requestId])}
+        request={mcpApproval} onReply={host.onMcpApprovalReply}/>;
       const projection = projectConversationContent(target, host, "activity");
       if (projection.kind === "file-review") {
         const review: ConversationFileReviewData = restrictConversationReviewPermissions(projection.review);

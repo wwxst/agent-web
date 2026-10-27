@@ -1,0 +1,18 @@
+/* mcp-plugin-logo original ct: distinct from the qbd approval family. */
+.codex-source-compact-request{border-radius:14px;border:1px solid var(--demo-border,#dedede);background:var(--demo-panel,#fff);color:var(--demo-text,#242424);max-width:100%;overflow:hidden}
+.codex-source-compact-request__form{display:flex;flex-wrap:wrap;align-items:center;gap:12px;padding:12px}
+.codex-source-compact-request__identity{display:flex;align-items:center;flex:1 1 256px;gap:12px;min-width:0}
+.codex-source-compact-request__icon{display:flex;flex:none;align-items:center;justify-content:center;width:40px;height:40px;border-radius:9px;background:var(--demo-raised,#f1f1f1);color:var(--demo-muted,#666)}
+.codex-source-compact-request__content{flex:1;min-width:0}
+.codex-source-compact-request__title{font-size:14px;line-height:20px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.codex-source-compact-request__description{font-size:12px;line-height:20px;min-width:0;margin-top:2px}
+.codex-source-compact-request__url{display:flex;gap:8px;min-width:0;overflow-wrap:anywhere}
+.codex-source-compact-request__url-label{flex:none;color:var(--demo-muted,#777)}
+.codex-source-compact-request__url-value{min-width:0;overflow-wrap:anywhere}
+.codex-source-compact-request__actions{display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:8px;margin-inline-start:auto}
+.codex-source-compact-request__actions button{padding:6px 12px;min-height:30px;font-size:12px;border:1px solid var(--demo-border,#ccc);border-radius:8px;cursor:pointer;background:transparent;color:inherit}
+.codex-source-compact-request__actions button:disabled{cursor:not-allowed;opacity:.5}
+.codex-source-compact-request__actions button:focus-visible{outline:2px solid var(--demo-link,#3265bd);outline-offset:2px}
+.codex-source-compact-request__actions .codex-source-compact-request__primary{background:var(--demo-text,#252525);color:var(--demo-panel,#fff);border-color:transparent}
+.codex-source-compact-request__status{color:var(--demo-muted,#777);font-size:12px;line-height:20px;margin-top:5px}
+.codex-source-compact-request__error{color:var(--demo-danger,#b42318);font-size:12px;line-height:20px;margin-top:5px}

@@ -1388,3 +1388,111 @@ test("native Electron KZu clipped approval card keeps portaled Mae menu visible,
   });
  }finally{await app.close();await rm(profile,{recursive:true,force:true});}
 });
+
+
+test("native Electron renders source Computer Use first-use card and rejects approval through actual main IPC",{
+ timeout:100000,
+},async()=>{
+ const profile=await mkdtemp(join(tmpdir(),"agent-web-computer-use-approval-"));
+ const app=await electron.launch({
+  executablePath,args:[".",...(process.platform==="linux"&&process.env.CI?["--no-sandbox"]:[])],
+  cwd:root,env:{...process.env,AGENT_WEB_DEV_URL:"",AGENT_WEB_USER_DATA_DIR:profile,
+    ELECTRON_DISABLE_SECURITY_WARNINGS:"true"},timeout:40000,
+ });
+ try{
+  const page=await app.firstWindow();
+  await page.locator('[aria-label="演示会话导航"]').waitFor({timeout:20000});
+  await page.getByRole("button",{name:"打开演示工具"}).click();
+  await page.getByTestId("demo-computer-use-approval-request").click();
+  const row=page.locator('[data-demo-turn-id^="computer-use-approval-"]').last();
+  const card=row.locator("[data-source-computer-use-approval-card]");
+  await card.waitFor({timeout:15000});
+  assert.equal(await card.getAttribute("data-source-computer-use-reply-phase"),"idle");
+  assert.match(await card.innerText(),/Allow ChatGPT to use Visual Studio Code\?/);
+  assert.match(await card.locator('[data-source-computer-use-first-disclosure="true"]').innerText(),
+    /It may take screenshots of app contents/);
+  assert.equal(await card.getByRole("button",{name:"Always allow"}).count(),1);
+  assert.equal(await card.getByRole("button",{name:"Allow once"}).count(),0);
+  const approve=card.getByRole("button",{name:"Allow this conversation"});
+  await approve.click();
+  // Real Electron IPC rejects immediately; never assume browser fixture delay.
+  assert.ok(["submitting","error"].includes(
+    await card.getAttribute("data-source-computer-use-reply-phase")));
+  await card.locator(".codex-source-mcp-approval__error").waitFor({timeout:15000});
+  assert.match(await card.locator(".codex-source-mcp-approval__error").innerText(),
+    /backend unavailable/);
+  assert.equal(await approve.isDisabled(),false);
+  assert.match(await card.locator('[data-source-computer-use-first-disclosure="true"]').innerText(),
+    /It may take screenshots/);
+  await card.getByRole("button",{name:"Deny"}).click();
+  await card.locator(".codex-source-mcp-approval__error").waitFor({timeout:15000});
+  assert.equal(await card.getAttribute("data-source-computer-use-reply-phase"),"error");
+  assert.equal(await card.getByText(/Response sent to host/).count(),0);
+  assert.equal(await row.count(),1);
+  await row.scrollIntoViewIfNeeded();
+  await mkdir(resolve(root,"desktop/test-results"),{recursive:true});
+  await page.screenshot({
+    path:resolve(root,"desktop/test-results/source-computer-use-approval-backend-unavailable.png"),
+    animations:"disabled",fullPage:false,
+  });
+ }finally{await app.close();await rm(profile,{recursive:true,force:true});}
+});
+
+
+test("native Electron Browser website access remains fail-closed across site and global approval scopes",{
+ timeout:100000,
+},async()=>{
+ const profile=await mkdtemp(join(tmpdir(),"agent-web-browser-site-approval-"));
+ const app=await electron.launch({
+  executablePath,args:[".",...(process.platform==="linux"&&process.env.CI?["--no-sandbox"]:[])],
+  cwd:root,env:{...process.env,AGENT_WEB_DEV_URL:"",AGENT_WEB_USER_DATA_DIR:profile,
+    ELECTRON_DISABLE_SECURITY_WARNINGS:"true"},timeout:40000,
+ });
+ try{
+  const page=await app.firstWindow();
+  await page.locator('[aria-label="演示会话导航"]').waitFor({timeout:20000});
+  await page.getByRole("button",{name:"打开演示工具"}).click();
+  await page.getByTestId("demo-browser-website-approval-request").click();
+  const browserCard=page.locator('[data-demo-turn-id^="browser-website-approval-"]')
+    .last().locator("[data-source-browser-website-approval-card]");
+  await browserCard.waitFor({timeout:15000});
+  assert.match(await browserCard.innerText(),/Allow ChatGPT to access/);
+  assert.equal(await browserCard.getAttribute("data-source-browser-website-reply-phase"),"idle");
+  await browserCard.getByRole("button",{name:"Allow for all sites"}).click();
+  const dialog=page.getByRole("dialog");
+  await dialog.waitFor({timeout:10000});
+  assert.match(await dialog.innerText(),/elevated risks for your data/);
+  await dialog.getByRole("button",{name:"Cancel"}).click();
+  assert.equal(await dialog.count(),0);
+  assert.equal(await browserCard.getAttribute("data-source-browser-website-reply-phase"),"idle");
+  await browserCard.getByRole("button",{name:"Allow for all sites"}).click();
+  await dialog.getByRole("button",{name:"Allow any website"}).click();
+  await browserCard.locator(".codex-source-mcp-approval__error").waitFor({timeout:15000});
+  assert.equal(await browserCard.getAttribute("data-source-browser-website-reply-phase"),"error");
+  assert.match(await browserCard.locator(".codex-source-mcp-approval__error").innerText(),
+    /No permission was confirmed/);
+  assert.equal(await browserCard.getByText(/Response sent to host/).count(),0);
+  // Chrome is made the latest turn so the virtual transcript mounts its card.
+  await page.getByTestId("demo-chrome-website-approval-request").click();
+  const chromeCard=page.locator('[data-demo-turn-id^="browser-website-policy-denied-"]')
+    .last().locator("[data-source-browser-website-approval-card]");
+  await chromeCard.waitFor({timeout:15000});
+  assert.equal(await chromeCard.getByRole("button",{name:"Allow for all sites"}).count(),0);
+  assert.match(await chromeCard.innerText(),/Chrome/);
+  await chromeCard.getByRole("button",{name:"Approval options"}).click();
+  const menu=page.getByRole("menu",{name:"Approval options"});
+  await menu.waitFor({timeout:10000});
+  await menu.getByRole("menuitem",{name:"Allow for this site"}).click();
+  await chromeCard.locator(".codex-source-mcp-approval__error").waitFor({timeout:15000});
+  assert.equal(await chromeCard.getAttribute("data-source-browser-website-reply-phase"),"error");
+  assert.match(await chromeCard.locator(".codex-source-mcp-approval__error").innerText(),
+    /backend unavailable/);
+  assert.equal(await chromeCard.getByText(/Response sent to host/).count(),0);
+  await chromeCard.scrollIntoViewIfNeeded();
+  await mkdir(resolve(root,"desktop/test-results"),{recursive:true});
+  await page.screenshot({
+    path:resolve(root,"desktop/test-results/source-browser-site-approval-fail-closed.png"),
+    animations:"disabled",fullPage:false,
+  });
+ }finally{await app.close();await rm(profile,{recursive:true,force:true});}
+});

@@ -1,0 +1,15 @@
+/* Source: mcp-server-elicitation-request-panel Ge/Je.
+ * This stylesheet reuses qbd action/footer tokens. The confirmation modal
+ * is a narrowly scoped independent equivalent of the private dialog shell. */
+.codex-source-browser-website__source{display:inline-flex;align-items:center;gap:8px;font-size:12px;line-height:20px}
+.codex-source-browser-website__source-icon{display:inline-grid;place-items:center;width:17px;height:17px;font-size:17px;color:var(--demo-muted,#777)}
+.codex-source-browser-website__origin{color:var(--demo-link,#3969a8);text-decoration:underline;text-underline-offset:2px;overflow-wrap:anywhere}
+.codex-source-browser-website__scrim{position:fixed;inset:0;z-index:1500;display:grid;place-items:center;padding:20px;background:rgba(0,0,0,.48)}
+.codex-source-browser-website__dialog{width:min(100%,430px);max-height:min(90vh,660px);overflow:auto;border-radius:16px;background:var(--demo-panel,#fff);color:var(--demo-text,#212121);border:1px solid var(--demo-border,#dedede);box-shadow:0 18px 52px rgba(0,0,0,.27);padding:24px}
+.codex-source-browser-website__dialog h2{font-size:18px;line-height:1.4;font-weight:600;margin:0 0 16px}
+.codex-source-browser-website__dialog p{display:flex;gap:9px;align-items:flex-start;font-size:13px;line-height:1.5;margin:0 0 20px;color:var(--demo-muted,#5b5b5b)}
+.codex-source-browser-website__dialog p span{color:var(--demo-warning,#b7721d)}
+.codex-source-browser-website__dialog-actions{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap}
+.codex-source-browser-website__dialog-actions button{border-radius:9px;padding:8px 13px;border:1px solid var(--demo-border,#ccc);background:transparent;color:inherit;font:inherit;cursor:pointer}
+.codex-source-browser-website__dialog-actions button[type="submit"]{background:var(--demo-text,#222);color:var(--demo-panel,#fff)}
+.codex-source-browser-website__dialog-actions button:focus-visible{outline:2px solid var(--demo-link,#3969a8);outline-offset:2px}

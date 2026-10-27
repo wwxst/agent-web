@@ -18,17 +18,24 @@ export interface SourceApprovalCardSurfaceProps {
   onSubmit:(event:React.FormEvent<HTMLFormElement>)=>void;
   requestId:string;
   phase:string;
+  kind?:"mcp"|"computer-use"|"browser-website";
 }
 export function SourceApprovalCardSurface({
   headerContent,title,subtitle,reason,details,status,actions,onSubmit,
-  requestId,phase,
+  requestId,phase,kind="mcp",
 }:SourceApprovalCardSurfaceProps){
   return <section className="codex-source-mcp-approval"
     data-codex-approval-surface="true"
-    data-source-mcp-approval-card=""
-    data-source-mcp-request-id={requestId}
-    data-source-mcp-reply-phase={phase}
-    aria-label="MCP tool approval request">
+    data-source-mcp-approval-card={kind==="mcp"?"":undefined}
+    data-source-computer-use-approval-card={kind==="computer-use"?"":undefined}
+    data-source-browser-website-approval-card={kind==="browser-website"?"":undefined}
+    data-source-mcp-request-id={kind==="mcp"?requestId:undefined}
+    data-source-mcp-reply-phase={kind==="mcp"?phase:undefined}
+    data-source-computer-use-request-id={kind==="computer-use"?requestId:undefined}
+    data-source-computer-use-reply-phase={kind==="computer-use"?phase:undefined}
+    data-source-browser-website-request-id={kind==="browser-website"?requestId:undefined}
+    data-source-browser-website-reply-phase={kind==="browser-website"?phase:undefined}
+    aria-label={kind==="computer-use"?"Computer Use app approval request":kind==="browser-website"?"Browser website access approval request":"MCP tool approval request"}>
     <div className="codex-source-mcp-approval__body">
       <div role="alert" aria-atomic="true" className="codex-source-mcp-approval__heading">
         {headerContent!=null

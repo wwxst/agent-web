@@ -29,7 +29,7 @@ import {
   demoActivityEntry, demoItem, demoMessageEntry, makeLongHistory,
   demoStreamingCodeEntry, updateDemoStreamingCodeEntry,
   demoAutomaticReviewEntry, updateDemoAutomaticReviewEntry,
-  demoMcpApprovalEntry,
+  demoMcpApprovalEntry, demoComputerUseApprovalEntry, demoBrowserWebsiteApprovalEntry, demoUrlActionEntry,
   type DemoConversationId,
 } from "./mockConversation.js";
 
@@ -256,6 +256,10 @@ export function App() {
     // remounts virtual rows, so historical Rk choices remain host-owned.
     const DemoRow = React.useMemo(() => makeDemoRow(notify), [notify, generation]);
     React.useEffect(() => () => DemoRow.dispose(), [DemoRow]);
+    // On real native host pending/settled events, mutate this SAME source
+    // consumed by ConnectedLiveConversationTranscript and its virtualizer.
+    React.useEffect(()=>DemoRow.bindHostElicitations(source,active),
+      [DemoRow,source,active]);
   // Search the SAME source-Y-projected entries as the mounted virtualizer.
   // The canonical historical-turn source belongs to DemoRow's existing host
   // event bridge; its subscription survives virtual row unmount and clears
@@ -623,6 +627,47 @@ export function App() {
     ]);
   }
 
+  function playBrowserWebsiteApprovalFixture() {
+    if(playing)return;
+    markFollow();
+    const id=nextId("browser-website-approval");
+    // Synthetic pending requests exercise the existing canonical transcript.
+    // Electron main rejects all replies while Agent authorization is absent.
+    appendDemoEntries(source,[
+      demoBrowserWebsiteApprovalEntry(id+"-policy-denied",false),
+      demoBrowserWebsiteApprovalEntry(id+"-all-sites",true),
+    ]);
+  }
+
+  function playUrlActionFixture() {
+    if(playing)return;
+    markFollow();
+    // Original URL-action two-stage flow, explicitly synthetic request.
+    appendDemoEntries(source,[demoUrlActionEntry(nextId("url-action"))]);
+  }
+
+  function playChromeWebsiteApprovalFixture() {
+    if(playing)return;
+    markFollow();
+    // Standalone policy-denied Chrome request for the latest virtualized turn;
+    // it uses the SAME host classifier and fail-closed reply callback.
+    appendDemoEntries(source,[
+      demoBrowserWebsiteApprovalEntry(nextId("browser-website-policy-denied"),false),
+    ]);
+  }
+
+  function playComputerUseApprovalFixture() {
+    if(playing)return;
+    markFollow();
+    const id=nextId("computer-use-approval");
+    // Both requests live in the same canonical transcript. The real
+    // Electron main process fails closed; no app permission is modified.
+    appendDemoEntries(source,[
+      demoComputerUseApprovalEntry(id+"-high-risk",true),
+      demoComputerUseApprovalEntry(id),
+    ]);
+  }
+
   function stopSample() {
     if (timerRef.current != null) clearTimeout(timerRef.current);
     timerRef.current = null;
@@ -801,6 +846,22 @@ export function App() {
             data-testid="demo-automatic-review-transition"><Icon name="check" size={15}/> 演示自动审阅状态（模拟）</button>
           <button type="button" onClick={playMcpApprovalFixture}
             data-testid="demo-mcp-approval-request"><Icon name="check" size={15}/> 演示 MCP 审批请求（模拟）</button>
+          <button type="button" onClick={playBrowserWebsiteApprovalFixture}
+            data-testid="demo-browser-website-approval-request">
+            <Icon name="panel" size={15}/> 演示 Browser 网站授权请求（模拟）
+          </button>
+          <button type="button" onClick={playUrlActionFixture}
+            data-testid="demo-url-action-request">
+            <Icon name="plugin" size={15}/> 演示 URL action 请求（模拟）
+          </button>
+          <button type="button" onClick={playChromeWebsiteApprovalFixture}
+            data-testid="demo-chrome-website-approval-request">
+            <Icon name="panel" size={15}/> 演示 Chrome 网站授权请求（模拟）
+          </button>
+          <button type="button" onClick={playComputerUseApprovalFixture}
+            data-testid="demo-computer-use-approval-request">
+            <Icon name="panel" size={15}/> 演示 Computer Use 授权请求（模拟）
+          </button>
           <button type="button" onClick={injectHistory} disabled={historyAdded}><Icon name="plus" size={15}/> 添加 45 条历史</button>
           <button type="button" onClick={() => void virtualizerApiRef.current?.scrollToKey(`history-content:turn:${source.getSnapshot().entries[0]?.turnId ?? ""}`, undefined, {align:"top"})}><Icon name="top" size={15}/> 跳到开头</button>
           <button type="button" onClick={scrollToBottom}><Icon name="bottom" size={15}/> 跳到最新</button>

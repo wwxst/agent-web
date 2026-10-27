@@ -48,7 +48,7 @@ test("real review timeline keeps collapsing repeated tool details outside keyboa
     if(await motion.count()===0){
       return await repeated.getAttribute("data-source-disclosure-phase")==="collapsed";
     }
-    return await motion.getAttribute("inert")===""&&
+    return await motion.evaluate((el:HTMLElement)=>el.inert===true)&&
       await motion.getAttribute("aria-hidden")==="true";
   }).toBe(true);
   await row.scrollIntoViewIfNeeded();

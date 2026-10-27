@@ -17,6 +17,8 @@ declare global {
     agentWebDesktopHost?: {
       subscribeUiCommands(listener:(command:"toggle-sidebar"|"previous-thread"|"next-thread"|"find-in-thread"|"find-next-in-thread"|"find-previous-in-thread")=>void):()=>void;
       openMenu(id:"file"|"edit"|"view"|"help",anchor:{x:number;y:number}):Promise<boolean>;
+      /** Real native external HTTPS open. Never grants or settles an Agent request. */
+      openExternalUrl(url:string):Promise<boolean>;
       getHostInfo():Promise<{
         windowType:"electron";platform:string;theme:string;backendConnected:false
       }>;

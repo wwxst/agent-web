@@ -18,6 +18,13 @@ import type { ConversationRenderProjectionDependencies } from "../src/conversati
 import type { InlineFileReviewAction, InlineReviewFile } from "../src/conversation/InlineFileReviewModel.js";
 import {projectSourceMcpGenericApprovalMessage}
   from "../src/conversation/SourceMcpApprovalRequestModel.js";
+import {projectSourceBrowserWebsiteApproval} from "../src/conversation/SourceBrowserWebsiteApprovalModel.js";
+import {projectSourceUrlActionRequest} from "../src/conversation/SourceUrlActionRequestModel.js";
+import {projectSourceHostMcpApproval} from "../src/conversation/SourceHostMcpApprovalProjection.js";
+import {bindSourcePendingElicitationsToTimeline}
+  from "../src/conversation/SourcePendingElicitationTimelineBinder.js";
+import {demoActivityEntry,demoItem,type DemoSource,type DemoConversationId}
+  from "./mockConversation.js";
 import {createSourceInlineReviewWrapPreference}
   from "../src/conversation/SourceInlineReviewWrapPreference.js";
 import { getDemoBlocks, getDemoHistoryTurnItems } from "./mockConversation.js";
@@ -201,7 +208,7 @@ function ActivityDetails({ item }: { item: ConversationMessageItem; isActive: bo
     <button type="button" className="demo-activity-toggle" aria-expanded={expanded} onClick={() => setExpanded((value) => !value)}>
       <span className="demo-activity-icon" aria-hidden="true">›</span>
       <span>{heading}</span>
-      <span className="demo-activity-state">{item.state === "Working" ? "运行中" : "已完成 · 模拟"}</span>
+      <span className="demo-activity-state">{item.type==="host-pending-elicitation"?"等待宿主处理":item.state === "Working" ? "运行中" : "已完成 · 模拟"}</span>
     </button>
     {expanded && (command != null || output != null) && <div className="demo-activity-detail">
       {command != null && <pre><span className="demo-command-prefix">$ </span>{command}</pre>}
@@ -238,6 +245,15 @@ export function makeDemoRow(notify: (message: string) => void) {
   // the synthetic browser preview on its existing deterministic event feed.
   connectDesktopHostEventBridge(eventBridge);
   const historyStore=eventBridge.toolHistory;
+  const pendingStore=eventBridge.pendingElicitations;
+  const hostPending=(item:ConversationMessageItem)=>{
+    if(item.type!=="host-pending-elicitation"||
+      typeof item.id!=="string"||typeof item.pendingHostId!=="string"||
+      typeof item.pendingThreadId!=="string")return null;
+    return pendingStore.get({
+      hostId:item.pendingHostId,threadId:item.pendingThreadId,requestId:item.id,
+    });
+  };
   const collapseState = createSourceActivityCollapseState();
   const demoMcpLabelHost = {
     isFailedResult: (input:import("../src/conversation/SourceMcpToolActivityLabel.js").SourceMcpToolActivityLabelInput)=>
@@ -507,9 +523,73 @@ export function makeDemoRow(notify: (message: string) => void) {
         isExpandable:true,
       };
     },
+    /** Original at dispatch only recognizes the explicit urlAction kind.
+     * Browser fixture is intentionally readonly for external opens. Native
+     * Electron uses its real (validated) isolated openExternalUrl bridge. */
+    getUrlActionRequest:(item)=>{
+      const live=hostPending(item);
+      if(live!=null)return projectSourceUrlActionRequest(live.elicitation,{
+        hostId:live.hostId,conversationId:live.threadId,requestId:live.requestId,
+      });
+      if(item.type!=="demo-url-action"||typeof item.id!=="string")return null;
+      return projectSourceUrlActionRequest({
+        kind:"urlAction",action:{
+          message:"Complete the browser step, then continue (synthetic).",
+          url:"https://example.org/account/verify",
+        },
+      },{hostId:"demo-host",conversationId:"frontend",requestId:item.id});
+    },
+    onUrlActionOpenExternal:window.agentWebDesktopHost!=null
+      ?url=>window.agentWebDesktopHost!.openExternalUrl(url)
+      :undefined,
+    /** Source ft/Ge: recognition is from an exact synthetic browser MCP
+     * request and host policy, not UI classification. All replies fail closed. */
+    getBrowserWebsiteApprovalRequest:(item)=>{
+      const live=hostPending(item);
+      if(live!=null)return projectSourceBrowserWebsiteApproval(live.elicitation,{
+        hostId:live.hostId,conversationId:live.threadId,
+        requestId:live.requestId,allowAllSites:false,
+      });
+      if(item.type!=="demo-browser-website-approval"||typeof item.id!=="string")return null;
+      const allowAllSites=item.demoBrowserWebsiteAllSites===true;
+      return projectSourceBrowserWebsiteApproval({
+        kind:"mcpToolCall",
+        approval:{
+          tool_name:"access_browser_origin",
+          connector_id:allowAllSites?"browser-use":"connector-chrome",
+          connector_name:allowAllSites?"Browser":"Chrome",
+          tool_params:{origin:allowAllSites?"https://example.org":"https://docs.example.org",
+            reason:"Synthetic website access request; no Agent backend is connected."},
+          persist:["always"],
+        },
+      },{hostId:"demo-host",conversationId:"frontend",requestId:item.id,allowAllSites});
+    },
+    /** Source E Computer Use request is distinct from generic MCP tool ye.
+     * Both use the same host-scoped MCP elicitation *reply transport*.
+     * Demo records are explicitly synthetic; native Electron main rejects. */
+    getComputerUseApprovalRequest:(item)=>{
+      if(item.type!=="demo-computer-use-approval"||typeof item.id!=="string")return null;
+      const highRisk=item.demoComputerUseHighRisk===true;
+      return {
+        hostId:"demo-host",conversationId:"frontend",
+        requestId:item.id,
+        appDisplayName:highRisk?"Terminal":"Visual Studio Code",
+        connectorName:"Computer Use (synthetic fixture)",
+        riskLevel:highRisk?"high":null,
+        subtitle:"Synthetic request · no Computer Use backend is connected",
+        persistModes:highRisk?["session"] as const:["session","always"] as const,
+        hasPreviouslyApproved:highRisk,
+      };
+    },
     /** Host-only demo transport: every reply rejects. A click can never grant
      * real permission or pretend a request has settled successfully. */
     getMcpApprovalRequest:(item)=>{
+      const live=hostPending(item);
+      if(live!=null){
+        return projectSourceHostMcpApproval(live.elicitation,{
+          hostId:live.hostId,conversationId:live.threadId,requestId:live.requestId,
+        });
+      }
       if(item.type!=="demo-mcp-approval"||typeof item.id!=="string")return null;
       const disabled=item.demoMcpApprovalDisabled===true;
       // Original be/ke generic-message title logic is exercised by the
@@ -622,6 +702,23 @@ export function makeDemoRow(notify: (message: string) => void) {
     </div>;
   };
   return Object.assign(DemoRow, {
+    /** One host-event ingress -> one canonical LiveConversationSource. No
+     * separate list, synthetic grant, or cross-thread mounting. */
+    bindHostElicitations(source:DemoSource,threadId:DemoConversationId){
+      return bindSourcePendingElicitationsToTimeline({
+        store:pendingStore,source,hostId:"demo-host",threadId,
+        createEntry(request,turnId){
+          const kind=String(request.elicitation.kind);
+          return demoActivityEntry(turnId,[
+            demoItem(request.requestId,"host-pending-elicitation",undefined,{
+              heading:"宿主待处理请求 · "+kind,
+              state:"Needs input",pendingHostId:request.hostId,
+              pendingThreadId:request.threadId,
+            }),
+          ]);
+        },
+      });
+    },
     findHistory: {source: findHistorySource, query: historyTurnQuery},
     dispose() {
       for (const source of historySources.values()) source.dispose();
