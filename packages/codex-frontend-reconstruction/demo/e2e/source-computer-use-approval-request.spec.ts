@@ -60,6 +60,16 @@ test("source Computer Use elevated risk header replaces connector, no unsupporte
    await page.waitForTimeout(75);
  }
  await expect(row).toHaveCount(1);
+ await row.scrollIntoViewIfNeeded();
+ // Earlier completed activity is wrapped by the original Rk historical
+ // group and may have its body intentionally unmounted while collapsed.
+ // Expand the genuine existing wrapper before querying the approval card.
+ const historical=row.locator('[data-recovered-agent-activity] button').first();
+ if(await historical.count())await historical.click();
+ const activityGroup=row.locator('[data-codex-activity-group] [aria-expanded]').first();
+ if(await activityGroup.count()&&
+    await activityGroup.getAttribute("aria-expanded")==="false")
+   await activityGroup.click();
  const card=row.locator("[data-source-computer-use-approval-card]");
  await expect(card).toHaveCount(1);
  await expect(card.getByText("Allow ChatGPT to use Terminal?")).toBeVisible();
