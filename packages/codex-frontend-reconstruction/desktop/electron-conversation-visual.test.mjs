@@ -1437,3 +1437,58 @@ test("native Electron renders source Computer Use first-use card and rejects app
   });
  }finally{await app.close();await rm(profile,{recursive:true,force:true});}
 });
+
+
+test("native Electron shows source E Computer Use first-use and high-risk requests without an authorization transport",{
+ timeout:100000,
+},async()=>{
+ const profile=await mkdtemp(join(tmpdir(),"agent-web-computer-use-approval-"));
+ const app=await electron.launch({
+   executablePath,args:[".",...(process.platform==="linux"&&process.env.CI?["--no-sandbox"]:[])],
+   cwd:root,env:{...process.env,AGENT_WEB_DEV_URL:"",AGENT_WEB_USER_DATA_DIR:profile,
+     ELECTRON_DISABLE_SECURITY_WARNINGS:"true"},timeout:40000,
+ });
+ try{
+   const page=await app.firstWindow();
+   await page.locator('[aria-label="演示会话导航"]').waitFor({timeout:20000});
+   await page.getByRole("button",{name:"打开演示工具"}).click();
+   await page.getByTestId("demo-computer-use-approval-request").click();
+   const rows=page.locator('[data-demo-turn-id^="computer-use-approval-"]');
+   assert.equal(await rows.count(),2);
+   const firstUse=rows.last().locator("[data-source-computer-use-approval-card]");
+   const highRisk=rows.first().locator("[data-source-computer-use-approval-card]");
+   await firstUse.waitFor({timeout:15000});
+   assert.match(await firstUse.innerText(),/Allow ChatGPT to use Visual Studio Code/);
+   assert.match(await firstUse.innerText(),/It may take screenshots of app contents/);
+   assert.equal(await firstUse.locator('[data-source-computer-use-first-disclosure="true"]').count(),1);
+   assert.equal(await firstUse.getByRole("button",{name:"Always allow"}).isDisabled(),true);
+   assert.equal(await firstUse.getByRole("button",{name:"Deny"}).isDisabled(),true);
+   assert.equal(await firstUse.getByRole("button",{name:"Allow this conversation"}).isDisabled(),true);
+   assert.equal(await firstUse.getByRole("button",{name:"Approval options"}).count(),0);
+   assert.equal(await firstUse.getByRole("button",{name:"Allow once"}).count(),0);
+   assert.match(await firstUse.innerText(),/No Computer Use reply transport is connected/);
+   assert.match(await highRisk.innerText(),/Allow ChatGPT to use Terminal/);
+   assert.match(await highRisk.locator('[data-source-computer-use-header="high"]').innerText(),
+     /Elevated Risk/);
+   assert.equal(await highRisk.locator("[data-source-computer-use-first-disclosure]").count(),0);
+   assert.equal(await highRisk.getByRole("button",{name:"Always allow"}).count(),0);
+   assert.equal(await highRisk.getByRole("button",{name:"Deny"}).isDisabled(),true);
+   assert.equal(await firstUse.getAttribute("data-source-computer-use-reply-phase"),"idle");
+   assert.equal(await highRisk.getAttribute("data-source-computer-use-reply-phase"),"idle");
+   assert.equal(await page.locator("[data-source-computer-use-reply-phase='submitted']").count(),0);
+   await firstUse.scrollIntoViewIfNeeded();
+   await mkdir(resolve(root,"desktop/test-results"),{recursive:true});
+   await page.screenshot({
+     path:resolve(root,"desktop/test-results/source-computer-use-first-use-readonly.png"),
+     animations:"disabled",fullPage:false,
+   });
+   await highRisk.scrollIntoViewIfNeeded();
+   await page.screenshot({
+     path:resolve(root,"desktop/test-results/source-computer-use-high-risk-readonly.png"),
+     animations:"disabled",fullPage:false,
+   });
+ }finally{
+   await app.close();
+   await rm(profile,{recursive:true,force:true});
+ }
+});
