@@ -121,6 +121,7 @@ test("mounts recovered transcript components and handles mock-only interactions"
   expect(conversationTokens.mountedMargins).toContain("16px");
   // Different message and code leaves now share app-shared text tokens.
   await expect(page.locator(".demo-markdown").first()).toHaveCSS("font-size","13px");
+  await page.getByRole("button", { name: "打开演示工具" }).click();
   await page.getByRole("button", { name: /跳到最新/ }).click();
   const lastRow = page.locator('[data-turn-key="history-content:turn:history-45"]');
   await expect(lastRow).toBeInViewport({ ratio: 0.1 });
@@ -199,6 +200,7 @@ test("thread navigation retains canonical transcript, appended history, draft an
   // Its already-injected history control remains disabled, not recreated.
   await expect(page.getByRole("button",{name:"添加 45 条历史"})).toBeDisabled();
   await page.getByRole("button",{name:"重置"}).click();
+  await page.getByRole("button",{name:"打开演示工具"}).click();
   await expect(page.getByRole("button",{name:"添加 45 条历史"})).toBeEnabled();
   await expect(editor).toBeEmpty();
 });
@@ -236,6 +238,7 @@ test("thread navigation restores its own virtualized scroll distance without for
   await page.getByRole("button",{name:"打开演示工具"}).click();
   await expect(page.getByRole("button",{name:"添加 45 条历史"})).toBeDisabled();
   await page.getByRole("button",{name:"重置"}).click();
+  await page.getByRole("button",{name:"打开演示工具"}).click();
   await expect(page.getByRole("button",{name:"添加 45 条历史"})).toBeEnabled();
   await expect.poll(()=>viewport.evaluate(el=>Math.max(0,el.scrollHeight-el.clientHeight-el.scrollTop)))
     .toBeLessThan(125);
