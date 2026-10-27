@@ -18,6 +18,7 @@ import type { ConversationRenderProjectionDependencies } from "../src/conversati
 import type { InlineFileReviewAction, InlineReviewFile } from "../src/conversation/InlineFileReviewModel.js";
 import {projectSourceMcpGenericApprovalMessage}
   from "../src/conversation/SourceMcpApprovalRequestModel.js";
+import {projectSourceBrowserWebsiteApproval} from "../src/conversation/SourceBrowserWebsiteApprovalModel.js";
 import {createSourceInlineReviewWrapPreference}
   from "../src/conversation/SourceInlineReviewWrapPreference.js";
 import { getDemoBlocks, getDemoHistoryTurnItems } from "./mockConversation.js";
@@ -506,6 +507,23 @@ export function makeDemoRow(notify: (message: string) => void) {
         isDeclined:status==="denied",
         isExpandable:true,
       };
+    },
+    /** Source ft/Ge: recognition is from an exact synthetic browser MCP
+     * request and host policy, not UI classification. All replies fail closed. */
+    getBrowserWebsiteApprovalRequest:(item)=>{
+      if(item.type!=="demo-browser-website-approval"||typeof item.id!=="string")return null;
+      const allowAllSites=item.demoBrowserWebsiteAllSites===true;
+      return projectSourceBrowserWebsiteApproval({
+        kind:"mcpToolCall",
+        approval:{
+          tool_name:"access_browser_origin",
+          connector_id:allowAllSites?"browser-use":"connector-chrome",
+          connector_name:allowAllSites?"Browser":"Chrome",
+          tool_params:{origin:allowAllSites?"https://example.org":"https://docs.example.org",
+            reason:"Synthetic website access request; no Agent backend is connected."},
+          persist:["always"],
+        },
+      },{hostId:"demo-host",conversationId:"frontend",requestId:item.id,allowAllSites});
     },
     /** Source E Computer Use request is distinct from generic MCP tool ye.
      * Both use the same host-scoped MCP elicitation *reply transport*.

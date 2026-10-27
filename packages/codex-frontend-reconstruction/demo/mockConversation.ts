@@ -105,6 +105,17 @@ export function demoMcpApprovalEntry(turnId:string,disabled=false):ConversationR
 
 /** Source E Computer Use approval samples in the *existing* canonical
  * timeline. Metadata is synthetic and grants no real application access. */
+export function demoBrowserWebsiteApprovalEntry(
+  turnId:string,allowAllSites:boolean,
+):ConversationRenderEntry{
+  return demoActivityEntry(turnId,[
+    demoItem(turnId+"-request","demo-browser-website-approval",undefined,{
+      heading:"Browser 网站访问授权（模拟）",
+      state:"Needs input",demoBrowserWebsiteAllSites:allowAllSites,
+    }),
+  ]);
+}
+
 export function demoComputerUseApprovalEntry(turnId:string,highRisk=false):ConversationRenderEntry{
   return demoActivityEntry(turnId,[
     demoItem(turnId+"-request","demo-computer-use-approval",undefined,{

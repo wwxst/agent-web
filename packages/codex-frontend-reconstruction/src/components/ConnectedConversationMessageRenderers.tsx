@@ -37,6 +37,8 @@ import { ActivityStatusLabel, AutomaticApprovalReviewList, type ActivityStatusTr
 import { InlineFileReview } from "./InlineFileReview.js";
 import { SourceMcpApprovalRequestCard } from "./SourceMcpApprovalRequestCard.js";
 import {SourceComputerUseApprovalRequestCard} from "./SourceComputerUseApprovalRequestCard.js";
+import {SourceBrowserWebsiteApprovalCard} from "./SourceBrowserWebsiteApprovalCard.js";
+import type {SourceBrowserWebsiteApprovalRequest} from "../conversation/SourceBrowserWebsiteApprovalModel.js";
 import type {SourceComputerUseApprovalRequest} from "../conversation/SourceComputerUseApprovalModel.js";
 import type {
   SourceMcpApprovalRequest, SourceMcpApprovalReplyTransport,
@@ -144,6 +146,8 @@ export interface ConnectedConversationRendererHost extends ConversationContentAd
   /** Original E shares the scoped MCP elicitation response transport,
    * but has distinct title/disclosure/persistence UI. */
   getComputerUseApprovalRequest?:(item:ConversationMessageItem)=>SourceComputerUseApprovalRequest|null;
+  /** Original ft/Ge: the host projects verified Browser/Chrome website access requests. */
+  getBrowserWebsiteApprovalRequest?:(item:ConversationMessageItem)=>SourceBrowserWebsiteApprovalRequest|null;
   onMcpApprovalReply?:SourceMcpApprovalReplyTransport;
   translator: ActivityStatusTranslation;
   getApprovalReviewSummary: (review: AutomaticApprovalReviewSummary) => React.ReactNode;
@@ -179,6 +183,10 @@ export function createConnectedConversationMessageRenderers(host: ConnectedConve
     }
 
     const renderProjectedActivity = (target: ConversationMessageItem): React.ReactNode => {
+      const browserWebsiteApproval=host.getBrowserWebsiteApprovalRequest?.(target)??null;
+      if(browserWebsiteApproval!=null)return <SourceBrowserWebsiteApprovalCard
+        key={JSON.stringify([browserWebsiteApproval.hostId,browserWebsiteApproval.conversationId,browserWebsiteApproval.requestId])}
+        request={browserWebsiteApproval} onReply={host.onMcpApprovalReply}/>;
       const computerUseApproval=host.getComputerUseApprovalRequest?.(target)??null;
       if(computerUseApproval!=null)return <SourceComputerUseApprovalRequestCard
         key={JSON.stringify([computerUseApproval.hostId,computerUseApproval.conversationId,computerUseApproval.requestId])}

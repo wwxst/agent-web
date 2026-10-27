@@ -29,7 +29,7 @@ import {
   demoActivityEntry, demoItem, demoMessageEntry, makeLongHistory,
   demoStreamingCodeEntry, updateDemoStreamingCodeEntry,
   demoAutomaticReviewEntry, updateDemoAutomaticReviewEntry,
-  demoMcpApprovalEntry, demoComputerUseApprovalEntry,
+  demoMcpApprovalEntry, demoComputerUseApprovalEntry, demoBrowserWebsiteApprovalEntry,
   type DemoConversationId,
 } from "./mockConversation.js";
 
@@ -623,6 +623,18 @@ export function App() {
     ]);
   }
 
+  function playBrowserWebsiteApprovalFixture() {
+    if(playing)return;
+    markFollow();
+    const id=nextId("browser-website-approval");
+    // Synthetic pending requests exercise the existing canonical transcript.
+    // Electron main rejects all replies while Agent authorization is absent.
+    appendDemoEntries(source,[
+      demoBrowserWebsiteApprovalEntry(id+"-policy-denied",false),
+      demoBrowserWebsiteApprovalEntry(id+"-all-sites",true),
+    ]);
+  }
+
   function playComputerUseApprovalFixture() {
     if(playing)return;
     markFollow();
@@ -813,6 +825,10 @@ export function App() {
             data-testid="demo-automatic-review-transition"><Icon name="check" size={15}/> 演示自动审阅状态（模拟）</button>
           <button type="button" onClick={playMcpApprovalFixture}
             data-testid="demo-mcp-approval-request"><Icon name="check" size={15}/> 演示 MCP 审批请求（模拟）</button>
+          <button type="button" onClick={playBrowserWebsiteApprovalFixture}
+            data-testid="demo-browser-website-approval-request">
+            <Icon name="panel" size={15}/> 演示 Browser 网站授权请求（模拟）
+          </button>
           <button type="button" onClick={playComputerUseApprovalFixture}
             data-testid="demo-computer-use-approval-request">
             <Icon name="panel" size={15}/> 演示 Computer Use 授权请求（模拟）
