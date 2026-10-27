@@ -12,6 +12,10 @@ import {
   type SourceMcpApprovalParameter,
 } from "../conversation/SourceMcpApprovalRequestModel.js";
 import { SourceApprovalCardSurface } from "./SourceApprovalCardSurface.js";
+import {
+  nextSourceApprovalMenuIndex,
+  type SourceApprovalMenuMoveKey,
+} from "../conversation/SourceApprovalScopeMenuKeyboardModel.js";
 import "./sourceMcpApprovalRequestCard.css";
 
 export interface SourceMcpApprovalRequestCardProps {
@@ -57,6 +61,8 @@ export function SourceMcpApprovalRequestCard({
   const scopeMenuRef=React.useRef<HTMLDivElement|null>(null);
   const scopeTriggerRef=React.useRef<HTMLButtonElement|null>(null);
   const firstMenuItemRef=React.useRef<HTMLButtonElement|null>(null);
+  const lastMenuItemRef=React.useRef<HTMLButtonElement|null>(null);
+  const pendingMenuFocusRef=React.useRef<0|1>(0);
   // Original we keeps "name:index" expansion state above lazy/paged rows.
   const [expandedParams,setExpandedParams]=React.useState<Record<string,boolean>>({});
   const submitting=React.useRef(false);
@@ -70,6 +76,7 @@ export function SourceMcpApprovalRequestCard({
     setShowAll(false);
     setExpandedParams({});
     setScopeMenuOpen(false);
+    pendingMenuFocusRef.current=0;
     return ()=>{generation.current++;};
   },[request.requestId]);
   const entries=sourceMcpApprovalParameterEntries(request.toolParams,request.toolParamsDisplay);
@@ -83,6 +90,8 @@ export function SourceMcpApprovalRequestCard({
     const reply=sourceMcpApprovalReply(request,decision,persist);
     if(reply==null||onReply==null||submitting.current||phase==="submitted")return;
     submitting.current=true;
+    // Once a response is dispatched, no menu items may remain navigable.
+    setScopeMenuOpen(false);
     setPhase("submitting");setError(null);
     const current=generation.current;
     try{
@@ -106,7 +115,7 @@ export function SourceMcpApprovalRequestCard({
   }
   React.useEffect(()=>{
     if(!scopeMenuOpen)return;
-    firstMenuItemRef.current?.focus();
+    (pendingMenuFocusRef.current===1?lastMenuItemRef:firstMenuItemRef).current?.focus();
     const closeOutside=(event:PointerEvent)=>{
       if(event.target instanceof Node&&!scopeMenuRef.current?.contains(event.target))
         setScopeMenuOpen(false);
@@ -162,7 +171,37 @@ export function SourceMcpApprovalRequestCard({
       No approval transport is connected. This request is read-only.
     </p>:null}
   </>;
-  const closeMenu=()=>{setScopeMenuOpen(false);scopeTriggerRef.current?.focus();};
+  const closeMenu=(restoreFocus=true)=>{
+    setScopeMenuOpen(false);
+    if(restoreFocus)scopeTriggerRef.current?.focus();
+  };
+  const openMenu=(last=false)=>{
+    pendingMenuFocusRef.current=last?1:0;
+    setScopeMenuOpen(true);
+  };
+  const menuKeyDown=(event:React.KeyboardEvent<HTMLDivElement>)=>{
+    if(event.key==="Escape"){
+      event.preventDefault();event.stopPropagation();
+      closeMenu();
+      return;
+    }
+    if(event.key==="Tab"){
+      // Do not trap keyboard users inside approval options. Let browser
+      // tab order advance naturally, and dismiss the transient popover.
+      closeMenu(false);
+      return;
+    }
+    if(event.key==="ArrowDown"||event.key==="ArrowUp"||
+      event.key==="Home"||event.key==="End"){
+      event.preventDefault();event.stopPropagation();
+      const buttons=[firstMenuItemRef.current,lastMenuItemRef.current]
+        .filter((element):element is HTMLButtonElement=>element!=null&&!element.disabled);
+      const active=buttons.findIndex(button=>button===document.activeElement);
+      const next=nextSourceApprovalMenuIndex(
+        event.key as SourceApprovalMenuMoveKey,active,buttons.length);
+      if(next!=null)buttons[next]?.focus();
+    }
+  };
   const actions=<>
     {hasAlwaysScope?<button type="button"
       className="codex-source-mcp-approval__action codex-source-mcp-approval__action--leading"
@@ -181,19 +220,23 @@ export function SourceMcpApprovalRequestCard({
           className="codex-source-mcp-approval__action codex-source-mcp-approval__action--dropdown"
           aria-label="Approval options" aria-haspopup="menu"
           aria-expanded={scopeMenuOpen} disabled={!canApprove}
-          onClick={()=>setScopeMenuOpen(current=>!current)}>
+          onClick={()=>{if(scopeMenuOpen)closeMenu();else openMenu();}}
+          onKeyDown={event=>{
+            if(event.key==="ArrowDown"||event.key==="ArrowUp"){
+              event.preventDefault();
+              openMenu(event.key==="ArrowUp");
+            }
+          }}>
           <span aria-hidden="true">⌄</span>
         </button>:null}
         {hasSessionScope&&scopeMenuOpen?<div role="menu"
           aria-label="Approval options"
           className="codex-source-mcp-approval__scope-menu"
-          onKeyDown={event=>{
-            if(event.key==="Escape"){event.preventDefault();closeMenu();}
-          }}>
+          onKeyDown={menuKeyDown}>
           <button type="button" role="menuitem" ref={firstMenuItemRef}
-            onClick={()=>{closeMenu();void respond("accept");}}>Allow once</button>
-          <button type="button" role="menuitem"
-            onClick={()=>{closeMenu();void respond("accept","session");}}>
+            onClick={()=>{closeMenu(false);void respond("accept");}}>Allow once</button>
+          <button type="button" role="menuitem" ref={lastMenuItemRef}
+            onClick={()=>{closeMenu(false);void respond("accept","session");}}>
             Allow this conversation
           </button>
         </div>:null}
