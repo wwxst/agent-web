@@ -66,6 +66,9 @@ export function SourceMcpApprovalRequestCard({
   const closeOffscreenMenu=React.useCallback(()=>setScopeMenuOpen(false),[]);
   const firstMenuItemRef=React.useRef<HTMLButtonElement|null>(null);
   const lastMenuItemRef=React.useRef<HTMLButtonElement|null>(null);
+  const focusPositionedMenu=React.useCallback(()=>{
+    (pendingMenuFocusRef.current===1?lastMenuItemRef:firstMenuItemRef).current?.focus();
+  },[]);
   const pendingMenuFocusRef=React.useRef<0|1>(0);
   // Original we keeps "name:index" expansion state above lazy/paged rows.
   const [expandedParams,setExpandedParams]=React.useState<Record<string,boolean>>({});
@@ -119,7 +122,6 @@ export function SourceMcpApprovalRequestCard({
   }
   React.useEffect(()=>{
     if(!scopeMenuOpen)return;
-    (pendingMenuFocusRef.current===1?lastMenuItemRef:firstMenuItemRef).current?.focus();
     const closeOutside=(event:PointerEvent)=>{
       if(event.target instanceof Node&&
         !scopeMenuRef.current?.contains(event.target)&&
@@ -241,7 +243,8 @@ export function SourceMcpApprovalRequestCard({
           menuRef={portaledMenuRef}
           menuId={scopeMenuId}
           onKeyDown={menuKeyDown}
-          onAnchorUnavailable={closeOffscreenMenu}>
+          onAnchorUnavailable={closeOffscreenMenu}
+          onPositioned={focusPositionedMenu}>
           <button type="button" role="menuitem" ref={firstMenuItemRef}
             onClick={()=>{closeMenu(false);void respond("accept");}}>Allow once</button>
           <button type="button" role="menuitem" ref={lastMenuItemRef}
