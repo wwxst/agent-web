@@ -1070,9 +1070,11 @@ test("native Electron MCP approval request waits for host, fails safely, and all
   assert.equal(await card.locator("[data-source-mcp-param]").count(),4);
   await card.getByRole("button",{name:"Show 2 more items"}).click();
   assert.equal(await card.locator("[data-source-mcp-param]").count(),6);
-  const approve=card.getByRole("button",{name:"Allow for session"});
+  const options=card.getByRole("button",{name:"Approval options"});
   const deny=card.getByRole("button",{name:"Deny"});
-  await approve.click();
+  await options.click();
+  const session=card.getByRole("menuitem",{name:"Allow this conversation"});
+  await session.click();
   // Real IPC fails immediately when no Agent backend is connected. The
   // already tested browser fixture holds the pending phase for 380ms,
   // while native Electron is allowed to settle before Playwright's click
@@ -1083,7 +1085,7 @@ test("native Electron MCP approval request waits for host, fails safely, and all
     [...document.querySelectorAll("[data-source-mcp-approval-card]")]
       .some(node=>node.getAttribute("data-source-mcp-reply-phase")==="error"),
     null,{timeout:12000});
-  assert.equal(await approve.isDisabled(),false);
+  assert.equal(await options.isDisabled(),false);
   assert.match(await card.getByRole("alert").innerText(),
     /MCP backend unavailable/);
   await deny.click();
