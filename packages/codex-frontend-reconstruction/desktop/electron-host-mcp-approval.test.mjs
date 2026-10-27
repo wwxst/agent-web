@@ -81,7 +81,7 @@ test("native host pending generic and MCP tool requests use existing source card
   await send({type:"pending-elicitation",request:tool});
   const second=requestCard(tool.requestId);
   await second.waitFor({timeout:12000});
-  assert.equal(await second.getByText("Project Files").count(),1);
+  assert.equal(await second.locator(".codex-source-mcp-approval__connector").innerText(),"Project Files");
   assert.equal(await second.locator('[data-source-mcp-param="query"]').count(),1);
   assert.equal(await second.getByRole("button",{name:"Always allow"}).count(),0);
   assert.equal(await second.getByRole("button",{name:"Approval options"}).count(),1);
