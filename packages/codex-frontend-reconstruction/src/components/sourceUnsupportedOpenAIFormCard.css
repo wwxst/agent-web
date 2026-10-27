@@ -1,0 +1,46 @@
+/* request-panel bn: content p-4, footer border-t px-4 py-3.
+ * Source approval wrapper is independent from the generic form editor. */
+.codex-source-unsupported-form{
+ display:flex;flex-direction:column;min-width:0;
+ overflow:hidden;border:1px solid var(--demo-border,#dedede);
+ border-radius:12px;background:var(--demo-panel,#fff);
+ color:var(--demo-text,#242424);
+}
+.codex-source-unsupported-form__content{
+ display:flex;flex-direction:column;gap:4px;padding:16px;
+}
+.codex-source-unsupported-form__title{
+ font-size:14px;font-weight:600;line-height:21px;
+}
+.codex-source-unsupported-form__description{
+ font-size:13px;line-height:20px;
+ color:var(--demo-muted,#656565);overflow-wrap:anywhere;
+}
+.codex-source-unsupported-form__readonly{
+ font-size:12px;line-height:18px;color:var(--demo-muted,#656565);
+ margin-top:8px;
+}
+.codex-source-unsupported-form__error{
+ font-size:12px;line-height:18px;color:var(--demo-danger,#b42318);
+ margin-top:8px;
+}
+.codex-source-unsupported-form__footer{
+ display:flex;justify-content:flex-end;gap:8px;align-items:center;
+ padding:12px 16px;border-top:1px solid var(--demo-border,#dedede);
+}
+.codex-source-unsupported-form button{
+ border:1px solid var(--demo-border,#dedede);
+ border-radius:9px;padding:7px 14px;min-height:32px;
+ background:transparent;color:inherit;font:inherit;cursor:pointer;
+}
+.codex-source-unsupported-form button:focus-visible{
+ outline:2px solid var(--demo-link,#3265bd);outline-offset:2px;
+}
+.codex-source-unsupported-form button:disabled{opacity:.5;cursor:not-allowed}
+.codex-source-unsupported-form__dismiss{
+ color:var(--demo-danger,#b42318)!important;
+}
+.codex-source-unsupported-form__skip{
+ background:var(--demo-text,#242424)!important;
+ border-color:transparent!important;color:var(--demo-panel,#fff)!important;
+}
