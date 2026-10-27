@@ -635,6 +635,16 @@ export function App() {
     ]);
   }
 
+  function playChromeWebsiteApprovalFixture() {
+    if(playing)return;
+    markFollow();
+    // Standalone policy-denied Chrome request for the latest virtualized turn;
+    // it uses the SAME host classifier and fail-closed reply callback.
+    appendDemoEntries(source,[
+      demoBrowserWebsiteApprovalEntry(nextId("browser-website-policy-denied"),false),
+    ]);
+  }
+
   function playComputerUseApprovalFixture() {
     if(playing)return;
     markFollow();
@@ -828,6 +838,10 @@ export function App() {
           <button type="button" onClick={playBrowserWebsiteApprovalFixture}
             data-testid="demo-browser-website-approval-request">
             <Icon name="panel" size={15}/> 演示 Browser 网站授权请求（模拟）
+          </button>
+          <button type="button" onClick={playChromeWebsiteApprovalFixture}
+            data-testid="demo-chrome-website-approval-request">
+            <Icon name="panel" size={15}/> 演示 Chrome 网站授权请求（模拟）
           </button>
           <button type="button" onClick={playComputerUseApprovalFixture}
             data-testid="demo-computer-use-approval-request">
