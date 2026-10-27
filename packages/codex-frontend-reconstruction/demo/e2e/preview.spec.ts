@@ -92,6 +92,7 @@ test("mounts recovered transcript components and handles mock-only interactions"
 
   await page.getByRole("button", { name: "打开演示工具" }).click();
   await page.getByRole("button", { name: /添加 45 条历史/ }).click();
+  await page.getByRole("button", { name: "打开演示工具" }).click();
   await expect(page.getByRole("button", { name: /添加 45 条历史/ })).toBeDisabled();
   await page.getByRole("button", { name: /跳到开头/ }).click();
   await expect(page.locator('[data-turn-key="history-content:turn:intro"]')).toBeAttached();
@@ -189,12 +190,13 @@ test("thread navigation retains canonical transcript, appended history, draft an
   await expect(page.getByText("已收到你的消息",{exact:false})).toBeVisible();
   await page.getByRole("button",{name:"打开演示工具"}).click();
   await page.getByRole("button",{name:"添加 45 条历史"}).click();
+  await page.getByRole("button",{name:"打开演示工具"}).click();
   await expect(page.getByRole("button",{name:"添加 45 条历史"})).toBeDisabled();
   await page.getByRole("button",{name:/工具调用与审批交互/}).click();
   await expect(editor).toContainText("仅供审阅会话的草稿");
   await page.getByRole("button",{name:/恢复 Codex 会话界面/}).click();
-  // The existing tool popover remains open across thread switches. Confirm
-  // its already-injected history control remains disabled, not recreated.
+  // After reopening the picker, it remains open across thread switches.
+  // Its already-injected history control remains disabled, not recreated.
   await expect(page.getByRole("button",{name:"添加 45 条历史"})).toBeDisabled();
   await page.getByRole("button",{name:"重置"}).click();
   await expect(page.getByRole("button",{name:"添加 45 条历史"})).toBeEnabled();
@@ -229,7 +231,9 @@ test("thread navigation restores its own virtualized scroll distance without for
     const after=await viewport.evaluate(el=>Math.max(0,el.scrollHeight-el.clientHeight-el.scrollTop));
     return Math.abs(after-settledBefore);
   },{timeout:12000}).toBeLessThan(170);
-  // Restore an actual scroll position without discarding the same source data.
+  // Reopen the picker after its earlier fixture-selection dismissal.
+  // The already-appended history must remain available after navigation.
+  await page.getByRole("button",{name:"打开演示工具"}).click();
   await expect(page.getByRole("button",{name:"添加 45 条历史"})).toBeDisabled();
   await page.getByRole("button",{name:"重置"}).click();
   await expect(page.getByRole("button",{name:"添加 45 条历史"})).toBeEnabled();
