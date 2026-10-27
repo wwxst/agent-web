@@ -83,13 +83,10 @@ export function SourceComputerUseApprovalRequestCard({
       </svg>
       Elevated Risk
     </span>
-    // Original E uses a packaged computer-use-plugin-icon asset that
-    // is absent from this supplied resources ZIP. Do not fabricate it.
+    // Original E imports a packaged PNG absent from user-provided resources.
+    // Render verified connector text only instead of inventing an icon.
     :<span className="codex-source-computer-use__connector"
-      data-source-computer-use-header="app">
-      <span className="codex-source-computer-use__icon-fallback" aria-hidden="true">CU</span>
-      {request.connectorName}
-    </span>;
+      data-source-computer-use-header="app">{request.connectorName}</span>;
   const status=<>
     {error?<p role="alert" className="codex-source-mcp-approval__error">{error}</p>:null}
     {phase==="submitting"
