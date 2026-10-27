@@ -1448,7 +1448,9 @@ test("native Electron shows source E Computer Use first-use and high-risk reques
    assert.match(await highRisk.innerText(),/Allow ChatGPT to use Terminal/);
    assert.match(await highRisk.locator('[data-source-computer-use-header="high"]').innerText(),
      /Elevated Risk/);
-   assert.equal(await highRisk.locator("[data-source-computer-use-first-disclosure]").count(),0);
+   assert.equal(await highRisk.locator("[data-source-computer-use-first-disclosure='true']").count(),0);
+   assert.equal(await highRisk.locator("[data-source-computer-use-first-disclosure='false']").count(),1);
+   assert.doesNotMatch(await highRisk.innerText(),/It may take screenshots/);
    assert.equal(await highRisk.getByRole("button",{name:"Always allow"}).count(),0);
    assert.equal(await highRisk.getByRole("button",{name:"Deny"}).isDisabled(),true);
    assert.equal(await highRisk.getAttribute("data-source-computer-use-reply-phase"),"idle");
