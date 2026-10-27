@@ -29,7 +29,7 @@ import {
   demoActivityEntry, demoItem, demoMessageEntry, makeLongHistory,
   demoStreamingCodeEntry, updateDemoStreamingCodeEntry,
   demoAutomaticReviewEntry, updateDemoAutomaticReviewEntry,
-  demoMcpApprovalEntry,
+  demoMcpApprovalEntry, demoComputerUseApprovalEntry,
   type DemoConversationId,
 } from "./mockConversation.js";
 
@@ -623,6 +623,18 @@ export function App() {
     ]);
   }
 
+  function playComputerUseApprovalFixture() {
+    if(playing)return;
+    markFollow();
+    const id=nextId("computer-use-approval");
+    // Both requests live in the same canonical transcript. The real
+    // Electron main process fails closed; no app permission is modified.
+    appendDemoEntries(source,[
+      demoComputerUseApprovalEntry(id+"-high-risk",true),
+      demoComputerUseApprovalEntry(id),
+    ]);
+  }
+
   function stopSample() {
     if (timerRef.current != null) clearTimeout(timerRef.current);
     timerRef.current = null;
@@ -801,6 +813,10 @@ export function App() {
             data-testid="demo-automatic-review-transition"><Icon name="check" size={15}/> 演示自动审阅状态（模拟）</button>
           <button type="button" onClick={playMcpApprovalFixture}
             data-testid="demo-mcp-approval-request"><Icon name="check" size={15}/> 演示 MCP 审批请求（模拟）</button>
+          <button type="button" onClick={playComputerUseApprovalFixture}
+            data-testid="demo-computer-use-approval-request">
+            <Icon name="monitor" size={15}/> 演示 Computer Use 授权请求（模拟）
+          </button>
           <button type="button" onClick={injectHistory} disabled={historyAdded}><Icon name="plus" size={15}/> 添加 45 条历史</button>
           <button type="button" onClick={() => void virtualizerApiRef.current?.scrollToKey(`history-content:turn:${source.getSnapshot().entries[0]?.turnId ?? ""}`, undefined, {align:"top"})}><Icon name="top" size={15}/> 跳到开头</button>
           <button type="button" onClick={scrollToBottom}><Icon name="bottom" size={15}/> 跳到最新</button>
