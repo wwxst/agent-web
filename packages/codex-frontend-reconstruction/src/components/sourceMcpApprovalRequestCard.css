@@ -1,12 +1,93 @@
-/* Reconstructed source ye/we approval surface. Uses existing demo theme
- * variables and source composition; private Nz card/icon design is pending. */
+/* Original qbd/eQu shared approval shell; private design token and
+ * Button components remain approximated by independently-owned styles. */
 .codex-source-mcp-approval {
-  min-width:0;display:flex;flex-direction:column;gap:10px;
-  padding:14px 16px;border:1px solid var(--demo-border,#e4e4e4);
+  container-type:inline-size;
+  container-name:approval-card;
+  display:flex;flex-direction:column;min-width:0;max-height:min(80vh,640px);
+  padding:0;gap:0;overflow:visible;
+  border:1px solid var(--demo-border,#e4e4e4);
   border-radius:12px;background:var(--demo-surface,#fff);
   color:var(--demo-text,#292929);font-size:13px;
 }
-.codex-source-mcp-approval__header {display:flex;align-items:center;gap:10px;min-width:0}
+.codex-source-mcp-approval__body {
+  display:flex;min-width:0;min-height:0;flex-direction:column;gap:8px;
+  overflow-y:auto;overscroll-behavior:contain;padding:16px 16px 12px;
+}
+.codex-source-mcp-approval__heading {
+  display:flex;min-width:0;flex-direction:column;gap:8px;
+}
+.codex-source-mcp-approval__heading-group {
+  display:flex;min-width:0;flex-direction:column;gap:2px;
+}
+.codex-source-mcp-approval__header,
+.codex-source-mcp-approval__header-inner {
+  display:flex;align-items:center;gap:8px;min-width:0;
+  font-size:12px;line-height:20px;font-weight:400;
+}
+.codex-source-mcp-approval__details {
+  display:flex;flex-direction:column;gap:4px;min-width:0;
+}
+.codex-source-mcp-approval__reason-row {
+  container-type:inline-size;display:block;width:100%;min-width:0;margin:0;
+}
+.codex-source-mcp-approval__footer {
+  display:flex;align-items:center;flex-shrink:0;gap:8px;
+  margin:0;padding:8px 16px 16px;
+}
+.codex-source-mcp-approval__trailing {
+  display:flex;align-items:center;gap:8px;min-width:0;margin-left:auto;
+}
+.codex-source-mcp-approval__split {position:relative;display:flex;min-width:0;}
+.codex-source-mcp-approval__action {
+  min-width:0;display:inline-flex;align-items:center;justify-content:center;
+  border:1px solid var(--demo-border,#dedede);background:var(--demo-surface,#fff);
+  color:var(--demo-text,#292929);border-radius:8px;
+  padding:7px 12px;font-size:13px;line-height:20px;font-weight:500;
+  cursor:pointer;white-space:nowrap;
+}
+.codex-source-mcp-approval__action--leading {margin-right:auto;max-width:100%;}
+.codex-source-mcp-approval__action--primary {
+  color:var(--demo-surface,#fff);background:var(--demo-text,#292929);
+  border-color:var(--demo-text,#292929);
+}
+.codex-source-mcp-approval__split:has(.codex-source-mcp-approval__action--dropdown)
+  .codex-source-mcp-approval__action--primary {
+  border-radius:8px 0 0 8px;
+}
+.codex-source-mcp-approval__action--dropdown {
+  border-radius:0 8px 8px 0;padding:7px 10px;
+  border-color:var(--demo-text,#292929);
+  border-left:1px solid color-mix(in srgb,var(--demo-surface,#fff) 35%,transparent);
+  color:var(--demo-surface,#fff);background:var(--demo-text,#292929);
+}
+.codex-source-mcp-approval__scope-menu {
+  position:absolute;right:0;bottom:calc(100% + 6px);z-index:20;
+  min-width:204px;max-width:min(280px,80vw);
+  display:flex;flex-direction:column;padding:4px;
+  border:1px solid var(--demo-border,#dedede);border-radius:10px;
+  box-shadow:0 8px 28px #0002;background:var(--demo-surface,#fff);
+}
+.codex-source-mcp-approval__scope-menu button {
+  border:0;text-align:left;padding:8px 10px;background:transparent;
+  border-radius:6px;color:var(--demo-text,#292929);font-size:13px;
+}
+.codex-source-mcp-approval__scope-menu button:hover,
+.codex-source-mcp-approval__scope-menu button:focus-visible {
+  background:var(--demo-panel,#f1f1f1);
+}
+@container approval-card (max-width:28rem) {
+  .codex-source-mcp-approval__footer,
+  .codex-source-mcp-approval__trailing {
+    align-items:stretch;flex-direction:column;width:100%;
+  }
+  .codex-source-mcp-approval__trailing {margin-left:0;}
+  .codex-source-mcp-approval__action--leading {margin-right:0;}
+  .codex-source-mcp-approval__split {width:100%;}
+  .codex-source-mcp-approval__split .codex-source-mcp-approval__action--primary {
+    flex:1;
+  }
+}
+
 .codex-source-mcp-approval__connector {min-width:0;overflow:hidden;text-overflow:ellipsis;font-weight:600}
 .codex-source-mcp-approval__risk {
   display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:600;
@@ -14,8 +95,8 @@
 }
 .codex-source-mcp-approval__risk svg {flex-shrink:0}
 .codex-source-mcp-approval__tool-name {font-weight:600}
-.codex-source-mcp-approval__title {margin:0;font-size:14px;line-height:1.45;font-weight:600}
-.codex-source-mcp-approval__reason,.codex-source-mcp-approval__subtitle,
+.codex-source-mcp-approval__title {min-width:0;overflow-wrap:anywhere;margin:0;font-size:14px;line-height:20px;font-weight:500}
+.codex-source-mcp-approval__subtitle,
 .codex-source-mcp-approval__readonly {margin:0;color:var(--demo-dim,#858585)}
 .codex-source-mcp-approval__params {display:flex;flex-direction:column;gap:8px;min-width:0}
 /* Original Ibd renders <dl class="@container"> wrapping Mbd's
@@ -69,15 +150,8 @@
   align-self:flex-start;border:0;padding:1px 0;background:none;
   color:var(--demo-dim,#858585);font-size:12px;text-decoration:underline;
 }
-.codex-source-mcp-approval__actions {
-  display:flex;flex-wrap:wrap;justify-content:flex-end;gap:7px;
-  border-top:1px solid var(--demo-border,#e4e4e4);padding-top:10px;
-}
-.codex-source-mcp-approval__actions button {
-  border:1px solid var(--demo-border,#e4e4e4);
-  border-radius:7px;padding:6px 10px;background:var(--demo-panel,#f7f7f7);
-}
-.codex-source-mcp-approval__actions button:hover:not(:disabled) {filter:brightness(.97)}
+.codex-source-mcp-approval__action:hover:not(:disabled) {filter:brightness(.97)}
+.codex-source-mcp-approval__scope-menu button:disabled {opacity:.46}
 .codex-source-mcp-approval button:disabled {opacity:.46;cursor:not-allowed}
 .codex-source-mcp-approval button:focus-visible {outline:2px solid var(--demo-accent,#777);outline-offset:2px}
 .codex-source-mcp-approval__error {margin:0;color:var(--color-text-danger,#c03835)}
