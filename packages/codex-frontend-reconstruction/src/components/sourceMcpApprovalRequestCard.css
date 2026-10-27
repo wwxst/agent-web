@@ -5,9 +5,13 @@
   container-name:approval-card;
   display:flex;flex-direction:column;min-width:0;max-height:min(80vh,640px);
   padding:0;gap:0;overflow:visible;
-  border:1px solid var(--demo-border,#e4e4e4);
-  border-radius:12px;background:var(--demo-surface,#fff);
-  color:var(--demo-text,#292929);font-size:13px;
+  /* Original KZu approval variant: rounded-3xl border border-default
+   * bg-surface-elevated-secondary. Token-backed, with local preview
+   * fallbacks until the private Codex theme contract is restored. */
+  border:1px solid var(--border-default,var(--demo-border,#dedede));
+  border-radius:24px;
+  background:var(--surface-elevated-secondary,var(--demo-panel,#fafafa));
+  color:var(--text-default,var(--demo-text,#292929));font-size:13px;
 }
 .codex-source-mcp-approval__body {
   display:flex;min-width:0;min-height:0;flex-direction:column;gap:8px;
@@ -64,8 +68,9 @@
   position:absolute;right:0;bottom:calc(100% + 6px);z-index:20;
   min-width:204px;max-width:min(280px,80vw);
   display:flex;flex-direction:column;padding:4px;
-  border:1px solid var(--demo-border,#dedede);border-radius:10px;
-  box-shadow:0 8px 28px #0002;background:var(--demo-surface,#fff);
+  border:1px solid var(--border-default,var(--demo-border,#dedede));
+  border-radius:12px;
+  box-shadow:0 8px 28px #0002;background:var(--surface-elevated,#fff);
 }
 .codex-source-mcp-approval__scope-menu button {
   border:0;text-align:left;padding:8px 10px;background:transparent;
