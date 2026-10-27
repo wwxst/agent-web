@@ -59,7 +59,9 @@ import type {
 } from "../conversation/SourceToolSuggestionRequestModel.js";
 import type {SourceUrlActionRequest} from "../conversation/SourceUrlActionRequestModel.js";
 import type {SourceBrowserWebsiteApprovalRequest} from "../conversation/SourceBrowserWebsiteApprovalModel.js";
-import type {SourceComputerUseApprovalRequest} from "../conversation/SourceComputerUseApprovalModel.js";
+import type {
+  SourceComputerUseApprovalRequest, SourceComputerUseReplyTransport,
+} from "../conversation/SourceComputerUseApprovalModel.js";
 import type {
   SourceMcpApprovalRequest, SourceMcpApprovalReplyTransport,
 } from "../conversation/SourceMcpApprovalRequestModel.js";
@@ -191,6 +193,9 @@ export interface ConnectedConversationRendererHost extends ConversationContentAd
   /** Real host-owned install/enable + independently verified readiness ONLY. */
   onStartToolSuggestion?:SourceToolSuggestionStart;
   onCheckToolSuggestionReady?:SourceToolSuggestionCheckReady;
+  /** Computer Use app authorization requires explicit independently verified host authority.
+   * Never infer it from a generic MCP approval transport in a different request registry. */
+  onComputerUseApprovalReply?:SourceComputerUseReplyTransport;
   onMcpApprovalReply?:SourceMcpApprovalReplyTransport;
   translator: ActivityStatusTranslation;
   getApprovalReviewSummary: (review: AutomaticApprovalReviewSummary) => React.ReactNode;
@@ -259,7 +264,7 @@ export function createConnectedConversationMessageRenderers(host: ConnectedConve
       const computerUseApproval=host.getComputerUseApprovalRequest?.(target)??null;
       if(computerUseApproval!=null)return <SourceComputerUseApprovalRequestCard
         key={JSON.stringify([computerUseApproval.hostId,computerUseApproval.conversationId,computerUseApproval.requestId])}
-        request={computerUseApproval} onReply={host.onMcpApprovalReply}/>;
+        request={computerUseApproval} onReply={host.onComputerUseApprovalReply}/>;
       const mcpApproval=host.getMcpApprovalRequest?.(target)??null;
       if(mcpApproval!=null)return <SourceMcpApprovalRequestCard
         key={JSON.stringify([mcpApproval.hostId,mcpApproval.conversationId,mcpApproval.requestId])}
