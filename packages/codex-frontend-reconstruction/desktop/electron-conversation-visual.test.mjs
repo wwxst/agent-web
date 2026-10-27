@@ -1213,3 +1213,68 @@ test("native Electron source MCP responsive detail grid retains hidden value exp
   });
  }finally{await app.close();await rm(profile,{recursive:true,force:true});}
 });
+
+
+test("native Electron mounts original qbd approval shell and scoped split-button layout",{
+ timeout:100000,
+},async()=>{
+ const profile=await mkdtemp(join(tmpdir(),"agent-web-qbd-approval-"));
+ const app=await electron.launch({
+  executablePath,args:[".",...(process.platform==="linux"&&process.env.CI?["--no-sandbox"]:[])],
+  cwd:root,env:{...process.env,AGENT_WEB_DEV_URL:"",AGENT_WEB_USER_DATA_DIR:profile,
+    ELECTRON_DISABLE_SECURITY_WARNINGS:"true"},timeout:40000,
+ });
+ try{
+  const page=await app.firstWindow();
+  await page.locator('[aria-label="演示会话导航"]').waitFor({timeout:20000});
+  await page.getByRole("button",{name:"打开演示工具"}).click();
+  await page.getByTestId("demo-mcp-approval-request").click();
+  const card=page.locator('[data-demo-turn-id^="mcp-approval-"]').last()
+    .locator("[data-codex-approval-surface]");
+  await card.waitFor({timeout:15000});
+  assert.equal(await card.locator('[role="alert"][aria-atomic="true"]').count(),1);
+  assert.equal(await card.locator('.codex-source-mcp-approval__reason-row dt').innerText(),"Reason");
+  assert.match(await card.locator('.codex-source-mcp-approval__reason-row dd').innerText(),
+    /sample project files/);
+  const footer=card.locator("form.codex-source-mcp-approval__footer");
+  assert.equal(await footer.getByRole("button",{name:"Always allow"}).count(),1);
+  assert.equal(await footer.getByRole("button",{name:"Allow once"}).count(),1);
+  assert.equal(await footer.getByRole("button",{name:"Allow for session"}).count(),0);
+  async function layout(width){
+   return card.evaluate((el,w)=>{
+    el.style.width=w+"px";
+    const f=el.querySelector(".codex-source-mcp-approval__footer");
+    const lead=f.querySelector(".codex-source-mcp-approval__action--leading");
+    const deny=f.querySelector(".codex-source-mcp-approval__trailing button");
+    const primary=f.querySelector(".codex-source-mcp-approval__action--primary");
+    return {direction:getComputedStyle(f).flexDirection,
+      lead:lead.getBoundingClientRect().toJSON(),
+      deny:deny.getBoundingClientRect().toJSON(),
+      primary:primary.getBoundingClientRect().toJSON()};
+   },width);
+  }
+  const wide=await layout(600),narrow=await layout(410);
+  assert.equal(wide.direction,"row");
+  assert.ok(wide.lead.x<wide.deny.x&&wide.deny.x<wide.primary.x);
+  assert.equal(narrow.direction,"column");
+  assert.ok(narrow.lead.y<narrow.deny.y&&narrow.deny.y<narrow.primary.y);
+  await card.evaluate(el=>el.style.removeProperty("width"));
+  const options=footer.getByRole("button",{name:"Approval options"});
+  await options.click();
+  const menu=footer.getByRole("menu",{name:"Approval options"});
+  await menu.waitFor({timeout:12000});
+  assert.equal(await menu.getByRole("menuitem").count(),2);
+  assert.equal(await menu.getByRole("menuitem",{name:"Allow once"}).evaluate(
+    el=>el===document.activeElement),true);
+  await page.keyboard.press("Escape");
+  assert.equal(await menu.count(),0);
+  assert.equal(await options.evaluate(el=>el===document.activeElement),true);
+  assert.equal(await card.getAttribute("data-source-mcp-reply-phase"),"idle");
+  await card.scrollIntoViewIfNeeded();
+  await mkdir(resolve(root,"desktop/test-results"),{recursive:true});
+  await page.screenshot({
+   path:resolve(root,"desktop/test-results/source-qbd-approval-footer.png"),
+   animations:"disabled",fullPage:false,
+  });
+ }finally{await app.close();await rm(profile,{recursive:true,force:true});}
+});
