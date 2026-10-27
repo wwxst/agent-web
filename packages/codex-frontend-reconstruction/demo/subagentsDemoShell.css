@@ -1,0 +1,49 @@
+/* The original x/F uses the app's right-side tab host. This standalone
+ * preview has no private side-panel manager, so only the mounting slot width
+ * is a demo adapter; all internal panel layout follows compiled F/I/w/y. */
+.demo-subagents-right-tab-host {
+  width:var(--demo-right-panel-width,360px);
+  max-width:45%;
+  min-width:280px;
+  min-height:0;
+  flex:none;
+  border-left:1px solid var(--demo-border,#e7e7e7);
+  background:var(--demo-panel,#fff);
+  position:relative;
+  z-index:2;
+}
+.demo-source-subagent-thread {
+  display:flex;
+  flex-direction:column;
+  width:100%;
+  min-width:0;
+  min-height:0;
+  height:100%;
+}
+.demo-source-subagent-disclaimer {
+  flex:none;
+  padding:10px 14px;
+  margin:0;
+  font-size:11px;
+  color:#777;
+  background:#f6f6f6;
+}
+.demo-source-subagent-viewport {
+  flex:1;
+  min-height:0;
+  min-width:0;
+  overflow:auto;
+}
+.demo-source-subagent-viewport .demo-transcript-column {
+  width:calc(100% - 24px);
+  margin:0 auto;
+  min-width:0;
+  padding-top:14px;
+}
+@media (max-width:850px) {
+  .demo-subagents-right-tab-host {
+    min-width:0;
+    width:46%;
+    max-width:46%;
+  }
+}
