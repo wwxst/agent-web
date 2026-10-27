@@ -27,7 +27,8 @@ export function SourceTextFormElicitationCard({
  const [error,setError]=React.useState<string|null>(null);
  const pending=React.useRef(false);
  const generation=React.useRef(0);
- const active=request.fields[fieldIndex]??request.fields[0];
+ // The schema projector accepts 1–12 fields; the fallback is non-null.
+ const active=request.fields[fieldIndex]??request.fields[0]!;
  const last=fieldIndex===request.fields.length-1;
  React.useEffect(()=>{
    generation.current++;pending.current=false;
