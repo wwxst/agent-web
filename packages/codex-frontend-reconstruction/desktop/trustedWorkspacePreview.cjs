@@ -21,7 +21,7 @@ function validWorkspaceSearchRequest(request){
     Object.keys(request).length===1&&Object.hasOwn(request,"query")&&
     typeof request.query==="string"&&request.query.trim()===request.query&&
     request.query.length>=2&&request.query.length<=80&&
-    !/[\\u0000-\\u001f\\u007f]/u.test(request.query);
+    !/[\u0000-\u001f\u007f]/u.test(request.query);
 }
 /** Local, grant-relative path only: no absolute roots, traversal, device
  * names or escaping into the host filesystem. Empty means chosen root. */
@@ -354,7 +354,9 @@ function createTrustedWorkspacePreviewHost({
       if(listed.truncated)truncated=true;
       for(const entry of listed.entries){
         if(entry.kind==="directory"){
-          if(!visited.has(entry.relativePath))pending.push(entry.relativePath);
+          if(validRelativePath(entry.relativePath)&&
+            !visited.has(entry.relativePath))pending.push(entry.relativePath);
+          else if(!validRelativePath(entry.relativePath))truncated=true;
           continue;
         }
         if(entry.relativePath.toLocaleLowerCase().includes(query)){
