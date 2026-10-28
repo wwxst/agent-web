@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {
   sourceUserFileDisplayName,
   sourceUserFileLayout,
+  sourceUserFileAttachmentGroups,
   sourceUserFileLineInfo,
   sourceUserFileOpenTarget,
 } from "../build/SourceUserFileAttachmentsModel.js";
@@ -36,6 +37,25 @@ test("original hn discriminates uploads from workspace file-path attachments",()
   });
   assert.equal(sourceUserFileLayout(resource,true),"pill");
   assert.equal(sourceUserFileLayout(resource,true,true),"card");
+});
+
+test("source Ba partitions featured cards separately from context pills without inventing MIME capabilities",()=>{
+  const source=[
+    {path:"/workspace/src/App.tsx",startLine:14},
+    {upload:{fileName:"first.pdf"}},
+    {upload:{fileName:"paste.txt"},preview:"Pasted source"},
+    {upload:{fileName:"empty.txt"},preview:""},
+    {path:"/workspace/docs/preview.pdf"},
+  ];
+  const gated=sourceUserFileAttachmentGroups(source,false);
+  assert.deepEqual(gated.featured,[source[2],source[3]]);
+  assert.deepEqual(gated.context,[source[0],source[1],source[4]]);
+  const enabled=sourceUserFileAttachmentGroups(source,true,
+    name=>name==="first.pdf",
+    item=>item.path==="/workspace/docs/preview.pdf");
+  assert.deepEqual(enabled.featured,[source[1],source[2],source[3],source[4]]);
+  assert.deepEqual(enabled.context,[source[0]]);
+  assert.equal(source.length,5);
 });
 
 test("original yn line label and safe separate host routing",()=>{
