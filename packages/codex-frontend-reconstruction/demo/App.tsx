@@ -271,6 +271,7 @@ export function App() {
   },[]);
   const openWorkspaceAttachment=React.useCallback(async(
     request:{path:string;line?:number;endLine?:number},
+    mode:"preview"|"copy"="preview",
   )=>{
     const host=window.agentWebDesktopHost;
     if(host==null||workspaceOpenInFlightRef.current)return;
@@ -288,7 +289,13 @@ export function App() {
       }
       const file=await host.readWorkspaceTextFile(request);
       if(epoch!==workspaceRequestEpochRef.current)return;
-      setWorkspacePreview(file);
+      if(mode==="copy"){
+        if(navigator.clipboard?.writeText==null)
+          throw new Error("WORKSPACE_CLIPBOARD_UNAVAILABLE");
+        await navigator.clipboard.writeText(file.text);
+        if(epoch===workspaceRequestEpochRef.current)
+          notify("已复制文件内容");
+      }else setWorkspacePreview(file);
     }catch(error){
       if(epoch!==workspaceRequestEpochRef.current)return;
       const detail=String(error);
@@ -296,7 +303,9 @@ export function App() {
         workspaceGrantRef.current=false;
         try{await host.revokeWorkspaceDirectory();}catch{}
       }
-      notify("本地文件无法预览：请选择包含该文件的工作区，或检查权限与格式。");
+      notify(mode==="copy"
+        ?"无法复制文件内容：请确认目录授权和剪贴板权限。"
+        :"本地文件无法预览：请选择包含该文件的工作区，或检查权限与格式。");
     }finally{
       workspaceOpenInFlightRef.current=false;
     }
