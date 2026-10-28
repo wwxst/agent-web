@@ -72,9 +72,12 @@ function createWindow(){
     },
   });
   mainWindow=win;
-  // A user-selected directory grant is never carried across reload/navigation.
-  win.webContents.on("did-navigate",()=>workspacePreviewHost?.clearSender(win.webContents.id));
-  win.on("closed",()=>workspacePreviewHost?.clearSender(win.webContents.id));
+  // Capture the immutable webContents identity BEFORE destruction. Accessing
+  // win.webContents inside BrowserWindow's "closed" event is not safe on
+  // every Electron/Windows build and can interrupt app shutdown.
+  const workspaceSenderId=win.webContents.id;
+  win.webContents.on("did-navigate",()=>workspacePreviewHost?.clearSender(workspaceSenderId));
+  win.on("closed",()=>workspacePreviewHost?.clearSender(workspaceSenderId));
   // Original keeps accelerators in native Menu while its own window owns
   // the visible File/Edit/View/Help chrome. Our header requests bounded
   // submenu popups from main, rather than a separate renderer menu model.
