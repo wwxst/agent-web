@@ -707,14 +707,16 @@ export function App() {
     appendDemoEntries(source,[
       demoMessageEntry("user",id,
         "Synthetic request with host-provided file attachments. No real files are opened.",{
-          demoFileAttachments:[
+          attachments:[
             {path:"/projects/agent-web/src/App.tsx",
               fsPath:"/projects/agent-web/src/App.tsx",
               label:"App.tsx (14-28)",startLine:14,endLine:28},
+            {path:"",label:"Detached attachment"},
+          ],
+          uploadedFileAttachments:[
             {upload:{fileName:"reference-notes.pdf"}},
             {upload:{fileName:"clipboard.txt"},preview:"Pasted code snippets from a test fixture"},
             {upload:{fileName:"empty-clipboard.txt"},preview:""},
-            {path:"",label:"Detached attachment"},
           ],
         }),
     ]);
