@@ -74,7 +74,7 @@ export function SourceUserFileAttachments({
   // private electronBridge.showContextMenu native-menu protocol.
   React.useLayoutEffect(()=>{
     if(fileMenu!=null&&menuItems.length>0)
-      menuRef.current?.querySelector<HTMLButtonElement>('[role="menuitem"]')?.focus();
+      menuRef.current?.querySelector<HTMLButtonElement>('[role="menuitem"]')?.focus({preventScroll:true});
   },[fileMenu,menuItems.length]);
   React.useEffect(()=>{
     if(fileMenu==null)return;
@@ -82,7 +82,7 @@ export function SourceUserFileAttachments({
     const onKey=(event:KeyboardEvent)=>{
       if(event.key==="Escape"){
         event.preventDefault();
-        fileMenu.trigger.isConnected&&fileMenu.trigger.focus();
+        fileMenu.trigger.isConnected&&fileMenu.trigger.focus({preventScroll:true});
         dismiss();
       }else if(event.key==="Tab")dismiss();
     };
@@ -122,7 +122,7 @@ export function SourceUserFileAttachments({
     const next=event.key==="Home"?0:event.key==="End"?last:
       event.key==="ArrowDown"?(active+1)%buttons.length:
       (active<0?last:(active+last)%buttons.length);
-    buttons[next]?.focus();
+    buttons[next]?.focus({preventScroll:true});
   }
   if(attachments.length===0)return null;
   const groups=sourceUserFileAttachmentGroups(
@@ -222,7 +222,7 @@ export function SourceUserFileAttachments({
           onClick={()=>{
             const current=fileMenu;
             setFileMenu(null);
-            if(current.trigger.isConnected)current.trigger.focus();
+            if(current.trigger.isConnected)current.trigger.focus({preventScroll:true});
             void onFileMenuAction?.(current.attachment,current.route,item.id);
           }}>{item.message}</button>)}
       </div>,document.body):null}
