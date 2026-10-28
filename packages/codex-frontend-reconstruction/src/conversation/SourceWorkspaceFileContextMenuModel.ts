@@ -31,6 +31,10 @@ export interface SourceWorkspaceFileContextMenuCapabilities {
   openMode?:"workspace"|string;
   /** Narrow independent Electron host cannot copy a path without a root. */
   requiresAbsoluteCopyPath?:boolean;
+  /** Independent native read requires a real absolute local resource path;
+   * a source-relative path may still be copied using its cwd, but cannot be
+   * read until an authenticated host resolves it. */
+  requiresAbsoluteReadPath?:boolean;
 }
 export interface SourceWorkspaceFileMenuItem {
   id:SourceWorkspaceFileMenuActionId;
@@ -88,7 +92,9 @@ export function sourceWorkspaceFileContextMenuItems(
     (!capabilities.requiresAbsoluteCopyPath||
       isSourceWorkspaceAbsoluteCopyPath(sourceWorkspaceFileCopyPath(route)??"")))
     items.push({id:"workspace-file-copy-path",message:"Copy path"});
-  if(capabilities.copyContents===true&&capabilities.openMode!=="workspace")
+  if(capabilities.copyContents===true&&capabilities.openMode!=="workspace"&&
+    (!capabilities.requiresAbsoluteReadPath||
+      isSourceWorkspaceAbsoluteCopyPath(route.qe.path)))
     items.push({id:"workspace-file-copy-contents",message:"Copy file contents"});
   return items;
 }
