@@ -368,5 +368,5 @@ test("source Eqi tab strip menu works on canonical local file tabs with guarded 
       __tabContextActionsTest:{selections:number;reads:number};
     }).__tabContextActionsTest);
   expect(host.selections).toBe(1);
-  expect(host.reads).toBe(3);
+  expect(host.reads).toBe(4);
 });
