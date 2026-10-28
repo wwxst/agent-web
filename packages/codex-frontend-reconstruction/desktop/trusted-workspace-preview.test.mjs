@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {mkdtemp,mkdir,writeFile,symlink,rm,realpath,stat} from "node:fs/promises";
+import {mkdtemp,mkdir,writeFile,symlink,rm,realpath,stat,open as nativeOpen,rename} from "node:fs/promises";
 import {tmpdir} from "node:os";
 import {join,resolve} from "node:path";
 import {
@@ -253,7 +253,19 @@ test("in-flight read and clipboard copy cannot disclose contents after revoke",a
       chooseDirectory:async()=>({canceled:false,filePaths:[root]}),
       filesystem:{
         realpath,stat,
-        readFile:async()=>{started.settle(true);return reading.promise;},
+        open:async(...args)=>{
+          const handle=await nativeOpen(...args);
+          return {
+            fd:handle.fd,
+            stat:()=>handle.stat(),
+            read:async(...readArgs)=>{
+              started.settle(true);
+              await reading.promise;
+              return handle.read(...readArgs);
+            },
+            close:()=>handle.close(),
+          };
+        },
       },
       writeClipboardText:text=>writes.push(text),
     });
