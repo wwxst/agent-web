@@ -100,3 +100,25 @@
 .demo-workspace-preview__menu button:disabled{
   color:var(--demo-muted,#858585);opacity:.45;cursor:default;
 }
+
+/* Original text-file-editor-tab-content.electron uses an EditorView with
+ * independent scrollDOM; this remains a bounded, non-editable local view. */
+.demo-workspace-preview__codemirror{
+  flex:1;min-width:0;min-height:0;overflow:hidden;
+  background:var(--demo-panel,#fff);
+}
+.demo-workspace-preview__codemirror .cm-editor{
+  height:100%;
+  background:transparent;
+}
+.demo-workspace-preview__codemirror .cm-editor.cm-focused{
+  outline:2px solid var(--demo-focus,#7979cf);
+  outline-offset:-2px;
+}
+.demo-workspace-preview__codemirror .cm-scroller{
+  max-height:100%;overscroll-behavior:contain;
+}
+.demo-workspace-preview__codemirror .cm-line.demo-workspace-preview__selection{
+  background:rgba(100,111,205,.16);
+  box-shadow:inset 3px 0 0 rgba(100,111,205,.58);
+}
