@@ -7,6 +7,9 @@ import {SourceUserFileAttachments} from "./SourceUserFileAttachments.js";
 import {sourceUserFileAttachmentsFromMessage,
   type SourceUserFileAttachment,type SourceUserFileOpenTarget}
   from "../conversation/SourceUserFileAttachmentsModel.js";
+import type {
+  SourceUserFileQeContext,SourceUserFileQeHostClassifiers,SourceUserFileRoute,
+} from "../conversation/SourceUserFileQeRouteModel.js";
 import { combineSourceActivityTrace } from "../conversation/SourceCombinedActivityTrace.js";
 import { filterSourceLatestActivityUnits } from "../conversation/SourceLatestActivityVisibility.js";
 import type { SourceRepeatedActivityRow } from "../conversation/SourceRepeatedActivityGroups.js";
