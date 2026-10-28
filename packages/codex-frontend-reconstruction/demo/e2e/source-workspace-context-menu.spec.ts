@@ -20,6 +20,18 @@ test("real mounted user file attachment opens source-gated menu; clipboard and c
         return {selected:true,name:"fixture-root"};
       },
       revokeWorkspaceDirectory:async()=>{state.revokeCalls++;return true;},
+      // Test-host substitutes are explicitly local to this browser test;
+      // production uses Electron's native clipboard APIs.
+      copyWorkspaceFilePath:async(path:string)=>{
+        state.clipboard.push(path);return true;
+      },
+      copyWorkspaceFileContents:async(request:{path:string})=>{
+        state.readCalls++;
+        if(request.path!=="/projects/agent-web/src/App.tsx")
+          throw Error("WORKSPACE_OUTSIDE_GRANT");
+        state.clipboard.push("// fixture content\nexport const real = true;");
+        return true;
+      },
       readWorkspaceTextFile:async(request:{path:string})=>{
         state.readCalls++;
         if(request.path!=="/projects/agent-web/src/App.tsx")
