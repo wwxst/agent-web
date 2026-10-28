@@ -20,6 +20,7 @@ const SELECT_WORKSPACE_CHANNEL="agent-web:select-workspace-directory";
 const READ_WORKSPACE_TEXT_CHANNEL="agent-web:read-workspace-text";
 const LIST_WORKSPACE_DIRECTORY_CHANNEL="agent-web:list-workspace-directory";
 const READ_WORKSPACE_TREE_TEXT_CHANNEL="agent-web:read-workspace-tree-text";
+const SEARCH_WORKSPACE_FILES_CHANNEL="agent-web:search-workspace-files";
 const REVOKE_WORKSPACE_CHANNEL="agent-web:revoke-workspace-directory";
 const COPY_WORKSPACE_PATH_CHANNEL="agent-web:copy-workspace-file-path";
 const COPY_WORKSPACE_CONTENTS_CHANNEL="agent-web:copy-workspace-file-contents";
@@ -202,6 +203,18 @@ contextBridge.exposeInMainWorld("agentWebDesktopHost",Object.freeze({
       ...(request.line===undefined?{}:{line:request.line}),
       ...(request.endLine===undefined?{}:{endLine:request.endLine}),
     });
+  },
+  /** Original Ve searches the authenticated host. Our independent fallback
+   * allows a bounded, filename-only query under the existing native grant. */
+  searchWorkspaceFiles(request){
+    const query=request?.query;
+    if(request==null||typeof request!=="object"||Array.isArray(request)||
+      Object.keys(request).length!==1||
+      typeof query!=="string"||query.trim()!==query||
+      query.length<2||query.length>80||
+      /[\u0000-\u001f\u007f]/u.test(query))
+      return Promise.reject(new TypeError("WORKSPACE_INVALID_SEARCH_REQUEST"));
+    return ipcRenderer.invoke(SEARCH_WORKSPACE_FILES_CHANNEL,{query});
   },
   // Source SXo copy-path does not read the file. Main still validates the
   // absolute typed path and trusted main-frame sender.
