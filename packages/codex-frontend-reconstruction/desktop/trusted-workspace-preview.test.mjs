@@ -486,3 +486,38 @@ test("native directory listing rejects stale output after grant revoke during as
       /WORKSPACE_NOT_GRANTED/);
   }finally{await rm(root,{recursive:true,force:true});}
 });
+
+test("same-path re-selection invalidates an older in-flight directory result",async()=>{
+  const root=await mkdtemp(join(tmpdir(),"agent-web-tree-reselect-"));
+  try{
+    await writeFile(join(root,"source.ts"),"safe");
+    const event={sender:{id:704}};
+    let release,started;
+    const gate=new Promise(resolve=>{release=resolve;});
+    const enter=new Promise(resolve=>{started=resolve;});
+    const fs=await import("node:fs/promises");
+    let calls=0;
+    const host=createTrustedWorkspacePreviewHost({
+      isTrustedRenderer:e=>e===event,
+      chooseDirectory:async()=>({canceled:false,filePaths:[root]}),
+      filesystem:{
+        ...fs,
+        opendir:async candidate=>{
+          const dir=await fs.opendir(candidate);
+          if(++calls===1){started(true);await gate;}
+          return dir;
+        },
+      },
+    });
+    await host.selectDirectory(event);
+    const oldListing=host.listDirectory(event,{relativePath:""});
+    await enter;
+    // Native selection can replace an earlier grant even at the same
+    // pathname; the in-flight old query must not be treated as current.
+    await host.selectDirectory(event);
+    release(true);
+    await assert.rejects(oldListing,/WORKSPACE_GRANT_REVOKED/);
+    const fresh=await host.listDirectory(event,{relativePath:""});
+    assert.equal(fresh.entries[0].name,"source.ts");
+  }finally{await rm(root,{recursive:true,force:true});}
+});
