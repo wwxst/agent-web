@@ -43,7 +43,7 @@ function isValidPreviewRequest(input){
       input.endLine<=10000000));
 }
 function createTrustedWorkspacePreviewHost({
-  isTrustedRenderer,chooseDirectory,filesystem=fs,
+  isTrustedRenderer,chooseDirectory,filesystem=fs,writeClipboardText,
 }){
   if(typeof isTrustedRenderer!=="function"||typeof chooseDirectory!=="function")
     throw new TypeError("WORKSPACE_HOST_CAPABILITY_REQUIRED");
@@ -97,13 +97,30 @@ function createTrustedWorkspacePreviewHost({
       readOnly:true,
     };
   }
+  // Original SXo writes a file path without first opening its contents.
+  // This is a bounded typed file-path action, never a general clipboard IPC.
+  function copyFilePath(event,raw){
+    sender(event);
+    if(!isSafePathInput(raw))denied("WORKSPACE_INVALID_FILE_REQUEST");
+    if(typeof writeClipboardText!=="function")denied("WORKSPACE_CLIPBOARD_UNAVAILABLE");
+    writeClipboardText(raw);
+    return true;
+  }
+  // File contents are more sensitive: reuse EXACTLY the existing trusted
+  // main-frame, folder-grant, realpath, symlink and size/UTF-8 checks.
+  async function copyFileContents(event,request){
+    const file=await readTextFile(event,request);
+    if(typeof writeClipboardText!=="function")denied("WORKSPACE_CLIPBOARD_UNAVAILABLE");
+    writeClipboardText(file.text);
+    return true;
+  }
   function revoke(event){
     const id=sender(event);
     grants.delete(id);
     return true;
   }
   function clearSender(id){grants.delete(id);}
-  return {selectDirectory,readTextFile,revoke,clearSender,
+  return {selectDirectory,readTextFile,copyFilePath,copyFileContents,revoke,clearSender,
     // No method intentionally exposes the granted root to a renderer.
   };
 }
