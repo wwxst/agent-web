@@ -1498,3 +1498,37 @@ test("native Electron Browser website access remains fail-closed across site and
   });
  }finally{await app.close();await rm(profile,{recursive:true,force:true});}
 });
+
+test("native Electron renders source hn/yn uploaded and workspace attachments without granting file-open authority",{
+ timeout:100000,
+},async()=>{
+ const profile=await mkdtemp(join(tmpdir(),"agent-web-user-file-attachments-"));
+ const app=await electron.launch({
+  executablePath,args:[".",...(process.platform==="linux"&&process.env.CI?["--no-sandbox"]:[])],
+  cwd:root,env:{...process.env,AGENT_WEB_DEV_URL:"",AGENT_WEB_USER_DATA_DIR:profile,
+    ELECTRON_DISABLE_SECURITY_WARNINGS:"true"},timeout:40000,
+ });
+ try{
+  const page=await app.firstWindow();
+  await page.locator('[aria-label="演示会话导航"]').waitFor({timeout:20000});
+  await page.getByRole("button",{name:"打开演示工具"}).click();
+  await page.getByTestId("demo-source-user-file-attachments").click();
+  const row=page.locator('[data-demo-turn-id^="user-file-attachments-"]').last();
+  await row.waitFor({timeout:15000});
+  const files=row.locator('[data-conversation-message="user"] [data-source-user-file-attachments]');
+  await files.waitFor({timeout:15000});
+  assert.equal(await files.locator('[data-source-user-attachment-kind]').count(),3);
+  assert.match(await files.innerText(),/App\.tsx/);
+  assert.match(await files.innerText(),/reference-notes\.pdf/);
+  assert.equal(await files.locator('[data-source-user-attachment-lines="14-28"]').count(),1);
+  assert.equal(await files.getByRole("button",{name:/App\.tsx/}).isDisabled(),true);
+  assert.equal(await files.getByRole("button",{name:"reference-notes.pdf"}).isDisabled(),true);
+  assert.equal(await files.getByRole("button",{name:"Detached attachment"}).isDisabled(),true);
+  await mkdir(resolve(root,"desktop/test-results"),{recursive:true});
+  await page.screenshot({
+   path:resolve(root,"desktop/test-results/source-user-file-attachments-readonly.png"),
+   animations:"disabled",fullPage:false,
+  });
+  assert.equal(await page.getByRole("region",{name:"对话"}).count(),1);
+ }finally{await app.close();await rm(profile,{recursive:true,force:true});}
+});
