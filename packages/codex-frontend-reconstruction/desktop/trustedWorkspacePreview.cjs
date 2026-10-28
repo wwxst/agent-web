@@ -48,6 +48,22 @@ function createTrustedWorkspacePreviewHost({
   if(typeof isTrustedRenderer!=="function"||typeof chooseDirectory!=="function")
     throw new TypeError("WORKSPACE_HOST_CAPABILITY_REQUIRED");
   const grants=new Map();
+  // A renderer's workspace authority is a lifetime, not merely a window ID.
+  // A native picker may complete AFTER revoke/navigation/closure. Invalidate
+  // its captured generation so no late chooser response can restore a grant.
+  const epochs=new Map();
+  const pendingPickers=new Set();
+  const currentEpoch=id=>epochs.get(id)??0;
+  const clearSender=id=>{
+    epochs.set(id,currentEpoch(id)+1);
+    grants.delete(id);
+  };
+  function stillCurrent(event,id,epoch){
+    if(currentEpoch(id)!==epoch||event?.sender?.id!==id)return false;
+    // webContents can be destroyed or navigated while the OS dialog is open.
+    try{return isTrustedRenderer(event)===true;}
+    catch{return false;}
+  }
   const sender=(event)=>{
     if(!isTrustedRenderer(event))denied("WORKSPACE_UNTRUSTED_RENDERER");
     const id=event?.sender?.id;
@@ -56,21 +72,34 @@ function createTrustedWorkspacePreviewHost({
   };
   async function selectDirectory(event){
     const id=sender(event);
-    const result=await chooseDirectory(event);
-    // Native dialog cancellation never replaces or expands an old grant.
-    if(result?.canceled===true||!Array.isArray(result?.filePaths)||
-       result.filePaths.length!==1)return {selected:false};
-    const selected=result.filePaths[0];
-    if(!isSafePathInput(selected))denied("WORKSPACE_INVALID_DIRECTORY");
-    const root=await filesystem.realpath(selected);
-    const stat=await filesystem.stat(root);
-    if(!stat.isDirectory())denied("WORKSPACE_INVALID_DIRECTORY");
-    grants.set(id,root);
-    return {selected:true,name:path.basename(root)};
+    // Do not let multiple concurrent native dialogs race to replace a grant
+    // for one webContents. Other senders retain independent picker lifetimes.
+    if(pendingPickers.has(id))denied("WORKSPACE_PICKER_IN_PROGRESS");
+    const epoch=currentEpoch(id);
+    pendingPickers.add(id);
+    try{
+      const result=await chooseDirectory(event);
+      if(!stillCurrent(event,id,epoch))return {selected:false};
+      // Native dialog cancellation never replaces or expands an old grant.
+      if(result?.canceled===true||!Array.isArray(result?.filePaths)||
+         result.filePaths.length!==1)return {selected:false};
+      const selected=result.filePaths[0];
+      if(!isSafePathInput(selected))denied("WORKSPACE_INVALID_DIRECTORY");
+      const root=await filesystem.realpath(selected);
+      if(!stillCurrent(event,id,epoch))return {selected:false};
+      const stat=await filesystem.stat(root);
+      if(!stillCurrent(event,id,epoch))return {selected:false};
+      if(!stat.isDirectory())denied("WORKSPACE_INVALID_DIRECTORY");
+      grants.set(id,root);
+      return {selected:true,name:path.basename(root)};
+    }finally{
+      pendingPickers.delete(id);
+    }
   }
   async function readTextFile(event,request){
     const id=sender(event);
     if(!isValidPreviewRequest(request))denied("WORKSPACE_INVALID_FILE_REQUEST");
+    const epoch=currentEpoch(id);
     const root=grants.get(id);
     if(root==null)denied("WORKSPACE_NOT_GRANTED");
     // Resolve the actual canonical path; lexical containment alone is unsafe
@@ -90,6 +119,10 @@ function createTrustedWorkspacePreviewHost({
     try{text=new TextDecoder("utf-8",{fatal:true}).decode(bytes);}
     catch{denied("WORKSPACE_NOT_UTF8");}
     if(text.includes("\u0000"))denied("WORKSPACE_NOT_TEXT");
+    // Reads may also span a thread change or a destroyed renderer. Never
+    // deliver stale file contents after a revoked grant, even if IO completed.
+    if(!stillCurrent(event,id,epoch)||grants.get(id)!==root)
+      denied("WORKSPACE_GRANT_REVOKED");
     return {
       name:path.basename(real),relativePath:path.relative(root,real),
       text,...(request.line===undefined?{}:{line:request.line}),
@@ -116,10 +149,9 @@ function createTrustedWorkspacePreviewHost({
   }
   function revoke(event){
     const id=sender(event);
-    grants.delete(id);
+    clearSender(id);
     return true;
   }
-  function clearSender(id){grants.delete(id);}
   return {selectDirectory,readTextFile,copyFilePath,copyFileContents,revoke,clearSender,
     // No method intentionally exposes the granted root to a renderer.
   };
