@@ -9,7 +9,7 @@
  * We intentionally DO NOT impersonate its private electronBridge API.
  */
 const path = require("node:path");
-const {app, BrowserWindow, ipcMain, shell, nativeTheme, screen, Menu} = require("electron");
+const {app, BrowserWindow, ipcMain, shell, nativeTheme, screen, Menu, dialog} = require("electron");
 const {
   PRIMARY_MIN_WIDTH,PRIMARY_MIN_HEIGHT,sourcePrimaryChromeOptions,
 } = require("./windowChrome.cjs");
@@ -22,6 +22,7 @@ const {handleUserVerificationCancel}=require("./userVerificationCancel.cjs");
 const {handleUnsupportedFormReply}=require("./unsupportedFormReply.cjs");
 const {handleFormTextReply}=require("./textFormReply.cjs");
 const {handleExternalUrlOpen,sourceSafeExternalHttpsUrl}=require("./externalUrlAction.cjs");
+const {createTrustedWorkspacePreviewHost}=require("./trustedWorkspacePreview.cjs");
 
 const HOST_INFO_CHANNEL = "agent-web:host-info";
 const HOST_EVENT_CHANNEL = "agent-web:host-event";
@@ -34,6 +35,9 @@ const USER_VERIFICATION_CANCEL_CHANNEL="agent-web:user-verification-cancel";
 const UNSUPPORTED_FORM_REPLY_CHANNEL="agent-web:unsupported-form-reply";
 const TEXT_FORM_REPLY_CHANNEL="agent-web:text-form-reply";
 const OPEN_EXTERNAL_URL_CHANNEL="agent-web:open-external-url";
+const SELECT_WORKSPACE_CHANNEL="agent-web:select-workspace-directory";
+const READ_WORKSPACE_TEXT_CHANNEL="agent-web:read-workspace-text";
+const REVOKE_WORKSPACE_CHANNEL="agent-web:revoke-workspace-directory";
 const devUrl=process.env.AGENT_WEB_DEV_URL || "";
 const devMode=devUrl.length>0;
 const indexPath=path.resolve(__dirname,"../demo-dist/index.html");
@@ -44,6 +48,7 @@ if(typeof dataDirOverride==="string"&&path.isAbsolute(dataDirOverride)){
   app.setPath("userData",dataDirOverride);
 }
 let mainWindow=null;
+let workspacePreviewHost=null;
 
 function isAllowedNavigation(url){
   return allowedNavigation(url,{devUrl,indexPath});
@@ -67,6 +72,9 @@ function createWindow(){
     },
   });
   mainWindow=win;
+  // A user-selected directory grant is never carried across reload/navigation.
+  win.webContents.on("did-navigate",()=>workspacePreviewHost?.clearSender(win.webContents.id));
+  win.on("closed",()=>workspacePreviewHost?.clearSender(win.webContents.id));
   // Original keeps accelerators in native Menu while its own window owns
   // the visible File/Edit/View/Help chrome. Our header requests bounded
   // submenu popups from main, rather than a separate renderer menu model.
@@ -161,6 +169,19 @@ function isTrustedRenderer(event){
 }
 function setupIpc(){
   const template=installNativeMenu();
+  workspacePreviewHost=createTrustedWorkspacePreviewHost({
+    isTrustedRenderer,
+    chooseDirectory:event=>dialog.showOpenDialog(
+      BrowserWindow.fromWebContents(event.sender),
+      {title:"Select workspace folder for read-only previews",
+       properties:["openDirectory","dontAddToRecent"]}),
+  });
+  ipcMain.handle(SELECT_WORKSPACE_CHANNEL,(event)=>
+    workspacePreviewHost.selectDirectory(event));
+  ipcMain.handle(READ_WORKSPACE_TEXT_CHANNEL,(event,request)=>
+    workspacePreviewHost.readTextFile(event,request));
+  ipcMain.handle(REVOKE_WORKSPACE_CHANNEL,event=>
+    workspacePreviewHost.revoke(event));
   // Original mcp-request-card ye calls a request-scoped host reply method;
   // this standalone app does NOT have that Agent backend protocol. Use
   // existing main-frame navigation/sender guards and fail closed.
@@ -211,7 +232,7 @@ app.on("window-all-closed",()=>{if(process.platform!=="darwin")app.quit();});
 app.on("activate",()=>{if(BrowserWindow.getAllWindows().length===0)createWindow();});
 app.whenReady().then(()=>{setupIpc();createWindow();});
 app.on("before-quit",()=>{
-  for(const channel of [HOST_INFO_CHANNEL,OPEN_MENU_CHANNEL,READ_DRAFTS_CHANNEL,WRITE_DRAFT_CHANNEL,MCP_APPROVAL_REPLY_CHANNEL,OPEN_EXTERNAL_URL_CHANNEL,USER_VERIFICATION_CANCEL_CHANNEL,UNSUPPORTED_FORM_REPLY_CHANNEL,TEXT_FORM_REPLY_CHANNEL]){
+  for(const channel of [HOST_INFO_CHANNEL,OPEN_MENU_CHANNEL,READ_DRAFTS_CHANNEL,WRITE_DRAFT_CHANNEL,MCP_APPROVAL_REPLY_CHANNEL,OPEN_EXTERNAL_URL_CHANNEL,USER_VERIFICATION_CANCEL_CHANNEL,UNSUPPORTED_FORM_REPLY_CHANNEL,TEXT_FORM_REPLY_CHANNEL,SELECT_WORKSPACE_CHANNEL,READ_WORKSPACE_TEXT_CHANNEL,REVOKE_WORKSPACE_CHANNEL]){
     ipcMain.removeHandler(channel);
   }
 });
