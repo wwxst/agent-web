@@ -21,8 +21,10 @@ Read-only original user-provided build:
 - Resource files use `fsPath || path` for opening, `path` as a
   resource path, and `yn` for line information.
   The imported `xt` is original `app-primary` function `sV`: with
-  `lineInfo` it strips a duplicated trailing ` 14-28` or
-  ` (14-28)` from the label before FilePill displays its own range.
+  `lineInfo` it strips any trailing ` 14-28` or ` (14-28)` shaped
+  suffix from the label before FilePill displays its own range, **even
+  when the suffix differs from the current lineInfo**. The original
+  predicate tests only whether lineInfo exists, not equality.
   `yn` returns `startLine-endLine` if the two differ, or
   `startLine` if equal/only one. No startLine yields nothing.
 - A shared-thread resource routes through the external shared-thread
