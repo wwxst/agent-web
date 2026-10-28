@@ -12,7 +12,12 @@ Read-only original user-provided build:
 - Uploaded file without a preview goes to private `Me` FilePill
   (`filename:upload.fileName`, layout `pill` or `card` when
   uploaded-file viewer enabled). With a preview it calls private
-  `at({preview,onClick})`, not a fabricated filename-derived image.
+  `at({preview,onClick})` (the import resolves to `Wmd` in
+  `app-initial-5851df3f6cb1.js`), **not an image viewer**.
+  `Wmd` uses the string preview as its label, falls back to
+  "Pasted text" if the string is empty, and renders an `Eti`
+  card with "Pasted text" subtitle. The reconstruction now implements
+  this concrete branch in its existing attached file card.
 - Resource files use `fsPath || path` for opening, `path` as a
   resource path, and `yn` for line information.
   `yn` returns `startLine-endLine` if the two differ, or
@@ -41,7 +46,7 @@ Read-only original user-provided build:
   `ConnectedConversationMessageRenderers.UserMessage` branch through
   `getUserFileAttachments(item)`. No new timeline, chat row, Composer
   or backend action is created.
-- The original private FilePill styling/icon, `at` rich thumbnails, file
+- The original private FilePill icon, hosted image preview, file
   context menus and `Qe/U` host openers remain host-provided. A
   conservative native-file pill is a **visual approximation**.
 - Without a verified `onUserFileAttachmentOpen` callback the controls
