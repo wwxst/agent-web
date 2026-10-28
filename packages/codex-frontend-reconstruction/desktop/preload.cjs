@@ -16,6 +16,9 @@ const USER_VERIFICATION_CANCEL_CHANNEL="agent-web:user-verification-cancel";
 const UNSUPPORTED_FORM_REPLY_CHANNEL="agent-web:unsupported-form-reply";
 const TEXT_FORM_REPLY_CHANNEL="agent-web:text-form-reply";
 const OPEN_EXTERNAL_URL_CHANNEL="agent-web:open-external-url";
+const SELECT_WORKSPACE_CHANNEL="agent-web:select-workspace-directory";
+const READ_WORKSPACE_TEXT_CHANNEL="agent-web:read-workspace-text";
+const REVOKE_WORKSPACE_CHANNEL="agent-web:revoke-workspace-directory";
 const draftThreadIds=new Set(["frontend","review"]);
 const allowedUiCommands=new Set([
   "toggle-sidebar","previous-thread","next-thread",
@@ -138,6 +141,24 @@ contextBridge.exposeInMainWorld("agentWebDesktopHost",Object.freeze({
       return Promise.reject(new TypeError("EXTERNAL_URL_INVALID"));
     }
     return ipcRenderer.invoke(OPEN_EXTERNAL_URL_CHANNEL,url);
+  },
+  // Qe's original host owns workspace identity. This independent host only
+  // allows a user-approved native folder grant and a read-only UTF-8 preview.
+  // A renderer cannot pass its own root or issue a generic filesystem action.
+  selectWorkspaceDirectory:()=>ipcRenderer.invoke(SELECT_WORKSPACE_CHANNEL),
+  revokeWorkspaceDirectory:()=>ipcRenderer.invoke(REVOKE_WORKSPACE_CHANNEL),
+  readWorkspaceTextFile(request){
+    if(request==null||typeof request!=="object"||Array.isArray(request)||
+       Object.keys(request).some(k=>!["path","line"].includes(k))||
+       typeof request.path!=="string"||request.path.length<1||
+       request.path.length>4096||/[\u0000-\u001f\u007f]/u.test(request.path)||
+       (request.line!==undefined&&(!Number.isSafeInteger(request.line)||
+         request.line<1||request.line>10000000)))
+      return Promise.reject(new TypeError("WORKSPACE_INVALID_FILE_REQUEST"));
+    return ipcRenderer.invoke(READ_WORKSPACE_TEXT_CHANNEL,{
+      path:request.path,
+      ...(request.line===undefined?{}:{line:request.line}),
+    });
   },
   getComposerDrafts:()=>ipcRenderer.invoke(READ_DRAFTS_CHANNEL),
   setComposerDraft(threadId,text){
