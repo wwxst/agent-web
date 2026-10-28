@@ -1585,6 +1585,11 @@ test("native Electron renders source hn/yn uploaded and workspace attachments wi
   if(process.platform==="win32"){
     // Assert the actual Windows clipboard, not an injected JS fake.
     await menu.getByRole("menuitem",{name:"Copy path"}).click();
+    // The copy action crosses isolated preload -> main asynchronously.
+    // Wait for the real native IPC success feedback before reading clipboard.
+    await page.getByRole("status").getByText("已复制文件路径").waitFor({
+      timeout:10000,
+    });
     await assert.doesNotReject(async()=>{
       const value=await app.evaluate(({clipboard})=>clipboard.readText());
       assert.equal(value,"/projects/agent-web/src/App.tsx");
