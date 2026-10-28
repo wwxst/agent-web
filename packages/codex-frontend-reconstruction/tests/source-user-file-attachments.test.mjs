@@ -34,6 +34,8 @@ test("original yn line label and safe separate host routing",()=>{
   }),{kind:"workspace",path:"/host/src/A.ts",line:12,column:1});
   assert.deepEqual(sourceUserFileOpenTarget({sharedThread:{shareId:"abc"},path:"/x"}),
     {kind:"shared-thread",shareId:"abc"});
+  assert.deepEqual(sourceUserFileOpenTarget({sharedThread:{shareId:"abc"}}),
+    {kind:"none"});
   assert.deepEqual(sourceUserFileOpenTarget({label:"Unresolved"}),{kind:"none"});
   assert.deepEqual(sourceUserFileOpenTarget({upload:{fileName:" "}}),{kind:"none"});
   assert.equal(sourceUserFileDisplayName({path:"C:\\test\\other.txt"}),"other.txt");
