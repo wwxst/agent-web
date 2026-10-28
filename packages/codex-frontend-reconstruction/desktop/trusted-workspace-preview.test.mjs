@@ -201,25 +201,36 @@ test("late file root realpath/stat resolution never restores a revoked grant",as
   try{
     const event={sender:{id:203}};
     const realpathGate=deferredNativeOperation();
+    const realpathStarted=deferredNativeOperation();
     const statGate=deferredNativeOperation();
-    let which=0;
+    const statStarted=deferredNativeOperation();
+    let realpathCalls=0;
     const host=createTrustedWorkspacePreviewHost({
       isTrustedRenderer:e=>e===event,
       chooseDirectory:async()=>({canceled:false,filePaths:[root]}),
       filesystem:{
-        realpath:async path=>++which===1?realpathGate.promise:realpath(path),
-        stat:async path=>which===2?statGate.promise:stat(path),
+        realpath:async path=>{
+          if(++realpathCalls===1){
+            realpathStarted.settle(true);
+            return realpathGate.promise;
+          }
+          return realpath(path);
+        },
+        stat:async()=>{
+          statStarted.settle(true);
+          return statGate.promise;
+        },
         readFile:async()=>Buffer.from("safe"),
       },
     });
     const pendingPath=host.selectDirectory(event);
+    await realpathStarted.promise; // Dialog completed, canonicalization is pending.
     host.revoke(event);
     realpathGate.settle(root);
     assert.deepEqual(await pendingPath,{selected:false});
     // New picker enters stat stage; invalidation there must also fail closed.
     const pendingStat=host.selectDirectory(event);
-    // First invocation ended before stat, so 2nd realpath increments which=2.
-    // The mocked stat for this request is delayed.
+    await statStarted.promise;
     host.clearSender(203);
     statGate.settle(await stat(root));
     assert.deepEqual(await pendingStat,{selected:false});
