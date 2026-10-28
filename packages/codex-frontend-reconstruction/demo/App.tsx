@@ -287,15 +287,14 @@ export function App() {
         if(!grant.selected)return;
         workspaceGrantRef.current=true;
       }
-      const file=await host.readWorkspaceTextFile(request);
-      if(epoch!==workspaceRequestEpochRef.current)return;
       if(mode==="copy"){
-        if(navigator.clipboard?.writeText==null)
-          throw new Error("WORKSPACE_CLIPBOARD_UNAVAILABLE");
-        await navigator.clipboard.writeText(file.text);
+        await host.copyWorkspaceFileContents(request);
+        if(epoch===workspaceRequestEpochRef.current)notify("已复制文件内容");
+      }else{
+        const file=await host.readWorkspaceTextFile(request);
         if(epoch===workspaceRequestEpochRef.current)
-          notify("已复制文件内容");
-      }else setWorkspacePreview(file);
+          setWorkspacePreview(file);
+      }
     }catch(error){
       if(epoch!==workspaceRequestEpochRef.current)return;
       const detail=String(error);
