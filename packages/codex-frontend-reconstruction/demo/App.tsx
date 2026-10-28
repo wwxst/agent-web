@@ -710,7 +710,7 @@ export function App() {
           demoFileAttachments:[
             {path:"/projects/agent-web/src/App.tsx",
               fsPath:"/projects/agent-web/src/App.tsx",
-              label:"App.tsx",startLine:14,endLine:28},
+              label:"App.tsx (14-28)",startLine:14,endLine:28},
             {upload:{fileName:"reference-notes.pdf"}},
             {upload:{fileName:"clipboard.txt"},preview:"Pasted code snippets from a test fixture"},
             {upload:{fileName:"empty-clipboard.txt"},preview:""},
