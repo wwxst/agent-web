@@ -49,10 +49,12 @@ export function sourceUserFileOpenTarget(
     return attachment.upload.fileName.trim().length>0
       ?{kind:"uploaded",name:attachment.upload.fileName}:{kind:"none"};
   }
-  if(attachment.sharedThread?.shareId)
-    return {kind:"shared-thread",shareId:attachment.sharedThread.shareId};
+  // Original hn first tests h = fsPath || path. Even a shared-thread pill
+  // has NO click callback when that underlying resource path is missing.
   const path=attachment.fsPath||attachment.path;
   if(path==null||path.trim()==="")return {kind:"none"};
+  if(attachment.sharedThread?.shareId)
+    return {kind:"shared-thread",shareId:attachment.sharedThread.shareId};
   return {kind:"workspace",path,
     ...(attachment.startLine!=null?{line:attachment.startLine,column:1}:{})};
 }
