@@ -436,6 +436,13 @@ test("mounted source path tree selects real consented CodeMirror tabs, filters a
   await src.click();
   await expect(src).toHaveAttribute("aria-expanded","false");
   await expect(tree.getByRole("treeitem")).toHaveCount(1);
+  // The original tree-side pane owns expanded paths outside the visibility
+  // toggle. Merely hiding it must not reset explicit user collapse.
+  await toggle.click();
+  await expect(toggle).toHaveAttribute("aria-pressed","false");
+  await expect(tree).not.toBeVisible();
+  await toggle.click();
+  await expect(src).toHaveAttribute("aria-expanded","false");
 
   const filter=panel.getByRole("textbox",{name:"Filter open files"});
   await filter.fill("INDEX");
