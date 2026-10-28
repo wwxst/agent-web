@@ -20,6 +20,8 @@ export interface SourceUserFileAttachmentsProps {
   isUploadedPreviewable?:(filename:string)=>boolean;
   /** The resource kind classifier is host-owned, not inferred from a suffix. */
   isPathPreviewable?:(attachment:SourceUserWorkspaceFile)=>boolean;
+  /** Optional host-specific capability filter, e.g. native local files only. */
+  canOpenAttachment?:(attachment:SourceUserFileAttachment,target:SourceUserFileOpenTarget)=>boolean;
   /** No callback means a readonly attachment, never a fake file opener. */
   onOpen?:(attachment:SourceUserFileAttachment,target:SourceUserFileOpenTarget)=>void|Promise<void>;
   openDisabledLabel?:string;
@@ -31,7 +33,7 @@ export interface SourceUserFileAttachmentsProps {
  */
 export function SourceUserFileAttachments({
   attachments,isUploadedFileViewerEnabled=false,isUploadedPreviewable,isPathPreviewable,
-  onOpen,openDisabledLabel="File opening unavailable",
+  canOpenAttachment,onOpen,openDisabledLabel="File opening unavailable",
 }:SourceUserFileAttachmentsProps){
   if(attachments.length===0)return null;
   const groups=sourceUserFileAttachmentGroups(
@@ -45,7 +47,8 @@ export function SourceUserFileAttachments({
     // Original hn -> Wmd uses pasted text string, never a thumbnail.
     const pastedTextPreview=uploaded&&attachment.preview!=null;
     const layout=sourceUserFileLayout(attachment,featured,featured&&!uploaded);
-    const canOpen=onOpen!=null&&target.kind!=="none";
+    const canOpen=onOpen!=null&&target.kind!=="none"&&
+      (canOpenAttachment?.(attachment,target)??true);
     return <div key={index} className="codex-user-file-attachments__item"
       data-source-user-attachment-kind={uploaded?"upload":target.kind}
       data-source-user-attachment-layout={layout}>
