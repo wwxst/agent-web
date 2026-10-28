@@ -47,14 +47,14 @@ export interface SourceWorkspaceFileMenuItem {
  * canonicalization or security grant.
  */
 function sourceFilePathForJoin(input:string):string {
-  const unc=input.match(/^\\\\\\\\\\?\\\\UNC\\\\(.*)$/i);
-  if(unc!=null)return ("\\\\\\\"+unc[1]).replace(/\\\\/g,"/");
-  const drive=input.match(/^\\\\\\\\\\?\\\\([A-Za-z]:[\\\\/].*)$/);
-  return (drive?.[1]??input).replace(/\\\\/g,"/");
+  const unc=input.match(/^\\\\\?\\UNC\\(.*)$/i);
+  if(unc!=null)return ("\\\\"+unc[1]).replace(/\\/g,"/");
+  const drive=input.match(/^\\\\\?\\([A-Za-z]:[\\/].*)$/);
+  return (drive?.[1]??input).replace(/\\/g,"/");
 }
 function sourceFileAbsolute(input:string):boolean {
   return (input.startsWith("/")&&!input.startsWith("//"))||
-    /^[A-Za-z]:\\//.test(input)||/^\\/\\/[^/]+\\/[^/]+/.test(input);
+    /^[A-Za-z]:\//.test(input)||/^\/\/[^/]+\/[^/]+/.test(input);
 }
 export function sourceWorkspaceFileCopyPath(route:SourceUserFileRoute):string|null {
   if(route.kind!=="workspace")return null;
@@ -64,9 +64,9 @@ export function sourceWorkspaceFileCopyPath(route:SourceUserFileRoute):string|nu
   const normalizedPath=sourceFilePathForJoin(path);
   const joined=sourceFileAbsolute(normalizedPath)||normalizedCwd===""
     ?normalizedPath
-    :normalizedCwd.replace(/\\/+$/,"")+"/"+normalizedPath.replace(/^\\/+/,"");
+    :normalizedCwd.replace(/\/+$/,"")+"/"+normalizedPath.replace(/^\/+/,"");
   // Source Z6e: Windows drives become /C:/... even if cwd had backslashes.
-  return /^[A-Za-z]:\\//.test(joined)?"/"+joined:joined;
+  return /^[A-Za-z]:\//.test(joined)?"/"+joined:joined;
 }
 /** An independent native host requires an absolute path to copy. SXo's
  * private clipboard service can also copy relative paths; do not pretend
