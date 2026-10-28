@@ -213,12 +213,13 @@ export function WorkspaceReadOnlyPreviewPanel({
       {rangeLabel}
     </p>
     <div className="demo-workspace-preview__editor-layout">
-      {showOpenFileTree?<WorkspaceOpenFilesTree
+      <WorkspaceOpenFilesTree
+        visible={showOpenFileTree}
         files={tabs.map(tab=>({
           id:tab.id,relativePath:tab.content.relativePath,
         }))}
         activeTabId={activeTabId}
-        onSelectTab={onSelectTab}/>:null}
+        onSelectTab={onSelectTab}/>
       <WorkspaceReadOnlyCodeMirror key={activeTabId}
         preview={preview}
         initialScrollTop={scrollByTab.current.get(activeTabId)}
