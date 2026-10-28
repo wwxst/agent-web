@@ -46,7 +46,9 @@ Read-only original user-provided build:
   original viewer gate `w` and host-side `vc` file-kind confirmation.
   `E` is a right-aligned vertical list. `D` is right-aligned,
   horizontally scrollable, `flex-row-reverse`, with a `min-w-max`
-  inner row. This actual source partition is now mounted in the existing
+  inner row. Original outer message JSX orders them before the user-body
+  node (`children:[p,m,g,_,v,x,S,C,T,E]`): `x` and `S` precede `T`.
+  This source partition and ordering are now mounted in the existing
   UserMessage React leaf; private file-kind checks remain host-supplied.
 - The source's card-vs-pill decision on workspace files additionally
   requires private MIME/target preview checks and a feature flag. This
@@ -75,8 +77,9 @@ Read-only original user-provided build:
 
 Real Composer file intake, file upload lifecycle/progress, data URL previews,
 Electron secure open-file transport, actual file-manager routing, image
-lightbox, trusted workspace-file menus, and source-matched FilePill CSS
-remain unimplemented. The synthetic attachment objects are not evidence
+lightbox, trusted workspace-file menus, and private theme/icon token mapping
+remain unimplemented. FilePill geometry was verified against `Eti/eti`,
+but its full design system and hover/disabled behavior are not identical. The synthetic attachment objects are not evidence
 of an actual upload or mounted filesystem permission.
 
 Do not include original compiled assets in Git. Keep backend unchanged.
