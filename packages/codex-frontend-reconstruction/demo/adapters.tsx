@@ -11,6 +11,7 @@ import {
   createConnectedConversationMessageRenderers,
   type ConnectedConversationRendererHost,
 } from "../src/components/ConnectedConversationMessageRenderers.js";
+import type {SourceUserFileAttachment} from "../src/conversation/SourceUserFileAttachmentsModel.js";
 import { createConversationLiveRow } from "../src/components/ConversationMessageBlocks.js";
 import { CodexSourceWorkStatus } from "../src/components/CodexSourceWorkStatus.js";
 import type { ConversationMessageItem, ConversationMessagePlanDependencies } from "../src/conversation/ConversationMessageRenderPlan.js";
@@ -533,6 +534,13 @@ export function makeDemoRow(notify: (message: string) => void) {
     /** Original at dispatch only recognizes the explicit urlAction kind.
      * Browser fixture is intentionally readonly for external opens. Native
      * Electron uses its real (validated) isolated openExternalUrl bridge. */
+    // Source hn receives explicit attachment objects from user item metadata.
+    // This synthetic demo provides no workspace/upload open capability.
+    getUserFileAttachments:(item)=>{
+      if(item.type!=="userMessage"||!Array.isArray(item.demoFileAttachments))
+        return null;
+      return item.demoFileAttachments as SourceUserFileAttachment[];
+    },
     getTextFormElicitationRequest:(item)=>{
       const live=hostPending(item);
       if(live!=null)return projectSourceTextFormElicitation(live.elicitation,{
