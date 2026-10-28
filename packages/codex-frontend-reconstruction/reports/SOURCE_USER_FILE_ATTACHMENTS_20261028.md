@@ -20,6 +20,9 @@ Read-only original user-provided build:
   this concrete branch in its existing attached file card.
 - Resource files use `fsPath || path` for opening, `path` as a
   resource path, and `yn` for line information.
+  The imported `xt` is original `app-primary` function `sV`: with
+  `lineInfo` it strips a duplicated trailing ` 14-28` or
+  ` (14-28)` from the label before FilePill displays its own range.
   `yn` returns `startLine-endLine` if the two differ, or
   `startLine` if equal/only one. No startLine yields nothing.
 - A shared-thread resource routes through the external shared-thread
