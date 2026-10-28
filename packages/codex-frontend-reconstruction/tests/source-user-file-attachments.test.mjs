@@ -4,6 +4,7 @@ import {
   sourceUserFileDisplayName,
   sourceUserFileLayout,
   sourceUserFileAttachmentGroups,
+  sourceUserFileAttachmentsFromMessage,
   sourceUserFileLineInfo,
   sourceUserFileOpenTarget,
 } from "../build/SourceUserFileAttachmentsModel.js";
@@ -37,6 +38,20 @@ test("original hn discriminates uploads from workspace file-path attachments",()
   });
   assert.equal(sourceUserFileLayout(resource,true),"pill");
   assert.equal(sourceUserFileLayout(resource,true,true),"card");
+});
+
+test("original Ba reads typed attachments and uploadedFileAttachments from the canonical message",()=>{
+  const resource={path:"/projects/agent-web/src/App.tsx",label:"App.tsx"};
+  const upload={upload:{fileName:"reference-notes.pdf",fileId:"fixture-id"}};
+  const source=sourceUserFileAttachmentsFromMessage({
+    attachments:[resource,{path:42},{upload:{fileName:undefined}},null,
+      {path:"/workspace/a",startLine:"invalid"},{label:"detached"}],
+    uploadedFileAttachments:[upload,{upload:{fileName:"notes.txt"},preview:{unsafe:"preview"}}],
+  });
+  assert.deepEqual(source,[resource,{label:"detached"},upload]);
+  assert.deepEqual(sourceUserFileAttachmentsFromMessage({
+    attachments:"not-an-array",uploadedFileAttachments:null}),[]);
+  assert.deepEqual(sourceUserFileAttachmentsFromMessage({message:"@src/App.tsx"}),[]);
 });
 
 test("source Ba partitions featured cards separately from context pills without inventing MIME capabilities",()=>{
