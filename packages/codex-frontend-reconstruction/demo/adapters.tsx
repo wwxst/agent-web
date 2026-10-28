@@ -1,6 +1,8 @@
 import * as React from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import {sourceWorkspaceFileCopyPath}
+  from "../src/conversation/SourceWorkspaceFileContextMenuModel.js";
 import {createSourceCodeBlockWordWrapPreference,
   sourceCodeBlockWrapState} from "../src/conversation/SourceCodeBlockWordWrapPreference.js";
 import {
@@ -361,13 +363,16 @@ export function makeDemoRow(
       // Source SXo always defines copy-path; copy-contents exists outside
       // workspace mode. The native host has both a clipboard and guarded
       // read-only workspace API; never advertise unsupported OS actions.
-      userFileMenuCapabilities:{copyPath:true,copyContents:true},
+      userFileMenuCapabilities:{copyPath:true,copyContents:true,
+        requiresAbsoluteCopyPath:true,requiresAbsoluteReadPath:true},
       onUserFileMenuAction:async(
         _attachment,_route,action)=>{
         if(_route.kind!=="workspace")return;
         if(action==="workspace-file-copy-path"){
           try{
-            await window.agentWebDesktopHost!.copyWorkspaceFilePath(_route.qe.path);
+            const path=sourceWorkspaceFileCopyPath(_route);
+            if(path==null)throw Error("WORKSPACE_INVALID_FILE_REQUEST");
+            await window.agentWebDesktopHost!.copyWorkspaceFilePath(path);
             notify("已复制文件路径");
           }catch{
             notify("无法复制文件路径：请检查剪贴板权限。");
