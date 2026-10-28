@@ -237,6 +237,8 @@ function createTrustedWorkspacePreviewHost({
     if(!validDirectoryRequest(request))denied("WORKSPACE_INVALID_DIRECTORY_REQUEST");
     const epoch=currentEpoch(id),root=grants.get(id);
     if(root==null)denied("WORKSPACE_NOT_GRANTED");
+    const grantedIdentity=directoryIdentities.get(id);
+    if(grantedIdentity==null)denied("WORKSPACE_NOT_GRANTED");
     const relative=request.relativePath;
     const candidate=relative===""?root:path.join(root,...relative.split("/"));
     // Explicitly reject symlink/junction components, even those pointing
@@ -305,7 +307,8 @@ function createTrustedWorkspacePreviewHost({
       if(afterPath!==real||!sameDirectoryIdentity(opened,after))
         denied("WORKSPACE_DIRECTORY_CHANGED");
     }finally{await handle.close();}
-    if(!stillCurrent(event,id,epoch)||grants.get(id)!==root)
+    if(!stillCurrent(event,id,epoch)||grants.get(id)!==root||
+      directoryIdentities.get(id)!==grantedIdentity)
       denied("WORKSPACE_GRANT_REVOKED");
     entries.sort((a,b)=>(a.kind==="directory"?0:1)-
       (b.kind==="directory"?0:1)||
@@ -317,12 +320,20 @@ function createTrustedWorkspacePreviewHost({
     if(!validTreeFileRequest(request))denied("WORKSPACE_INVALID_FILE_REQUEST");
     const root=grants.get(id);
     if(root==null)denied("WORKSPACE_NOT_GRANTED");
+    const grantedIdentity=directoryIdentities.get(id);
+    const before=await filesystem.stat(root);
+    if(!sameDirectoryIdentity(before,grantedIdentity))
+      denied("WORKSPACE_DIRECTORY_CHANGED");
     const absolute=path.join(root,...request.relativePath.split("/"));
     const file=await readTextFile(event,{
       path:absolute,
       ...(request.line===undefined?{}:{line:request.line}),
       ...(request.endLine===undefined?{}:{endLine:request.endLine}),
     });
+    // A new native selection at the same spelling must not resurrect the
+    // earlier directory's read after a root replacement.
+    if(grants.get(id)!==root||directoryIdentities.get(id)!==grantedIdentity)
+      denied("WORKSPACE_GRANT_REVOKED");
     // The path supplied to a tree row is root-relative and cannot leak the
     // selected host root. Canonical source content remains read-only.
     return file;
