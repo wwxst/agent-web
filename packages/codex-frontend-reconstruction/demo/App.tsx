@@ -200,6 +200,10 @@ export function App() {
   const [showDemoTools, setShowDemoTools] = React.useState(false);
   const [workspacePreview,setWorkspacePreview]=React.useState<WorkspaceReadOnlyPreview|null>(null);
   const workspaceGrantRef=React.useRef(false);
+  // A file read/dialog is bound to the visible thread lifetime; an old
+  // request cannot install a preview after switching/resetting conversations.
+  const workspaceRequestEpochRef=React.useRef(0);
+  const workspaceOpenInFlightRef=React.useRef(false);
   const [findOpen,setFindOpen]=React.useState(false);
   const [findQuery,setFindQuery]=React.useState("");
   const [findOrdinal,setFindOrdinal]=React.useState(0);
@@ -256,31 +260,48 @@ export function App() {
       if (toastTimerRef.current != null) clearTimeout(toastTimerRef.current);
       toastTimerRef.current = setTimeout(() => setToast(null), 3600);
     }, []);
+  const revokeWorkspacePreview=React.useCallback(()=>{
+    workspaceRequestEpochRef.current++;
+    workspaceGrantRef.current=false;
+    setWorkspacePreview(null);
+    // An outstanding native folder picker may resolve after this revoke;
+    // its call-site checks the epoch again and revokes that late grant.
+    const host=window.agentWebDesktopHost;
+    if(host!=null)void host.revokeWorkspaceDirectory().catch(()=>{});
+  },[]);
   const openWorkspaceAttachment=React.useCallback(async(
     request:{path:string;line?:number},
   )=>{
     const host=window.agentWebDesktopHost;
-    if(host==null)return;
+    if(host==null||workspaceOpenInFlightRef.current)return;
+    workspaceOpenInFlightRef.current=true;
+    const epoch=workspaceRequestEpochRef.current;
     try{
       if(!workspaceGrantRef.current){
-        // Real native folder consent, never inferred from a transcript path.
         const grant=await host.selectWorkspaceDirectory();
+        if(epoch!==workspaceRequestEpochRef.current){
+          if(grant.selected)await host.revokeWorkspaceDirectory().catch(()=>{});
+          return;
+        }
         if(!grant.selected)return;
         workspaceGrantRef.current=true;
       }
       const file=await host.readWorkspaceTextFile(request);
+      if(epoch!==workspaceRequestEpochRef.current)return;
       setWorkspacePreview(file);
     }catch(error){
-      // A rejected/incorrectly selected root must never trap the user in an
-      // unchangeable grant. Revoke and let the next direct click choose anew.
+      if(epoch!==workspaceRequestEpochRef.current)return;
       const detail=String(error);
       if(/WORKSPACE_(?:OUTSIDE_GRANT|NOT_GRANTED|FILE_UNAVAILABLE)/.test(detail)){
         workspaceGrantRef.current=false;
         try{await host.revokeWorkspaceDirectory();}catch{}
       }
       notify("本地文件无法预览：请选择包含该文件的工作区，或检查权限与格式。");
+    }finally{
+      workspaceOpenInFlightRef.current=false;
     }
   },[notify]);
+  React.useEffect(()=>()=>revokeWorkspacePreview(),[revokeWorkspacePreview]);
   // Reset creates a new demo host lifetime. Switching conversations only
     // remounts virtual rows, so historical Rk choices remain host-owned.
     const DemoRow = React.useMemo(() => makeDemoRow(notify,openWorkspaceAttachment),
@@ -768,6 +789,7 @@ export function App() {
     notify("已加入 45 条模拟消息。可滚动检查虚拟列表。");
   }
   function reset() {
+    revokeWorkspacePreview();
     scrollController.cancelSourceScrollToBottomAnimation();
     if (timerRef.current != null) clearTimeout(timerRef.current);
     timerRef.current = null;
@@ -789,6 +811,7 @@ export function App() {
   }
   function switchConversation(id: DemoConversationId) {
     if (id === active) return;
+    revokeWorkspacePreview();
     scrollController.cancelSourceScrollToBottomAnimation();
     // Snapshot the existing controller before React remounts the source
     // virtualizer. The outgoing viewport and its follow policy are owned by
@@ -807,7 +830,6 @@ export function App() {
     setHistoryAdded(historyByConversationRef.current.has(id));
     setDraft(draftByConversationRef.current.get(id)??"");
     setActive(id);
-    setWorkspacePreview(null);
     // Never retain result offsets from an unrelated demo conversation.
     setFindOrdinal(0);
   }
