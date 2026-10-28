@@ -62,6 +62,7 @@ export function SourceUserFileAttachments({
     attachment:SourceUserFileAttachment;
     route:SourceUserFileRoute;
     trigger:HTMLButtonElement;
+    triggerKey:string;
   }|null>(null);
   const menuRef=React.useRef<HTMLDivElement|null>(null);
   const menuId=React.useId();
@@ -98,13 +99,13 @@ export function SourceUserFileAttachments({
   },[fileMenu]);
   function openFileMenu(
     trigger:HTMLButtonElement,attachment:SourceUserFileAttachment,
-    route:SourceUserFileRoute,left:number,top:number,
+    route:SourceUserFileRoute,left:number,top:number,triggerKey:string,
   ):boolean{
     if(onFileMenuAction==null||
       sourceWorkspaceFileContextMenuItems(route,fileMenuCapabilities).length===0)
       return false;
     setFileMenu({
-      attachment,route,trigger,
+      attachment,route,trigger,triggerKey,
       left:Math.max(4,Math.min(left,window.innerWidth-210)),
       top:Math.max(4,Math.min(top,window.innerHeight-124)),
     });
@@ -142,6 +143,7 @@ export function SourceUserFileAttachments({
       (canOpenAttachment?.(attachment,target)??true);
     const canShowMenu=onFileMenuAction!=null&&
       sourceWorkspaceFileContextMenuItems(sourceRoute,fileMenuCapabilities).length>0;
+    const triggerKey=`${featured?"featured":"context"}-${index}`;
     return <div key={index} className="codex-user-file-attachments__item"
       data-source-user-attachment-kind={uploaded?"upload":target.kind}
       data-source-user-attachment-layout={layout}>
@@ -151,9 +153,9 @@ export function SourceUserFileAttachments({
         title={!canOpen?openDisabledLabel:name}
         aria-label={line!=null?`${name}, lines ${line}`:name}
         aria-haspopup={canShowMenu?"menu":undefined}
-        aria-expanded={canShowMenu?fileMenu?.trigger.dataset.sourceAttachmentIndex===String(index):undefined}
+        aria-expanded={canShowMenu?fileMenu?.triggerKey===triggerKey:undefined}
         aria-controls={canShowMenu&&fileMenu!=null?menuId:undefined}
-        data-source-attachment-index={index}
+        data-source-attachment-index={triggerKey}
         onClick={()=>{if(canOpen)void onOpen?.(attachment,target,sourceRoute);}}
         onKeyDown={event=>{
           // Source Hxn ignores modified key chords and child-origin events.
@@ -164,14 +166,14 @@ export function SourceUserFileAttachments({
           event.preventDefault();
           event.stopPropagation();
           const rect=event.currentTarget.getBoundingClientRect();
-          openFileMenu(event.currentTarget,attachment,sourceRoute,rect.left,rect.bottom);
+          openFileMenu(event.currentTarget,attachment,sourceRoute,rect.left,rect.bottom,triggerKey);
         }}
         onContextMenu={event=>{
           if(!canShowMenu)return;
           event.preventDefault();
           event.stopPropagation();
           openFileMenu(event.currentTarget,attachment,sourceRoute,
-            event.clientX,event.clientY);
+            event.clientX,event.clientY,triggerKey);
         }}>
         <span className="codex-user-file-attachments__icon" aria-hidden="true">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
