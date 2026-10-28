@@ -45,6 +45,7 @@ export function SourceUserFileAttachments({
         data-source-user-attachment-kind={uploaded?"upload":target.kind}
         data-source-user-attachment-layout={layout}>
         <button type="button" className="codex-user-file-attachments__pill"
+          data-composer-attachment-pill={layout==="pill"?true:undefined}
           disabled={!canOpen}
           title={!canOpen?openDisabledLabel:name}
           aria-label={line!=null?`${name}, lines ${line}`:name}
@@ -60,7 +61,6 @@ export function SourceUserFileAttachments({
           <span className="codex-user-file-attachments__name">{name}</span>
           {line!=null?<span className="codex-user-file-attachments__line"
             data-source-user-attachment-lines={line}>{line}</span>:null}
-          {canOpen?<span aria-hidden="true" className="codex-user-file-attachments__open">↗</span>:null}
         </button>
       </div>;
     })}
