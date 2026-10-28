@@ -12,6 +12,42 @@ const {constants:fsConstants}=require("node:fs");
 const path=require("node:path");
 const {TextDecoder}=require("node:util");
 const MAX_PREVIEW_BYTES=1024*1024;
+const MAX_DIRECTORY_ENTRIES=200;
+const MAX_DIRECTORY_SCAN=400;
+/** Local, grant-relative path only: no absolute roots, traversal, device
+ * names or escaping into the host filesystem. Empty means chosen root. */
+function validRelativePath(relativePath,allowRoot=false){
+  if(typeof relativePath!=="string"||relativePath.length>1024||
+    (!allowRoot&&relativePath==="")||
+    /[\\:\u0000-\u001f\u007f]/u.test(relativePath)||
+    relativePath.startsWith("/")||relativePath.endsWith("/"))return false;
+  return relativePath===""&&allowRoot||
+    relativePath.split("/").every(part=>part!==""&&part!=="."&&part!==".."&&
+      !/[. ]$/.test(part));
+}
+function validDirectoryRequest(request){
+  return request!=null&&typeof request==="object"&&!Array.isArray(request)&&
+    Object.keys(request).length===1&&
+    Object.hasOwn(request,"relativePath")&&
+    validRelativePath(request.relativePath,true);
+}
+function validTreeFileRequest(request){
+  return request!=null&&typeof request==="object"&&!Array.isArray(request)&&
+    Object.hasOwn(request,"relativePath")&&
+    Object.keys(request).every(k=>["relativePath","line","endLine"].includes(k))&&
+    validRelativePath(request.relativePath)&&
+    (request.line===undefined||(Number.isSafeInteger(request.line)&&
+      request.line>=1&&request.line<=10000000))&&
+    (request.endLine===undefined||(Number.isSafeInteger(request.endLine)&&
+      request.line!==undefined&&request.endLine>=request.line&&
+      request.endLine<=10000000));
+}
+function sameDirectoryIdentity(a,b){
+  return a!=null&&b!=null&&a.isDirectory()&&b.isDirectory()&&
+    a.ino!=null&&b.ino!=null&&a.dev!=null&&b.dev!=null&&
+    String(a.ino)!=="0"&&String(b.ino)!=="0"&&
+    String(a.ino)===String(b.ino)&&String(a.dev)===String(b.dev);
+}
 const ALLOWED_EXTENSIONS=new Set([
   ".txt",".md",".mdx",".json",".jsonl",".ts",".tsx",".js",".jsx",
   ".mjs",".cjs",".css",".scss",".html",".xml",".yaml",".yml",
@@ -188,6 +224,102 @@ function createTrustedWorkspacePreviewHost({
       readOnly:true,
     };
   }
+  /** Original Un -> an lists one directory at a time. We only implement
+   * a narrow native fallback under the same explicit per-sender grant:
+   * no recursive scans, absolute paths or arbitrary host filesystem APIs. */
+  async function listDirectory(event,request){
+    const id=sender(event);
+    if(!validDirectoryRequest(request))denied("WORKSPACE_INVALID_DIRECTORY_REQUEST");
+    const epoch=currentEpoch(id),root=grants.get(id);
+    if(root==null)denied("WORKSPACE_NOT_GRANTED");
+    const relative=request.relativePath;
+    const candidate=relative===""?root:path.join(root,...relative.split("/"));
+    // Explicitly reject symlink/junction components, even those pointing
+    // back inside the root. This avoids widening the original grant.
+    let walked=root;
+    for(const segment of relative===""?[]:relative.split("/")){
+      walked=path.join(walked,segment);
+      let info;
+      try{info=await filesystem.lstat(walked);}
+      catch{denied("WORKSPACE_DIRECTORY_UNAVAILABLE");}
+      if(info.isSymbolicLink()||!info.isDirectory())
+        denied("WORKSPACE_DIRECTORY_UNAVAILABLE");
+    }
+    let real;
+    try{real=await filesystem.realpath(candidate);}
+    catch{denied("WORKSPACE_DIRECTORY_UNAVAILABLE");}
+    if(real!==root&&!isPathInside(root,real))denied("WORKSPACE_OUTSIDE_GRANT");
+    // Reject alias paths even when resolved inside root: the caller must
+    // traverse only actual directories owned by the selected tree.
+    if(real!==candidate)denied("WORKSPACE_DIRECTORY_CHANGED");
+    const before=await filesystem.stat(real);
+    if(!before.isDirectory())denied("WORKSPACE_DIRECTORY_UNAVAILABLE");
+    let handle;
+    try{
+      handle=await filesystem.open(real,fsConstants.O_RDONLY|
+        (fsConstants.O_DIRECTORY??0)|
+        (process.platform!=="win32"?(fsConstants.O_NOFOLLOW??0):0));
+    }catch{denied("WORKSPACE_DIRECTORY_UNAVAILABLE");}
+    const entries=[];
+    let truncated=false;
+    try{
+      const opened=await handle.stat();
+      if(!sameDirectoryIdentity(opened,before))
+        denied("WORKSPACE_DIRECTORY_CHANGED");
+      if(process.platform==="linux"){
+        let openedPath;
+        try{openedPath=await filesystem.realpath(`/proc/self/fd/${handle.fd}`);}
+        catch{denied("WORKSPACE_DIRECTORY_CHANGED");}
+        if(openedPath!==real||!isPathInside(root,openedPath)&&openedPath!==root)
+          denied("WORKSPACE_DIRECTORY_CHANGED");
+      }
+      const iteratorPath=process.platform==="linux"?
+        `/proc/self/fd/${handle.fd}`:real;
+      let dir;
+      try{dir=await filesystem.opendir(iteratorPath);}
+      catch{denied("WORKSPACE_DIRECTORY_UNAVAILABLE");}
+      try{
+        for(let scanned=0;scanned<MAX_DIRECTORY_SCAN;scanned++){
+          const entry=await dir.read();
+          if(entry==null)break;
+          if(scanned===MAX_DIRECTORY_SCAN-1)truncated=true;
+          if(entry.name.startsWith(".")||!validRelativePath(entry.name)||
+            entry.isSymbolicLink())continue;
+          const kind=entry.isDirectory()?"directory":
+            entry.isFile()&&isPreviewableTextFile(entry.name)?"file":null;
+          if(kind==null)continue;
+          if(entries.length>=MAX_DIRECTORY_ENTRIES){truncated=true;break;}
+          const child=relative?relative+"/"+entry.name:entry.name;
+          entries.push({name:entry.name,relativePath:child,kind});
+        }
+      }finally{await dir.close();}
+      const afterPath=await filesystem.realpath(real);
+      const after=await filesystem.stat(real);
+      if(afterPath!==real||!sameDirectoryIdentity(opened,after))
+        denied("WORKSPACE_DIRECTORY_CHANGED");
+    }finally{await handle.close();}
+    if(!stillCurrent(event,id,epoch)||grants.get(id)!==root)
+      denied("WORKSPACE_GRANT_REVOKED");
+    entries.sort((a,b)=>(a.kind==="directory"?0:1)-
+      (b.kind==="directory"?0:1)||
+      a.name.localeCompare(b.name,undefined,{numeric:true,sensitivity:"base"}));
+    return {relativePath:relative,entries,truncated};
+  }
+  async function readTreeTextFile(event,request){
+    const id=sender(event);
+    if(!validTreeFileRequest(request))denied("WORKSPACE_INVALID_FILE_REQUEST");
+    const root=grants.get(id);
+    if(root==null)denied("WORKSPACE_NOT_GRANTED");
+    const absolute=path.join(root,...request.relativePath.split("/"));
+    const file=await readTextFile(event,{
+      path:absolute,
+      ...(request.line===undefined?{}:{line:request.line}),
+      ...(request.endLine===undefined?{}:{endLine:request.endLine}),
+    });
+    // The path supplied to a tree row is root-relative and cannot leak the
+    // selected host root. Canonical source content remains read-only.
+    return file;
+  }
   // Original SXo writes a file path without first opening its contents.
   // This is a bounded typed file-path action, never a general clipboard IPC.
   function copyFilePath(event,raw){
@@ -210,12 +342,15 @@ function createTrustedWorkspacePreviewHost({
     clearSender(id);
     return true;
   }
-  return {selectDirectory,readTextFile,copyFilePath,copyFileContents,revoke,clearSender,
+  return {selectDirectory,readTextFile,listDirectory,readTreeTextFile,
+    copyFilePath,copyFileContents,revoke,clearSender,
     // No method intentionally exposes the granted root to a renderer.
   };
 }
 module.exports={
-  MAX_PREVIEW_BYTES,isSafePathInput,isPathInside,isPreviewableTextFile,
+  MAX_PREVIEW_BYTES,MAX_DIRECTORY_ENTRIES,validRelativePath,
+  validDirectoryRequest,validTreeFileRequest,
+  isSafePathInput,isPathInside,isPreviewableTextFile,
   isSameFileIdentity,readOpenedText,
   isValidPreviewRequest,createTrustedWorkspacePreviewHost,
 };
