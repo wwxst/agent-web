@@ -367,8 +367,7 @@ export function makeDemoRow(
         if(_route.kind!=="workspace")return;
         if(action==="workspace-file-copy-path"){
           try{
-            if(navigator.clipboard?.writeText==null)throw Error("Clipboard unavailable");
-            await navigator.clipboard.writeText(_route.qe.path);
+            await window.agentWebDesktopHost!.copyWorkspaceFilePath(_route.qe.path);
             notify("已复制文件路径");
           }catch{
             notify("无法复制文件路径：请检查剪贴板权限。");
