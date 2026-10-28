@@ -100,7 +100,7 @@ export function WorkspaceOpenFilesTree({
       </button>)}
     </div>
     <p className="demo-workspace-preview__tree-notice">
-      Opened files only · No directory access
+      Opened files only · No directory listing
     </p>
   </div>;
 }
