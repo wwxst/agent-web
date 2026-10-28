@@ -41,13 +41,11 @@ function visibleSelectedLines(
     line>view.state.doc.lines)return Decoration.none;
   const last=Math.min(
     view.state.doc.lines,Math.max(line,endLine??line));
-  const marks:ReturnType<typeof Decoration.line>[]=[];
   const ranges:{from:number;value:ReturnType<typeof Decoration.line>}[]=[];
   const decoration=Decoration.line({
     class:"demo-workspace-preview__selection",
     attributes:{"data-workspace-file-selected-range":"true"},
   });
-  marks.push(decoration);
   for(const span of view.visibleRanges){
     const from=view.state.doc.lineAt(span.from).number;
     const to=view.state.doc.lineAt(span.to).number;
