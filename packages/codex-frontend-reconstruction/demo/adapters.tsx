@@ -366,7 +366,9 @@ export function makeDemoRow(
         await onOpenWorkspaceAttachment({
           path:sourceRoute.qe.path,
           ...(sourceRoute.qe.line==null?{}:{line:sourceRoute.qe.line}),
-          ...(sourceRoute.contextMenu.endLine==null?{}:
+          ...(sourceRoute.qe.line==null||
+            sourceRoute.contextMenu.endLine==null||
+            sourceRoute.contextMenu.endLine<sourceRoute.qe.line?{}:
             {endLine:sourceRoute.contextMenu.endLine}),
         });
       },
