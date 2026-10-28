@@ -89,3 +89,36 @@ export function sourceUserFileLayout(
     return attachment.preview!=null||uploadedViewerEnabled?"card":"pill";
   return isSourceConfirmedPathPreview?"card":"pill";
 }
+
+/**
+ * Original sites-end-resource Ba:
+ *   C=[...attachments,...uploadedFileAttachments]
+ *   [E,D] = partition(C, T)
+ *   T(upload)=hasPreview || viewerEnabled && private file-kind supported
+ *   T(workspace)=viewerEnabled && startLine==null && supported kind
+ *
+ * Featured entries are vertical right-aligned cards; context entries are
+ * horizontally scrollable pills. Private vc/DO predicates are host-owned.
+ */
+export interface SourceUserFileAttachmentGroups {
+  featured:readonly SourceUserFileAttachment[];
+  context:readonly SourceUserFileAttachment[];
+}
+export function sourceUserFileAttachmentGroups(
+  attachments:readonly SourceUserFileAttachment[],
+  viewerEnabled:boolean,
+  isUploadedPreviewable?:(filename:string)=>boolean,
+  isPathPreviewable?:(attachment:SourceUserWorkspaceFile)=>boolean,
+):SourceUserFileAttachmentGroups{
+  const featured:SourceUserFileAttachment[]=[];
+  const context:SourceUserFileAttachment[]=[];
+  for(const attachment of attachments){
+    const highlighted=isSourceUserUploadedFile(attachment)
+      ?attachment.preview!=null||
+        (viewerEnabled&&isUploadedPreviewable?.(attachment.upload.fileName)===true)
+      :viewerEnabled&&attachment.startLine==null&&
+        isPathPreviewable?.(attachment)===true;
+    (highlighted?featured:context).push(attachment);
+  }
+  return {featured,context};
+}
