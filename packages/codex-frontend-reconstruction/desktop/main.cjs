@@ -39,6 +39,7 @@ const SELECT_WORKSPACE_CHANNEL="agent-web:select-workspace-directory";
 const READ_WORKSPACE_TEXT_CHANNEL="agent-web:read-workspace-text";
 const LIST_WORKSPACE_DIRECTORY_CHANNEL="agent-web:list-workspace-directory";
 const READ_WORKSPACE_TREE_TEXT_CHANNEL="agent-web:read-workspace-tree-text";
+const SEARCH_WORKSPACE_FILES_CHANNEL="agent-web:search-workspace-files";
 const REVOKE_WORKSPACE_CHANNEL="agent-web:revoke-workspace-directory";
 const COPY_WORKSPACE_PATH_CHANNEL="agent-web:copy-workspace-file-path";
 const COPY_WORKSPACE_CONTENTS_CHANNEL="agent-web:copy-workspace-file-contents";
@@ -192,6 +193,8 @@ function setupIpc(){
     workspacePreviewHost.listDirectory(event,request));
   ipcMain.handle(READ_WORKSPACE_TREE_TEXT_CHANNEL,(event,request)=>
     workspacePreviewHost.readTreeTextFile(event,request));
+  ipcMain.handle(SEARCH_WORKSPACE_FILES_CHANNEL,(event,request)=>
+    workspacePreviewHost.searchDirectoryFiles(event,request));
   ipcMain.handle(REVOKE_WORKSPACE_CHANNEL,event=>
     workspacePreviewHost.revoke(event));
   ipcMain.handle(COPY_WORKSPACE_PATH_CHANNEL,(event,path)=>
@@ -250,6 +253,7 @@ app.whenReady().then(()=>{setupIpc();createWindow();});
 app.on("before-quit",()=>{
   for(const channel of [HOST_INFO_CHANNEL,OPEN_MENU_CHANNEL,READ_DRAFTS_CHANNEL,WRITE_DRAFT_CHANNEL,MCP_APPROVAL_REPLY_CHANNEL,OPEN_EXTERNAL_URL_CHANNEL,USER_VERIFICATION_CANCEL_CHANNEL,UNSUPPORTED_FORM_REPLY_CHANNEL,TEXT_FORM_REPLY_CHANNEL,SELECT_WORKSPACE_CHANNEL,READ_WORKSPACE_TEXT_CHANNEL,
     LIST_WORKSPACE_DIRECTORY_CHANNEL,READ_WORKSPACE_TREE_TEXT_CHANNEL,
+    SEARCH_WORKSPACE_FILES_CHANNEL,
     REVOKE_WORKSPACE_CHANNEL,COPY_WORKSPACE_PATH_CHANNEL,COPY_WORKSPACE_CONTENTS_CHANNEL]){
     ipcMain.removeHandler(channel);
   }
