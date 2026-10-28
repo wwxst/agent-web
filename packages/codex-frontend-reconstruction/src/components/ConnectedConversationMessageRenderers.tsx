@@ -4,7 +4,8 @@ import type { AgentActivityUnit, AgentActivityCollapseOptions } from "../convers
 import { CodexAgentActivity } from "./CodexAgentActivity.js";
 import { CodexSourceCollapsibleUserMessage } from "./CodexSourceCollapsibleUserMessage.js";
 import {SourceUserFileAttachments} from "./SourceUserFileAttachments.js";
-import type {SourceUserFileAttachment,SourceUserFileOpenTarget}
+import {sourceUserFileAttachmentsFromMessage,
+  type SourceUserFileAttachment,type SourceUserFileOpenTarget}
   from "../conversation/SourceUserFileAttachmentsModel.js";
 import { combineSourceActivityTrace } from "../conversation/SourceCombinedActivityTrace.js";
 import { filterSourceLatestActivityUnits } from "../conversation/SourceLatestActivityVisibility.js";
@@ -345,7 +346,8 @@ export function createConnectedConversationMessageRenderers(host: ConnectedConve
   return {
     UserMessage(props) {
       const content = projectConversationContent(props.item, host, "message");
-      const attachments=host.getUserFileAttachments?.(props.item)??[];
+      const attachments=host.getUserFileAttachments?.(props.item)??
+        sourceUserFileAttachmentsFromMessage(props.item);
       // Original Rt: I = explicit isAeonFormatted ?? private capability
       // fallback. This independent host has no private capability provider;
       // only a genuine typed source item flag may enable the compact variant.
