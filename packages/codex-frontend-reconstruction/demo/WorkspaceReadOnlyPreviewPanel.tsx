@@ -2,6 +2,7 @@ import * as React from "react";
 import {createPortal} from "react-dom";
 import {WorkspaceReadOnlyCodeMirror} from "./WorkspaceReadOnlyCodeMirror.js";
 import {WorkspaceOpenFilesTree} from "./WorkspaceOpenFilesTree.js";
+import {WorkspaceGrantedDirectoryTree} from "./WorkspaceGrantedDirectoryTree.js";
 import {
   sourceLocalFileTabContextMenu,
   type SourceLocalFileTabContextAction,
@@ -45,7 +46,7 @@ export function sourceWorkspacePreviewRange(
 }
 export function WorkspaceReadOnlyPreviewPanel({
   preview,tabs,activeTabId,onSelectTab,onCloseTab,onCloseOthers,
-  onCloseToRight,onClose,
+  onCloseToRight,onClose,onOpenTreeFile,
 }:{
   preview:WorkspaceReadOnlyPreview;
   /** Source IX opens a tab keyed by k3o, not a separate preview window.
@@ -57,6 +58,7 @@ export function WorkspaceReadOnlyPreviewPanel({
   onCloseOthers:(id:string)=>void;
   onCloseToRight:(id:string)=>void;
   onClose:()=>void;
+  onOpenTreeFile:(relativePath:string)=>void;
 }){
   // IX preserves a tab contentInstance in the original private XL host.
   // This independent CodeMirror view is recreated on tab switch, but its
@@ -213,13 +215,19 @@ export function WorkspaceReadOnlyPreviewPanel({
       {rangeLabel}
     </p>
     <div className="demo-workspace-preview__editor-layout">
-      <WorkspaceOpenFilesTree
-        visible={showOpenFileTree}
-        files={tabs.map(tab=>({
-          id:tab.id,relativePath:tab.content.relativePath,
-        }))}
-        activeTabId={activeTabId}
-        onSelectTab={onSelectTab}/>
+      {window.agentWebDesktopHost?.listWorkspaceDirectory!=null&&
+        window.agentWebDesktopHost?.readWorkspaceTreeTextFile!=null
+        ?<WorkspaceGrantedDirectoryTree
+          visible={showOpenFileTree}
+          activeRelativePath={preview.relativePath.replace(/\\/g,"/")}
+          onOpenFile={onOpenTreeFile}/>
+        :<WorkspaceOpenFilesTree
+          visible={showOpenFileTree}
+          files={tabs.map(tab=>({
+            id:tab.id,relativePath:tab.content.relativePath,
+          }))}
+          activeTabId={activeTabId}
+          onSelectTab={onSelectTab}/>}
       <WorkspaceReadOnlyCodeMirror key={activeTabId}
         preview={preview}
         initialScrollTop={scrollByTab.current.get(activeTabId)}
