@@ -325,11 +325,11 @@ test("source Eqi tab strip menu works on canonical local file tabs with guarded 
     "Close","Close other tabs","Close tabs to the right",
   ]);
   await expect(menu.getByRole("menuitem",{name:"Close tabs to the right"})).toBeDisabled();
-  await expect(menu.getByRole("menuitem",{name:"Close"})).toBeFocused();
+  await expect(menu.getByRole("menuitem",{name:"Close",exact:true})).toBeFocused();
   await page.keyboard.press("End");
   await expect(menu.getByRole("menuitem",{name:"Close other tabs"})).toBeFocused();
   await page.keyboard.press("Home");
-  await expect(menu.getByRole("menuitem",{name:"Close"})).toBeFocused();
+  await expect(menu.getByRole("menuitem",{name:"Close",exact:true})).toBeFocused();
   await page.keyboard.press("Escape");
   await expect(menu).toHaveCount(0);
   await expect(indexTab).toBeFocused();
