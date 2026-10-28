@@ -550,7 +550,7 @@ test("native granted workspace directory tree opens new CodeMirror tab without r
     .toHaveAttribute("contenteditable","false");
   // Original Un / Ve separates tree expansion and host filename search:
   // find a file which the directory tree has NEVER expanded to.
-  const filter=panel.getByRole("textbox",{name:"Filter workspace files"});
+  const filter=panel.getByRole("searchbox",{name:"Filter workspace files"});
   await filter.fill("unopened");
   const searchResult=tree.getByRole("treeitem",{name:"src/deep/unopened.ts"});
   await expect(searchResult).toBeVisible();
