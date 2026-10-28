@@ -78,3 +78,25 @@
 .demo-workspace-preview__tabpanel{
   flex:1;display:flex;flex-direction:column;min-height:0;min-width:0;
 }
+
+/* Eqi tab-strip context actions, rendered in an independent browser fallback.
+ * Mirrors the existing source workspace attachment menu's fallback surface. */
+.demo-workspace-preview__menu{
+  position:fixed;z-index:11000;min-width:204px;max-width:calc(100vw - 8px);
+  padding:5px;border-radius:10px;border:1px solid rgba(128,128,128,.19);
+  background:var(--demo-panel,#fff);color:var(--demo-text,#242424);
+  box-shadow:0 10px 35px rgba(0,0,0,.14);
+  display:flex;flex-direction:column;gap:1px;
+}
+.demo-workspace-preview__menu button{
+  width:100%;display:block;text-align:left;padding:8px 11px;
+  border:none;border-radius:6px;background:transparent;color:inherit;
+  font:inherit;font-size:13px;line-height:18px;cursor:pointer;
+}
+.demo-workspace-preview__menu button:not(:disabled):hover,
+.demo-workspace-preview__menu button:not(:disabled):focus-visible{
+  background:rgba(128,128,128,.13);outline:none;
+}
+.demo-workspace-preview__menu button:disabled{
+  color:var(--demo-muted,#858585);opacity:.45;cursor:default;
+}
