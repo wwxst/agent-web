@@ -259,10 +259,13 @@ function createTrustedWorkspacePreviewHost({
     // Reject alias paths even when resolved inside root: the caller must
     // traverse only actual directories owned by the selected tree.
     if(real!==candidate)denied("WORKSPACE_DIRECTORY_CHANGED");
+    // Keep the selected grant root pinned even when listing its descendants.
+    // A child directory has a DIFFERENT inode from its root by design.
+    const currentRoot=await filesystem.stat(root);
+    if(!sameDirectoryIdentity(currentRoot,grantedIdentity))
+      denied("WORKSPACE_DIRECTORY_CHANGED");
     const before=await filesystem.stat(real);
     if(!before.isDirectory())denied("WORKSPACE_DIRECTORY_UNAVAILABLE");
-    if(!sameDirectoryIdentity(before,directoryIdentities.get(id)))
-      denied("WORKSPACE_DIRECTORY_CHANGED");
     let handle;
     try{
       handle=await filesystem.open(real,fsConstants.O_RDONLY|
