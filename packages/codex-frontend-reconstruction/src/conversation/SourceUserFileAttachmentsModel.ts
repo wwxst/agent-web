@@ -122,3 +122,38 @@ export function sourceUserFileAttachmentGroups(
   }
   return {featured,context};
 }
+
+/**
+ * Original Ba reads [...n.attachments,...n.uploadedFileAttachments??[]].
+ * Keep that source ordering and reject malformed external host fields rather
+ * than treating arbitrary message text or untrusted blobs as file actions.
+ */
+export function sourceUserFileAttachmentsFromMessage(
+  message:Record<string,unknown>,
+):readonly SourceUserFileAttachment[]{
+  const candidates=[
+    ...(Array.isArray(message.attachments)?message.attachments:[]),
+    ...(Array.isArray(message.uploadedFileAttachments)?message.uploadedFileAttachments:[]),
+  ];
+  return candidates.filter(isSourceUserFileAttachment);
+}
+function isSourceUserFileAttachment(value:unknown):value is SourceUserFileAttachment{
+  if(value==null||typeof value!=="object"||Array.isArray(value))return false;
+  const obj=value as Record<string,unknown>;
+  if("upload" in obj){
+    const upload=obj.upload;
+    if(upload==null||typeof upload!=="object"||Array.isArray(upload))return false;
+    if(typeof (upload as Record<string,unknown>).fileName!=="string")return false;
+    return obj.preview==null||typeof obj.preview==="string";
+  }
+  if(!["path","fsPath","label"].some(key=>typeof obj[key]==="string"))
+    return false;
+  if(obj.startLine!=null&&typeof obj.startLine!=="number")return false;
+  if(obj.endLine!=null&&typeof obj.endLine!=="number")return false;
+  if(obj.sharedThread!=null){
+    const thread=obj.sharedThread;
+    if(thread==null||typeof thread!=="object"||Array.isArray(thread)||
+       typeof (thread as Record<string,unknown>).shareId!=="string")return false;
+  }
+  return true;
+}
