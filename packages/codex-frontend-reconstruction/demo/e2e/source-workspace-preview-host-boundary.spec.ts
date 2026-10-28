@@ -35,7 +35,7 @@ test("actual attachment row opens read-only native-host preview, revokes on thre
     }});
   });
   const inspect=()=>page.evaluate(()=>{
-    const state=(window as Window & {__workspaceTestState:{
+    const state=(window as unknown as Window & {__workspaceTestState:{
       selectCalls:number;readCalls:number;revokeCalls:number;
     }}).__workspaceTestState;
     return {select:state.selectCalls,read:state.readCalls,revoke:state.revokeCalls};
@@ -68,7 +68,7 @@ test("actual attachment row opens read-only native-host preview, revokes on thre
   // A pending dialog is asynchronous. If the user switches conversations,
   // its late acceptance cannot reopen a different thread's file panel.
   await page.evaluate(()=>{
-    (window as Window & {__workspaceTestState:{delayNext:boolean}}).__workspaceTestState.delayNext=true;
+    (window as unknown as Window & {__workspaceTestState:{delayNext:boolean}}).__workspaceTestState.delayNext=true;
   });
   await back.click();
   await expect.poll(async()=>(await inspect()).select).toBe(2);
@@ -76,7 +76,7 @@ test("actual attachment row opens read-only native-host preview, revokes on thre
   expect((await inspect()).select).toBe(2); // one native picker in flight
   await navigation.getByRole("button").nth(1).click();
   await page.evaluate(()=>{
-    const state=(window as Window & {__workspaceTestState:{
+    const state=(window as unknown as Window & {__workspaceTestState:{
       release:null|((value:{selected:boolean;name:string})=>void);
     }}).__workspaceTestState;
     state.release?.({selected:true,name:"fixture-workspace"});
