@@ -57,3 +57,19 @@ test("independent read-only tab strip closes selected tab without losing survivi
   assert.deepEqual(closeC,sourceEmptyLocalReadOnlyTabState());
   assert.equal(sourceCloseLocalReadOnlyFileTab(closeC,"unknown"),closeC);
 });
+
+test("late independent file read populates a background tab without stealing a newer selection",()=>{
+  const a={id:"file:a.ts",path:"a.ts",content:"first"};
+  const b={id:"file:b.ts",path:"b.ts",content:"second"};
+  const openB=sourceOpenLocalReadOnlyFileTab(sourceEmptyLocalReadOnlyTabState(),b);
+  const lateA=sourceOpenLocalReadOnlyFileTab(openB,a,false);
+  assert.deepEqual(lateA.tabs,[b,a]);
+  assert.equal(lateA.activeTabId,b.id);
+  const updatedA=sourceOpenLocalReadOnlyFileTab(lateA,{...a,content:"newest"},false);
+  assert.equal(updatedA.activeTabId,b.id);
+  assert.equal(updatedA.tabs.find(tab=>tab.id===a.id)?.content,"newest");
+  assert.equal(sourceOpenLocalReadOnlyFileTab(lateA,a,true).activeTabId,a.id);
+  // A background read is still usable if it is the first file to finish.
+  const first=sourceOpenLocalReadOnlyFileTab(sourceEmptyLocalReadOnlyTabState(),a,false);
+  assert.equal(first.activeTabId,a.id);
+});
