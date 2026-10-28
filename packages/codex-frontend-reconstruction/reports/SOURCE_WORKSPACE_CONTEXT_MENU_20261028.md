@@ -47,10 +47,15 @@ forwards the authenticated host capabilities and source `Qe` route; it does
 not substitute a new transcript or change grouping.
 
 The existing React demo adapter enables Copy path and Copy file contents
-**only when the actual independent Electron preload is present**. Copy path
-uses the same clipboard API already used by the code-block action. Copy
-contents uses the same user-granted, sender-scoped, realpath-validated 1 MiB
-UTF-8 reader added in PR #59; it does not open arbitrary files without a
+**only when the actual independent Electron preload is present**. An actual
+Windows clipboard regression proved that a browser-level
+`navigator.clipboard.writeText` from the isolated Electron `file://`
+renderer may fail silently from the user's perspective (old clipboard text
+remains). Therefore Copy path now uses a **narrow typed main-process IPC**
+that only accepts a canonical absolute string path; Copy contents invokes
+the same grant-scoped, realpath-validated 1 MiB UTF-8 reader added in PR #59
+*inside* the main process, and then writes to the native OS clipboard.
+No generic clipboard-write or filesystem IPC is exposed; it does not open arbitrary files without a
 native folder grant, does not modify files and does not issue an Agent RPC.
 A failure is surfaced without claiming a successful clipboard operation.
 The original private file-viewer still is not rebuilt; this native fallback
@@ -71,3 +76,10 @@ authenticated Codex/Agent host counterpart or further source reverse
 engineering. A **manual Windows** native folder-picker and clipboard
 permission check is still required, and no version-matched pixel comparison
 has been performed. No backend or `main` branch is touched.
+
+
+Native regression specifically checks the Windows OS clipboard after the
+real **Copy path** menu click, and main-process unit tests check ungranted,
+untrusted and out-of-root content-copy denials. Earlier prototype browser
+clipboard action failed this test and was replaced rather than reported as
+a completed feature.
