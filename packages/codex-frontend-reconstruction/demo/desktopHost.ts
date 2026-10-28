@@ -23,6 +23,13 @@ declare global {
     agentWebDesktopHost?: {
       subscribeUiCommands(listener:(command:"toggle-sidebar"|"previous-thread"|"next-thread"|"find-in-thread"|"find-next-in-thread"|"find-previous-in-thread")=>void):()=>void;
       openMenu(id:"file"|"edit"|"view"|"help",anchor:{x:number;y:number}):Promise<boolean>;
+      /** User consent grants a single native folder, scoped to this renderer.
+       * Path never comes from React; native folder picker owns the grant. */
+      selectWorkspaceDirectory():Promise<{selected:boolean;name?:string}>;
+      revokeWorkspaceDirectory():Promise<boolean>;
+      readWorkspaceTextFile(request:{path:string;line?:number}):Promise<{
+        name:string;relativePath:string;text:string;line?:number;readOnly:true;
+      }>;
       /** Real native external HTTPS open. Never grants or settles an Agent request. */
       openExternalUrl(url:string):Promise<boolean>;
       /** A typed native cancel only. The absence of a verified Agent
