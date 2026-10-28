@@ -1,5 +1,6 @@
 import * as React from "react";
 import {createPortal} from "react-dom";
+import {WorkspaceReadOnlyCodeMirror} from "./WorkspaceReadOnlyCodeMirror.js";
 import {
   sourceLocalFileTabContextMenu,
   type SourceLocalFileTabContextAction,
@@ -56,8 +57,10 @@ export function WorkspaceReadOnlyPreviewPanel({
   onCloseToRight:(id:string)=>void;
   onClose:()=>void;
 }){
-  const content=React.useRef<HTMLPreElement|null>(null);
-  const highlighted=React.useRef<HTMLSpanElement|null>(null);
+  // IX preserves a tab contentInstance in the original private XL host.
+  // This independent CodeMirror view is recreated on tab switch, but its
+  // scroll offset is retained by stable k3o IDs within the mounted panel.
+  const scrollByTab=React.useRef(new Map<string,number>());
   const asideRef=React.useRef<HTMLElement|null>(null);
   const menuRef=React.useRef<HTMLDivElement|null>(null);
   const menuId=React.useId();
@@ -146,15 +149,11 @@ export function WorkspaceReadOnlyPreviewPanel({
     else if(action==="close-other-tabs")onCloseOthers(current.tabId);
     else onCloseToRight(current.tabId);
   }
-  const segments=React.useMemo(()=>sourceWorkspacePreviewRange(
-    preview.text,preview.line,preview.endLine,
-  ),[preview.text,preview.line,preview.endLine]);
   React.useEffect(()=>{
-    const pre=content.current,selected=highlighted.current;
-    if(pre==null)return;
-    pre.scrollTop=selected==null?0:
-      Math.max(0,selected.offsetTop-pre.offsetTop-54);
-  },[preview,segments]);
+    const current=new Set(tabs.map(tab=>tab.id));
+    for(const id of scrollByTab.current.keys())
+      if(!current.has(id))scrollByTab.current.delete(id);
+  },[tabs]);
   const rangeLabel=preview.line==null?"":
     preview.endLine!=null&&preview.endLine!==preview.line
       ?` · Lines ${preview.line}-${preview.endLine}`
@@ -189,7 +188,7 @@ export function WorkspaceReadOnlyPreviewPanel({
             openTabMenu(event.currentTarget,tab.id,event.clientX,event.clientY);
           }}>{tab.content.name}</button>
         <button type="button" aria-label={`Close ${tab.content.name} tab`}
-          onClick={()=>onCloseTab(tab.id)}>×</button>
+          onClick={()=>{scrollByTab.current.delete(tab.id);onCloseTab(tab.id);}}>×</button>
       </div>)}
     </div>
     <div id="demo-workspace-preview-panel" role="tabpanel"
@@ -206,12 +205,10 @@ export function WorkspaceReadOnlyPreviewPanel({
       Read-only local preview · Not the original Codex file manager
       {rangeLabel}
     </p>
-    <pre ref={content} tabIndex={0} className="demo-workspace-preview__text"
-      data-workspace-file-text="">{segments.before}
-      {segments.selectedLine!=null&&segments.selected.length>0
-        ?<span ref={highlighted} className="demo-workspace-preview__selection"
-          data-workspace-file-selected-range="">{segments.selected}</span>:null}
-      {segments.after}</pre>
+    <WorkspaceReadOnlyCodeMirror key={activeTabId}
+      preview={preview}
+      initialScrollTop={scrollByTab.current.get(activeTabId)}
+      onScrollTop={top=>scrollByTab.current.set(activeTabId,top)}/>
     </div>
     {tabMenu!=null&&menuItems.length>0?createPortal(
       <div ref={menuRef} id={menuId}
