@@ -42,11 +42,14 @@ export function sourceEmptyLocalReadOnlyTabState<T>():SourceLocalReadOnlyTabStat
 export function sourceOpenLocalReadOnlyFileTab<T>(
   state:SourceLocalReadOnlyTabState<T>,
   tab:SourceLocalReadOnlyFileTab<T>,
+  activate=true,
 ):SourceLocalReadOnlyTabState<T>{
   const existing=state.tabs.findIndex(t=>t.id===tab.id);
   const tabs=existing<0?[...state.tabs,tab]:
     state.tabs.map(t=>t.id===tab.id?tab:t);
-  return {tabs,activeTabId:tab.id};
+  // The independent native reader can finish files out of order. Preserve
+  // an already selected tab when a different, older read completes later.
+  return {tabs,activeTabId:activate?tab.id:state.activeTabId??tab.id};
 }
 export function sourceSelectLocalReadOnlyFileTab<T>(
   state:SourceLocalReadOnlyTabState<T>,id:string,
