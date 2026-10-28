@@ -1513,7 +1513,7 @@ test("native Electron renders source hn/yn uploaded and workspace attachments wi
   await page.locator('[aria-label="演示会话导航"]').waitFor({timeout:20000});
   // Reuse this EXISTING native BrowserWindow to assert actual preload/main
   // denial; a separate concurrent Electron launch can starve CI display.
-  const workspaceSecurity=await page.evaluate(async()=>{
+  const workspaceSecurity=await page.evaluate(async path=>{
     const host=window.agentWebDesktopHost;
     const error=async request=>{
       try{await host.readWorkspaceTextFile(request);return "UNEXPECTED_SUCCESS";}
@@ -1525,11 +1525,11 @@ test("native Electron renders source hn/yn uploaded and workspace attachments wi
       revoke:typeof host.revokeWorkspaceDirectory,
       rawIpc:typeof host.invoke,
       node:typeof window.require,
-      absentGrant:await error({path:process.platform==="win32"?"C:\\\\temp\\\\agent-web-preview.ts":"/tmp/agent-web-preview.ts"}),
+      absentGrant:await error({path:path}),
       relative:await error({path:"../escape.ts"}),
-      invalidLine:await error({path:process.platform==="win32"?"C:\\\\temp\\\\agent-web-preview.ts":"/tmp/agent-web-preview.ts",line:-1}),
+      invalidLine:await error({path:path,line:-1}),
     };
-  });
+  },resolve(root,"demo","App.tsx"));
   assert.equal(workspaceSecurity.chooser,"function");
   assert.equal(workspaceSecurity.read,"function");
   assert.equal(workspaceSecurity.revoke,"function");
