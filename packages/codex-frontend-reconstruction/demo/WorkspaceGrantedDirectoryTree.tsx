@@ -54,13 +54,14 @@ export function WorkspaceGrantedDirectoryTree({
     return ()=>{lifecycle.current++;pendingRef.current.clear();};
   },[load]);
   const toggle=React.useCallback((path:string)=>{
+    if(!expanded.has(path))load(path);
     setExpanded(current=>{
       const next=new Set(current);
       if(next.has(path))next.delete(path);
-      else {next.add(path);load(path);}
+      else next.add(path);
       return next;
     });
-  },[load]);
+  },[expanded,load]);
   const rows=React.useMemo(()=>{
     const term=query.trim().toLocaleLowerCase();
     const result:TreeRow[]=[];
