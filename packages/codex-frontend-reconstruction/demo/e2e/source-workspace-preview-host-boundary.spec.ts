@@ -221,8 +221,8 @@ test("authorized file tabs accept overlapping reads, reject stale reopen results
   await page.getByRole("button",{name:"打开演示工具"}).click();
   await page.getByTestId("demo-source-user-file-attachments").click();
   const row=page.locator('[data-demo-turn-id^="user-file-attachments-"]').last();
-  const app=row.getByRole("button",{name:/App\\.tsx/});
-  const index=row.getByRole("button",{name:/index\\.ts/});
+  const app=row.getByRole("button",{name:/App\.tsx/});
+  const index=row.getByRole("button",{name:/index\.ts/});
   const preview=page.getByRole("complementary",{name:"Local file preview"});
   await app.click();
   await expect.poll(readCount).toBe(1);
