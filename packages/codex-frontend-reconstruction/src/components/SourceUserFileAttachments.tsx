@@ -87,12 +87,17 @@ export function SourceUserFileAttachments({
       }else if(event.key==="Tab")dismiss();
     };
     document.addEventListener("pointerdown",dismiss);
-    document.addEventListener("scroll",dismiss,true);
+    // Virtualized thread positioning and menu-item focus can generate
+    // delayed programmatic scroll events immediately after right-click.
+    // Dismiss on actual wheel/touch scrolling, not those synthetic moves.
+    document.addEventListener("wheel",dismiss,{capture:true,passive:true});
+    document.addEventListener("touchmove",dismiss,{capture:true,passive:true});
     document.addEventListener("keydown",onKey);
     window.addEventListener("blur",dismiss);
     return ()=>{
       document.removeEventListener("pointerdown",dismiss);
-      document.removeEventListener("scroll",dismiss,true);
+      document.removeEventListener("wheel",dismiss,true);
+      document.removeEventListener("touchmove",dismiss,true);
       document.removeEventListener("keydown",onKey);
       window.removeEventListener("blur",dismiss);
     };
