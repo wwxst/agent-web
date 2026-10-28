@@ -1562,7 +1562,7 @@ test("native Electron renders source hn/yn uploaded and workspace attachments wi
   assert.equal(await files.getByRole("button",{name:"Detached attachment"}).isDisabled(),true);
   // The real context-isolated Electron host advertises only copy-path and
   // consented read-only copy-contents; never generic shell/file-manager.
-  await files.getByRole("button",{name:/App\\.tsx/}).click({button:"right"});
+  await files.getByRole("button",{name:/App/}).click({button:"right"});
   const menu=page.getByRole("menu",{name:"Workspace file actions"});
   await menu.waitFor({timeout:10000});
   assert.deepEqual(await menu.getByRole("menuitem").allTextContents(),[
