@@ -476,3 +476,91 @@ test("mounted source path tree selects real consented CodeMirror tabs, filters a
   await navigation.getByRole("button").nth(1).click();
   await expect(panel).toHaveCount(0);
 });
+
+test("native granted workspace directory tree opens new CodeMirror tab without root disclosure or extra picker",async({page})=>{
+  await page.addInitScript(()=>{
+    const state={grant:0,lists:[] as string[],treeReads:[] as string[],absoluteReads:0,revokes:0};
+    Object.assign(window,{__nativeTreeBridgeTest:state});
+    Object.defineProperty(window,"agentWebDesktopHost",{configurable:true,value:{
+      subscribeUiCommands:()=>()=>{},
+      subscribeHostEvents:()=>()=>{},
+      getComposerDrafts:async()=>({}),
+      setComposerDraft:async()=>true,
+      openMenu:async()=>false,
+      selectWorkspaceDirectory:async()=>{
+        state.grant++;return {selected:true,name:"consented-project"};
+      },
+      revokeWorkspaceDirectory:async()=>{state.revokes++;return true;},
+      readWorkspaceTextFile:async(request:{path:string})=>{
+        state.absoluteReads++;
+        return {name:"App.tsx",relativePath:"src/App.tsx",
+          text:"opened source App",readOnly:true};
+      },
+      listWorkspaceDirectory:async({relativePath}:{relativePath:string})=>{
+        state.lists.push(relativePath);
+        if(relativePath==="")return {relativePath,entries:[
+          {name:"src",relativePath:"src",kind:"directory"},
+          {name:"README.md",relativePath:"README.md",kind:"file"},
+        ],truncated:false};
+        if(relativePath==="src")return {relativePath,entries:[
+          {name:"App.tsx",relativePath:"src/App.tsx",kind:"file"},
+          {name:"extra.ts",relativePath:"src/extra.ts",kind:"file"},
+        ],truncated:false};
+        throw Error("WORKSPACE_DIRECTORY_UNAVAILABLE");
+      },
+      readWorkspaceTreeTextFile:async({relativePath}:{relativePath:string})=>{
+        state.treeReads.push(relativePath);
+        if(relativePath!=="src/extra.ts")throw Error("WORKSPACE_FILE_UNAVAILABLE");
+        return {name:"extra.ts",relativePath,text:"export const fromNativeTree = true;",
+          readOnly:true};
+      },
+    }});
+  });
+  await page.goto("/");
+  await page.getByRole("button",{name:"打开演示工具"}).click();
+  await page.getByTestId("demo-source-user-file-attachments").click();
+  const row=page.locator('[data-demo-turn-id^="user-file-attachments-"]').last();
+  await row.getByRole("button",{name:/App\.tsx/}).click();
+  const panel=page.getByRole("complementary",{name:"Local file preview"});
+  await panel.getByRole("button",{name:"Toggle open files tree"}).click();
+  const tree=panel.getByRole("tree",{name:"Granted workspace directories"});
+  await expect(tree).toBeVisible();
+  const src=tree.getByRole("treeitem",{name:"src",exact:true});
+  await expect(src).toBeVisible();
+  await src.click();
+  const extra=tree.getByRole("treeitem",{name:"extra.ts"});
+  await expect(extra).toBeVisible();
+  await extra.click();
+  await expect(panel.locator("[data-workspace-file-text]"))
+    .toContainText("fromNativeTree = true");
+  await expect(panel.getByRole("tab",{name:"extra.ts"}))
+    .toHaveAttribute("aria-selected","true");
+  await expect(extra).toHaveAttribute("aria-selected","true");
+  await expect(panel.locator(".cm-content"))
+    .toHaveAttribute("contenteditable","false");
+  const state=await page.evaluate(()=>
+    (window as unknown as Window & {
+      __nativeTreeBridgeTest:{
+        grant:number;lists:string[];treeReads:string[];absoluteReads:number;
+      };
+    }).__nativeTreeBridgeTest);
+  expect(state.grant).toBe(1);
+  expect(state.absoluteReads).toBe(1);
+  expect(state.treeReads).toEqual(["src/extra.ts"]);
+  expect(state.lists).toEqual(["","src"]);
+
+  // Already-open tree file must not issue a second filesystem read.
+  await extra.click();
+  const after=await page.evaluate(()=>
+    (window as unknown as Window & {
+      __nativeTreeBridgeTest:{treeReads:string[]};
+    }).__nativeTreeBridgeTest.treeReads);
+  expect(after).toEqual(["src/extra.ts"]);
+  const nav=page.getByRole("navigation",{name:"会话"});
+  await nav.getByRole("button").nth(1).click();
+  await expect(panel).toHaveCount(0);
+  await expect.poll(async()=>page.evaluate(()=>
+    (window as unknown as Window & {
+      __nativeTreeBridgeTest:{revokes:number};
+    }).__nativeTreeBridgeTest.revokes)).toBeGreaterThanOrEqual(1);
+});
