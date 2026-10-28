@@ -38,6 +38,16 @@ Read-only original user-provided build:
   gap 4px, padding 8px horizontal / 6px vertical, 14px text.
   Card variant is 256px max, 8px radius and 12px/32px padding.
   Browser tests now assert these mounted pill tokens.
+- The original whole-user-message renderer `Ba` in
+  `frontend/webview/assets/sites-end-resource-fa77a923096d.js`
+  partitions `[...attachments,...uploadedFileAttachments]` into
+  `E` featured cards and `D` context pills. Uploaded pasted text is
+  always featured; other uploads and workspace files require the
+  original viewer gate `w` and host-side `vc` file-kind confirmation.
+  `E` is a right-aligned vertical list. `D` is right-aligned,
+  horizontally scrollable, `flex-row-reverse`, with a `min-w-max`
+  inner row. This actual source partition is now mounted in the existing
+  UserMessage React leaf; private file-kind checks remain host-supplied.
 - The source's card-vs-pill decision on workspace files additionally
   requires private MIME/target preview checks and a feature flag. This
   recovery therefore defaults to `pill` unless the host confirms a
