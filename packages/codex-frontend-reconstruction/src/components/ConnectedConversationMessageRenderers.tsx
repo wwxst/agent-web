@@ -354,12 +354,6 @@ export function createConnectedConversationMessageRenderers(host: ConnectedConve
         data-content-search-unit-key={typeof props.item.id==="string"?props.item.id:undefined}
         data-source-user-message-format={isAeonFormatted?"compact":"standard"}
         className="flex flex-col gap-2">
-        {content.kind === "markdown"
-          ? <CodexSourceCollapsibleUserMessage text={content.text}
-              isAeonFormatted={isAeonFormatted}>
-              {visibleText=><host.Markdown text={visibleText} role="user" />}
-            </CodexSourceCollapsibleUserMessage>
-          : <host.ActivityDetails item={props.item} isActive={false} presentation="ordinary" />}
         {attachments.length>0?<SourceUserFileAttachments
           attachments={attachments}
           isUploadedFileViewerEnabled={host.isUploadedFileViewerEnabled}
@@ -368,6 +362,12 @@ export function createConnectedConversationMessageRenderers(host: ConnectedConve
           onOpen={host.onUserFileAttachmentOpen==null?undefined:
             (attachment,target)=>host.onUserFileAttachmentOpen?.(attachment,target,props.item)}/>
           :null}
+        {content.kind === "markdown"
+          ? <CodexSourceCollapsibleUserMessage text={content.text}
+              isAeonFormatted={isAeonFormatted}>
+              {visibleText=><host.Markdown text={visibleText} role="user" />}
+            </CodexSourceCollapsibleUserMessage>
+          : <host.ActivityDetails item={props.item} isActive={false} presentation="ordinary" />}
         {host.UserMessageExtras ? <host.UserMessageExtras {...props} /> : null}
       </div>;
     },
