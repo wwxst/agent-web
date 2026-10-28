@@ -15,7 +15,12 @@ test("source hn mounts typed file pills inside the actual user virtual turn and 
   await expect(files.locator('[data-source-user-attachment-lines="14-28"]')).toBeVisible();
   await expect(files.locator('[data-source-user-attachment-kind="upload"]')).toContainText("reference-notes.pdf");
   await expect(files.locator('[data-source-user-attachment-kind="none"]')).toContainText("Detached attachment");
-  await expect(files.getByRole("button",{name:/App.tsx/})).toBeDisabled();
+  const resourcePill=files.getByRole("button",{name:/App.tsx/});
+  await expect(resourcePill).toBeDisabled();
+  await expect(resourcePill).toHaveCSS("border-radius","9999px");
+  await expect(resourcePill).toHaveCSS("max-width","320px");
+  await expect(resourcePill).toHaveCSS("font-size","14px");
+  await expect(resourcePill).toHaveAttribute("data-composer-attachment-pill","true");
   await expect(files.getByRole("button",{name:"reference-notes.pdf"})).toBeDisabled();
   await expect(files.getByRole("button",{name:"Detached attachment"})).toBeDisabled();
   await expect(page.getByRole("region",{name:"对话"})).toBeVisible();
