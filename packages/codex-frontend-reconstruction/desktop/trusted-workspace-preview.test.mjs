@@ -98,3 +98,37 @@ test("cancel and malicious dialog values do not add grants or expose path",async
   assert.equal(isValidPreviewRequest({path:resolve("file.ts"),line:0}),false);
   assert.equal(isValidPreviewRequest({path:resolve("file.ts"),evil:true}),false);
 });
+
+test("source SXo native clipboard copies paths without grant and contents only after realpath grant",async()=>{
+  const root=await mkdtemp(join(tmpdir(),"agent-web-workspace-copy-"));
+  const outside=await mkdtemp(join(tmpdir(),"agent-web-workspace-copy-outside-"));
+  try{
+    const path=join(root,"hello.ts");
+    const rejected=join(outside,"private.ts");
+    await writeFile(path,"export const safe = true;");
+    await writeFile(rejected,"private");
+    const event={sender:{id:51}},untrusted={sender:{id:52}};
+    const writes=[];
+    const host=createTrustedWorkspacePreviewHost({
+      isTrustedRenderer:e=>e===event,
+      chooseDirectory:async()=>({canceled:false,filePaths:[root]}),
+      writeClipboardText:text=>writes.push(text),
+    });
+    assert.equal(host.copyFilePath(event,path),true);
+    assert.deepEqual(writes,[path]);
+    await assert.rejects(host.copyFileContents(event,{path}),/WORKSPACE_NOT_GRANTED/);
+    await assert.rejects(host.copyFileContents(untrusted,{path}),/WORKSPACE_UNTRUSTED_RENDERER/);
+    assert.deepEqual(writes,[path]);
+    assert.throws(()=>host.copyFilePath(event,"not-absolute.ts"),/WORKSPACE_INVALID_FILE_REQUEST/);
+    await host.selectDirectory(event);
+    assert.equal(await host.copyFileContents(event,{path}),true);
+    assert.deepEqual(writes,[path,"export const safe = true;"]);
+    await assert.rejects(host.copyFileContents(event,{path:rejected}),/WORKSPACE_OUTSIDE_GRANT/);
+    assert.deepEqual(writes,[path,"export const safe = true;"]);
+    host.revoke(event);
+    await assert.rejects(host.copyFileContents(event,{path}),/WORKSPACE_NOT_GRANTED/);
+  }finally{
+    await rm(root,{recursive:true,force:true});
+    await rm(outside,{recursive:true,force:true});
+  }
+});
