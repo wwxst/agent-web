@@ -24,6 +24,10 @@ test("original hn discriminates uploads from workspace file-path attachments",()
   const resource={path:"/project/src/Example.ts",label:"Example.ts",
     startLine:14,endLine:28};
   assert.equal(sourceUserFileDisplayName(resource),"Example.ts");
+  assert.equal(sourceUserFileDisplayName({...resource,label:"Example.ts (14-28)"}),"Example.ts");
+  assert.equal(sourceUserFileDisplayName({...resource,label:"Example.ts 14-28"}),"Example.ts");
+  assert.equal(sourceUserFileDisplayName({...resource,label:"Example.ts (9)"}),"Example.ts (9)");
+  assert.equal(sourceUserFileDisplayName({path:"/x",label:"Example.ts (9)"}),"Example.ts (9)");
   assert.equal(sourceUserFileLineInfo(resource),"14-28");
   assert.deepEqual(sourceUserFileOpenTarget(resource),{
     kind:"workspace",path:"/project/src/Example.ts",line:14,column:1,
