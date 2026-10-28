@@ -782,6 +782,9 @@ export function App() {
             {path:"/projects/agent-web/src/App.tsx",
               fsPath:"/projects/agent-web/src/App.tsx",
               label:"App.tsx (14-28)",startLine:14,endLine:28},
+            {path:"/projects/agent-web/src/index.ts",
+              fsPath:"/projects/agent-web/src/index.ts",
+              label:"index.ts (3)",startLine:3},
             {path:"",label:"Detached attachment"},
           ],
           uploadedFileAttachments:[
