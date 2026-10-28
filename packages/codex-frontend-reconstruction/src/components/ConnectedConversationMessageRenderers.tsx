@@ -206,7 +206,6 @@ export interface ConnectedConversationRendererHost extends ConversationContentAd
     target:SourceUserFileOpenTarget,item:ConversationMessageItem)=>void|Promise<void>;
   isUploadedFileViewerEnabled?:boolean;
   isUserFileAttachmentPreviewable?:(attachment:SourceUserFileAttachment)=>boolean;
-  renderUserUploadedFilePreview?:(attachment:SourceUserFileAttachment)=>React.ReactNode;
   /** Host may inject read-receipt, attachments and copy controls. */
   UserMessageExtras?: React.ComponentType<{
     item: ConversationMessageItem;
@@ -363,7 +362,6 @@ export function createConnectedConversationMessageRenderers(host: ConnectedConve
           attachments={attachments}
           isUploadedFileViewerEnabled={host.isUploadedFileViewerEnabled}
           isPathPreviewable={host.isUserFileAttachmentPreviewable}
-          renderUploadedPreview={host.renderUserUploadedFilePreview}
           onOpen={host.onUserFileAttachmentOpen==null?undefined:
             (attachment,target)=>host.onUserFileAttachmentOpen?.(attachment,target,props.item)}/>
           :null}
