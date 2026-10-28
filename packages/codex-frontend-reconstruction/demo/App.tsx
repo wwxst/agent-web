@@ -1,6 +1,8 @@
 import * as React from "react";
 import { createPortal } from "react-dom";
 import { CodexComposerLayout } from "../src/components/CodexComposerLayout.js";
+import {WorkspaceReadOnlyPreviewPanel,
+  type WorkspaceReadOnlyPreview} from "./WorkspaceReadOnlyPreviewPanel.js";
 import { CodexSourceComposerHostForm } from "../src/components/CodexSourceComposerHostForm.js";
 import { CodexSourceScrollToBottomButton } from "../src/components/CodexSourceScrollToBottomButton.js";
 import { DemoProseMirrorComposerEditor } from "./DemoProseMirrorComposerEditor.js";
@@ -196,6 +198,8 @@ export function App() {
   const [toast, setToast] = React.useState<string | null>(null);
   const [historyAdded, setHistoryAdded] = React.useState(false);
   const [showDemoTools, setShowDemoTools] = React.useState(false);
+  const [workspacePreview,setWorkspacePreview]=React.useState<WorkspaceReadOnlyPreview|null>(null);
+  const workspaceGrantRef=React.useRef(false);
   const [findOpen,setFindOpen]=React.useState(false);
   const [findQuery,setFindQuery]=React.useState("");
   const [findOrdinal,setFindOrdinal]=React.useState(0);
@@ -252,9 +256,28 @@ export function App() {
       if (toastTimerRef.current != null) clearTimeout(toastTimerRef.current);
       toastTimerRef.current = setTimeout(() => setToast(null), 3600);
     }, []);
+  const openWorkspaceAttachment=React.useCallback(async(
+    request:{path:string;line?:number},
+  )=>{
+    const host=window.agentWebDesktopHost;
+    if(host==null)return;
+    try{
+      if(!workspaceGrantRef.current){
+        // Real native folder consent, never inferred from a transcript path.
+        const grant=await host.selectWorkspaceDirectory();
+        if(!grant.selected)return;
+        workspaceGrantRef.current=true;
+      }
+      const file=await host.readWorkspaceTextFile(request);
+      setWorkspacePreview(file);
+    }catch(error){
+      notify("本地文件无法预览：请选择包含该文件的工作区，或检查权限与格式。");
+    }
+  },[notify]);
   // Reset creates a new demo host lifetime. Switching conversations only
     // remounts virtual rows, so historical Rk choices remain host-owned.
-    const DemoRow = React.useMemo(() => makeDemoRow(notify), [notify, generation]);
+    const DemoRow = React.useMemo(() => makeDemoRow(notify,openWorkspaceAttachment),
+      [notify,openWorkspaceAttachment,generation]);
     React.useEffect(() => () => DemoRow.dispose(), [DemoRow]);
     // On real native host pending/settled events, mutate this SAME source
     // consumed by ConnectedLiveConversationTranscript and its virtualizer.
@@ -777,6 +800,7 @@ export function App() {
     setHistoryAdded(historyByConversationRef.current.has(id));
     setDraft(draftByConversationRef.current.get(id)??"");
     setActive(id);
+    setWorkspacePreview(null);
     // Never retain result offsets from an unrelated demo conversation.
     setFindOrdinal(0);
   }
@@ -1035,6 +1059,9 @@ export function App() {
         </CodexSourceComposerHostForm>
       </div>
     </div>
+    {workspacePreview!=null?
+      <WorkspaceReadOnlyPreviewPanel preview={workspacePreview}
+        onClose={()=>setWorkspacePreview(null)}/>:null}
     {toast && <div className="demo-toast" role="status"><Icon name="check" size={17}/>{toast}</div>}
   </div></div>;
 }
