@@ -170,7 +170,7 @@ export function WorkspaceReadOnlyPreviewPanel({
           aria-selected={tab.id===activeTabId}
           aria-haspopup="menu"
           aria-expanded={tabMenu?.tabId===tab.id}
-          aria-controls={tabMenu?.tabId===tab.id?menuId:"demo-workspace-preview-panel"}
+          aria-controls="demo-workspace-preview-panel"
           title={tab.content.relativePath}
           onClick={()=>onSelectTab(tab.id)}
           onKeyDown={event=>{
