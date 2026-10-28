@@ -188,6 +188,7 @@ export {
   sourceUserFileDisplayName,
   sourceUserFileLayout,
   sourceUserFileAttachmentGroups,
+  sourceUserFileAttachmentsFromMessage,
 } from "./conversation/SourceUserFileAttachmentsModel.js";
 export type {
   SourceUserUploadedFile,
