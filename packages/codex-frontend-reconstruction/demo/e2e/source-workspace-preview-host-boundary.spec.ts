@@ -584,6 +584,18 @@ test("native granted workspace directory tree opens new CodeMirror tab without r
       __nativeTreeBridgeTest:{treeReads:string[]};
     }).__nativeTreeBridgeTest.treeReads);
   expect(after).toEqual(["src/extra.ts","src/deep/unopened.ts"]);
+  // Original an refreshKey invalidates root AND current expanded branches;
+  // the independent native fallback must not refresh only the root.
+  await panel.getByRole("button",{name:"Refresh workspace directory"}).click();
+  await expect.poll(async()=>page.evaluate(()=>
+    (window as unknown as Window & {
+      __nativeTreeBridgeTest:{lists:string[]};
+    }).__nativeTreeBridgeTest.lists.length)).toBe(4);
+  const refreshed=await page.evaluate(()=>
+    (window as unknown as Window & {
+      __nativeTreeBridgeTest:{lists:string[]};
+    }).__nativeTreeBridgeTest.lists);
+  expect(refreshed).toEqual(["","src","","src"]);
   const nav=page.getByRole("navigation",{name:"会话"});
   await nav.getByRole("button").nth(1).click();
   await expect(panel).toHaveCount(0);
