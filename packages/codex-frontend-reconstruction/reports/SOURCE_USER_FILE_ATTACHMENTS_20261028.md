@@ -1,0 +1,55 @@
+# Source user-message file attachments, 2026-10-28
+
+## Original evidence
+
+Read-only original user-provided build:
+`frontend/webview/assets/user-message-attachments-93893a2e6026.js`,
+34,522 bytes, SHA-256
+`e19f1394a0b45725c91903e7c6f597fb8a431307f5c0a3ed29c0814d3561e411`.
+
+- Original `hn({attachment,cwd,hostId,isUploadedFileViewerEnabled})`
+  branches on the presence of the `upload` property.
+- Uploaded file without a preview goes to private `Me` FilePill
+  (`filename:upload.fileName`, layout `pill` or `card` when
+  uploaded-file viewer enabled). With a preview it calls private
+  `at({preview,onClick})`, not a fabricated filename-derived image.
+- Resource files use `fsPath || path` for opening, `path` as a
+  resource path, and `yn` for line information.
+  `yn` returns `startLine-endLine` if the two differ, or
+  `startLine` if equal/only one. No startLine yields nothing.
+- A shared-thread resource routes through the external shared-thread
+  handler instead of the workspace-file opener; other paths route through
+  private host `Qe`, with `line` and column 1.
+- The source's card-vs-pill decision on workspace files additionally
+  requires private MIME/target preview checks and a feature flag. This
+  recovery therefore defaults to `pill` unless the host confirms a
+  previewable path.
+
+## Integrated, not a parallel mock
+
+- `SourceUserFileAttachmentsModel` preserves these shape/routing branches
+  and never opens a path or network URL.
+- `SourceUserFileAttachments` is mounted directly under the existing
+  `ConnectedConversationMessageRenderers.UserMessage` branch through
+  `getUserFileAttachments(item)`. No new timeline, chat row, Composer
+  or backend action is created.
+- The original private FilePill styling/icon, `at` rich thumbnails, file
+  context menus and `Qe/U` host openers remain host-provided. A
+  conservative native-file pill is a **visual approximation**.
+- Without a verified `onUserFileAttachmentOpen` callback the controls
+  are explicitly disabled. Empty/unknown targets are also disabled.
+- Synthetic fixture lives only behind the demo tool picker and adds a
+  user message with typed paths/uploads to the same current
+  `LiveConversationSource`. Chromium tests use the actual virtual row;
+  Node tests cover `hn` route and `yn` lines.
+
+## Remaining work
+
+Real Composer file intake, file upload lifecycle/progress, data URL previews,
+Electron secure open-file transport, actual file-manager routing, image
+lightbox, trusted workspace-file menus, and source-matched FilePill CSS
+remain unimplemented. The synthetic attachment objects are not evidence
+of an actual upload or mounted filesystem permission.
+
+Do not include original compiled assets in Git. Keep backend unchanged.
+Validate final CI on branch HEAD before proposing merge.
