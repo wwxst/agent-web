@@ -60,9 +60,13 @@ Read-only original user-provided build:
 - `SourceUserFileAttachmentsModel` preserves these shape/routing branches
   and never opens a path or network URL.
 - `SourceUserFileAttachments` is mounted directly under the existing
-  `ConnectedConversationMessageRenderers.UserMessage` branch through
-  `getUserFileAttachments(item)`. No new timeline, chat row, Composer
-  or backend action is created.
+  `ConnectedConversationMessageRenderers.UserMessage` branch. It now
+  reads original `Ba` `item.attachments` and
+  `item.uploadedFileAttachments` when no optional host projection
+  overrides them, validating external records before React rendering.
+  The demo injects synthetic messages using those **same original item
+  fields** and no longer installs a fake `demoFileAttachments` host
+  adapter. No new timeline, chat row, Composer or backend action is created.
 - The original private FilePill icon, hosted image preview, file
   context menus and `Qe/U` host openers remain host-provided. A
   conservative native-file pill is a **visual approximation**.
