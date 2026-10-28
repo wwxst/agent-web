@@ -3,6 +3,9 @@ import type { ConversationMessageItem } from "../conversation/ConversationMessag
 import type { AgentActivityUnit, AgentActivityCollapseOptions } from "../conversation/AgentActivityProjection.js";
 import { CodexAgentActivity } from "./CodexAgentActivity.js";
 import { CodexSourceCollapsibleUserMessage } from "./CodexSourceCollapsibleUserMessage.js";
+import {SourceUserFileAttachments} from "./SourceUserFileAttachments.js";
+import type {SourceUserFileAttachment,SourceUserFileOpenTarget}
+  from "../conversation/SourceUserFileAttachmentsModel.js";
 import { combineSourceActivityTrace } from "../conversation/SourceCombinedActivityTrace.js";
 import { filterSourceLatestActivityUnits } from "../conversation/SourceLatestActivityVisibility.js";
 import type { SourceRepeatedActivityRow } from "../conversation/SourceRepeatedActivityGroups.js";
@@ -195,6 +198,15 @@ export interface ConnectedConversationRendererHost extends ConversationContentAd
   translator: ActivityStatusTranslation;
   getApprovalReviewSummary: (review: AutomaticApprovalReviewSummary) => React.ReactNode;
   getApprovalReviewDetails: (review: AutomaticApprovalReviewSummary) => React.ReactNode;
+  /** Original user-message-attachments hn, scoped to verified host item data.
+   * Never parse Markdown text as an inferred uploaded file. */
+  getUserFileAttachments?:(item:ConversationMessageItem)=>readonly SourceUserFileAttachment[]|null|undefined;
+  /** Authenticated host supplies actual file open, upload or shared-thread route. */
+  onUserFileAttachmentOpen?:(attachment:SourceUserFileAttachment,
+    target:SourceUserFileOpenTarget,item:ConversationMessageItem)=>void|Promise<void>;
+  isUploadedFileViewerEnabled?:boolean;
+  isUserFileAttachmentPreviewable?:(attachment:SourceUserFileAttachment)=>boolean;
+  renderUserUploadedFilePreview?:(attachment:SourceUserFileAttachment)=>React.ReactNode;
   /** Host may inject read-receipt, attachments and copy controls. */
   UserMessageExtras?: React.ComponentType<{
     item: ConversationMessageItem;
@@ -332,6 +344,7 @@ export function createConnectedConversationMessageRenderers(host: ConnectedConve
   return {
     UserMessage(props) {
       const content = projectConversationContent(props.item, host, "message");
+      const attachments=host.getUserFileAttachments?.(props.item)??[];
       // Original Rt: I = explicit isAeonFormatted ?? private capability
       // fallback. This independent host has no private capability provider;
       // only a genuine typed source item flag may enable the compact variant.
@@ -346,6 +359,14 @@ export function createConnectedConversationMessageRenderers(host: ConnectedConve
               {visibleText=><host.Markdown text={visibleText} role="user" />}
             </CodexSourceCollapsibleUserMessage>
           : <host.ActivityDetails item={props.item} isActive={false} presentation="ordinary" />}
+        {attachments.length>0?<SourceUserFileAttachments
+          attachments={attachments}
+          isUploadedFileViewerEnabled={host.isUploadedFileViewerEnabled}
+          isPathPreviewable={host.isUserFileAttachmentPreviewable}
+          renderUploadedPreview={host.renderUserUploadedFilePreview}
+          onOpen={host.onUserFileAttachmentOpen==null?undefined:
+            (attachment,target)=>host.onUserFileAttachmentOpen?.(attachment,target,props.item)}/>
+          :null}
         {host.UserMessageExtras ? <host.UserMessageExtras {...props} /> : null}
       </div>;
     },
