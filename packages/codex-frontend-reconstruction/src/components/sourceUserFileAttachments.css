@@ -26,6 +26,7 @@
   color:var(--demo-muted,#777);
 }
 .codex-user-file-attachments__icon svg{width:100%;height:100%}
+.codex-user-file-attachments__label{display:flex;flex:1;min-width:0;flex-direction:column;gap:1px}
 .codex-user-file-attachments__name{
   display:block;min-width:0;max-width:248px;overflow:hidden;
   white-space:nowrap;text-overflow:ellipsis;font-weight:500;
@@ -45,6 +46,4 @@
 .codex-user-file-attachments__item[data-source-user-attachment-layout="card"] .codex-user-file-attachments__icon svg{
   width:24px;height:24px;
 }
-.codex-user-file-attachments__preview{
-  display:flex;max-width:120px;overflow:hidden;border-radius:5px;
-}
+.codex-user-file-attachments__subtitle{color:var(--demo-muted,#777);font-size:11px;line-height:16px}
