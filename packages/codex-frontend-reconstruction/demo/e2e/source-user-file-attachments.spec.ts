@@ -10,6 +10,12 @@ test("source hn mounts typed file pills inside the actual user virtual turn and 
   await expect(user).toBeVisible();
   const files=user.locator('[data-source-user-file-attachments]');
   await expect(files).toHaveCount(1);
+  // Original Ba renders image/featured/context attachments BEFORE the
+  // user-message body T, not below an already-rendered Markdown bubble.
+  await expect.poll(async()=>files.evaluate(el=>
+    el.nextElementSibling?.textContent?.includes(
+      "Synthetic request with host-provided file attachments.")===true))
+    .toBe(true);
   const featured=files.locator('[data-source-user-featured-attachments]');
   const context=files.locator('[data-source-user-context-attachments]');
   await expect(featured.locator('[data-source-user-attachment-kind]')).toHaveCount(2);
