@@ -38,6 +38,29 @@ test("independent Electron file renderer starts, isolates preload and routes Fc 
   assert.equal(host.info.backendConnected,false);
   assert.equal(host.exposedNode,"undefined");
   assert.equal(host.processType,"undefined");
+  // Confirm the real context-isolated preload routes both new scoped tree
+  // channels to main, validates input and denies reads without a native grant.
+  const treeBoundary=await page.evaluate(async()=>{
+    const api=window.agentWebDesktopHost;
+    const failure=async(work)=>{try{await work();return "unexpected success";}
+      catch(error){return String(error);}};
+    return {
+      hasList:typeof api?.listWorkspaceDirectory==="function",
+      hasRead:typeof api?.readWorkspaceTreeTextFile==="function",
+      traversal:await failure(()=>api.listWorkspaceDirectory({
+        relativePath:"../outside",
+      })),
+      notGranted:await failure(()=>api.listWorkspaceDirectory({relativePath:""})),
+      readNotGranted:await failure(()=>api.readWorkspaceTreeTextFile({
+        relativePath:"src/App.tsx",
+      })),
+    };
+  });
+  assert.equal(treeBoundary.hasList,true);
+  assert.equal(treeBoundary.hasRead,true);
+  assert.match(treeBoundary.traversal,/WORKSPACE_INVALID_DIRECTORY_REQUEST/);
+  assert.match(treeBoundary.notGranted,/WORKSPACE_NOT_GRANTED/);
+  assert.match(treeBoundary.readNotGranted,/WORKSPACE_NOT_GRANTED/);
   const prefs=await app.evaluate(({BrowserWindow})=>{
     const win=BrowserWindow.getAllWindows()[0];
     return win.webContents.getLastWebPreferences();
