@@ -7,6 +7,7 @@ import {
   sourceReviewFileTabId,sourceEmptyLocalReadOnlyTabState,
   sourceOpenLocalReadOnlyFileTab,sourceSelectLocalReadOnlyFileTab,
   sourceCloseLocalReadOnlyFileTab,
+  sourceCloseOtherLocalReadOnlyFileTabs,sourceCloseLocalReadOnlyTabsToRight,
   type SourceLocalReadOnlyTabState,
 } from "../src/conversation/SourceReviewFileTabModel.js";
 import { CodexSourceComposerHostForm } from "../src/components/CodexSourceComposerHostForm.js";
@@ -1143,6 +1144,26 @@ export function App() {
           workspaceSelectionIntentRef.current++;
           workspaceLatestReadByTabRef.current.delete(id);
           setWorkspaceTabs(current=>sourceCloseLocalReadOnlyFileTab(current,id));
+        }}
+        onCloseOthers={id=>{
+          workspaceSelectionIntentRef.current++;
+          // Closing other tabs must also invalidate pending reads that have
+          // not yet produced visible tabs; otherwise they can resurrect.
+          const latest=workspaceLatestReadByTabRef.current.get(id);
+          workspaceLatestReadByTabRef.current.clear();
+          if(latest!=null)workspaceLatestReadByTabRef.current.set(id,latest);
+          setWorkspaceTabs(current=>sourceCloseOtherLocalReadOnlyFileTabs(current,id));
+        }}
+        onCloseToRight={id=>{
+          workspaceSelectionIntentRef.current++;
+          const index=workspaceTabs.tabs.findIndex(tab=>tab.id===id);
+          if(index<0)return;
+          const retain=new Set(workspaceTabs.tabs.slice(0,index+1).map(tab=>tab.id));
+          // Existing strip order is the source for the right-side range.
+          // Pending, unmounted tabs are not authorized to reappear.
+          for(const key of workspaceLatestReadByTabRef.current.keys())
+            if(!retain.has(key))workspaceLatestReadByTabRef.current.delete(key);
+          setWorkspaceTabs(current=>sourceCloseLocalReadOnlyTabsToRight(current,id));
         }}
         onClose={()=>{
           workspaceSelectionIntentRef.current++;
