@@ -65,7 +65,15 @@ export function sourceUserFileDisplayName(attachment:SourceUserFileAttachment):s
     return attachment.preview==null?attachment.upload.fileName:
       attachment.preview.length>0?attachment.preview:"Pasted text";
   const label=attachment.label?.trim();
-  if(label)return label;
+  if(label){
+    // Original app-primary sV(label, lineInfo) strips a duplicated trailing
+    // " 14-28" or " (14-28)" when hn also passes lineInfo to FilePill.
+    const lineInfo=sourceUserFileLineInfo(attachment);
+    return lineInfo==null?label:label.replace(
+      /(?:\s+\(\s*\d+(?:-\d+)?\s*\)|\s+\d+(?:-\d+)?)(\s*)$/,
+      "",
+    );
+  }
   const path=attachment.path||attachment.fsPath;
   if(!path)return "";
   return path.split(/[\\/]/).filter(Boolean).at(-1)??path;
