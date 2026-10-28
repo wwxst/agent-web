@@ -20,6 +20,14 @@ Read-only original user-provided build:
 - A shared-thread resource routes through the external shared-thread
   handler instead of the workspace-file opener; other paths route through
   private host `Qe`, with `line` and column 1.
+- Followed the imported `Me=Eti` component in
+  `frontend/webview/assets/app-initial-5851df3f6cb1.js`,
+  SHA-256 `c70d95da34ba7e5962a559dbf68d0102d10b4b47b877f5d9933629bb5a1f3a10`.
+  Original `Eti -> eti` is a `button[type=button]` with
+  `data-composer-attachment-pill`, `rounded-full`, max width 320px,
+  gap 4px, padding 8px horizontal / 6px vertical, 14px text.
+  Card variant is 256px max, 8px radius and 12px/32px padding.
+  Browser tests now assert these mounted pill tokens.
 - The source's card-vs-pill decision on workspace files additionally
   requires private MIME/target preview checks and a feature flag. This
   recovery therefore defaults to `pill` unless the host confirms a
