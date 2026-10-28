@@ -1523,6 +1523,16 @@ test("native Electron renders source hn/yn uploaded and workspace attachments wi
       chooser:typeof host.selectWorkspaceDirectory,
       read:typeof host.readWorkspaceTextFile,
       revoke:typeof host.revokeWorkspaceDirectory,
+      copyPath:typeof host.copyWorkspaceFilePath,
+      copyContents:typeof host.copyWorkspaceFileContents,
+      ungrantedCopy:await (async()=>{
+        try{await host.copyWorkspaceFileContents({path});return "UNEXPECTED_SUCCESS";}
+        catch(e){return String(e);}
+      })(),
+      invalidCopyPath:await (async()=>{
+        try{await host.copyWorkspaceFilePath("../relative.ts");return "UNEXPECTED_SUCCESS";}
+        catch(e){return String(e);}
+      })(),
       rawIpc:typeof host.invoke,
       node:typeof window.require,
       absentGrant:await error({path:path}),
@@ -1535,6 +1545,10 @@ test("native Electron renders source hn/yn uploaded and workspace attachments wi
   assert.equal(workspaceSecurity.chooser,"function");
   assert.equal(workspaceSecurity.read,"function");
   assert.equal(workspaceSecurity.revoke,"function");
+  assert.equal(workspaceSecurity.copyPath,"function");
+  assert.equal(workspaceSecurity.copyContents,"function");
+  assert.match(workspaceSecurity.ungrantedCopy,/WORKSPACE_NOT_GRANTED/);
+  assert.match(workspaceSecurity.invalidCopyPath,/WORKSPACE_INVALID_FILE_REQUEST/);
   assert.equal(workspaceSecurity.rawIpc,"undefined");
   assert.equal(workspaceSecurity.node,"undefined");
   assert.match(workspaceSecurity.absentGrant,/WORKSPACE_NOT_GRANTED|WORKSPACE_INVALID_FILE_REQUEST/);
