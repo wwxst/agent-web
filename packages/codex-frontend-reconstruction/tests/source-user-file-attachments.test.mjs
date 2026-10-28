@@ -14,6 +14,13 @@ test("original hn discriminates uploads from workspace file-path attachments",()
     {kind:"uploaded",name:"reference-notes.pdf"});
   assert.equal(sourceUserFileLayout(uploaded,false),"pill");
   assert.equal(sourceUserFileLayout(uploaded,true),"card");
+  const pasted={upload:{fileName:"clipboard.txt"},preview:"Copied words"};
+  assert.equal(sourceUserFileDisplayName(pasted),"Copied words");
+  assert.equal(sourceUserFileLayout(pasted,false),"card");
+  assert.deepEqual(sourceUserFileOpenTarget(pasted),
+    {kind:"uploaded",name:"clipboard.txt"});
+  assert.equal(sourceUserFileDisplayName({
+    upload:{fileName:"empty-paste.txt"},preview:""}),"Pasted text");
   const resource={path:"/project/src/Example.ts",label:"Example.ts",
     startLine:14,endLine:28};
   assert.equal(sourceUserFileDisplayName(resource),"Example.ts");
