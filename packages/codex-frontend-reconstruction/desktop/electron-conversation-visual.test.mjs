@@ -1568,7 +1568,14 @@ test("native Electron renders source hn/yn uploaded and workspace attachments wi
   assert.deepEqual(await menu.getByRole("menuitem").allTextContents(),[
     "Copy path","Copy file contents",
   ]);
-  await page.keyboard.press("Escape");
+  if(process.platform==="win32"){
+    // Assert the actual Windows clipboard, not an injected JS fake.
+    await menu.getByRole("menuitem",{name:"Copy path"}).click();
+    await assert.doesNotReject(async()=>{
+      const value=await app.evaluate(({clipboard})=>clipboard.readText());
+      assert.equal(value,"/projects/agent-web/src/App.tsx");
+    });
+  }else await page.keyboard.press("Escape");
   assert.equal(await menu.count(),0);
   await mkdir(resolve(root,"desktop/test-results"),{recursive:true});
   await page.screenshot({
