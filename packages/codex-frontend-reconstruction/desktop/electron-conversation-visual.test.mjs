@@ -1517,7 +1517,9 @@ test("native Electron renders source hn/yn uploaded and workspace attachments wi
   await row.waitFor({timeout:15000});
   const files=row.locator('[data-conversation-message="user"] [data-source-user-file-attachments]');
   await files.waitFor({timeout:15000});
-  assert.equal(await files.locator('[data-source-user-attachment-kind]').count(),3);
+  assert.equal(await files.locator('[data-source-user-attachment-kind]').count(),5);
+  assert.equal(await files.locator('[data-source-pasted-text-preview="true"]').count(),2);
+  assert.match(await files.innerText(),/Pasted code snippets from a test fixture/);
   assert.match(await files.innerText(),/App\.tsx/);
   assert.match(await files.innerText(),/reference-notes\.pdf/);
   assert.equal(await files.locator('[data-source-user-attachment-lines="14-28"]').count(),1);
