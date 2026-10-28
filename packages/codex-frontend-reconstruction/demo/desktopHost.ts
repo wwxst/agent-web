@@ -47,6 +47,14 @@ declare global {
       }):Promise<{
         name:string;relativePath:string;text:string;line?:number;endLine?:number;readOnly:true;
       }>;
+      /** Independent bounded filename-only fallback for original Ve search;
+       * requires the same native folder grant, never returns file contents. */
+      searchWorkspaceFiles?(request:{query:string}):Promise<{
+        query:string;
+        files:readonly {name:string;relativePath:string}[];
+        scannedDirectories:number;
+        truncated:boolean;
+      }>;
       /** Real native external HTTPS open. Never grants or settles an Agent request. */
       openExternalUrl(url:string):Promise<boolean>;
       /** A typed native cancel only. The absence of a verified Agent
