@@ -3,6 +3,12 @@ import { createPortal } from "react-dom";
 import { CodexComposerLayout } from "../src/components/CodexComposerLayout.js";
 import {WorkspaceReadOnlyPreviewPanel,
   type WorkspaceReadOnlyPreview} from "./WorkspaceReadOnlyPreviewPanel.js";
+import {
+  sourceReviewFileTabId,sourceEmptyLocalReadOnlyTabState,
+  sourceOpenLocalReadOnlyFileTab,sourceSelectLocalReadOnlyFileTab,
+  sourceCloseLocalReadOnlyFileTab,
+  type SourceLocalReadOnlyTabState,
+} from "../src/conversation/SourceReviewFileTabModel.js";
 import { CodexSourceComposerHostForm } from "../src/components/CodexSourceComposerHostForm.js";
 import { CodexSourceScrollToBottomButton } from "../src/components/CodexSourceScrollToBottomButton.js";
 import { DemoProseMirrorComposerEditor } from "./DemoProseMirrorComposerEditor.js";
@@ -198,7 +204,9 @@ export function App() {
   const [toast, setToast] = React.useState<string | null>(null);
   const [historyAdded, setHistoryAdded] = React.useState(false);
   const [showDemoTools, setShowDemoTools] = React.useState(false);
-  const [workspacePreview,setWorkspacePreview]=React.useState<WorkspaceReadOnlyPreview|null>(null);
+  const [workspaceTabs,setWorkspaceTabs]=React.useState<
+    SourceLocalReadOnlyTabState<WorkspaceReadOnlyPreview>
+  >(sourceEmptyLocalReadOnlyTabState);
   const workspaceGrantRef=React.useRef(false);
   // A file read/dialog is bound to the visible thread lifetime; an old
   // request cannot install a preview after switching/resetting conversations.
@@ -263,7 +271,7 @@ export function App() {
   const revokeWorkspacePreview=React.useCallback(()=>{
     workspaceRequestEpochRef.current++;
     workspaceGrantRef.current=false;
-    setWorkspacePreview(null);
+    setWorkspaceTabs(sourceEmptyLocalReadOnlyTabState());
     // An outstanding native folder picker may resolve after this revoke;
     // its call-site checks the epoch again and revokes that late grant.
     const host=window.agentWebDesktopHost;
@@ -293,7 +301,11 @@ export function App() {
       }else{
         const file=await host.readWorkspaceTextFile(request);
         if(epoch===workspaceRequestEpochRef.current)
-          setWorkspacePreview(file);
+          setWorkspaceTabs(current=>epoch===workspaceRequestEpochRef.current
+            ?sourceOpenLocalReadOnlyFileTab(current,{
+              id:sourceReviewFileTabId(request.path),
+              path:request.path,content:file,
+            }):current);
       }
     }catch(error){
       if(epoch!==workspaceRequestEpochRef.current)return;
@@ -1096,9 +1108,20 @@ export function App() {
         </CodexSourceComposerHostForm>
       </div>
     </div>
-    {workspacePreview!=null?
-      <WorkspaceReadOnlyPreviewPanel preview={workspacePreview}
-        onClose={()=>setWorkspacePreview(null)}/>:null}
+    {workspaceTabs.activeTabId!=null&&
+      workspaceTabs.tabs.find(tab=>tab.id===workspaceTabs.activeTabId)!=null?
+      <WorkspaceReadOnlyPreviewPanel
+        tabs={workspaceTabs.tabs}
+        activeTabId={workspaceTabs.activeTabId}
+        preview={workspaceTabs.tabs.find(tab=>
+          tab.id===workspaceTabs.activeTabId)!.content}
+        onSelectTab={id=>setWorkspaceTabs(current=>
+          sourceSelectLocalReadOnlyFileTab(current,id))}
+        onCloseTab={id=>setWorkspaceTabs(current=>
+          sourceCloseLocalReadOnlyFileTab(current,id))}
+        onClose={()=>setWorkspaceTabs(current=>
+          sourceCloseLocalReadOnlyFileTab(current,current.activeTabId??""))}
+      />:null}
     {toast && <div className="demo-toast" role="status"><Icon name="check" size={17}/>{toast}</div>}
   </div></div>;
 }
