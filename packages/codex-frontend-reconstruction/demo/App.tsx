@@ -271,6 +271,13 @@ export function App() {
       const file=await host.readWorkspaceTextFile(request);
       setWorkspacePreview(file);
     }catch(error){
+      // A rejected/incorrectly selected root must never trap the user in an
+      // unchangeable grant. Revoke and let the next direct click choose anew.
+      const detail=String(error);
+      if(/WORKSPACE_(?:OUTSIDE_GRANT|NOT_GRANTED|FILE_UNAVAILABLE)/.test(detail)){
+        workspaceGrantRef.current=false;
+        try{await host.revokeWorkspaceDirectory();}catch{}
+      }
       notify("本地文件无法预览：请选择包含该文件的工作区，或检查权限与格式。");
     }
   },[notify]);
