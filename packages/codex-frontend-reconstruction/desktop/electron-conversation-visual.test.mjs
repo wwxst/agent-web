@@ -1523,7 +1523,10 @@ test("native Electron renders source hn/yn uploaded and workspace attachments wi
   assert.match(await files.innerText(),/App\.tsx/);
   assert.match(await files.innerText(),/reference-notes\.pdf/);
   assert.equal(await files.locator('[data-source-user-attachment-lines="14-28"]').count(),1);
-  assert.equal(await files.getByRole("button",{name:/App\.tsx/}).isDisabled(),true);
+  // The new narrow native workspace action is enabled, but does not open
+  // any file until explicit folder consent. Other attachment kinds remain
+  // disabled and cannot borrow this local read-only capability.
+  assert.equal(await files.getByRole("button",{name:/App\.tsx/}).isEnabled(),true);
   assert.equal(await files.getByRole("button",{name:"reference-notes.pdf"}).isDisabled(),true);
   assert.equal(await files.getByRole("button",{name:"Detached attachment"}).isDisabled(),true);
   await mkdir(resolve(root,"desktop/test-results"),{recursive:true});
