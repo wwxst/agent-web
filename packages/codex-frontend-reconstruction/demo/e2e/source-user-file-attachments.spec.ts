@@ -14,7 +14,9 @@ test("source hn mounts typed file pills inside the actual user virtual turn and 
   await expect(files.locator('[data-source-user-attachment-kind="workspace"]')).toContainText("App.tsx");
   await expect(files.locator('[data-source-user-attachment-lines="14-28"]')).toBeVisible();
   await expect(files.locator('[data-source-user-attachment-kind="workspace"] .codex-user-file-attachments__name')).toHaveText("App.tsx");
-  await expect(files.locator('[data-source-user-attachment-kind="upload"]')).toContainText("reference-notes.pdf");
+  const uploads=files.locator('[data-source-user-attachment-kind="upload"]');
+  await expect(uploads).toHaveCount(3);
+  await expect(uploads.first()).toContainText("reference-notes.pdf");
   await expect(files.locator('[data-source-user-attachment-kind="none"]')).toContainText("Detached attachment");
   const pasted=files.locator('[data-source-pasted-text-preview="true"]');
   await expect(pasted).toHaveCount(2);
