@@ -1,0 +1,23 @@
+/* Original hn -> Me: resource attachment pill; uploaded viewer is
+ * host-configured. The proprietary FilePill design-system component is not
+ * bundled here, so spacing/icon are explicit visual approximations. */
+.codex-user-file-attachments{display:flex;flex-wrap:wrap;align-items:flex-start;gap:8px;max-width:100%}
+.codex-user-file-attachments__item{display:inline-flex;min-width:0;max-width:100%}
+.codex-user-file-attachments__pill{
+  display:inline-flex;align-items:center;gap:7px;
+  min-height:30px;max-width:100%;padding:5px 9px;
+  border:1px solid var(--demo-border,#dedede);border-radius:8px;
+  font:inherit;font-size:12px;line-height:18px;text-align:left;
+  color:var(--demo-text,#242424);background:var(--demo-panel,#fff);
+  cursor:pointer;
+}
+.codex-user-file-attachments__pill:disabled{cursor:default;opacity:1}
+.codex-user-file-attachments__pill:not(:disabled):hover{background:var(--demo-raised,#f5f5f5)}
+.codex-user-file-attachments__pill:focus-visible{outline:2px solid var(--demo-focus,#7979cf);outline-offset:2px}
+.codex-user-file-attachments__icon{display:inline-flex;flex:none;width:16px;height:16px;color:var(--demo-muted,#777)}
+.codex-user-file-attachments__icon svg{width:100%;height:100%}
+.codex-user-file-attachments__name{display:block;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;max-width:24rem}
+.codex-user-file-attachments__line{flex:none;color:var(--demo-muted,#777);font-size:11px}
+.codex-user-file-attachments__open{flex:none;color:var(--demo-muted,#777)}
+.codex-user-file-attachments__item[data-source-user-attachment-layout="card"] .codex-user-file-attachments__pill{min-height:46px;padding:7px 11px}
+.codex-user-file-attachments__preview{display:flex;max-width:120px;overflow:hidden;border-radius:5px}
