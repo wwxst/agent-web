@@ -5,7 +5,22 @@
  * Private file-kind icon and theme colors remain host/design-system work.
  */
 .codex-user-file-attachments{
-  display:flex;flex-wrap:wrap;align-items:flex-start;gap:8px;max-width:100%;
+  display:flex;flex-direction:column;align-items:flex-end;gap:8px;max-width:100%;
+}
+/* Source Ba's featured E list (cards above the normal context attachments). */
+.codex-user-file-attachments__featured{
+  display:flex;flex-direction:column;align-items:flex-end;gap:8px;max-width:100%;
+}
+/* Source Ba's D list: flex-row-reverse, scrollable, self-end, p-px.
+ * Inner list must remain min-w-max to preserve horizontal scroll. */
+.codex-user-file-attachments__context{
+  display:flex;flex-direction:row-reverse;align-self:flex-end;
+  width:max-content;max-width:100%;padding:1px;
+  overflow-x:auto;overflow-y:hidden;scrollbar-width:none;
+}
+.codex-user-file-attachments__context::-webkit-scrollbar{display:none}
+.codex-user-file-attachments__context-inner{
+  display:flex;align-items:center;gap:8px;min-width:max-content;
 }
 .codex-user-file-attachments__item{display:inline-flex;min-width:0;max-width:100%}
 .codex-user-file-attachments__pill{
