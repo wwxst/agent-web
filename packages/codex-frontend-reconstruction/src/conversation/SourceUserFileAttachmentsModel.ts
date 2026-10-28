@@ -8,7 +8,8 @@
 export interface SourceUserUploadedFile {
   upload:{fileName:string};
   /** Original `at` renders a host-owned rich preview, never inferred from filename. */
-  preview?:unknown;
+  /** Source Wmd uses preview.length: this is pasted text, not an image. */
+  preview?:string|null;
 }
 export interface SourceUserWorkspaceFile {
   path?:string|null;
@@ -60,7 +61,9 @@ export function sourceUserFileOpenTarget(
 }
 /** Original Me receives xt(label, lineInfo) for resource files. */
 export function sourceUserFileDisplayName(attachment:SourceUserFileAttachment):string{
-  if(isSourceUserUploadedFile(attachment))return attachment.upload.fileName;
+  if(isSourceUserUploadedFile(attachment))
+    return attachment.preview==null?attachment.upload.fileName:
+      attachment.preview.length>0?attachment.preview:"Pasted text";
   const label=attachment.label?.trim();
   if(label)return label;
   const path=attachment.path||attachment.fsPath;
@@ -75,6 +78,6 @@ export function sourceUserFileLayout(
   isSourceConfirmedPathPreview=false,
 ):"card"|"pill"{
   if(isSourceUserUploadedFile(attachment))
-    return uploadedViewerEnabled?"card":"pill";
+    return attachment.preview!=null||uploadedViewerEnabled?"card":"pill";
   return isSourceConfirmedPathPreview?"card":"pill";
 }
