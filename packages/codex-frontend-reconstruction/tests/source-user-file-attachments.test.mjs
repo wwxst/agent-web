@@ -26,8 +26,10 @@ test("original hn discriminates uploads from workspace file-path attachments",()
   assert.equal(sourceUserFileDisplayName(resource),"Example.ts");
   assert.equal(sourceUserFileDisplayName({...resource,label:"Example.ts (14-28)"}),"Example.ts");
   assert.equal(sourceUserFileDisplayName({...resource,label:"Example.ts 14-28"}),"Example.ts");
-  assert.equal(sourceUserFileDisplayName({...resource,label:"Example.ts (9)"}),"Example.ts (9)");
+  assert.equal(sourceUserFileDisplayName({...resource,label:"Example.ts (9)"}),"Example.ts");
   assert.equal(sourceUserFileDisplayName({path:"/x",label:"Example.ts (9)"}),"Example.ts (9)");
+  // Original sV only checks whether lineInfo is present, not whether the
+  // trailing label suffix is identical to that lineInfo.
   assert.equal(sourceUserFileLineInfo(resource),"14-28");
   assert.deepEqual(sourceUserFileOpenTarget(resource),{
     kind:"workspace",path:"/project/src/Example.ts",line:14,column:1,
