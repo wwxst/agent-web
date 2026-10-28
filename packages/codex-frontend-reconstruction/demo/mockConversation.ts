@@ -3,6 +3,7 @@
  * These are NOT Codex transcript records, live backend events, or recovered IPC data.
  */
 import type { ConversationRenderEntry } from "../src/conversation/ConversationRenderEntriesModel.js";
+import type {SourceUserFileAttachment} from "../src/conversation/SourceUserFileAttachmentsModel.js";
 import type { ConversationMessageItem, ConversationTranscriptBlock } from "../src/conversation/ConversationMessageRenderPlan.js";
 import { createLiveConversationSource } from "../src/conversation/LiveConversationSource.js";
 import { projectSourceTurnTranscriptBlocks } from "../src/conversation/SourceTurnTranscriptBlocks.js";
@@ -34,7 +35,7 @@ export function demoItem(id: string, type: string, content?: string, extra: Reco
 }
 
 export function demoMessageEntry(role: "user" | "assistant", id: string, content: string,
-  sourceFormat?: {isAeonFormatted:boolean}): ConversationRenderEntry {
+  sourceFormat?: {isAeonFormatted?:boolean;demoFileAttachments?:readonly SourceUserFileAttachment[]}): ConversationRenderEntry {
   return demoEntry(id, {
     type: role === "user" ? "user-message" : "assistant-message",
     key: `block:${id}`,
