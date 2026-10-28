@@ -248,7 +248,10 @@ const newFile: InlineReviewFile = {
 
 export function makeDemoRow(
   notify: (message: string) => void,
-  onOpenWorkspaceAttachment?: (request:{path:string;line?:number;endLine?:number})=>Promise<void>,
+  onOpenWorkspaceAttachment?: (
+    request:{path:string;line?:number;endLine?:number},
+    mode?:"preview"|"copy",
+  )=>Promise<void>,
 ) {
   const eventBridge=createSourceConversationHostEventBridge();
   // Subscribe to the independent Electron preload when available, or leave
@@ -355,6 +358,26 @@ export function makeDemoRow(
     // Original Qe is private. Only a real Electron-local bounded preview
     // handler may enable workspace file pills; uploads never gain authority.
     ...(window.agentWebDesktopHost!=null&&onOpenWorkspaceAttachment!=null?{
+      // Source SXo always defines copy-path; copy-contents exists outside
+      // workspace mode. The native host has both a clipboard and guarded
+      // read-only workspace API; never advertise unsupported OS actions.
+      userFileMenuCapabilities:{copyPath:true,copyContents:true},
+      onUserFileMenuAction:async(
+        _attachment,_route,action)=>{
+        if(_route.kind!=="workspace")return;
+        if(action==="workspace-file-copy-path"){
+          if(navigator.clipboard?.writeText==null)throw Error("Clipboard unavailable");
+          await navigator.clipboard.writeText(_route.qe.path);
+          notify("已复制文件路径");
+          return;
+        }
+        if(action==="workspace-file-copy-contents"){
+          await onOpenWorkspaceAttachment({
+            path:_route.qe.path,
+            ...(_route.qe.line==null?{}:{line:_route.qe.line}),
+          },"copy");
+        }
+      },
       canOpenUserFileAttachment:(_attachment:unknown,target:{kind:string})=>
         target.kind==="workspace",
       onUserFileAttachmentOpen:async(
