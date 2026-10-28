@@ -187,10 +187,12 @@ export {
   sourceUserFileOpenTarget,
   sourceUserFileDisplayName,
   sourceUserFileLayout,
+  sourceUserFileAttachmentGroups,
 } from "./conversation/SourceUserFileAttachmentsModel.js";
 export type {
   SourceUserUploadedFile,
   SourceUserWorkspaceFile,
   SourceUserFileAttachment,
   SourceUserFileOpenTarget,
+  SourceUserFileAttachmentGroups,
 } from "./conversation/SourceUserFileAttachmentsModel.js";
