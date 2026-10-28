@@ -126,8 +126,8 @@ test("existing canonical user-message files reuse source k3o tabs, switch, close
   await page.getByRole("button",{name:"打开演示工具"}).click();
   await page.getByTestId("demo-source-user-file-attachments").click();
   const user=page.locator('[data-demo-turn-id^="user-file-attachments-"]').last();
-  const app=user.getByRole("button",{name:/App\\.tsx/});
-  const index=user.getByRole("button",{name:/index\\.ts/});
+  const app=user.getByRole("button",{name:/App\.tsx/});
+  const index=user.getByRole("button",{name:/index\.ts/});
   const preview=page.getByRole("complementary",{name:"Local file preview"});
   await app.click();
   await expect(preview).toBeVisible();
