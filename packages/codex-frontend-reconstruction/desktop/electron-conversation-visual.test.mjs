@@ -1511,6 +1511,33 @@ test("native Electron renders source hn/yn uploaded and workspace attachments wi
  try{
   const page=await app.firstWindow();
   await page.locator('[aria-label="演示会话导航"]').waitFor({timeout:20000});
+  // Reuse this EXISTING native BrowserWindow to assert actual preload/main
+  // denial; a separate concurrent Electron launch can starve CI display.
+  const workspaceSecurity=await page.evaluate(async()=>{
+    const host=window.agentWebDesktopHost;
+    const error=async request=>{
+      try{await host.readWorkspaceTextFile(request);return "UNEXPECTED_SUCCESS";}
+      catch(e){return String(e);}
+    };
+    return {
+      chooser:typeof host.selectWorkspaceDirectory,
+      read:typeof host.readWorkspaceTextFile,
+      revoke:typeof host.revokeWorkspaceDirectory,
+      rawIpc:typeof host.invoke,
+      node:typeof window.require,
+      absentGrant:await error({path:process.platform==="win32"?"C:\\\\temp\\\\agent-web-preview.ts":"/tmp/agent-web-preview.ts"}),
+      relative:await error({path:"../escape.ts"}),
+      invalidLine:await error({path:process.platform==="win32"?"C:\\\\temp\\\\agent-web-preview.ts":"/tmp/agent-web-preview.ts",line:-1}),
+    };
+  });
+  assert.equal(workspaceSecurity.chooser,"function");
+  assert.equal(workspaceSecurity.read,"function");
+  assert.equal(workspaceSecurity.revoke,"function");
+  assert.equal(workspaceSecurity.rawIpc,"undefined");
+  assert.equal(workspaceSecurity.node,"undefined");
+  assert.match(workspaceSecurity.absentGrant,/WORKSPACE_NOT_GRANTED|WORKSPACE_INVALID_FILE_REQUEST/);
+  assert.match(workspaceSecurity.relative,/WORKSPACE_INVALID_FILE_REQUEST/);
+  assert.match(workspaceSecurity.invalidLine,/WORKSPACE_INVALID_FILE_REQUEST/);
   await page.getByRole("button",{name:"打开演示工具"}).click();
   await page.getByTestId("demo-source-user-file-attachments").click();
   const row=page.locator('[data-demo-turn-id^="user-file-attachments-"]').last();
