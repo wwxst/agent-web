@@ -37,8 +37,17 @@ export function sourceWorkspacePreviewRange(
     after:text.slice(end),selectedLine:line};
 }
 export function WorkspaceReadOnlyPreviewPanel({
-  preview,onClose,
-}:{preview:WorkspaceReadOnlyPreview;onClose:()=>void}){
+  preview,tabs,activeTabId,onSelectTab,onCloseTab,onClose,
+}:{
+  preview:WorkspaceReadOnlyPreview;
+  /** Source IX opens a tab keyed by k3o, not a separate preview window.
+   * Contents remain explicitly independent local read-only fallbacks. */
+  tabs:readonly {id:string;path:string;content:WorkspaceReadOnlyPreview}[];
+  activeTabId:string;
+  onSelectTab:(id:string)=>void;
+  onCloseTab:(id:string)=>void;
+  onClose:()=>void;
+}){
   const content=React.useRef<HTMLPreElement|null>(null);
   const highlighted=React.useRef<HTMLSpanElement|null>(null);
   const segments=React.useMemo(()=>sourceWorkspacePreviewRange(
@@ -56,6 +65,22 @@ export function WorkspaceReadOnlyPreviewPanel({
       :` · Line ${preview.line}`;
   return <aside className="demo-workspace-preview" role="complementary"
     aria-label="Local file preview" data-independent-workspace-preview="">
+    <div className="demo-workspace-preview__tabs" role="tablist"
+      aria-label="Open local files">
+      {tabs.map(tab=><div key={tab.id} className="demo-workspace-preview__tab"
+        data-source-file-tab-id={tab.id}
+        data-source-file-tab-active={tab.id===activeTabId?"true":"false"}>
+        <button type="button" role="tab"
+          aria-selected={tab.id===activeTabId}
+          aria-controls="demo-workspace-preview-panel"
+          title={tab.content.relativePath}
+          onClick={()=>onSelectTab(tab.id)}>{tab.content.name}</button>
+        <button type="button" aria-label={`Close ${tab.content.name} tab`}
+          onClick={()=>onCloseTab(tab.id)}>×</button>
+      </div>)}
+    </div>
+    <div id="demo-workspace-preview-panel" role="tabpanel"
+      aria-label={preview.name} className="demo-workspace-preview__tabpanel">
     <header className="demo-workspace-preview__header">
       <span className="demo-workspace-preview__name" title={preview.relativePath}>
         {preview.name}
@@ -74,5 +99,6 @@ export function WorkspaceReadOnlyPreviewPanel({
         ?<span ref={highlighted} className="demo-workspace-preview__selection"
           data-workspace-file-selected-range="">{segments.selected}</span>:null}
       {segments.after}</pre>
+    </div>
   </aside>;
 }
