@@ -108,6 +108,9 @@ function createTrustedWorkspacePreviewHost({
   if(typeof isTrustedRenderer!=="function"||typeof chooseDirectory!=="function")
     throw new TypeError("WORKSPACE_HOST_CAPABILITY_REQUIRED");
   const grants=new Map();
+  // Native directory enumeration pins the actual directory identity that
+  // the user selected, not merely a replaceable path string.
+  const directoryIdentities=new Map();
   // A renderer's workspace authority is a lifetime, not merely a window ID.
   // A native picker may complete AFTER revoke/navigation/closure. Invalidate
   // its captured generation so no late chooser response can restore a grant.
@@ -117,6 +120,7 @@ function createTrustedWorkspacePreviewHost({
   const clearSender=id=>{
     epochs.set(id,currentEpoch(id)+1);
     grants.delete(id);
+    directoryIdentities.delete(id);
   };
   function stillCurrent(event,id,epoch){
     if(currentEpoch(id)!==epoch||event?.sender?.id!==id)return false;
@@ -151,6 +155,7 @@ function createTrustedWorkspacePreviewHost({
       if(!stillCurrent(event,id,epoch))return {selected:false};
       if(!stat.isDirectory())denied("WORKSPACE_INVALID_DIRECTORY");
       grants.set(id,root);
+      directoryIdentities.set(id,stat);
       return {selected:true,name:path.basename(root)};
     }finally{
       pendingPickers.delete(id);
@@ -254,6 +259,8 @@ function createTrustedWorkspacePreviewHost({
     if(real!==candidate)denied("WORKSPACE_DIRECTORY_CHANGED");
     const before=await filesystem.stat(real);
     if(!before.isDirectory())denied("WORKSPACE_DIRECTORY_UNAVAILABLE");
+    if(!sameDirectoryIdentity(before,directoryIdentities.get(id)))
+      denied("WORKSPACE_DIRECTORY_CHANGED");
     let handle;
     try{
       handle=await filesystem.open(real,fsConstants.O_RDONLY|
