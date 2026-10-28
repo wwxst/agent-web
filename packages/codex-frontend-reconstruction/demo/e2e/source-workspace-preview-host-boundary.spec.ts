@@ -275,5 +275,6 @@ test("authorized file tabs accept overlapping reads, reject stale reopen results
     (window as unknown as Window & {
       __asyncPreviewTestState:{selections:number};
     }).__asyncPreviewTestState.selections);
-  expect(counters).toBe(1,"all reads share one user-selected directory grant");
+  // All concurrent reads must share the single explicit native grant.
+  expect(counters).toBe(1);
 });
