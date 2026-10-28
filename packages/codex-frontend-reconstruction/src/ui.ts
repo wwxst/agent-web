@@ -45,7 +45,7 @@ export type { SourceActivityDisclosureProps } from "./components/SourceActivityD
 
 export {SourceUserFileAttachments} from "./components/SourceUserFileAttachments.js";
 export {projectSourceUserFileQeRoute} from "./conversation/SourceUserFileQeRouteModel.js";
-export {sourceWorkspaceFileContextMenuItems} from "./conversation/SourceWorkspaceFileContextMenuModel.js";
+export {sourceWorkspaceFileContextMenuItems,sourceWorkspaceFileCopyPath,isSourceWorkspaceAbsoluteCopyPath} from "./conversation/SourceWorkspaceFileContextMenuModel.js";
 export type {
   SourceWorkspaceFileMenuActionId,SourceWorkspaceFileContextMenuCapabilities,
   SourceWorkspaceFileMenuItem,
