@@ -290,11 +290,6 @@ export function App() {
     const host=window.agentWebDesktopHost;
     if(host==null)return;
     const epoch=workspaceRequestEpochRef.current;
-    // Keep the original IX/k3o file identity while ensuring a slow prior
-    // read cannot overwrite a newer reopen of the same file.
-    const tabId=mode==="preview"?sourceReviewFileTabId(request.path):null;
-    const intent=tabId==null?null:++workspaceSelectionIntentRef.current;
-    if(tabId!=null&&intent!=null)workspaceLatestReadByTabRef.current.set(tabId,intent);
     try{
       if(!workspaceGrantRef.current){
         // Main-process native folder selection is exclusive. The old global
@@ -311,6 +306,11 @@ export function App() {
         if(!grant.selected)return;
         workspaceGrantRef.current=true;
       }
+      // A click dropped while the exclusive native directory chooser is
+      // running must not invalidate its first request's result.
+      const tabId=mode==="preview"?sourceReviewFileTabId(request.path):null;
+      const intent=tabId==null?null:++workspaceSelectionIntentRef.current;
+      if(tabId!=null&&intent!=null)workspaceLatestReadByTabRef.current.set(tabId,intent);
       if(mode==="copy"){
         await host.copyWorkspaceFileContents(request);
         if(epoch===workspaceRequestEpochRef.current)notify("已复制文件内容");
