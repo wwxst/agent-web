@@ -62,3 +62,22 @@
   width:24px;height:24px;
 }
 .codex-user-file-attachments__subtitle{color:var(--demo-muted,#777);font-size:11px;line-height:16px}
+
+/* Original xO context-menu trigger is portal-backed. Exact private visual
+ * tokens and menu animation remain unavailable in independent Electron. */
+.codex-user-file-attachments__menu{
+  position:fixed;z-index:11000;min-width:194px;max-width:calc(100vw - 8px);
+  padding:5px;border-radius:10px;border:1px solid rgba(128,128,128,.19);
+  background:var(--demo-panel,#fff);color:var(--demo-text,#242424);
+  box-shadow:0 10px 35px rgba(0,0,0,.14);
+  display:flex;flex-direction:column;gap:1px;
+}
+.codex-user-file-attachments__menu button{
+  width:100%;display:block;text-align:left;padding:8px 11px;
+  border:none;border-radius:6px;background:transparent;color:inherit;
+  font:inherit;font-size:13px;line-height:18px;cursor:pointer;
+}
+.codex-user-file-attachments__menu button:hover,
+.codex-user-file-attachments__menu button:focus-visible{
+  background:rgba(128,128,128,.13);outline:none;
+}
