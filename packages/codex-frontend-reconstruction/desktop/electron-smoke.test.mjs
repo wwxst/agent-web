@@ -47,6 +47,13 @@ test("independent Electron file renderer starts, isolates preload and routes Fc 
     return {
       hasList:typeof api?.listWorkspaceDirectory==="function",
       hasRead:typeof api?.readWorkspaceTreeTextFile==="function",
+      hasSearch:typeof api?.searchWorkspaceFiles==="function",
+      invalidSearch:await failure(()=>api.searchWorkspaceFiles({
+        query:"x",
+      })),
+      noGrantSearch:await failure(()=>api.searchWorkspaceFiles({
+        query:"readonly",
+      })),
       traversal:await failure(()=>api.listWorkspaceDirectory({
         relativePath:"../outside",
       })),
@@ -58,6 +65,9 @@ test("independent Electron file renderer starts, isolates preload and routes Fc 
   });
   assert.equal(treeBoundary.hasList,true);
   assert.equal(treeBoundary.hasRead,true);
+  assert.equal(treeBoundary.hasSearch,true);
+  assert.match(treeBoundary.invalidSearch,/WORKSPACE_INVALID_SEARCH_REQUEST/);
+  assert.match(treeBoundary.noGrantSearch,/WORKSPACE_NOT_GRANTED/);
   assert.match(treeBoundary.traversal,/WORKSPACE_INVALID_DIRECTORY_REQUEST/);
   assert.match(treeBoundary.notGranted,/WORKSPACE_NOT_GRANTED/);
   assert.match(treeBoundary.readNotGranted,/WORKSPACE_NOT_GRANTED/);
