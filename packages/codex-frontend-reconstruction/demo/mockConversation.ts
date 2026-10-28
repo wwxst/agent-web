@@ -35,7 +35,7 @@ export function demoItem(id: string, type: string, content?: string, extra: Reco
 }
 
 export function demoMessageEntry(role: "user" | "assistant", id: string, content: string,
-  sourceFormat?: {isAeonFormatted?:boolean;demoFileAttachments?:readonly SourceUserFileAttachment[]}): ConversationRenderEntry {
+  sourceFormat?: {isAeonFormatted?:boolean;attachments?:readonly SourceUserFileAttachment[];uploadedFileAttachments?:readonly SourceUserFileAttachment[]}): ConversationRenderEntry {
   return demoEntry(id, {
     type: role === "user" ? "user-message" : "assistant-message",
     key: `block:${id}`,
