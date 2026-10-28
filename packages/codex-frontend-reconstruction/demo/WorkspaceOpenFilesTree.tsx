@@ -5,11 +5,12 @@ import {
 } from "../src/conversation/SourceOpenFilesTreeModel.js";
 
 export function WorkspaceOpenFilesTree({
-  files,activeTabId,onSelectTab,
+  files,activeTabId,onSelectTab,visible=true,
 }:{
   files:readonly SourceOpenFileTreeEntry[];
   activeTabId:string;
   onSelectTab:(id:string)=>void;
+  visible?:boolean;
 }){
   const [query,setQuery]=React.useState("");
   const [expanded,setExpanded]=React.useState<ReadonlySet<string>>(()=>
@@ -55,6 +56,8 @@ export function WorkspaceOpenFilesTree({
     buttons[next]?.focus({preventScroll:false});
   }
   return <div className="demo-workspace-preview__tree"
+    style={visible?undefined:{display:"none"}}
+    aria-hidden={!visible}
     data-source-open-file-tree="">
     <div className="demo-workspace-preview__tree-header">
       <span>Open files</span>
