@@ -4,6 +4,8 @@ import {
   sourceReviewFileTabId,sourceEmptyLocalReadOnlyTabState,
   sourceOpenLocalReadOnlyFileTab,sourceSelectLocalReadOnlyFileTab,
   sourceCloseLocalReadOnlyFileTab,
+  sourceLocalFileTabContextMenu,sourceCloseOtherLocalReadOnlyFileTabs,
+  sourceCloseLocalReadOnlyTabsToRight,
 } from "../build/SourceReviewFileTabModel.js";
 
 test("original app-initial k3o file tab id uses host and environment only when present",()=>{
@@ -72,4 +74,40 @@ test("late independent file read populates a background tab without stealing a n
   // A background read is still usable if it is the first file to finish.
   const first=sourceOpenLocalReadOnlyFileTab(sourceEmptyLocalReadOnlyTabState(),a,false);
   assert.equal(first.activeTabId,a.id);
+});
+
+test("original Eqi tab strip menu preserves source action order and disabled-state gates",()=>{
+  const a={id:"file:a",path:"a",content:"a"};
+  const b={id:"file:b",path:"b",content:"b"};
+  const c={id:"file:c",path:"c",content:"c"};
+  const state=[a,b,c].reduce(sourceOpenLocalReadOnlyFileTab,sourceEmptyLocalReadOnlyTabState());
+  assert.deepEqual(sourceLocalFileTabContextMenu(state,"missing"),[]);
+  assert.deepEqual(sourceLocalFileTabContextMenu(state,a.id),[
+    {id:"close-tab",message:"Close",enabled:true},
+    {id:"close-other-tabs",message:"Close other tabs",enabled:true},
+    {id:"close-tabs-to-the-right",message:"Close tabs to the right",enabled:true},
+  ]);
+  assert.deepEqual(sourceLocalFileTabContextMenu(state,c.id).map(item=>item.enabled),
+    [true,true,false]);
+  const only=sourceCloseOtherLocalReadOnlyFileTabs(state,b.id);
+  assert.deepEqual(only,{tabs:[b],activeTabId:b.id});
+  assert.equal(sourceLocalFileTabContextMenu(only,b.id)[1]?.enabled,false);
+  assert.equal(sourceLocalFileTabContextMenu(only,b.id)[2]?.enabled,false);
+  assert.equal(sourceCloseOtherLocalReadOnlyFileTabs(only,b.id),only);
+  assert.equal(sourceCloseOtherLocalReadOnlyFileTabs(state,"missing"),state);
+});
+test("source close right removes only following tabs and preserves existing left-side selection",()=>{
+  const a={id:"file:a",path:"a",content:"a"};
+  const b={id:"file:b",path:"b",content:"b"};
+  const c={id:"file:c",path:"c",content:"c"};
+  const state=[a,b,c].reduce(sourceOpenLocalReadOnlyFileTab,sourceEmptyLocalReadOnlyTabState());
+  const selectedA=sourceSelectLocalReadOnlyFileTab(state,a.id);
+  const keepSelected=sourceCloseLocalReadOnlyTabsToRight(selectedA,b.id);
+  assert.deepEqual(keepSelected,{tabs:[a,b],activeTabId:a.id});
+  assert.deepEqual(state.tabs,[a,b,c],"input state must not be modified");
+  assert.deepEqual(sourceCloseLocalReadOnlyTabsToRight(state,b.id),{
+    tabs:[a,b],activeTabId:b.id,
+  },"closing active rightmost tab selects the initiating tab in the independent fallback");
+  assert.equal(sourceCloseLocalReadOnlyTabsToRight(state,c.id),state);
+  assert.equal(sourceCloseLocalReadOnlyTabsToRight(state,"missing"),state);
 });
