@@ -207,3 +207,13 @@ export type {
   SourceUserFileOpenTarget,
   SourceUserFileAttachmentGroups,
 } from "./conversation/SourceUserFileAttachmentsModel.js";
+
+export {
+ sourceReviewFileTabId,sourceEmptyLocalReadOnlyTabState,
+ sourceOpenLocalReadOnlyFileTab,sourceSelectLocalReadOnlyFileTab,
+ sourceCloseLocalReadOnlyFileTab,
+} from "./conversation/SourceReviewFileTabModel.js";
+export type {
+ SourceReviewFileTabKeyOptions,SourceLocalReadOnlyFileTab,
+ SourceLocalReadOnlyTabState,
+} from "./conversation/SourceReviewFileTabModel.js";
