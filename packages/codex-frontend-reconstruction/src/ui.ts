@@ -44,4 +44,9 @@ export { SourceActivityDisclosure } from "./components/SourceActivityDisclosure.
 export type { SourceActivityDisclosureProps } from "./components/SourceActivityDisclosure.js";
 
 export {SourceUserFileAttachments} from "./components/SourceUserFileAttachments.js";
+export {projectSourceUserFileQeRoute} from "./conversation/SourceUserFileQeRouteModel.js";
+export type {
+  SourceUserFileQeHostClassifiers,SourceUserFileQeContext,
+  SourceUserFileQeRequest,SourceUserFileRoute,
+} from "./conversation/SourceUserFileQeRouteModel.js";
 export type {SourceUserFileAttachmentsProps} from "./components/SourceUserFileAttachments.js";
