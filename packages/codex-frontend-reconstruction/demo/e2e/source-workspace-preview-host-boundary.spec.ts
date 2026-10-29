@@ -83,8 +83,16 @@ test("actual attachment row opens read-only native-host preview, revokes on thre
   await expect.poll(async()=>scroller.evaluate(element=>element.scrollTop))
     .toBeGreaterThan(0);
   const bottomScroll=await scroller.evaluate(element=>element.scrollTop);
+  await preview.locator(".cm-editor:visible").evaluate(element=>{
+    (window as unknown as {__editorBeforeRepeatedLocation?:Element})
+      .__editorBeforeRepeatedLocation=element;
+  });
   await attachment.click();
   await expect.poll(async()=>(await inspect()).read).toBe(2);
+  expect(await preview.locator(".cm-editor:visible").evaluate(element=>
+    element===(window as unknown as {__editorBeforeRepeatedLocation?:Element})
+      .__editorBeforeRepeatedLocation
+  )).toBe(true);
   await expect.poll(async()=>scroller.evaluate(element=>element.scrollTop))
     .toBeLessThan(bottomScroll);
   await preview.locator(".cm-content:visible").focus();
