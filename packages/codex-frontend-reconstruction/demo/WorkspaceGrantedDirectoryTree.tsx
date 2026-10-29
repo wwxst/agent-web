@@ -18,20 +18,33 @@ export function WorkspaceGrantedDirectoryTree({
   const [errors,setErrors]=React.useState<ReadonlySet<string>>(new Set());
   const [expanded,setExpanded]=React.useState<ReadonlySet<string>>(new Set());
   const [query,setQuery]=React.useState("");
+  const [refreshKey,setRefreshKey]=React.useState(0);
+  const [searchResult,setSearchResult]=React.useState<{
+    files:readonly {name:string;relativePath:string}[];
+    truncated:boolean;scannedDirectories:number;
+  }|null>(null);
+  const [searching,setSearching]=React.useState(false);
+  const [searchError,setSearchError]=React.useState(false);
+  const searchCallback=window.agentWebDesktopHost?.searchWorkspaceFiles;
+  const searchEnabled=searchCallback!=null;
   const treeRef=React.useRef<HTMLDivElement|null>(null);
   const lifecycle=React.useRef(0);
   const pendingRef=React.useRef(new Set<string>());
+  const requestSequence=React.useRef(new Map<string,number>());
   const list=window.agentWebDesktopHost?.listWorkspaceDirectory;
   const listRef=React.useRef(list);
   listRef.current=list;
-  const load=React.useCallback((relativePath:string)=>{
+  const load=React.useCallback((relativePath:string,force=false)=>{
     const fetch=listRef.current;
-    if(fetch==null||pendingRef.current.has(relativePath))return;
+    if(fetch==null||!force&&pendingRef.current.has(relativePath))return;
     const generation=lifecycle.current;
+    const sequence=(requestSequence.current.get(relativePath)??0)+1;
+    requestSequence.current.set(relativePath,sequence);
     pendingRef.current.add(relativePath);
     setPending(current=>new Set([...current,relativePath]));
     void fetch({relativePath}).then(result=>{
-      if(lifecycle.current!==generation)return;
+      if(lifecycle.current!==generation||
+        requestSequence.current.get(relativePath)!==sequence)return;
       setLoaded(current=>new Map(current).set(relativePath,{
         entries:result.entries,truncated:result.truncated,
       }));
@@ -39,11 +52,13 @@ export function WorkspaceGrantedDirectoryTree({
         const next=new Set(current);next.delete(relativePath);return next;
       });
     }).catch(()=>{
-      if(lifecycle.current!==generation)return;
+      if(lifecycle.current!==generation||
+        requestSequence.current.get(relativePath)!==sequence)return;
       setErrors(current=>new Set([...current,relativePath]));
     }).finally(()=>{
+      if(lifecycle.current!==generation||
+        requestSequence.current.get(relativePath)!==sequence)return;
       pendingRef.current.delete(relativePath);
-      if(lifecycle.current!==generation)return;
       setPending(current=>{
         const next=new Set(current);next.delete(relativePath);return next;
       });
@@ -51,7 +66,8 @@ export function WorkspaceGrantedDirectoryTree({
   },[]);
   React.useEffect(()=>{
     load("");
-    return ()=>{lifecycle.current++;pendingRef.current.clear();};
+    return ()=>{lifecycle.current++;pendingRef.current.clear();
+      requestSequence.current.clear();};
   },[load]);
   const toggle=React.useCallback((path:string)=>{
     if(!expanded.has(path))load(path);
@@ -62,13 +78,33 @@ export function WorkspaceGrantedDirectoryTree({
       return next;
     });
   },[expanded,load]);
+  React.useEffect(()=>{
+    const search=window.agentWebDesktopHost?.searchWorkspaceFiles;
+    const value=query.trim();
+    if(search==null||value.length<2){
+      setSearching(false);setSearchError(false);setSearchResult(null);
+      return;
+    }
+    let current=true;
+    setSearching(true);setSearchError(false);setSearchResult(null);
+    const timeout=window.setTimeout(()=>{
+      void search({query:value}).then(result=>{
+        if(!current)return;
+        setSearchResult({files:result.files,truncated:result.truncated,
+          scannedDirectories:result.scannedDirectories});
+      }).catch(()=>{
+        if(current){setSearchError(true);setSearchResult(null);}
+      }).finally(()=>{if(current)setSearching(false);});
+    },180);
+    return ()=>{current=false;window.clearTimeout(timeout);};
+  },[query,refreshKey,searchEnabled]);
   const rows=React.useMemo(()=>{
     const term=query.trim().toLocaleLowerCase();
     const result:TreeRow[]=[];
     function children(path:string,depth:number){
       for(const child of loaded.get(path)?.entries??[]){
-        // Source native tree search is host-owned. This independent view
-        // filters only loaded entries and never promises unseen matches.
+        // The original Un tree delegates nonempty queries to Ve. If the
+        // narrow native search is unavailable, retain loaded-row filtering.
         const matched=term===""||child.relativePath.toLocaleLowerCase().includes(term);
         const foundDescendant=child.kind==="directory"&&
           term!==""&&(loaded.get(child.relativePath)?.entries.some(item=>
@@ -110,14 +146,19 @@ export function WorkspaceGrantedDirectoryTree({
     style={visible?undefined:{display:"none"}} aria-hidden={!visible}>
     <div className="demo-workspace-preview__tree-header">
       <span>Workspace files</span>
-      <button type="button" title="Refresh granted root"
+      <button type="button" title="Refresh granted workspace listing"
         aria-label="Refresh workspace directory"
-        onClick={()=>load("")}>↻</button>
+        onClick={()=>{
+          for(const path of ["",...expanded])load(path,true);
+          setRefreshKey(value=>value+1);
+        }}>↻</button>
     </div>
     <label className="demo-workspace-preview__tree-filter">
-      <span className="sr-only">Filter loaded workspace files</span>
-      <input type="search" placeholder="Filter loaded files…"
-        aria-label="Filter loaded workspace files" value={query}
+      <span className="sr-only">Filter workspace files</span>
+      <input type="search" placeholder={searchEnabled?
+          "Filter files…":"Filter loaded files…"}
+        aria-label={searchEnabled?"Filter workspace files":
+          "Filter loaded workspace files"} value={query}
         onChange={event=>setQuery(event.target.value)}
         onKeyDown={event=>{
           if(event.key==="Escape"&&query){event.preventDefault();setQuery("");}
@@ -125,7 +166,35 @@ export function WorkspaceGrantedDirectoryTree({
     </label>
     <div ref={treeRef} role="tree" aria-label="Granted workspace directories"
       className="demo-workspace-preview__tree-items">
-      {rows.map(row=><button key={row.relativePath} type="button"
+      {searchEnabled&&query.trim().length>=2?
+        searching?<p role="status" className="demo-workspace-preview__tree-empty">
+          Searching files…
+        </p>:searchError?<p role="alert" className="demo-workspace-preview__tree-empty">
+          Workspace search unavailable
+        </p>:searchResult!=null?<>
+          {searchResult.files.length===0?
+            <p className="demo-workspace-preview__tree-empty">No matching files</p>:null}
+          {searchResult.files.map(file=><button
+            key={file.relativePath} type="button" role="treeitem"
+            aria-level={1} aria-selected={file.relativePath===activeRelativePath}
+            data-item-type="file" data-item-path={file.relativePath}
+            title={file.relativePath}
+            className="demo-workspace-preview__tree-item"
+            onClick={()=>onOpenFile(file.relativePath)}
+            onKeyDown={event=>navigate(event,{
+              ...file,kind:"file",depth:1,
+            })}>
+            <span className="demo-workspace-preview__tree-icon" aria-hidden="true">▤</span>
+            <span className="demo-workspace-preview__tree-label">
+              {file.relativePath}
+            </span>
+          </button>)}
+          {searchResult.truncated?
+            <p className="demo-workspace-preview__tree-empty">
+              Search limited to {searchResult.scannedDirectories} folders / 100 results
+            </p>:null}
+        </>:null:
+      rows.map(row=><button key={row.relativePath} type="button"
         role="treeitem" aria-level={row.depth}
         aria-selected={row.kind==="file"?
           row.relativePath===activeRelativePath:undefined}
@@ -142,6 +211,7 @@ export function WorkspaceGrantedDirectoryTree({
         </span>
         <span className="demo-workspace-preview__tree-label">{row.name}</span>
       </button>)}
+      {query.trim().length<2||!searchEnabled?<>
       {pending.size>0?<p role="status"
         className="demo-workspace-preview__tree-empty">Loading directory entries…</p>:null}
       {errors.size>0?<p role="alert"
@@ -154,9 +224,10 @@ export function WorkspaceGrantedDirectoryTree({
         <p className="demo-workspace-preview__tree-empty">
           Listing limited to 200 entries per folder
         </p>:null}
+      </>:null}
     </div>
     <p className="demo-workspace-preview__tree-notice">
-      Read-only · Chosen folder · Previewable files only
+      Read-only · Chosen folder · Previewable filenames only
     </p>
   </div>;
 }

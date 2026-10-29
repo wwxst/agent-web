@@ -7,6 +7,7 @@ import {
   createTrustedWorkspacePreviewHost,isPathInside,
   isPreviewableTextFile,isValidPreviewRequest,MAX_PREVIEW_BYTES,
   MAX_DIRECTORY_ENTRIES,validRelativePath,validDirectoryRequest,validTreeFileRequest,
+  MAX_SEARCH_DIRECTORIES,MAX_SEARCH_RESULTS,validWorkspaceSearchRequest,
 } from "./trustedWorkspacePreview.cjs";
 
 test("native directory grant is per trusted renderer, path canonical and revoked",async()=>{
@@ -519,5 +520,99 @@ test("same-path re-selection invalidates an older in-flight directory result",as
     await assert.rejects(oldListing,/WORKSPACE_GRANT_REVOKED/);
     const fresh=await host.listDirectory(event,{relativePath:""});
     assert.equal(fresh.entries[0].name,"source.ts");
+  }finally{await rm(root,{recursive:true,force:true});}
+});
+
+test("native Ve-like filename search finds unopened nested text files with explicit grant",async()=>{
+  const root=await mkdtemp(join(tmpdir(),"agent-web-tree-search-"));
+  const outside=await mkdtemp(join(tmpdir(),"agent-web-tree-search-outside-"));
+  try{
+    await mkdir(join(root,"src"));
+    await mkdir(join(root,"src","nested"));
+    await writeFile(join(root,"src","nested","Target.tsx"),"private file body");
+    await writeFile(join(root,"src","nested","ignore.exe"),"binary");
+    await writeFile(join(root,".private.tsx"),"hidden");
+    await writeFile(join(outside,"target-outside.tsx"),"outside");
+    try{await symlink(outside,join(root,"outside"),"dir");}
+    catch(error){if(!["EPERM","EACCES","ENOSYS"].includes(error?.code))throw error;}
+    const event={sender:{id:811}};
+    const host=createTrustedWorkspacePreviewHost({
+      isTrustedRenderer:e=>e===event,
+      chooseDirectory:async()=>({canceled:false,filePaths:[root]}),
+    });
+    assert.equal(validWorkspaceSearchRequest({query:"TAR"}),true);
+    for(const invalid of ["","x"," xy","xy ","z".repeat(81),"bad\u0000query"]){
+      assert.equal(validWorkspaceSearchRequest({query:invalid}),false);
+      await assert.rejects(host.searchDirectoryFiles(event,{query:invalid}),
+        /WORKSPACE_INVALID_SEARCH_REQUEST/);
+    }
+    await assert.rejects(host.searchDirectoryFiles(event,{query:"target"}),
+      /WORKSPACE_NOT_GRANTED/);
+    await host.selectDirectory(event);
+    const result=await host.searchDirectoryFiles(event,{query:"TARGET"});
+    assert.equal(result.query,"TARGET");
+    assert.deepEqual(result.files,[{
+      name:"Target.tsx",relativePath:"src/nested/Target.tsx",
+    }]);
+    assert.equal(result.truncated,false);
+    assert.equal(result.scannedDirectories,3);
+    assert.ok(!JSON.stringify(result).includes(root));
+    host.revoke(event);
+    await assert.rejects(host.searchDirectoryFiles(event,{query:"target"}),
+      /WORKSPACE_NOT_GRANTED/);
+  }finally{
+    await rm(root,{recursive:true,force:true});
+    await rm(outside,{recursive:true,force:true});
+  }
+});
+
+test("bounded filename search never traverses more than its directory budget",async()=>{
+  const root=await mkdtemp(join(tmpdir(),"agent-web-tree-search-limit-"));
+  try{
+    for(let i=0;i<MAX_SEARCH_DIRECTORIES+8;i++){
+      const directory=join(root,`dir-${String(i).padStart(3,"0")}`);
+      await mkdir(directory);
+      await writeFile(join(directory,"match-target.ts"),"valid");
+    }
+    const event={sender:{id:812}};
+    const host=createTrustedWorkspacePreviewHost({
+      isTrustedRenderer:e=>e===event,
+      chooseDirectory:async()=>({canceled:false,filePaths:[root]}),
+    });
+    await host.selectDirectory(event);
+    const result=await host.searchDirectoryFiles(event,{query:"match"});
+    assert.equal(result.scannedDirectories,MAX_SEARCH_DIRECTORIES);
+    assert.equal(result.truncated,true);
+    assert.ok(result.files.length<MAX_SEARCH_DIRECTORIES+8);
+    assert.ok(result.files.length<=MAX_SEARCH_RESULTS);
+  }finally{await rm(root,{recursive:true,force:true});}
+});
+
+test("in-flight workspace filename search loses grant after native revoke",async()=>{
+  const root=await mkdtemp(join(tmpdir(),"agent-web-search-revoke-"));
+  try{
+    await writeFile(join(root,"match.ts"),"safe");
+    let start,release;
+    const begun=new Promise(resolve=>{start=resolve;});
+    const gate=new Promise(resolve=>{release=resolve;});
+    const fs=await import("node:fs/promises");
+    const event={sender:{id:813}};
+    const host=createTrustedWorkspacePreviewHost({
+      isTrustedRenderer:e=>e===event,
+      chooseDirectory:async()=>({canceled:false,filePaths:[root]}),
+      filesystem:{
+        ...fs,
+        opendir:async directory=>{
+          const native=await fs.opendir(directory);
+          start(true);await gate;return native;
+        },
+      },
+    });
+    await host.selectDirectory(event);
+    const pending=host.searchDirectoryFiles(event,{query:"match"});
+    await begun;
+    host.revoke(event);
+    release(true);
+    await assert.rejects(pending,/WORKSPACE_GRANT_REVOKED/);
   }finally{await rm(root,{recursive:true,force:true});}
 });

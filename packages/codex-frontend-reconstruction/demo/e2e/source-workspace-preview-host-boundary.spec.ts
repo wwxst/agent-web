@@ -479,7 +479,8 @@ test("mounted source path tree selects real consented CodeMirror tabs, filters a
 
 test("native granted workspace directory tree opens new CodeMirror tab without root disclosure or extra picker",async({page})=>{
   await page.addInitScript(()=>{
-    const state={grant:0,lists:[] as string[],treeReads:[] as string[],absoluteReads:0,revokes:0};
+    const state={grant:0,lists:[] as string[],treeReads:[] as string[],
+      searches:[] as string[],absoluteReads:0,revokes:0};
     Object.assign(window,{__nativeTreeBridgeTest:state});
     Object.defineProperty(window,"agentWebDesktopHost",{configurable:true,value:{
       subscribeUiCommands:()=>()=>{},
@@ -508,8 +509,17 @@ test("native granted workspace directory tree opens new CodeMirror tab without r
         ],truncated:false};
         throw Error("WORKSPACE_DIRECTORY_UNAVAILABLE");
       },
+      searchWorkspaceFiles:async({query}:{query:string})=>{
+        state.searches.push(query);
+        return {query,files:query.toLowerCase().includes("unopened")?[
+          {name:"unopened.ts",relativePath:"src/deep/unopened.ts"},
+        ]:[],scannedDirectories:3,truncated:false};
+      },
       readWorkspaceTreeTextFile:async({relativePath}:{relativePath:string})=>{
         state.treeReads.push(relativePath);
+        if(relativePath==="src/deep/unopened.ts")
+          return {name:"unopened.ts",relativePath,
+            text:"export const fromNativeSearch = true;",readOnly:true};
         if(relativePath!=="src/extra.ts")throw Error("WORKSPACE_FILE_UNAVAILABLE");
         return {name:"extra.ts",relativePath,text:"export const fromNativeTree = true;",
           readOnly:true};
@@ -538,15 +548,33 @@ test("native granted workspace directory tree opens new CodeMirror tab without r
   await expect(extra).toHaveAttribute("aria-selected","true");
   await expect(panel.locator(".cm-content"))
     .toHaveAttribute("contenteditable","false");
+  // Original Un / Ve separates tree expansion and host filename search:
+  // find a file which the directory tree has NEVER expanded to.
+  const filter=panel.getByRole("searchbox",{name:"Filter workspace files"});
+  await filter.fill("unopened");
+  const searchResult=tree.getByRole("treeitem",{name:"src/deep/unopened.ts"});
+  await expect(searchResult).toBeVisible();
+  await searchResult.click();
+  await expect(panel.locator("[data-workspace-file-text]"))
+    .toContainText("fromNativeSearch = true");
+  await expect(panel.getByRole("tab",{name:"unopened.ts"}))
+    .toHaveAttribute("aria-selected","true");
+  await expect(searchResult).toHaveAttribute("aria-selected","true");
+  await filter.fill("not-present");
+  await expect(tree).toContainText("No matching files");
+  await filter.fill("");
+  await expect(extra).toBeVisible();
   const state=await page.evaluate(()=>
     (window as unknown as Window & {
       __nativeTreeBridgeTest:{
         grant:number;lists:string[];treeReads:string[];absoluteReads:number;
+        searches:string[];
       };
     }).__nativeTreeBridgeTest);
   expect(state.grant).toBe(1);
+  expect(state.searches).toEqual(["unopened","not-present"]);
   expect(state.absoluteReads).toBe(1);
-  expect(state.treeReads).toEqual(["src/extra.ts"]);
+  expect(state.treeReads).toEqual(["src/extra.ts","src/deep/unopened.ts"]);
   expect(state.lists).toEqual(["","src"]);
 
   // Already-open tree file must not issue a second filesystem read.
@@ -555,7 +583,19 @@ test("native granted workspace directory tree opens new CodeMirror tab without r
     (window as unknown as Window & {
       __nativeTreeBridgeTest:{treeReads:string[]};
     }).__nativeTreeBridgeTest.treeReads);
-  expect(after).toEqual(["src/extra.ts"]);
+  expect(after).toEqual(["src/extra.ts","src/deep/unopened.ts"]);
+  // Original an refreshKey invalidates root AND current expanded branches;
+  // the independent native fallback must not refresh only the root.
+  await panel.getByRole("button",{name:"Refresh workspace directory"}).click();
+  await expect.poll(async()=>page.evaluate(()=>
+    (window as unknown as Window & {
+      __nativeTreeBridgeTest:{lists:string[]};
+    }).__nativeTreeBridgeTest.lists.length)).toBe(4);
+  const refreshed=await page.evaluate(()=>
+    (window as unknown as Window & {
+      __nativeTreeBridgeTest:{lists:string[]};
+    }).__nativeTreeBridgeTest.lists);
+  expect(refreshed).toEqual(["","src","","src"]);
   const nav=page.getByRole("navigation",{name:"会话"});
   await nav.getByRole("button").nth(1).click();
   await expect(panel).toHaveCount(0);

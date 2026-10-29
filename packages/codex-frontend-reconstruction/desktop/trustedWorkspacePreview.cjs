@@ -14,6 +14,15 @@ const {TextDecoder}=require("node:util");
 const MAX_PREVIEW_BYTES=1024*1024;
 const MAX_DIRECTORY_ENTRIES=200;
 const MAX_DIRECTORY_SCAN=400;
+const MAX_SEARCH_DIRECTORIES=32;
+const MAX_SEARCH_RESULTS=100;
+function validWorkspaceSearchRequest(request){
+  return request!=null&&typeof request==="object"&&!Array.isArray(request)&&
+    Object.keys(request).length===1&&Object.hasOwn(request,"query")&&
+    typeof request.query==="string"&&request.query.trim()===request.query&&
+    request.query.length>=2&&request.query.length<=80&&
+    !/[\u0000-\u001f\u007f]/u.test(request.query);
+}
 /** Local, grant-relative path only: no absolute roots, traversal, device
  * names or escaping into the host filesystem. Empty means chosen root. */
 function validRelativePath(relativePath,allowRoot=false){
@@ -318,6 +327,55 @@ function createTrustedWorkspacePreviewHost({
       a.name.localeCompare(b.name,undefined,{numeric:true,sensitivity:"base"}));
     return {relativePath:relative,entries,truncated};
   }
+  /**
+   * Source Ve performs a host-owned filename search. This separate local
+   * fallback only searches previewable filenames inside an explicitly
+   * selected native folder. Every level is resolved by the already audited
+   * one-directory listDirectory path. Its work budget is finite.
+   */
+  async function searchDirectoryFiles(event,request){
+    const id=sender(event);
+    if(!validWorkspaceSearchRequest(request))
+      denied("WORKSPACE_INVALID_SEARCH_REQUEST");
+    const epoch=currentEpoch(id),root=grants.get(id);
+    const identity=directoryIdentities.get(id);
+    if(root==null||identity==null)denied("WORKSPACE_NOT_GRANTED");
+    const query=request.query.toLocaleLowerCase();
+    const pending=[""];
+    const visited=new Set();
+    const files=[];
+    let truncated=false;
+    while(pending.length>0&&visited.size<MAX_SEARCH_DIRECTORIES&&
+      files.length<MAX_SEARCH_RESULTS){
+      const dir=pending.shift();
+      if(dir===undefined||visited.has(dir))continue;
+      visited.add(dir);
+      const listed=await listDirectory(event,{relativePath:dir});
+      if(listed.truncated)truncated=true;
+      for(const entry of listed.entries){
+        if(entry.kind==="directory"){
+          if(validRelativePath(entry.relativePath)&&
+            !visited.has(entry.relativePath))pending.push(entry.relativePath);
+          else if(!validRelativePath(entry.relativePath))truncated=true;
+          continue;
+        }
+        if(entry.relativePath.toLocaleLowerCase().includes(query)){
+          files.push({name:entry.name,relativePath:entry.relativePath});
+          if(files.length>=MAX_SEARCH_RESULTS)break;
+        }
+      }
+    }
+    if(pending.length>0||files.length>=MAX_SEARCH_RESULTS)truncated=true;
+    // Even if the last scanned folder completed before a concurrent revoke
+    // or new same-path grant, no obsolete result may be delivered.
+    if(!stillCurrent(event,id,epoch)||grants.get(id)!==root||
+      directoryIdentities.get(id)!==identity)
+      denied("WORKSPACE_GRANT_REVOKED");
+    files.sort((a,b)=>a.relativePath.localeCompare(b.relativePath,
+      undefined,{numeric:true,sensitivity:"base"}));
+    return {query:request.query,files,truncated,
+      scannedDirectories:visited.size};
+  }
   async function readTreeTextFile(event,request){
     const id=sender(event);
     if(!validTreeFileRequest(request))denied("WORKSPACE_INVALID_FILE_REQUEST");
@@ -363,13 +421,14 @@ function createTrustedWorkspacePreviewHost({
     clearSender(id);
     return true;
   }
-  return {selectDirectory,readTextFile,listDirectory,readTreeTextFile,
+  return {selectDirectory,readTextFile,listDirectory,searchDirectoryFiles,readTreeTextFile,
     copyFilePath,copyFileContents,revoke,clearSender,
     // No method intentionally exposes the granted root to a renderer.
   };
 }
 module.exports={
-  MAX_PREVIEW_BYTES,MAX_DIRECTORY_ENTRIES,validRelativePath,
+  MAX_PREVIEW_BYTES,MAX_DIRECTORY_ENTRIES,MAX_SEARCH_DIRECTORIES,
+  MAX_SEARCH_RESULTS,validWorkspaceSearchRequest,validRelativePath,
   validDirectoryRequest,validTreeFileRequest,
   isSafePathInput,isPathInside,isPreviewableTextFile,
   isSameFileIdentity,readOpenedText,
