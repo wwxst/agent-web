@@ -297,7 +297,7 @@ export function App() {
     if(host!=null)void host.revokeWorkspaceDirectory().catch(()=>{});
   },[]);
   const openWorkspaceAttachment=React.useCallback(async(
-    request:{path:string;line?:number;endLine?:number},
+    request:{path:string;line?:number;endLine?:number;column?:number;resetTabState?:boolean},
     mode:"preview"|"copy"="preview",
   )=>{
     const host=window.agentWebDesktopHost;
@@ -328,7 +328,17 @@ export function App() {
         await host.copyWorkspaceFileContents(request);
         if(epoch===workspaceRequestEpochRef.current)notify("已复制文件内容");
       }else if(tabId!=null&&intent!=null){
-        const file=await host.readWorkspaceTextFile(request);
+        const file=await host.readWorkspaceTextFile({
+          path:request.path,
+          ...(request.line===undefined?{}:{line:request.line}),
+          ...(request.endLine===undefined?{}:{endLine:request.endLine}),
+        });
+        const locatedFile=request.line==null?file:{
+          ...file,line:request.line,
+          ...(request.endLine===undefined?{}:{endLine:request.endLine}),
+          ...(request.column===undefined?{}:{column:request.column}),
+          ...(request.resetTabState===undefined?{}:{resetTabState:request.resetTabState}),
+        };
         if(epoch===workspaceRequestEpochRef.current&&
             workspaceLatestReadByTabRef.current.get(tabId)===intent)
           setWorkspaceTabs(current=>{
@@ -344,11 +354,11 @@ export function App() {
             if(existing!=null&&existing.id!==tabId){
               workspaceLatestReadByTabRef.current.delete(existing.id);
               return sourceOpenLocalReadOnlyFileTab(current,{
-                id:existing.id,path:existing.path,content:file,
+                id:existing.id,path:existing.path,content:locatedFile,
               },intent===workspaceSelectionIntentRef.current);
             }
             return sourceOpenLocalReadOnlyFileTab(current,{
-              id:tabId,path:request.path,content:file,
+              id:tabId,path:request.path,content:locatedFile,
             },intent===workspaceSelectionIntentRef.current);
           });
       }
