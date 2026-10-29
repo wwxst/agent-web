@@ -161,7 +161,7 @@ test("existing canonical user-message files reuse source k3o tabs, switch, close
         const isApp=request.path.endsWith("/App.tsx");
         return {name:isApp?"App.tsx":"index.ts",
           relativePath:isApp?"src/App.tsx":"src/index.ts",
-          text:isApp?["app original",...Array.from({length:79},(_,i)=>\`app line \${i+2}\`)].join("\n")
+          text:isApp?["app original",...Array.from({length:79},(_,i)=>`app line ${i+2}`)].join("\n")
             :"index original\\nindex second",
           line:request.line,endLine:request.endLine,readOnly:true};
       },
