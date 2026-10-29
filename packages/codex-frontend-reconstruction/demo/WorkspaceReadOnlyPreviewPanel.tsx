@@ -174,6 +174,7 @@ export function WorkspaceReadOnlyPreviewPanel({
         data-source-file-tab-preview={tab.isPreview===true?"true":"false"}
         data-source-file-tab-active={tab.id===activeTabId?"true":"false"}>
         <button type="button" role="tab"
+          data-source-file-tab-preview={tab.isPreview===true?"true":"false"}
           aria-selected={tab.id===activeTabId}
           aria-haspopup="menu"
           aria-expanded={tabMenu?.tabId===tab.id}
