@@ -1335,6 +1335,7 @@ export function App() {
           setWorkspaceTabs(current=>sourceCloseOtherLocalReadOnlyFileTabs(current,id));
         }}
         onOpenTreeFile={openWorkspaceTreeFile}
+        onOpenLocation={openWorkspaceLocation}
         onCloseToRight={id=>{
           workspaceSelectionIntentRef.current++;
           const index=workspaceTabs.tabs.findIndex(tab=>tab.id===id);
