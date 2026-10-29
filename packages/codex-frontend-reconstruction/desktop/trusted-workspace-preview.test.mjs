@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {mkdtemp,mkdir,writeFile,symlink,rm,realpath,stat} from "node:fs/promises";
+import {mkdtemp,mkdir,writeFile,symlink,rm,realpath,stat,open as nativeOpen,rename} from "node:fs/promises";
 import {tmpdir} from "node:os";
 import {join,resolve} from "node:path";
 import {
@@ -253,7 +253,19 @@ test("in-flight read and clipboard copy cannot disclose contents after revoke",a
       chooseDirectory:async()=>({canceled:false,filePaths:[root]}),
       filesystem:{
         realpath,stat,
-        readFile:async()=>{started.settle(true);return reading.promise;},
+        open:async(...args)=>{
+          const handle=await nativeOpen(...args);
+          return {
+            fd:handle.fd,
+            stat:()=>handle.stat(),
+            read:async(...readArgs)=>{
+              started.settle(true);
+              await reading.promise;
+              return handle.read(...readArgs);
+            },
+            close:()=>handle.close(),
+          };
+        },
       },
       writeClipboardText:text=>writes.push(text),
     });
@@ -266,4 +278,106 @@ test("in-flight read and clipboard copy cannot disclose contents after revoke",a
     assert.deepEqual(writes,[],"clipboard must not receive bytes after sender close");
     await assert.rejects(host.readTextFile(event,{path:file}),/WORKSPACE_NOT_GRANTED/);
   }finally{await rm(root,{recursive:true,force:true});}
+});
+
+
+test("file replaced between realpath/stat and descriptor open is rejected by file identity",async()=>{
+  const root=await mkdtemp(join(tmpdir(),"agent-web-open-replacement-"));
+  try{
+    const file=join(root,"entry.ts");
+    const backup=join(root,"old.ts");
+    await writeFile(file,"original");
+    const event={sender:{id:301}};
+    let swaps=0;
+    const host=createTrustedWorkspacePreviewHost({
+      isTrustedRenderer:e=>e===event,
+      chooseDirectory:async()=>({canceled:false,filePaths:[root]}),
+      filesystem:{
+        realpath,stat,
+        open:async(...args)=>{
+          if(swaps++===0){
+            await rename(file,backup);
+            await writeFile(file,"ATTACKER-CONTENT");
+          }
+          return nativeOpen(...args);
+        },
+      },
+    });
+    await host.selectDirectory(event);
+    await assert.rejects(host.readTextFile(event,{path:file}),/WORKSPACE_FILE_CHANGED/);
+    assert.equal(swaps,1);
+  }finally{await rm(root,{recursive:true,force:true});}
+});
+
+test("open handle bounds a growing file to MAX+1 bytes, including malicious stat mismatch",async()=>{
+  const root=await mkdtemp(join(tmpdir(),"agent-web-open-growth-"));
+  try{
+    const file=join(root,"growing.ts");
+    await writeFile(file,"small");
+    const event={sender:{id:302}};
+    let reads=0,maxRequested=0,closes=0;
+    const host=createTrustedWorkspacePreviewHost({
+      isTrustedRenderer:e=>e===event,
+      chooseDirectory:async()=>({canceled:false,filePaths:[root]}),
+      filesystem:{
+        realpath,stat,
+        open:async(...args)=>{
+          const handle=await nativeOpen(...args);
+          return {
+            fd:handle.fd,stat:()=>handle.stat(),
+            read:async(buffer,offset,length)=>{
+              reads++;maxRequested=Math.max(maxRequested,length);
+              buffer.fill(0x41,offset,offset+length);
+              return {bytesRead:length};
+            },
+            close:async()=>{closes++;await handle.close();},
+          };
+        },
+      },
+    });
+    await host.selectDirectory(event);
+    await assert.rejects(host.readTextFile(event,{path:file}),/WORKSPACE_FILE_TOO_LARGE/);
+    assert.equal(reads,1);
+    assert.equal(maxRequested,MAX_PREVIEW_BYTES+1,
+      "no unbounded filename read or allocation beyond the first MAX+1 bytes");
+    assert.equal(closes,1,"file descriptor closes on oversized content rejection");
+  }finally{await rm(root,{recursive:true,force:true});}
+});
+
+test("Linux post-open descriptor path denies swapped parent symlink to outside workspace",{
+  skip:process.platform!=="linux",
+},async()=>{
+  const root=await mkdtemp(join(tmpdir(),"agent-web-checked-parent-"));
+  const outside=await mkdtemp(join(tmpdir(),"agent-web-checked-outside-"));
+  try{
+    const dir=join(root,"nested");
+    await mkdir(dir);
+    const file=join(dir,"entry.ts");
+    await writeFile(file,"safe");
+    const outsideFile=join(outside,"entry.ts");
+    await writeFile(outsideFile,"secret");
+    const event={sender:{id:303}};
+    const host=createTrustedWorkspacePreviewHost({
+      isTrustedRenderer:e=>e===event,
+      chooseDirectory:async()=>({canceled:false,filePaths:[root]}),
+      filesystem:{
+        realpath,stat,
+        open:async(...args)=>{
+          // Realpath/stat have checked the in-root path. Replace its parent
+          // with a symlink to the out-of-root directory immediately before
+          // opening. O_NOFOLLOW only protects the leaf, so the handle/path
+          // identity check must reject the new target before returning bytes.
+          await rename(dir,join(root,"old-nested"));
+          await symlink(outside,dir,"dir");
+          return nativeOpen(...args);
+        },
+      },
+    });
+    await host.selectDirectory(event);
+    await assert.rejects(host.readTextFile(event,{path:file}),
+      /WORKSPACE_FILE_CHANGED/);
+  }finally{
+    await rm(root,{recursive:true,force:true});
+    await rm(outside,{recursive:true,force:true});
+  }
 });

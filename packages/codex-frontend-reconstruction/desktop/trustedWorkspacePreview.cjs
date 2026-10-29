@@ -8,6 +8,7 @@
  * one trusted webContents and cleared on its navigation/closure.
  */
 const fs=require("node:fs/promises");
+const {constants:fsConstants}=require("node:fs");
 const path=require("node:path");
 const {TextDecoder}=require("node:util");
 const MAX_PREVIEW_BYTES=1024*1024;
@@ -41,6 +42,29 @@ function isValidPreviewRequest(input){
     (input.endLine===undefined||(Number.isSafeInteger(input.endLine)&&
       input.line!==undefined&&input.endLine>=input.line&&
       input.endLine<=10000000));
+}
+function isSameFileIdentity(left,right){
+  // Never accept an unavailable/zero inode as evidence of identity.
+  if(left==null||right==null||!left.isFile()||!right.isFile()||
+     left.ino==null||right.ino==null||left.dev==null||right.dev==null||
+     String(left.ino)==="0"||String(right.ino)==="0")return false;
+  return String(left.dev)===String(right.dev)&&
+    String(left.ino)===String(right.ino);
+}
+/** Bounded file-descriptor read. The size check happens on the opened
+ * handle, and even a growing file can never allocate/read past MAX+1. */
+async function readOpenedText(handle){
+  const buffer=Buffer.alloc(MAX_PREVIEW_BYTES+1);
+  let used=0;
+  while(used<buffer.length){
+    const {bytesRead}=await handle.read(buffer,used,buffer.length-used,used);
+    if(!Number.isSafeInteger(bytesRead)||bytesRead<0||
+       bytesRead>buffer.length-used)denied("WORKSPACE_FILE_READ_FAILED");
+    if(bytesRead===0)break;
+    used+=bytesRead;
+  }
+  if(used>MAX_PREVIEW_BYTES)denied("WORKSPACE_FILE_TOO_LARGE");
+  return buffer.subarray(0,used);
 }
 function createTrustedWorkspacePreviewHost({
   isTrustedRenderer,chooseDirectory,filesystem=fs,writeClipboardText,
@@ -109,12 +133,46 @@ function createTrustedWorkspacePreviewHost({
     catch{denied("WORKSPACE_FILE_UNAVAILABLE");}
     if(!isPathInside(root,real))denied("WORKSPACE_OUTSIDE_GRANT");
     if(!isPreviewableTextFile(real))denied("WORKSPACE_UNSUPPORTED_FILE");
-    const stat=await filesystem.stat(real);
-    if(!stat.isFile())denied("WORKSPACE_NOT_FILE");
-    if(stat.size>MAX_PREVIEW_BYTES)denied("WORKSPACE_FILE_TOO_LARGE");
-    // Byte limit is checked again after read: stat may be stale.
-    const bytes=await filesystem.readFile(real);
-    if(bytes.length>MAX_PREVIEW_BYTES)denied("WORKSPACE_FILE_TOO_LARGE");
+    const checked=await filesystem.stat(real);
+    if(!checked.isFile())denied("WORKSPACE_NOT_FILE");
+    if(checked.size>MAX_PREVIEW_BYTES)denied("WORKSPACE_FILE_TOO_LARGE");
+    // A pathname readFile() would re-open after the canonical path check.
+    // Open exactly once and pin the file identity. O_NOFOLLOW blocks a
+    // final-component symlink introduced after the initial realpath check
+    // on POSIX systems supporting this flag.
+    let handle;
+    try{
+      const flags=fsConstants.O_RDONLY|
+        (process.platform!=="win32"?(fsConstants.O_NOFOLLOW??0):0);
+      handle=await filesystem.open(real,flags);
+    }catch{denied("WORKSPACE_FILE_UNAVAILABLE");}
+    let bytes;
+    try{
+      const opened=await handle.stat();
+      if(!opened.isFile())denied("WORKSPACE_NOT_FILE");
+      if(opened.size>MAX_PREVIEW_BYTES)denied("WORKSPACE_FILE_TOO_LARGE");
+      // A file can be replaced after realpath() and before open().
+      // Verify that the open handle still matches a fresh canonical path.
+      const afterPath=await filesystem.realpath(real);
+      if(afterPath!==real||!isPathInside(root,afterPath))
+        denied("WORKSPACE_FILE_CHANGED");
+      const afterStat=await filesystem.stat(real);
+      if(!isSameFileIdentity(opened,checked)||
+         !isSameFileIdentity(opened,afterStat))
+        denied("WORKSPACE_FILE_CHANGED");
+      if(process.platform==="linux"){
+        // Linux /proc/self/fd refers to the ACTUAL opened object, not the
+        // replaceable path. This defeats a swapped parent symlink even if
+        // it is swapped back before our post-open path check.
+        let openedPath;
+        try{openedPath=await filesystem.realpath(
+          `/proc/self/fd/${handle.fd}`);}
+        catch{denied("WORKSPACE_FILE_IDENTITY_UNAVAILABLE");}
+        if(openedPath!==real||!isPathInside(root,openedPath))
+          denied("WORKSPACE_FILE_CHANGED");
+      }
+      bytes=await readOpenedText(handle);
+    }finally{await handle.close();}
     let text;
     try{text=new TextDecoder("utf-8",{fatal:true}).decode(bytes);}
     catch{denied("WORKSPACE_NOT_UTF8");}
@@ -158,5 +216,6 @@ function createTrustedWorkspacePreviewHost({
 }
 module.exports={
   MAX_PREVIEW_BYTES,isSafePathInput,isPathInside,isPreviewableTextFile,
+  isSameFileIdentity,readOpenedText,
   isValidPreviewRequest,createTrustedWorkspacePreviewHost,
 };
