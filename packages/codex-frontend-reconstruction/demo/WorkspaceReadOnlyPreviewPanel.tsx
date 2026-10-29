@@ -7,6 +7,10 @@ import {
   sourceLocalFileTabContextMenu,
   type SourceLocalFileTabContextAction,
 } from "../src/conversation/SourceReviewFileTabModel.js";
+import {
+  sourceWorkspaceRootFromPath,
+  type SourceLanguageLocation,
+} from "../src/conversation/SourceLanguageNavigationModel.js";
 import "./workspaceReadOnlyPreview.css";
 
 export interface WorkspaceReadOnlyPreview{
@@ -52,7 +56,7 @@ export function sourceWorkspacePreviewRange(
 }
 export function WorkspaceReadOnlyPreviewPanel({
   preview,tabs,activeTabId,onSelectTab,onKeepTab,onCloseTab,onCloseOthers,
-  onCloseToRight,onClose,onOpenTreeFile,
+  onCloseToRight,onClose,onOpenTreeFile,onOpenLocation,
 }:{
   preview:WorkspaceReadOnlyPreview;
   /** Source IX opens a tab keyed by k3o, not a separate preview window.
@@ -69,6 +73,7 @@ export function WorkspaceReadOnlyPreviewPanel({
   onCloseToRight:(id:string)=>void;
   onClose:()=>void;
   onOpenTreeFile:(relativePath:string,isPreview?:boolean)=>void;
+  onOpenLocation:(location:SourceLanguageLocation)=>void;
 }){
   // IX preserves a tab contentInstance in the original private XL host.
   // Keep one independent CodeMirror EditorView mounted per stable tab ID:
@@ -247,6 +252,9 @@ export function WorkspaceReadOnlyPreviewPanel({
           onSelectTab={onSelectTab}/>}
       {tabs.map(tab=><WorkspaceReadOnlyCodeMirror key={tab.id}
         preview={tab.content}
+        path={tab.path}
+        workspaceRoot={sourceWorkspaceRootFromPath(tab.path,tab.content.relativePath)}
+        onOpenLocation={onOpenLocation}
         active={tab.id===activeTabId}
         initialScrollTop={scrollByTab.current.get(tab.id)}
         onScrollTop={top=>scrollByTab.current.set(tab.id,top)}/>)}

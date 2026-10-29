@@ -9,6 +9,18 @@ import {python} from "@codemirror/lang-python";
 import {css} from "@codemirror/lang-css";
 import {html} from "@codemirror/lang-html";
 import type {WorkspaceReadOnlyPreview} from "./WorkspaceReadOnlyPreviewPanel.js";
+import {
+  SOURCE_LANGUAGE_LOCATION_KINDS,
+  sourceLanguageCapabilities,
+  sourceLanguageIdForPath,
+  sourceLanguageLocationIsWithinRoot,
+  sourceLanguageLocations,
+  sourceRelativeLanguageLocationPath,
+  type SourceLanguageCapabilities,
+  type SourceLanguageLocation,
+  type SourceLanguageLocationKind,
+  type SourceLanguagePosition,
+} from "../src/conversation/SourceLanguageNavigationModel.js";
 
 /**
  * Original text-file-editor-tab-content.electron-e71f710dc03c.js (Kr)
@@ -29,6 +41,37 @@ function sourceLocalPreviewLanguage(name:string){
   return [];
 }
 
+type SourceLanguageContextMenuState={
+  left:number;top:number;position:SourceLanguagePosition;
+};
+type SourceLanguageLocationListState={
+  kind:SourceLanguageLocationKind;left:number;top:number;loading:boolean;
+  locations:SourceLanguageLocation[];visibleCount:number;
+};
+function sourceLanguageActionLabel(kind:SourceLanguageLocationKind):string{
+  switch(kind){
+    case "definition":return "Go to Definition";
+    case "typeDefinition":return "Go to Type Definition";
+    case "implementation":return "Go to Implementations";
+    case "references":return "Go to References";
+  }
+}
+function sourceLanguageLocationsTitle(
+  kind:SourceLanguageLocationKind,count:number,
+):string{
+  const label=kind==="definition"?"definition":
+    kind==="typeDefinition"?"type definition":
+    kind==="implementation"?"implementation":"reference";
+  return `${count} ${label}${count===1?"":"s"}`;
+}
+function sourceLanguagePositionAt(
+  view:EditorView,event:MouseEvent,
+):SourceLanguagePosition|null{
+  const offset=view.posAtCoords({x:event.clientX,y:event.clientY});
+  if(offset==null)return null;
+  const line=view.state.doc.lineAt(offset);
+  return {line:line.number-1,character:offset-line.from};
+}
 /**
  * CodeMirror virtualizes off-screen lines. Build highlighted source line
  * decorations only for visible ranges, never one DOM node per selected line
@@ -75,6 +118,13 @@ function positionReadOnlyEditor(
       selection:{anchor:position},
       effects:EditorView.scrollIntoView(position,{y:"center"}),
     });
+    // A retained EditorView can have an ancestor hidden during a tab switch.
+    // After the source-confirmed scroll effect, enforce the same centered
+    // reveal against CodeMirror's own scrollDOM so a stale bottom snapshot
+    // cannot win a repeated navigation.
+    const block=view.lineBlockAt(position);
+    view.scrollDOM.scrollTop=Math.max(0,
+      block.top-(view.scrollDOM.clientHeight-block.height)/2);
   }else if(initialScrollTop!=null&&!preview.resetTabState){
     view.scrollDOM.scrollTop=initialScrollTop;
   }else if(preview.resetTabState){
@@ -84,13 +134,20 @@ function positionReadOnlyEditor(
 
 export interface WorkspaceReadOnlyCodeMirrorProps {
   preview:WorkspaceReadOnlyPreview;
+  /** Absolute path is only a lookup key; native host still checks its grant. */
+  path:string;
+  /** Renderer-derived display root, never treated as filesystem authority. */
+  workspaceRoot:string|null;
+  onOpenLocation:(location:SourceLanguageLocation)=>void;
   active?:boolean;
   initialScrollTop?:number;
   onScrollTop?:(top:number)=>void;
 }
 export function WorkspaceReadOnlyCodeMirror({
-  preview,active=true,initialScrollTop,onScrollTop,
+  preview,path,workspaceRoot,onOpenLocation,
+  active=true,initialScrollTop,onScrollTop,
 }:WorkspaceReadOnlyCodeMirrorProps){
+  const surfaceRef=React.useRef<HTMLDivElement|null>(null);
   const container=React.useRef<HTMLDivElement|null>(null);
   const viewRef=React.useRef<EditorView|null>(null);
   const onScrollTopRef=React.useRef(onScrollTop);
@@ -99,10 +156,110 @@ export function WorkspaceReadOnlyCodeMirror({
   activeRef.current=active;
   const previewRef=React.useRef(preview);
   previewRef.current=preview;
+  const [capabilities,setCapabilities]=React.useState<SourceLanguageCapabilities|null>(null);
+  const [contextMenu,setContextMenu]=React.useState<SourceLanguageContextMenuState|null>(null);
+  const [locationList,setLocationList]=React.useState<SourceLanguageLocationListState|null>(null);
+  const locationRequestIdRef=React.useRef(0);
+  const pathRef=React.useRef(path);
+  pathRef.current=path;
+  const workspaceRootRef=React.useRef(workspaceRoot);
+  workspaceRootRef.current=workspaceRoot;
+  const languageIdRef=React.useRef(sourceLanguageIdForPath(path));
+  languageIdRef.current=sourceLanguageIdForPath(path);
+  const capabilitiesRef=React.useRef(capabilities);
+  capabilitiesRef.current=capabilities;
+  const onOpenLocationRef=React.useRef(onOpenLocation);
+  onOpenLocationRef.current=onOpenLocation;
   const pendingPositionRef=React.useRef<{
     initialScrollTop:number|undefined;locationRequestChanged:boolean;
   }|null>(null);
   const lastLocationRequestIdRef=React.useRef(preview.locationRequestId);
+  const requestLocations=React.useCallback(async(
+    kind:SourceLanguageLocationKind,
+    position:SourceLanguagePosition,
+    anchor:{left:number;top:number},
+  )=>{
+    const host=window.agentWebDesktopHost;
+    const activePath=pathRef.current;
+    const languageId=languageIdRef.current;
+    const root=workspaceRootRef.current;
+    if(host?.getWorkspaceLanguageLocations==null||activePath===""||
+      languageId==null||root==null||
+      !capabilitiesRef.current?.locationKinds.includes(kind))return;
+    const requestId=++locationRequestIdRef.current;
+    setContextMenu(null);
+    setLocationList({kind,left:anchor.left,top:anchor.top,loading:true,
+      locations:[],visibleCount:100});
+    try{
+      const raw=await host.getWorkspaceLanguageLocations({
+        path:activePath,languageId,kind,position,
+      });
+      if(locationRequestIdRef.current!==requestId)return;
+      // Even a buggy provider must not turn a symbol result into access to a
+      // path outside the directory the user explicitly granted.
+      const locations=sourceLanguageLocations(raw).filter(location=>
+        sourceLanguageLocationIsWithinRoot(location.path,root));
+      if(locations.length===1){
+        setLocationList(null);
+        onOpenLocationRef.current(locations[0]!);
+      }else if(locations.length>1){
+        setLocationList({kind,left:anchor.left,top:anchor.top,loading:false,
+          locations,visibleCount:100});
+      }else setLocationList(null);
+    }catch{
+      if(locationRequestIdRef.current===requestId)setLocationList(null);
+    }
+  },[]);
+  const requestLocationsRef=React.useRef(requestLocations);
+  requestLocationsRef.current=requestLocations;
+  const languageId=sourceLanguageIdForPath(path);
+  React.useEffect(()=>{
+    const host=window.agentWebDesktopHost;
+    if(!active||path===""||workspaceRoot==null||languageId==null||
+      host?.getWorkspaceLanguageCapabilities==null||
+      host.getWorkspaceLanguageLocations==null){
+      setCapabilities(null);
+      setContextMenu(null);
+      setLocationList(null);
+      return;
+    }
+    let current=true;
+    setCapabilities(null);
+    void host.getWorkspaceLanguageCapabilities({path,languageId}).then(value=>{
+      if(current)setCapabilities(sourceLanguageCapabilities(value));
+    }).catch(()=>{if(current)setCapabilities(null);});
+    return ()=>{current=false;};
+  },[active,path,workspaceRoot,languageId]);
+  React.useEffect(()=>{
+    if(active)return;
+    locationRequestIdRef.current++;
+    setContextMenu(null);
+    setLocationList(null);
+  },[active]);
+  React.useEffect(()=>{
+    if(contextMenu==null&&locationList==null)return;
+    const onPointerDown=(event:PointerEvent)=>{
+      const target=event.target;
+      if(target instanceof Element&&target.closest(
+        "[data-source-language-menu],[data-source-language-locations]"))return;
+      locationRequestIdRef.current++;
+      setContextMenu(null);
+      setLocationList(null);
+    };
+    const onKeyDown=(event:KeyboardEvent)=>{
+      if(event.key!=="Escape")return;
+      event.preventDefault();
+      locationRequestIdRef.current++;
+      setContextMenu(null);
+      setLocationList(null);
+    };
+    document.addEventListener("pointerdown",onPointerDown);
+    document.addEventListener("keydown",onKeyDown);
+    return ()=>{
+      document.removeEventListener("pointerdown",onPointerDown);
+      document.removeEventListener("keydown",onKeyDown);
+    };
+  },[contextMenu,locationList]);
   React.useLayoutEffect(()=>{
     const parent=container.current;
     if(parent==null)return;
@@ -134,6 +291,48 @@ export function WorkspaceReadOnlyCodeMirror({
         lineNumbers(),
         sourceLocalPreviewLanguage(preview.name),
         selectedLines,
+        EditorView.domEventHandlers({
+          mousedown:(event,view)=>{
+            if(!activeRef.current||!(event.metaKey||event.ctrlKey)||event.button!==0)
+              return false;
+            if(!capabilitiesRef.current?.locationKinds.includes("definition"))
+              return false;
+            const position=sourceLanguagePositionAt(view,event);
+            const bounds=surfaceRef.current?.getBoundingClientRect();
+            if(position==null||bounds==null)return false;
+            event.preventDefault();
+            requestLocationsRef.current("definition",position,{
+              left:Math.max(4,Math.min(event.clientX-bounds.left,bounds.width-240)),
+              top:Math.max(4,Math.min(event.clientY-bounds.top+10,bounds.height-180)),
+            });
+            return true;
+          },
+          contextmenu:(event,view)=>{
+            if(!activeRef.current)return false;
+            // Ctrl/Cmd-click is a navigation gesture only when definition
+            // navigation is supported; otherwise retain the native context menu.
+            if(event.metaKey||event.ctrlKey){
+              if(capabilitiesRef.current?.locationKinds.includes("definition")){
+                event.preventDefault();return true;
+              }
+              return false;
+            }
+            const available=capabilitiesRef.current;
+            if(available==null||available.locationKinds.length===0)return false;
+            const position=sourceLanguagePositionAt(view,event);
+            const bounds=surfaceRef.current?.getBoundingClientRect();
+            if(position==null||bounds==null)return false;
+            event.preventDefault();
+            locationRequestIdRef.current++;
+            setLocationList(null);
+            setContextMenu({
+              left:Math.max(4,Math.min(event.clientX-bounds.left,bounds.width-240)),
+              top:Math.max(4,Math.min(event.clientY-bounds.top,bounds.height-180)),
+              position,
+            });
+            return true;
+          },
+        }),
         EditorView.theme({
           "&":{height:"100%",fontSize:"12px",
             color:"var(--demo-text, #242424)"},
@@ -210,11 +409,74 @@ export function WorkspaceReadOnlyCodeMirror({
         pending.initialScrollTop,pending.locationRequestChanged);
     }
   },[active]);
-  return <div ref={container}
+  return <div ref={surfaceRef}
     hidden={!active}
-    aria-hidden={!active}
-    className="demo-workspace-preview__codemirror"
-    data-workspace-file-text={active?"":undefined}
-    data-source-workspace-codemirror={active?"read-only":undefined}
-    aria-label={active?"Read-only file source":undefined}/>;
+    className="demo-workspace-preview__language-surface"
+    data-source-language-surface="">
+    <div ref={container}
+      aria-hidden={!active}
+      className="demo-workspace-preview__codemirror"
+      data-workspace-file-text={active?"":undefined}
+      data-source-workspace-codemirror={active?"read-only":undefined}
+      aria-label={active?"Read-only file source":undefined}/>
+    {active&&contextMenu!=null&&capabilities!=null?
+      <div role="menu" aria-label="Source language navigation"
+        data-source-language-menu=""
+        className="demo-source-language__menu"
+        style={{left:contextMenu.left,top:contextMenu.top}}
+        onPointerDown={event=>event.stopPropagation()}>
+        {SOURCE_LANGUAGE_LOCATION_KINDS.filter(kind=>
+          capabilities.locationKinds.includes(kind)).map(kind=>
+          <button key={kind} type="button" role="menuitem"
+            onClick={()=>{
+              const current=contextMenu;
+              setContextMenu(null);
+              void requestLocations(kind,current.position,{
+                left:current.left,top:current.top+8,
+              });
+            }}>{sourceLanguageActionLabel(kind)}</button>)}
+      </div>:null}
+    {active&&locationList!=null?
+      <div role="dialog"
+        aria-label={sourceLanguageLocationsTitle(locationList.kind,locationList.locations.length)}
+        data-source-language-locations=""
+        className="demo-source-language__locations"
+        style={{left:locationList.left,top:locationList.top}}
+        onPointerDown={event=>event.stopPropagation()}>
+        <header>
+          <span>{locationList.loading?"Loading locations…":
+            sourceLanguageLocationsTitle(locationList.kind,locationList.locations.length)}</span>
+          <button type="button" aria-label="Close locations"
+            onClick={()=>{
+              locationRequestIdRef.current++;
+              setLocationList(null);
+            }}>×</button>
+        </header>
+        {locationList.loading?
+          <p role="status">Loading locations…</p>:
+          <div className="demo-source-language__location-items">
+            {locationList.locations.slice(0,locationList.visibleCount).map((location,index)=>{
+              const relativePath=sourceRelativeLanguageLocationPath(
+                location.path,workspaceRoot??"");
+              const line=location.range.start.line+1;
+              const column=location.range.start.character+1;
+              return <button key={`${location.path}:${line}:${column}:${index}`}
+                type="button"
+                aria-label={`Open ${relativePath}, line ${line}, column ${column}`}
+                onClick={()=>{
+                  locationRequestIdRef.current++;
+                  setLocationList(null);
+                  onOpenLocationRef.current(location);
+                }}>
+                <span>{relativePath}</span><small>{line}:{column}</small>
+              </button>;
+            })}
+            {locationList.visibleCount<locationList.locations.length?
+              <button type="button" className="demo-source-language__load-more"
+                onClick={()=>setLocationList(current=>current==null?current:{
+                  ...current,visibleCount:current.visibleCount+100,
+                })}>Load more locations</button>:null}
+          </div>}
+      </div>:null}
+  </div>;
 }
