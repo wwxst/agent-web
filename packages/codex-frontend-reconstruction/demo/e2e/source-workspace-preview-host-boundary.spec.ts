@@ -968,3 +968,36 @@ test("original onOpenLocation opens a related file at one-based line/column and 
     {path:"/projects/agent-web/src/index.ts",line:3},
   ]);
 });
+
+test("source location without an existing workspace grant never opens a picker or reads a file",async({page})=>{
+  await page.addInitScript(()=>{
+    const state={selects:0,reads:0};
+    Object.assign(window,{__sourceOpenLocationNoGrantState:state});
+    Object.defineProperty(window,"agentWebDesktopHost",{configurable:true,value:{
+      subscribeUiCommands:()=>()=>{},
+      subscribeHostEvents:()=>()=>{},
+      getComposerDrafts:async()=>({}),
+      setComposerDraft:async()=>true,
+      openMenu:async()=>false,
+      selectWorkspaceDirectory:async()=>{
+        state.selects++;
+        return {selected:true,name:"unexpected-workspace"};
+      },
+      revokeWorkspaceDirectory:async()=>true,
+      readWorkspaceTextFile:async()=>{
+        state.reads++;
+        return {name:"index.ts",relativePath:"src/index.ts",text:"",readOnly:true};
+      },
+    }});
+  });
+  await page.goto("/");
+  await page.getByRole("button",{name:"打开演示工具"}).click();
+  await page.getByTestId("demo-source-open-location").click();
+  const state=await page.evaluate(()=>(
+    window as unknown as Window & {__sourceOpenLocationNoGrantState:{
+      selects:number;reads:number;
+    }
+  }).__sourceOpenLocationNoGrantState);
+  expect(state).toEqual({selects:0,reads:0});
+});
+
