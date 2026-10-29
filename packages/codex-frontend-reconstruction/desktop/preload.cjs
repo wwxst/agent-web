@@ -34,7 +34,7 @@ const sourceLanguageIds=new Set([
 ]);
 function validAbsoluteWorkspacePath(value){
   return typeof value==="string"&&value.length>0&&value.length<=4096&&
-    !/[\\u0000-\\u001f\\u007f]/u.test(value)&&
+    !/[\u0000-\u001f\u007f]/u.test(value)&&
     (value.startsWith("/")||/^[A-Za-z]:[\\\\/]/u.test(value)||value.startsWith("\\\\"));
 }
 const draftThreadIds=new Set(["frontend","review"]);
