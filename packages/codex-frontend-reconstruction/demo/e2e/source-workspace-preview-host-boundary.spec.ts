@@ -555,6 +555,17 @@ test("native granted workspace directory tree opens new CodeMirror tab without r
   const src=tree.getByRole("treeitem",{name:"src",exact:true});
   await expect(src).toBeVisible();
   await src.click();
+  const appTree=tree.getByRole("treeitem",{name:"App.tsx"});
+  await appTree.click();
+  await page.waitForTimeout(300);
+  const appReuse=await page.evaluate(()=>
+    (window as unknown as Window & {
+      __nativeTreeBridgeTest:{treeReads:string[];absoluteReads:number};
+    }).__nativeTreeBridgeTest);
+  expect(appReuse.absoluteReads).toBe(1);
+  expect(appReuse.treeReads).toEqual([]);
+  await expect(panel.getByRole("tab",{name:"App.tsx"}))
+    .toHaveAttribute("data-source-file-tab-preview","false");
   const extra=tree.getByRole("treeitem",{name:"extra.ts"});
   await expect(extra).toBeVisible();
   await extra.click();
