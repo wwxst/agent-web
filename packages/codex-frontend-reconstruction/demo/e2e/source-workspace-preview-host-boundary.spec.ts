@@ -901,7 +901,7 @@ test("original onOpenLocation payload reuses the granted tab and reveals the one
   await page.getByRole("button",{name:"打开演示工具"}).click();
   await page.getByTestId("demo-source-user-file-attachments").click();
   const row=page.locator('[data-demo-turn-id^="user-file-attachments-"]').last();
-  await row.getByRole("button",{name:/App\\.tsx/}).click();
+  await row.getByRole("button",{name:/App\.tsx/}).click();
 
   const panel=page.getByRole("complementary",{name:"Local file preview"});
   const appTab=panel.getByRole("tab",{name:"App.tsx"});
