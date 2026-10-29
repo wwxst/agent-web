@@ -975,8 +975,8 @@ export function App() {
     if(playing)return;
     markFollow();
     openWorkspaceLocation({
-      path:"/projects/agent-web/src/App.tsx",
-      range:{start:{line:13,character:3},end:{line:13,character:8}},
+      path:"/projects/agent-web/src/index.ts",
+      range:{start:{line:2,character:2},end:{line:2,character:8}},
     });
   }
 
