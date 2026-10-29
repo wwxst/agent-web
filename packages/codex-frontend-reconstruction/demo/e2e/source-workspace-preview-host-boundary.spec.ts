@@ -915,6 +915,9 @@ test("original onOpenLocation payload reuses the granted tab and reveals the one
   await scroller.evaluate(element=>{element.scrollTop=element.scrollHeight;});
   await expect.poll(()=>scroller.evaluate(element=>element.scrollTop)).toBeGreaterThan(0);
 
+  // Clicking an attachment closes the outside-click-dismissed demo tools
+  // overlay. Reopen it before injecting the explicitly synthetic location.
+  await page.getByRole("button",{name:"打开演示工具"}).click();
   // This demo-only control injects the exact source callback shape:
   // {path, range.start.line, range.start.character}. It is not an LSP provider.
   await page.getByTestId("demo-source-open-location").click();
