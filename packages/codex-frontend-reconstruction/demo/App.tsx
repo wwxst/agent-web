@@ -217,6 +217,9 @@ export function App() {
   // may finish concurrently and in a different order from user clicks.
   const workspacePickerInFlightRef=React.useRef(false);
   const workspaceSelectionIntentRef=React.useRef(0);
+  // A new source-location navigation must be distinguishable even when the
+  // same file, line and column are opened repeatedly.
+  const workspaceLocationRequestRef=React.useRef(0);
   // Latest *new preview* request wins, independently of tab-selection
   // intent. A slow earlier preview must not replace a newer tree selection.
   const workspaceLatestPreviewIntentRef=React.useRef(0);
@@ -297,12 +300,15 @@ export function App() {
     if(host!=null)void host.revokeWorkspaceDirectory().catch(()=>{});
   },[]);
   const openWorkspaceAttachment=React.useCallback(async(
-    request:{path:string;line?:number;endLine?:number},
+    request:{path:string;line?:number;endLine?:number;column?:number;resetTabState?:boolean},
     mode:"preview"|"copy"="preview",
   )=>{
     const host=window.agentWebDesktopHost;
     if(host==null)return;
     const epoch=workspaceRequestEpochRef.current;
+    const locationRequestId=
+      request.line!=null||request.column!=null||request.resetTabState===true
+        ?++workspaceLocationRequestRef.current:undefined;
     try{
       if(!workspaceGrantRef.current){
         // Main-process native folder selection is exclusive. The old global
@@ -328,7 +334,19 @@ export function App() {
         await host.copyWorkspaceFileContents(request);
         if(epoch===workspaceRequestEpochRef.current)notify("已复制文件内容");
       }else if(tabId!=null&&intent!=null){
-        const file=await host.readWorkspaceTextFile(request);
+        const file=await host.readWorkspaceTextFile({
+          path:request.path,
+          ...(request.line===undefined?{}:{line:request.line}),
+          ...(request.endLine===undefined?{}:{endLine:request.endLine}),
+        });
+        const locatedFile=locationRequestId==null?file:{
+          ...file,
+          ...(request.line===undefined?{}:{line:request.line}),
+          ...(request.endLine===undefined?{}:{endLine:request.endLine}),
+          ...(request.column===undefined?{}:{column:request.column}),
+          ...(request.resetTabState===undefined?{}:{resetTabState:request.resetTabState}),
+          locationRequestId,
+        };
         if(epoch===workspaceRequestEpochRef.current&&
             workspaceLatestReadByTabRef.current.get(tabId)===intent)
           setWorkspaceTabs(current=>{
@@ -344,11 +362,11 @@ export function App() {
             if(existing!=null&&existing.id!==tabId){
               workspaceLatestReadByTabRef.current.delete(existing.id);
               return sourceOpenLocalReadOnlyFileTab(current,{
-                id:existing.id,path:existing.path,content:file,
+                id:existing.id,path:existing.path,content:locatedFile,
               },intent===workspaceSelectionIntentRef.current);
             }
             return sourceOpenLocalReadOnlyFileTab(current,{
-              id:tabId,path:request.path,content:file,
+              id:tabId,path:request.path,content:locatedFile,
             },intent===workspaceSelectionIntentRef.current);
           });
       }
@@ -368,15 +386,30 @@ export function App() {
    * It never accepts the root or generic filesystem paths from React. */
   const openWorkspaceTreeFile=React.useCallback(async(
     relativePath:string,isPreview=true,
+    location?:{line?:number;endLine?:number;column?:number;resetTabState?:boolean},
   )=>{
     const host=window.agentWebDesktopHost;
     if(host?.readWorkspaceTreeTextFile==null||!workspaceGrantRef.current)return;
     const epoch=workspaceRequestEpochRef.current;
+    const locationRequestId=location==null?undefined:++workspaceLocationRequestRef.current;
     const relative=relativePath.replace(/\\/g,"/");
     const open=workspaceTabs.tabs.find(tab=>
       tab.content.relativePath.replace(/\\/g,"/")===relative);
     const intent=++workspaceSelectionIntentRef.current;
     if(open!=null){
+      // Original IX preserves the tab identity and forwards source location
+      // props. A resetTabState location intentionally clears the stale
+      // scroll snapshot; ordinary re-selection preserves it.
+      if(location!=null){
+        setWorkspaceTabs(current=>({
+          tabs:current.tabs.map(tab=>tab.id===open.id?{
+            ...tab,content:{...tab.content,...location,
+              ...(locationRequestId==null?{}:{locationRequestId})},
+          }:tab),
+          activeTabId:open.id,
+        }));
+        return;
+      }
       // Re-selecting an already-pinned tab must not cancel a different
       // pending preview. Re-selecting the current preview is a newer preview
       // intent and invalidates unresolved preview reads.
@@ -427,7 +460,10 @@ export function App() {
         }
         workspacePendingPreviewTabIdsRef.current.delete(tabId);
         return sourceOpenLocalReadOnlyFileTab(current,{
-          id:tabId,path:relative,content:file,isPreview,
+          id:tabId,path:relative,content:location==null?file:{
+            ...file,...location,
+            ...(locationRequestId==null?{}:{locationRequestId}),
+          },isPreview,
         },intent===workspaceSelectionIntentRef.current);
       });
     }catch(error){

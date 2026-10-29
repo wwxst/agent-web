@@ -168,3 +168,14 @@
 - Kept-tab state, italic preview labels, the local Keep tab action and stale async preview fencing are integrated into the existing React panel. This is not the private `XL` registry, and the original **Pin to sidebar** action is still separate and unsupported.
 - Verified on feature head `a24d702`: 516/516 core, 5/5 model, 66/66 Chromium, 80/80 Linux Electron, and Windows Electron 79 passed / 1 skipped / 0 failed; TypeScript/Vite and actual Electron smoke passed. The mounted browser scenario covers tree-to-attachment tab reuse, single-click preview replacement, double-click kept tabs, Keep tab, and stale slow-read rejection.
 - **Next:** restore source-confirmed file navigation state on the already mounted editor/tree—selected path and line/endLine/column reveal when opening a related file—then investigate preserving actual editor/content state across tab switches. Keep the current read-only and grant boundaries; do not invent write/save or remote-host behavior.
+
+
+## 2026-10-29 — Source line/column reveal integrated into the mounted read-only editor (PR #74)
+
+- Verified the uploaded compiled `app-initial-5851df3f6cb1.js` location contract and `user-message-attachments-93893a2e6026.js` Qe route. The existing attachment adapter was dropping the source-provided one-based `column`; it now forwards that value to the existing React file-tab route.
+- The mounted CodeMirror editor clamps one-based line/column to the actual document and line length, sets the selection, and scrolls the target into view. The original `endLine` range remains highlighted only over visible virtualized lines.
+- Added a monotonic location-request identity so reopening the same path and line is still treated as a new navigation and overrides an old saved scroll snapshot. Normal tab re-selection continues restoring that tab's own scroll; `resetTabState` remains an explicit reset signal.
+- Column and reset metadata stay renderer-side; the native read IPC receives only its supported path/line/endLine fields. Editor remains read-only and no write/save IPC was added.
+- Verified head `c71cb40a5212ee32a38849fe24e2641121e20c96`: core 516/516, demo model 5/5, Chromium 66/66, Linux Electron 80/80, Windows Electron 79 passed / 1 skipped / 0 failed. TypeScript/Vite, browser smoke, and both actual Electron smoke jobs passed.
+- PR #74 is Draft and stacked on PR #73's `recovery/native-preview-pinned-tab-lifecycle-20261029` branch. No Agent backend or `main` changes.
+- **Next:** wire the source-confirmed related-file `onOpenLocation` action to this existing tab route (including `resetTabState`) rather than stopping at attachment-click navigation; then test cross-tab editor-state preservation and compare the actual mounted panel against the matching original Codex build. Do not claim the private `contentInstance` or sidebar pinned-content registry is restored.

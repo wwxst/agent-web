@@ -302,3 +302,13 @@ Follow `reports/NEXT_BATCH.md`: add the typed controller paste-event contract an
 - Added core and canonical mounted-browser coverage for preview replacement, kept-tab survival, direct-open promotion, same-file dedup, double-click, Keep tab, and a slow old preview completing after a newer preview. Source evidence and exact limitations: `reports/SOURCE_PREVIEW_PINNED_TAB_LIFECYCLE_20261029.md`.
 - Verified final feature head `a24d7023f31061bca0d03c853e1d8ba0bc708b2c`: core 516/516, demo model 5/5, Chromium 66/66, Linux Electron 80/80, Windows Electron 79 passed / 1 skipped / 0 failed; TypeScript/Vite and both actual Electron smoke paths passed. Both push and PR workflows completed successfully.
 - PR #73 is still Draft, stacked on PR #72's branch, and has not been merged to `main`. No Agent backend or `main` changes.
+
+
+## 2026-10-29 — Source line/column reveal in the existing workspace preview (PR #74)
+
+- Forwarded the existing source attachment route's one-based `qe.column` through `demo/adapters.tsx` into `App.tsx`; host file-read requests still contain only path, line, and endLine.
+- `WorkspaceReadOnlyCodeMirror` now selects the target line/column, clamps out-of-range values safely, and scrolls to a new location request even if the same file/line was previously open at a different scroll offset. Per-tab scroll snapshots are restored on ordinary tab switches.
+- Added mounted Playwright assertions for the real CodeMirror caret at line 14/column 1 and reopening the same location after scrolling to the end. Existing read-only and native-grant boundary assertions remain.
+- Source evidence: `reports/SOURCE_LINE_COLUMN_REVEAL_20261029.md`.
+- CI at `c71cb40a5212ee32a38849fe24e2641121e20c96`: core 516/516, demo model 5/5, Chromium 66/66, Linux Electron 80/80, Windows Electron 79 passed / 1 skipped / 0 failed. Type-check/bundle, browser smoke, Linux Electron and Windows Electron jobs passed.
+- PR #74 is Draft, correctly stacked on PR #73. The original related-file `onOpenLocation` callback is not yet wired end-to-end; this stage validates the existing attachment route and editor contract only. Private editor `contentInstance`, durable state, write/save, real Agent transport and pixel parity remain outstanding. Backend and `main` unchanged.

@@ -31,7 +31,7 @@ test("actual attachment row opens read-only native-host preview, revokes on thre
         state.readCalls++;
         return {name:"App.tsx",relativePath:"src/App.tsx",
           line:request.line,endLine:request.endLine,
-          text:Array.from({length:32},(_,i)=>`source line ${i+1}`).join("\n"),
+          text:Array.from({length:80},(_,i)=>`source line ${i+1}`).join("\n"),
           readOnly:true};
       },
     }});
@@ -65,6 +65,37 @@ test("actual attachment row opens read-only native-host preview, revokes on thre
   await expect(highlightedLines.last()).toContainText("source line 28");
   await expect(preview.locator(".cm-line", {hasText:"source line 29"}))
     .not.toHaveAttribute("data-workspace-file-selected-range","true");
+  // Source hn's attachment route carries the one-based column from Qe into
+  // the same mounted CodeMirror selection, not merely into a line highlight.
+  await preview.locator(".cm-content").focus();
+  await expect.poll(async()=>preview.locator(".cm-content").evaluate(content=>{
+    const selection=content.ownerDocument.getSelection();
+    const anchor=selection?.anchorNode;
+    const line=anchor instanceof Element?anchor.closest(".cm-line"):
+      anchor?.parentElement?.closest(".cm-line");
+    return {line:line?.textContent?.trim()??null,
+      offset:selection?.anchorOffset??null};
+  })).toEqual({line:"source line 14",offset:0});
+  // Reopening the same source location is a new navigation, not a tab switch:
+  // its location request must beat the stale bottom-of-file scroll snapshot.
+  const scroller=preview.locator(".cm-scroller");
+  await scroller.evaluate(element=>{element.scrollTop=element.scrollHeight;});
+  await expect.poll(async()=>scroller.evaluate(element=>element.scrollTop))
+    .toBeGreaterThan(0);
+  const bottomScroll=await scroller.evaluate(element=>element.scrollTop);
+  await attachment.click();
+  await expect.poll(async()=>(await inspect()).read).toBe(2);
+  await expect.poll(async()=>scroller.evaluate(element=>element.scrollTop))
+    .toBeLessThan(bottomScroll);
+  await preview.locator(".cm-content").focus();
+  await expect.poll(async()=>preview.locator(".cm-content").evaluate(content=>{
+    const selection=content.ownerDocument.getSelection();
+    const anchor=selection?.anchorNode;
+    const line=anchor instanceof Element?anchor.closest(".cm-line"):
+      anchor?.parentElement?.closest(".cm-line");
+    return {line:line?.textContent?.trim()??null,
+      offset:selection?.anchorOffset??null};
+  })).toEqual({line:"source line 14",offset:0});
   const immutableBefore=await preview.locator("[data-workspace-file-text]").textContent();
   await preview.locator(".cm-content").focus();
   await page.keyboard.type("NO_WRITE_PERMITTED");
@@ -73,7 +104,7 @@ test("actual attachment row opens read-only native-host preview, revokes on thre
   expect(await preview.locator("[data-workspace-file-text]").textContent())
     .toBe(immutableBefore);
   await expect(preview).toContainText("Lines 14-28");
-  await expect.poll(async()=>(await inspect()).read).toBe(1);
+  await expect.poll(async()=>(await inspect()).read).toBe(2);
 
   // Source conversation identity is the authorization lifetime, not the
   // application window: switching must clear the panel and revoke its grant.
@@ -104,7 +135,7 @@ test("actual attachment row opens read-only native-host preview, revokes on thre
   });
   await expect.poll(async()=>(await inspect()).revoke).toBeGreaterThanOrEqual(2);
   await expect(preview).toHaveCount(0);
-  expect((await inspect()).read).toBe(1);
+  expect((await inspect()).read).toBe(2);
 });
 
 

@@ -67,7 +67,11 @@ export function WorkspaceReadOnlyCodeMirror({
   const container=React.useRef<HTMLDivElement|null>(null);
   const onScrollTopRef=React.useRef(onScrollTop);
   onScrollTopRef.current=onScrollTop;
+  const lastLocationRequestIdRef=React.useRef(preview.locationRequestId);
   React.useLayoutEffect(()=>{
+    const locationRequestChanged=
+      lastLocationRequestIdRef.current!==preview.locationRequestId;
+    lastLocationRequestIdRef.current=preview.locationRequestId;
     const parent=container.current;
     if(parent==null)return;
     const selectedLines=ViewPlugin.fromClass(class{
@@ -111,13 +115,28 @@ export function WorkspaceReadOnlyCodeMirror({
     const onScroll=()=>onScrollTopRef.current?.(view.scrollDOM.scrollTop);
     view.scrollDOM.addEventListener("scroll",onScroll,{passive:true});
     const frame=requestAnimationFrame(()=>{
-      if(initialScrollTop!=null){
+      // Original onOpenLocation passes one-based line/column and sets
+      // resetTabState=true. That navigation must win over a stale saved
+      // scroll offset; ordinary tab switches still restore their own offset.
+      const hasLocation=preview.line!=null&&
+        Number.isSafeInteger(preview.line)&&preview.line>=1;
+      if(hasLocation&&
+        (locationRequestChanged||preview.resetTabState||initialScrollTop==null)){
+        const lineNumber=Math.min(preview.line!,view.state.doc.lines);
+        const target=view.state.doc.line(lineNumber);
+        const column=preview.column!=null&&Number.isSafeInteger(preview.column)&&
+          preview.column>=1?Math.min(preview.column-1,target.length):0;
+        const position=target.from+column;
+        view.dispatch({
+          selection:{anchor:position},
+          effects:EditorView.scrollIntoView(position,{y:"center"}),
+        });
+      }else if(initialScrollTop!=null&&!preview.resetTabState){
+        // A tab switch is not a new location request: restore that tab's
+        // scroll snapshot instead of repeatedly jumping to its initial line.
         view.scrollDOM.scrollTop=initialScrollTop;
-      }else if(preview.line!=null&&
-        Number.isSafeInteger(preview.line)&&preview.line>=1){
-        const n=Math.min(preview.line,view.state.doc.lines);
-        view.dispatch({effects:EditorView.scrollIntoView(
-          view.state.doc.line(n).from,{y:"center"})});
+      }else if(preview.resetTabState){
+        view.scrollDOM.scrollTop=0;
       }
     });
     return ()=>{
@@ -125,7 +144,8 @@ export function WorkspaceReadOnlyCodeMirror({
       view.scrollDOM.removeEventListener("scroll",onScroll);
       view.destroy();
     };
-  },[preview.name,preview.text,preview.line,preview.endLine,initialScrollTop]);
+  },[preview.name,preview.text,preview.line,preview.endLine,preview.column,
+    preview.resetTabState,preview.locationRequestId,initialScrollTop]);
   return <div ref={container}
     className="demo-workspace-preview__codemirror"
     data-workspace-file-text=""

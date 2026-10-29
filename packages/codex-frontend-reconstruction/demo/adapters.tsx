@@ -251,7 +251,7 @@ const newFile: InlineReviewFile = {
 export function makeDemoRow(
   notify: (message: string) => void,
   onOpenWorkspaceAttachment?: (
-    request:{path:string;line?:number;endLine?:number},
+    request:{path:string;line?:number;endLine?:number;column?:number;resetTabState?:boolean},
     mode?:"preview"|"copy",
   )=>Promise<void>,
 ) {
@@ -397,6 +397,7 @@ export function makeDemoRow(
         await onOpenWorkspaceAttachment({
           path:sourceRoute.qe.path,
           ...(sourceRoute.qe.line==null?{}:{line:sourceRoute.qe.line}),
+          ...(sourceRoute.qe.column==null?{}:{column:sourceRoute.qe.column}),
           ...(sourceRoute.qe.line==null||
             sourceRoute.contextMenu.endLine==null||
             sourceRoute.contextMenu.endLine<sourceRoute.qe.line?{}:
