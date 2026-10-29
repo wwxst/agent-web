@@ -278,3 +278,95 @@ test("authorized file tabs accept overlapping reads, reject stale reopen results
   // All concurrent reads must share the single explicit native grant.
   expect(counters).toBe(1);
 });
+
+
+test("source Eqi tab strip menu works on canonical local file tabs with guarded close actions",async({page})=>{
+  await page.addInitScript(()=>{
+    const state={selections:0,reads:0,revocations:0};
+    Object.assign(window,{__tabContextActionsTest:state});
+    Object.defineProperty(window,"agentWebDesktopHost",{configurable:true,value:{
+      subscribeUiCommands:()=>()=>{},
+      subscribeHostEvents:()=>()=>{},
+      getComposerDrafts:async()=>({}),
+      setComposerDraft:async()=>true,
+      openMenu:async()=>false,
+      selectWorkspaceDirectory:async()=>{
+        state.selections++;return {selected:true,name:"fixture-root"};
+      },
+      revokeWorkspaceDirectory:async()=>{state.revocations++;return true;},
+      readWorkspaceTextFile:async(request:{path:string})=>{
+        state.reads++;
+        const app=request.path.endsWith("/App.tsx");
+        return {name:app?"App.tsx":"index.ts",
+          relativePath:app?"src/App.tsx":"src/index.ts",
+          text:app?"original app text":"original index text",readOnly:true};
+      },
+    }});
+  });
+  await page.goto("/");
+  await page.getByRole("button",{name:"打开演示工具"}).click();
+  await page.getByTestId("demo-source-user-file-attachments").click();
+  const row=page.locator('[data-demo-turn-id^="user-file-attachments-"]').last();
+  const app=row.getByRole("button",{name:/App\.tsx/});
+  const index=row.getByRole("button",{name:/index\.ts/});
+  const panel=page.getByRole("complementary",{name:"Local file preview"});
+  await app.click();
+  await index.click();
+  const tabs=panel.getByRole("tablist",{name:"Open local files"});
+  await expect(tabs.getByRole("tab")).toHaveText(["App.tsx","index.ts"]);
+
+  const menu=page.getByRole("menu",{name:"Local file tab actions"});
+  const appTab=tabs.getByRole("tab",{name:"App.tsx"});
+  const indexTab=tabs.getByRole("tab",{name:"index.ts"});
+  await indexTab.focus();
+  await page.keyboard.press("Shift+F10");
+  await expect(menu).toBeVisible();
+  await expect(menu.getByRole("menuitem")).toHaveText([
+    "Close","Close other tabs","Close tabs to the right",
+  ]);
+  await expect(menu.getByRole("menuitem",{name:"Close tabs to the right"})).toBeDisabled();
+  await expect(menu.getByRole("menuitem",{name:"Close",exact:true})).toBeFocused();
+  await page.keyboard.press("End");
+  await expect(menu.getByRole("menuitem",{name:"Close other tabs"})).toBeFocused();
+  await page.keyboard.press("Home");
+  await expect(menu.getByRole("menuitem",{name:"Close",exact:true})).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(menu).toHaveCount(0);
+  await expect(indexTab).toBeFocused();
+  await expect(indexTab).toHaveAttribute("aria-expanded","false");
+
+  await appTab.click({button:"right"});
+  await expect(menu.getByRole("menuitem",{name:"Close tabs to the right"})).toBeEnabled();
+  await menu.getByRole("menuitem",{name:"Close tabs to the right"}).click();
+  await expect(menu).toHaveCount(0);
+  await expect(tabs.getByRole("tab")).toHaveText(["App.tsx"]);
+  await expect(appTab).toHaveAttribute("aria-selected","true");
+
+  await index.click();
+  await expect(tabs.getByRole("tab")).toHaveCount(2);
+  await appTab.focus();
+  await page.keyboard.press("ContextMenu");
+  await expect(menu).toBeVisible();
+  await menu.getByRole("menuitem",{name:"Close other tabs"}).click();
+  await expect(tabs.getByRole("tab")).toHaveText(["App.tsx"]);
+  await expect(appTab).toHaveAttribute("aria-selected","true");
+  await expect(appTab).toBeFocused();
+
+  await index.click();
+  await expect(tabs.getByRole("tab")).toHaveCount(2);
+  await indexTab.click({button:"right"});
+  await menu.getByRole("menuitem",{name:"Close",exact:true}).click();
+  await expect(tabs.getByRole("tab")).toHaveText(["App.tsx"]);
+  await expect(appTab).toBeFocused();
+  await appTab.click({button:"right"});
+  await expect(menu.getByRole("menuitem",{name:"Close other tabs"})).toBeDisabled();
+  await expect(menu.getByRole("menuitem",{name:"Close tabs to the right"})).toBeDisabled();
+  await menu.getByRole("menuitem",{name:"Close",exact:true}).click();
+  await expect(panel).toHaveCount(0);
+  const host=await page.evaluate(()=>
+    (window as unknown as Window & {
+      __tabContextActionsTest:{selections:number;reads:number};
+    }).__tabContextActionsTest);
+  expect(host.selections).toBe(1);
+  expect(host.reads).toBe(4);
+});

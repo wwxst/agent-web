@@ -71,3 +71,49 @@ export function sourceCloseLocalReadOnlyFileTab<T>(
     :state.activeTabId;
   return {tabs,activeTabId};
 }
+
+/** Original app-initial Eqi emits these three actions in tab-strip placement.
+ * This local preview has no private pinned/home tab registry; all its tabs
+ * are user-closeable. The source guards the other two actions by the number
+ * of available closeable neighbors. */
+export type SourceLocalFileTabContextAction =
+  |"close-tab"|"close-other-tabs"|"close-tabs-to-the-right";
+export interface SourceLocalFileTabContextMenuItem {
+  id:SourceLocalFileTabContextAction;
+  message:"Close"|"Close other tabs"|"Close tabs to the right";
+  enabled:boolean;
+}
+export function sourceLocalFileTabContextMenu<T>(
+  state:SourceLocalReadOnlyTabState<T>,id:string,
+):readonly SourceLocalFileTabContextMenuItem[] {
+  const index=state.tabs.findIndex(tab=>tab.id===id);
+  if(index===-1)return [];
+  return [
+    {id:"close-tab",message:"Close",enabled:true},
+    {id:"close-other-tabs",message:"Close other tabs",
+      enabled:state.tabs.length>1},
+    {id:"close-tabs-to-the-right",message:"Close tabs to the right",
+      enabled:index<state.tabs.length-1},
+  ];
+}
+/** Source tab controller fe closes other closeable tabs and activates the
+ * retained target. The independent native preview has no pinned tabs. */
+export function sourceCloseOtherLocalReadOnlyFileTabs<T>(
+  state:SourceLocalReadOnlyTabState<T>,id:string,
+):SourceLocalReadOnlyTabState<T> {
+  const retained=state.tabs.find(tab=>tab.id===id);
+  if(retained==null)return state;
+  if(state.tabs.length===1&&state.activeTabId===id)return state;
+  return {tabs:[retained],activeTabId:id};
+}
+/** Source pe closes closeable tabs to the right in current strip order.
+ * Independent fallback activates target when the active tab was removed. */
+export function sourceCloseLocalReadOnlyTabsToRight<T>(
+  state:SourceLocalReadOnlyTabState<T>,id:string,
+):SourceLocalReadOnlyTabState<T> {
+  const index=state.tabs.findIndex(tab=>tab.id===id);
+  if(index===-1||index===state.tabs.length-1)return state;
+  const tabs=state.tabs.slice(0,index+1);
+  return {tabs,activeTabId:tabs.some(tab=>tab.id===state.activeTabId)
+    ?state.activeTabId:id};
+}
