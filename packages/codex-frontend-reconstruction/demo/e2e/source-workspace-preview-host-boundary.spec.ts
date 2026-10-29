@@ -791,6 +791,9 @@ test("source patch file links enter the mounted read-only preview at the first c
   // Tool activity is collapsed by default in the transcript; expand this
   // exact row before expecting its source-shaped patch leaf and path button.
   await patch.getByRole("button",{name:/1 项工具活动/}).click();
+  // The recovered activity group reveals a separate leaf disclosure before
+  // its per-file path controls, matching the source's two-level interaction.
+  await patch.getByRole("button",{name:"编辑了文件 · 模拟"}).click();
   const fileLink=patch.getByRole("button",{name:"ToolActivityHistorySource.ts"}).first();
   await expect(fileLink).toBeVisible();
   await fileLink.click();
