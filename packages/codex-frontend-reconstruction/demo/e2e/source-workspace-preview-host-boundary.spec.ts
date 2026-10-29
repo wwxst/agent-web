@@ -383,3 +383,96 @@ test("source Eqi tab strip menu works on canonical local file tabs with guarded 
   expect(host.selections).toBe(1);
   expect(host.reads).toBe(4);
 });
+
+test("mounted source path tree selects real consented CodeMirror tabs, filters and collapses without listing filesystem",async({page})=>{
+  await page.addInitScript(()=>{
+    const state={selections:0,reads:[] as string[],revocations:0};
+    Object.assign(window,{__sourceOpenedTreeHostState:state});
+    Object.defineProperty(window,"agentWebDesktopHost",{configurable:true,value:{
+      subscribeUiCommands:()=>()=>{},
+      subscribeHostEvents:()=>()=>{},
+      getComposerDrafts:async()=>({}),
+      setComposerDraft:async()=>true,
+      openMenu:async()=>false,
+      selectWorkspaceDirectory:async()=>{
+        state.selections++;return {selected:true,name:"fixture-root"};
+      },
+      revokeWorkspaceDirectory:async()=>{state.revocations++;return true;},
+      readWorkspaceTextFile:async(request:{path:string})=>{
+        state.reads.push(request.path);
+        const app=request.path.endsWith("/App.tsx");
+        return {name:app?"App.tsx":"index.ts",
+          relativePath:app?"src/App.tsx":"src/index.ts",
+          text:app?"real app source":"real index source",
+          readOnly:true};
+      },
+    }});
+  });
+  await page.goto("/");
+  await page.getByRole("button",{name:"打开演示工具"}).click();
+  await page.getByTestId("demo-source-user-file-attachments").click();
+  const row=page.locator('[data-demo-turn-id^="user-file-attachments-"]').last();
+  const app=row.getByRole("button",{name:/App\.tsx/});
+  const index=row.getByRole("button",{name:/index\.ts/});
+  const panel=page.getByRole("complementary",{name:"Local file preview"});
+  await app.click();
+  await index.click();
+  await expect(panel.locator("[data-workspace-file-text]")).toContainText("real index source");
+  const toggle=panel.getByRole("button",{name:"Toggle open files tree"});
+  await expect(toggle).toHaveAttribute("aria-pressed","false");
+  await toggle.click();
+  await expect(toggle).toHaveAttribute("aria-pressed","true");
+  const tree=panel.getByRole("tree",{name:"Opened local file paths"});
+  await expect(tree).toBeVisible();
+  const src=tree.getByRole("treeitem",{name:"src",exact:true});
+  const appFile=tree.getByRole("treeitem",{name:"App.tsx"});
+  const indexFile=tree.getByRole("treeitem",{name:"index.ts"});
+  await expect(src).toHaveAttribute("aria-expanded","true");
+  await expect(indexFile).toHaveAttribute("aria-selected","true");
+  await expect(appFile).toHaveAttribute("aria-selected","false");
+  await appFile.click();
+  await expect(panel.locator("[data-workspace-file-text]")).toContainText("real app source");
+  await expect(appFile).toHaveAttribute("aria-selected","true");
+  await src.click();
+  await expect(src).toHaveAttribute("aria-expanded","false");
+  await expect(tree.getByRole("treeitem")).toHaveCount(1);
+  // The original tree-side pane owns expanded paths outside the visibility
+  // toggle. Merely hiding it must not reset explicit user collapse.
+  await toggle.click();
+  await expect(toggle).toHaveAttribute("aria-pressed","false");
+  await expect(tree).not.toBeVisible();
+  await toggle.click();
+  await expect(src).toHaveAttribute("aria-expanded","false");
+
+  const filter=panel.getByRole("textbox",{name:"Filter open files"});
+  await filter.fill("INDEX");
+  await expect(src).toHaveAttribute("aria-expanded","true");
+  await expect(indexFile).toBeVisible();
+  await expect(appFile).toHaveCount(0);
+  await filter.press("Escape");
+  await expect(filter).toHaveValue("");
+  await expect(src).toHaveAttribute("aria-expanded","false");
+  await src.click();
+  await appFile.focus();
+  await page.keyboard.press("ArrowDown");
+  await expect(indexFile).toBeFocused();
+  await page.keyboard.press("Enter");
+  await expect(panel.locator("[data-workspace-file-text]")).toContainText("real index source");
+  await expect(indexFile).toHaveAttribute("aria-selected","true");
+
+  // This must not request a directory listing, perform another read or
+  // change the explicit OS chooser authority for the current thread.
+  const host=await page.evaluate(()=>
+    (window as unknown as Window & {
+      __sourceOpenedTreeHostState:{
+        reads:string[];selections:number;
+      };
+    }).__sourceOpenedTreeHostState);
+  expect(host.reads).toHaveLength(2);
+  expect(host.selections).toBe(1);
+  await panel.getByRole("button",{name:"Close App.tsx tab"}).click();
+  await expect(tree.getByRole("treeitem",{name:"App.tsx"})).toHaveCount(0);
+  const navigation=page.getByRole("navigation",{name:"会话"});
+  await navigation.getByRole("button").nth(1).click();
+  await expect(panel).toHaveCount(0);
+});

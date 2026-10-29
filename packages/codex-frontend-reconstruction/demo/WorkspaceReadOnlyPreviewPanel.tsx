@@ -1,6 +1,7 @@
 import * as React from "react";
 import {createPortal} from "react-dom";
 import {WorkspaceReadOnlyCodeMirror} from "./WorkspaceReadOnlyCodeMirror.js";
+import {WorkspaceOpenFilesTree} from "./WorkspaceOpenFilesTree.js";
 import {
   sourceLocalFileTabContextMenu,
   type SourceLocalFileTabContextAction,
@@ -64,6 +65,7 @@ export function WorkspaceReadOnlyPreviewPanel({
   const asideRef=React.useRef<HTMLElement|null>(null);
   const menuRef=React.useRef<HTMLDivElement|null>(null);
   const menuId=React.useId();
+  const [showOpenFileTree,setShowOpenFileTree]=React.useState(false);
   const [tabMenu,setTabMenu]=React.useState<{
     tabId:string;trigger:HTMLButtonElement;left:number;top:number;
   }|null>(null);
@@ -198,6 +200,11 @@ export function WorkspaceReadOnlyPreviewPanel({
         {preview.name}
         <small>{preview.relativePath}</small>
       </span>
+      <button type="button"
+        aria-label="Toggle open files tree"
+        aria-pressed={showOpenFileTree}
+        onClick={()=>setShowOpenFileTree(current=>!current)}
+        title="Show paths of already opened local files">☷</button>
       <button type="button" onClick={onClose}
         aria-label="Close local file preview">×</button>
     </header>
@@ -205,10 +212,19 @@ export function WorkspaceReadOnlyPreviewPanel({
       Read-only local preview · Not the original Codex file manager
       {rangeLabel}
     </p>
-    <WorkspaceReadOnlyCodeMirror key={activeTabId}
-      preview={preview}
-      initialScrollTop={scrollByTab.current.get(activeTabId)}
-      onScrollTop={top=>scrollByTab.current.set(activeTabId,top)}/>
+    <div className="demo-workspace-preview__editor-layout">
+      <WorkspaceOpenFilesTree
+        visible={showOpenFileTree}
+        files={tabs.map(tab=>({
+          id:tab.id,relativePath:tab.content.relativePath,
+        }))}
+        activeTabId={activeTabId}
+        onSelectTab={onSelectTab}/>
+      <WorkspaceReadOnlyCodeMirror key={activeTabId}
+        preview={preview}
+        initialScrollTop={scrollByTab.current.get(activeTabId)}
+        onScrollTop={top=>scrollByTab.current.set(activeTabId,top)}/>
+    </div>
     </div>
     {tabMenu!=null&&menuItems.length>0?createPortal(
       <div ref={menuRef} id={menuId}
