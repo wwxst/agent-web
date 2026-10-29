@@ -35,6 +35,18 @@ declare global {
       readWorkspaceTextFile(request:{path:string;line?:number;endLine?:number}):Promise<{
         name:string;relativePath:string;text:string;line?:number;endLine?:number;readOnly:true;
       }>;
+      /** Native grant-relative, single-directory bounded listing. No filesystem
+       * root or arbitrary renderer paths are exposed. */
+      listWorkspaceDirectory?(request:{relativePath:string}):Promise<{
+        relativePath:string;
+        entries:readonly {name:string;relativePath:string;kind:"directory"|"file"}[];
+        truncated:boolean;
+      }>;
+      readWorkspaceTreeTextFile?(request:{
+        relativePath:string;line?:number;endLine?:number;
+      }):Promise<{
+        name:string;relativePath:string;text:string;line?:number;endLine?:number;readOnly:true;
+      }>;
       /** Real native external HTTPS open. Never grants or settles an Agent request. */
       openExternalUrl(url:string):Promise<boolean>;
       /** A typed native cancel only. The absence of a verified Agent

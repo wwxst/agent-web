@@ -6,6 +6,7 @@ import {join,resolve} from "node:path";
 import {
   createTrustedWorkspacePreviewHost,isPathInside,
   isPreviewableTextFile,isValidPreviewRequest,MAX_PREVIEW_BYTES,
+  MAX_DIRECTORY_ENTRIES,validRelativePath,validDirectoryRequest,validTreeFileRequest,
 } from "./trustedWorkspacePreview.cjs";
 
 test("native directory grant is per trusted renderer, path canonical and revoked",async()=>{
@@ -380,4 +381,143 @@ test("Linux post-open descriptor path denies swapped parent symlink to outside w
     await rm(root,{recursive:true,force:true});
     await rm(outside,{recursive:true,force:true});
   }
+});
+
+test("native bounded directory tree lists only grant-contained previewable files, no hidden or linked paths",async()=>{
+  const root=await mkdtemp(join(tmpdir(),"agent-web-granted-tree-"));
+  const outside=await mkdtemp(join(tmpdir(),"agent-web-outside-tree-"));
+  try{
+    await mkdir(join(root,"src"));
+    await writeFile(join(root,"root.md"),"root source");
+    await writeFile(join(root,"binary.exe"),"should not appear");
+    await writeFile(join(root,".secret.ts"),"hidden");
+    await writeFile(join(root,"src","app.ts"),"export const app = true;");
+    await writeFile(join(outside,"secret.ts"),"outside");
+    try{await symlink(outside,join(root,"escape"),"dir");}
+    catch(error){if(!["EPERM","EACCES","ENOSYS"].includes(error?.code))throw error;}
+    const event={sender:{id:701}};
+    const host=createTrustedWorkspacePreviewHost({
+      isTrustedRenderer:e=>e===event,
+      chooseDirectory:async()=>({canceled:false,filePaths:[root]}),
+    });
+    await assert.rejects(host.listDirectory(event,{relativePath:""}),/WORKSPACE_NOT_GRANTED/);
+    await host.selectDirectory(event);
+    const listing=await host.listDirectory(event,{relativePath:""});
+    assert.equal(listing.relativePath,"");
+    assert.deepEqual(listing.entries.map(x=>[x.name,x.kind]),[
+      ["src","directory"],["root.md","file"],
+    ]);
+    assert.equal(listing.truncated,false);
+    assert.deepEqual((await host.listDirectory(event,{relativePath:"src"}))
+      .entries.map(x=>x.relativePath),["src/app.ts"]);
+    assert.equal((await host.readTreeTextFile(event,{relativePath:"src/app.ts"})).text,
+      "export const app = true;");
+    assert.equal((await host.readTreeTextFile(event,{relativePath:"src/app.ts"}))
+      .relativePath,join("src","app.ts"));
+    await assert.rejects(host.listDirectory(event,{relativePath:"escape"}),
+      /WORKSPACE_DIRECTORY_UNAVAILABLE/);
+    for(const invalid of ["../secret","src/../secret","/abs","src//app","src\\app",
+      "C:/root","src/.","src/","src/hidden."]){
+      assert.equal(validRelativePath(invalid,true),false,invalid);
+      await assert.rejects(host.listDirectory(event,{relativePath:invalid}),
+        /WORKSPACE_INVALID_DIRECTORY_REQUEST/);
+    }
+    assert.equal(validDirectoryRequest({relativePath:""}),true);
+    assert.equal(validDirectoryRequest({relativePath:"",extra:true}),false);
+    assert.equal(validTreeFileRequest({relativePath:"src/app.ts"}),true);
+    assert.equal(validTreeFileRequest({relativePath:"../secret.ts"}),false);
+    await assert.rejects(host.readTreeTextFile(event,{relativePath:"../secret.ts"}),
+      /WORKSPACE_INVALID_FILE_REQUEST/);
+    host.revoke(event);
+    await assert.rejects(host.listDirectory(event,{relativePath:""}),
+      /WORKSPACE_NOT_GRANTED/);
+    await assert.rejects(host.readTreeTextFile(event,{relativePath:"root.md"}),
+      /WORKSPACE_NOT_GRANTED/);
+  }finally{await rm(root,{recursive:true,force:true});await rm(outside,{recursive:true,force:true});}
+});
+
+test("native directory enumeration caps visible entries and never recursively walks folders",async()=>{
+  const root=await mkdtemp(join(tmpdir(),"agent-web-tree-cap-"));
+  try{
+    for(let i=0;i<MAX_DIRECTORY_ENTRIES+12;i++)
+      await writeFile(join(root,`file-${String(i).padStart(4,"0")}.ts`),"export{}");
+    const event={sender:{id:702}};
+    const host=createTrustedWorkspacePreviewHost({
+      isTrustedRenderer:e=>e===event,
+      chooseDirectory:async()=>({canceled:false,filePaths:[root]}),
+    });
+    await host.selectDirectory(event);
+    const response=await host.listDirectory(event,{relativePath:""});
+    assert.equal(response.entries.length,MAX_DIRECTORY_ENTRIES);
+    assert.equal(response.truncated,true);
+    assert.ok(response.entries.every(x=>x.kind==="file"&&x.relativePath===x.name));
+  }finally{await rm(root,{recursive:true,force:true});}
+});
+
+test("native directory listing rejects stale output after grant revoke during async enumeration",async()=>{
+  const root=await mkdtemp(join(tmpdir(),"agent-web-tree-revoke-"));
+  try{
+    await writeFile(join(root,"source.ts"),"contents");
+    const event={sender:{id:703}};
+    let release,begin;
+    const started=new Promise(resolve=>{begin=resolve;});
+    const gate=new Promise(resolve=>{release=resolve;});
+    const fs=await import("node:fs/promises");
+    const host=createTrustedWorkspacePreviewHost({
+      isTrustedRenderer:e=>e===event,
+      chooseDirectory:async()=>({canceled:false,filePaths:[root]}),
+      filesystem:{
+        ...fs,
+        opendir:async path=>{
+          const native=await fs.opendir(path);
+          begin(true);
+          await gate;
+          return native;
+        },
+      },
+    });
+    await host.selectDirectory(event);
+    const pending=host.listDirectory(event,{relativePath:""});
+    await started;
+    host.revoke(event);
+    release(true);
+    await assert.rejects(pending,/WORKSPACE_GRANT_REVOKED/);
+    await assert.rejects(host.listDirectory(event,{relativePath:""}),
+      /WORKSPACE_NOT_GRANTED/);
+  }finally{await rm(root,{recursive:true,force:true});}
+});
+
+test("same-path re-selection invalidates an older in-flight directory result",async()=>{
+  const root=await mkdtemp(join(tmpdir(),"agent-web-tree-reselect-"));
+  try{
+    await writeFile(join(root,"source.ts"),"safe");
+    const event={sender:{id:704}};
+    let release,started;
+    const gate=new Promise(resolve=>{release=resolve;});
+    const enter=new Promise(resolve=>{started=resolve;});
+    const fs=await import("node:fs/promises");
+    let calls=0;
+    const host=createTrustedWorkspacePreviewHost({
+      isTrustedRenderer:e=>e===event,
+      chooseDirectory:async()=>({canceled:false,filePaths:[root]}),
+      filesystem:{
+        ...fs,
+        opendir:async candidate=>{
+          const dir=await fs.opendir(candidate);
+          if(++calls===1){started(true);await gate;}
+          return dir;
+        },
+      },
+    });
+    await host.selectDirectory(event);
+    const oldListing=host.listDirectory(event,{relativePath:""});
+    await enter;
+    // Native selection can replace an earlier grant even at the same
+    // pathname; the in-flight old query must not be treated as current.
+    await host.selectDirectory(event);
+    release(true);
+    await assert.rejects(oldListing,/WORKSPACE_GRANT_REVOKED/);
+    const fresh=await host.listDirectory(event,{relativePath:""});
+    assert.equal(fresh.entries[0].name,"source.ts");
+  }finally{await rm(root,{recursive:true,force:true});}
 });

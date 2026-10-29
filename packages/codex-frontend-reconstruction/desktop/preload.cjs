@@ -18,6 +18,8 @@ const TEXT_FORM_REPLY_CHANNEL="agent-web:text-form-reply";
 const OPEN_EXTERNAL_URL_CHANNEL="agent-web:open-external-url";
 const SELECT_WORKSPACE_CHANNEL="agent-web:select-workspace-directory";
 const READ_WORKSPACE_TEXT_CHANNEL="agent-web:read-workspace-text";
+const LIST_WORKSPACE_DIRECTORY_CHANNEL="agent-web:list-workspace-directory";
+const READ_WORKSPACE_TREE_TEXT_CHANNEL="agent-web:read-workspace-tree-text";
 const REVOKE_WORKSPACE_CHANNEL="agent-web:revoke-workspace-directory";
 const COPY_WORKSPACE_PATH_CHANNEL="agent-web:copy-workspace-file-path";
 const COPY_WORKSPACE_CONTENTS_CHANNEL="agent-web:copy-workspace-file-contents";
@@ -162,6 +164,41 @@ contextBridge.exposeInMainWorld("agentWebDesktopHost",Object.freeze({
       return Promise.reject(new TypeError("WORKSPACE_INVALID_FILE_REQUEST"));
     return ipcRenderer.invoke(READ_WORKSPACE_TEXT_CHANNEL,{
       path:request.path,
+      ...(request.line===undefined?{}:{line:request.line}),
+      ...(request.endLine===undefined?{}:{endLine:request.endLine}),
+    });
+  },
+  // Local workspace tree: strict grant-relative paths, not a root URL or
+  // a generic fs primitive. Main independently validates all requests.
+  listWorkspaceDirectory(request){
+    const relativePath=request?.relativePath;
+    if(request==null||typeof request!=="object"||Array.isArray(request)||
+      Object.keys(request).length!==1||
+      typeof relativePath!=="string"||relativePath.length>1024||
+      /[\\:\u0000-\u001f\u007f]/u.test(relativePath)||
+      relativePath.startsWith("/")||relativePath.endsWith("/")||
+      relativePath.split("/").some(part=>part==="."||part===".."||
+        /[. ]$/.test(part)))
+      return Promise.reject(new TypeError("WORKSPACE_INVALID_DIRECTORY_REQUEST"));
+    return ipcRenderer.invoke(LIST_WORKSPACE_DIRECTORY_CHANNEL,{relativePath});
+  },
+  readWorkspaceTreeTextFile(request){
+    const relativePath=request?.relativePath;
+    if(request==null||typeof request!=="object"||Array.isArray(request)||
+      Object.keys(request).some(key=>!["relativePath","line","endLine"].includes(key))||
+      typeof relativePath!=="string"||relativePath.length<1||
+      relativePath.length>1024||/[\\:\u0000-\u001f\u007f]/u.test(relativePath)||
+      relativePath.startsWith("/")||relativePath.endsWith("/")||
+      relativePath.split("/").some(part=>part===""||part==="."||part===".."||
+        /[. ]$/.test(part))||
+      (request.line!==undefined&&(!Number.isSafeInteger(request.line)||
+        request.line<1||request.line>10000000))||
+      (request.endLine!==undefined&&(!Number.isSafeInteger(request.endLine)||
+        request.line===undefined||request.endLine<request.line||
+        request.endLine>10000000)))
+      return Promise.reject(new TypeError("WORKSPACE_INVALID_FILE_REQUEST"));
+    return ipcRenderer.invoke(READ_WORKSPACE_TREE_TEXT_CHANNEL,{
+      relativePath,
       ...(request.line===undefined?{}:{line:request.line}),
       ...(request.endLine===undefined?{}:{endLine:request.endLine}),
     });

@@ -339,6 +339,38 @@ export function App() {
         :"本地文件无法预览：请选择包含该文件的工作区，或检查权限与格式。");
     }
   },[notify]);
+  /** Native workspace tree uses only a grant-relative, validated path.
+   * It never accepts the root or generic filesystem paths from React. */
+  const openWorkspaceTreeFile=React.useCallback(async(relativePath:string)=>{
+    const host=window.agentWebDesktopHost;
+    if(host?.readWorkspaceTreeTextFile==null||!workspaceGrantRef.current)return;
+    const epoch=workspaceRequestEpochRef.current;
+    const relative=relativePath.replace(/\\/g,"/");
+    const open=workspaceTabs.tabs.find(tab=>
+      tab.content.relativePath.replace(/\\/g,"/")===relative);
+    const intent=++workspaceSelectionIntentRef.current;
+    if(open!=null){
+      setWorkspaceTabs(current=>sourceSelectLocalReadOnlyFileTab(current,open.id));
+      return;
+    }
+    const tabId=sourceReviewFileTabId("workspace-tree:"+relative);
+    workspaceLatestReadByTabRef.current.set(tabId,intent);
+    try{
+      const file=await host.readWorkspaceTreeTextFile({relativePath:relative});
+      if(epoch!==workspaceRequestEpochRef.current||
+        workspaceLatestReadByTabRef.current.get(tabId)!==intent)return;
+      setWorkspaceTabs(current=>{
+        if(epoch!==workspaceRequestEpochRef.current||
+          workspaceLatestReadByTabRef.current.get(tabId)!==intent)return current;
+        return sourceOpenLocalReadOnlyFileTab(current,{
+          id:tabId,path:relative,content:file,
+        },intent===workspaceSelectionIntentRef.current);
+      });
+    }catch(error){
+      if(epoch!==workspaceRequestEpochRef.current)return;
+      notify("无法读取所选工作区文件：请确认权限及文件格式。");
+    }
+  },[workspaceTabs.tabs,notify]);
   React.useEffect(()=>()=>revokeWorkspacePreview(),[revokeWorkspacePreview]);
   // Reset creates a new demo host lifetime. Switching conversations only
     // remounts virtual rows, so historical Rk choices remain host-owned.
@@ -1154,6 +1186,7 @@ export function App() {
           if(latest!=null)workspaceLatestReadByTabRef.current.set(id,latest);
           setWorkspaceTabs(current=>sourceCloseOtherLocalReadOnlyFileTabs(current,id));
         }}
+        onOpenTreeFile={openWorkspaceTreeFile}
         onCloseToRight={id=>{
           workspaceSelectionIntentRef.current++;
           const index=workspaceTabs.tabs.findIndex(tab=>tab.id===id);
