@@ -700,6 +700,28 @@ export function App() {
     ]);
   }
 
+  function playUserFileAttachmentsFixture(){
+    if(playing)return;
+    markFollow();
+    const id=nextId("user-file-attachments");
+    appendDemoEntries(source,[
+      demoMessageEntry("user",id,
+        "Synthetic request with host-provided file attachments. No real files are opened.",{
+          attachments:[
+            {path:"/projects/agent-web/src/App.tsx",
+              fsPath:"/projects/agent-web/src/App.tsx",
+              label:"App.tsx (14-28)",startLine:14,endLine:28},
+            {path:"",label:"Detached attachment"},
+          ],
+          uploadedFileAttachments:[
+            {upload:{fileName:"reference-notes.pdf"}},
+            {upload:{fileName:"clipboard.txt"},preview:"Pasted code snippets from a test fixture"},
+            {upload:{fileName:"empty-clipboard.txt"},preview:""},
+          ],
+        }),
+    ]);
+  }
+
   function stopSample() {
     if (timerRef.current != null) clearTimeout(timerRef.current);
     timerRef.current = null;
@@ -923,6 +945,10 @@ export function App() {
           <button type="button" onClick={playComputerUseApprovalFixture}
             data-testid="demo-computer-use-approval-request">
             <Icon name="panel" size={15}/> 演示 Computer Use 授权请求（模拟）
+          </button>
+          <button type="button" onClick={playUserFileAttachmentsFixture}
+            data-testid="demo-source-user-file-attachments">
+            <Icon name="folder" size={15}/> 演示用户文件附件（合成数据）
           </button>
           <button type="button" onClick={injectHistory} disabled={historyAdded}><Icon name="plus" size={15}/> 添加 45 条历史</button>
           <button type="button" onClick={() => void virtualizerApiRef.current?.scrollToKey(`history-content:turn:${source.getSnapshot().entries[0]?.turnId ?? ""}`, undefined, {align:"top"})}><Icon name="top" size={15}/> 跳到开头</button>

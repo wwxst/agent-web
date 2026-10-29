@@ -180,3 +180,20 @@ export type {
  SourceConversationHostEventTransport,
  SourceConversationHostEventBridge,
 } from "./conversation/SourceConversationHostEventBridge.js";
+
+export {
+  isSourceUserUploadedFile,
+  sourceUserFileLineInfo,
+  sourceUserFileOpenTarget,
+  sourceUserFileDisplayName,
+  sourceUserFileLayout,
+  sourceUserFileAttachmentGroups,
+  sourceUserFileAttachmentsFromMessage,
+} from "./conversation/SourceUserFileAttachmentsModel.js";
+export type {
+  SourceUserUploadedFile,
+  SourceUserWorkspaceFile,
+  SourceUserFileAttachment,
+  SourceUserFileOpenTarget,
+  SourceUserFileAttachmentGroups,
+} from "./conversation/SourceUserFileAttachmentsModel.js";

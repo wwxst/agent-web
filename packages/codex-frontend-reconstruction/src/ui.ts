@@ -42,3 +42,6 @@ export type { ConnectedCodexToolActivityItemProps } from "./components/Connected
 
 export { SourceActivityDisclosure } from "./components/SourceActivityDisclosure.js";
 export type { SourceActivityDisclosureProps } from "./components/SourceActivityDisclosure.js";
+
+export {SourceUserFileAttachments} from "./components/SourceUserFileAttachments.js";
+export type {SourceUserFileAttachmentsProps} from "./components/SourceUserFileAttachments.js";
