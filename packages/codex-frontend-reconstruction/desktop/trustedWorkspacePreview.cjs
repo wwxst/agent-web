@@ -461,13 +461,133 @@ function createTrustedWorkspacePreviewHost({
     writeClipboardText(file.text);
     return true;
   }
+  function languageContextIsCurrent(context){
+    return grants.get(context.id)===context.root&&
+      directoryIdentities.get(context.id)===context.rootIdentity&&
+      currentEpoch(context.id)===context.epoch;
+  }
+  async function languageRequestContext(event,request,validRequest){
+    const id=sender(event);
+    if(!validRequest(request))denied("WORKSPACE_INVALID_LANGUAGE_REQUEST");
+    const epoch=currentEpoch(id),root=grants.get(id);
+    if(root==null)denied("WORKSPACE_NOT_GRANTED");
+    const rootIdentity=directoryIdentities.get(id);
+    if(rootIdentity==null)denied("WORKSPACE_NOT_GRANTED");
+    const rootStat=await filesystem.stat(root);
+    if(!sameDirectoryIdentity(rootStat,rootIdentity))
+      denied("WORKSPACE_DIRECTORY_CHANGED");
+    let real;
+    try{real=await filesystem.realpath(request.path);}
+    catch{denied("WORKSPACE_FILE_UNAVAILABLE");}
+    if(!isPathInside(root,real))denied("WORKSPACE_OUTSIDE_GRANT");
+    if(!isPreviewableTextFile(real))denied("WORKSPACE_UNSUPPORTED_FILE");
+    if(languageIdForPath(real,path)!==request.languageId)
+      denied("WORKSPACE_LANGUAGE_UNSUPPORTED");
+    const file=await readTextFile(event,{path:real});
+    const context={id,epoch,root,rootIdentity,real,file,event};
+    if(!languageContextIsCurrent(context))denied("WORKSPACE_GRANT_REVOKED");
+    return context;
+  }
+  async function buildLanguageService(context){
+    let typescript;
+    try{typescript=require("typescript");}
+    catch{denied("WORKSPACE_LANGUAGE_SERVICE_UNAVAILABLE");}
+    const files=new Map();
+    let totalBytes=0;
+    const addFile=(absolute,text)=>{
+      if(files.has(absolute)||files.size>=MAX_LANGUAGE_FILES)return;
+      const bytes=Buffer.byteLength(text,"utf8");
+      if(totalBytes+bytes>MAX_LANGUAGE_SOURCE_BYTES)return;
+      files.set(absolute,text);totalBytes+=bytes;
+    };
+    addFile(context.real,context.file.text);
+    const queue=[""],visited=new Set();
+    let scannedDirectories=0;
+    while(queue.length>0&&scannedDirectories<MAX_LANGUAGE_DIRECTORIES&&
+      files.size<MAX_LANGUAGE_FILES&&totalBytes<MAX_LANGUAGE_SOURCE_BYTES){
+      if(!languageContextIsCurrent(context))denied("WORKSPACE_GRANT_REVOKED");
+      const relativeDirectory=queue.shift();
+      if(visited.has(relativeDirectory))continue;
+      visited.add(relativeDirectory);scannedDirectories++;
+      let listing;
+      try{listing=await listDirectory(context.event,{relativePath:relativeDirectory});}
+      catch(error){
+        if(!languageContextIsCurrent(context))denied("WORKSPACE_GRANT_REVOKED");
+        continue;
+      }
+      for(const entry of listing.entries){
+        if(entry.kind==="directory"){
+          if(SKIP_LANGUAGE_DIRECTORIES.has(entry.name.toLowerCase()))continue;
+          if(scannedDirectories+queue.length<MAX_LANGUAGE_DIRECTORIES)
+            queue.push(entry.relativePath);
+          continue;
+        }
+        if(!LANGUAGE_FILE_EXTENSIONS.has(path.extname(entry.name).toLowerCase())||
+          files.size>=MAX_LANGUAGE_FILES||totalBytes>=MAX_LANGUAGE_SOURCE_BYTES)continue;
+        const absolute=path.resolve(context.root,...entry.relativePath.split("/"));
+        if(files.has(absolute))continue;
+        let file;
+        try{file=await readTreeTextFile(context.event,{relativePath:entry.relativePath});}
+        catch(error){
+          if(!languageContextIsCurrent(context))denied("WORKSPACE_GRANT_REVOKED");
+          continue;
+        }
+        addFile(absolute,file.text);
+      }
+    }
+    if(!languageContextIsCurrent(context))denied("WORKSPACE_GRANT_REVOKED");
+    const service=createWorkspaceTypeScriptLanguageService({
+      root:context.root,files,typescript,path,platform:process.platform,
+    });
+    return {
+      root:context.root,rootIdentity:context.rootIdentity,
+      expiresAt:Date.now()+MAX_LANGUAGE_CACHE_AGE_MS,service,
+    };
+  }
+  async function languageServiceFor(context){
+    const cached=languageServiceCaches.get(context.id);
+    if(cached!=null&&cached.root===context.root&&
+      cached.rootIdentity===context.rootIdentity&&cached.expiresAt>Date.now())
+      return cached.service;
+    disposeLanguageCache(context.id);
+    const built=await buildLanguageService(context);
+    if(!languageContextIsCurrent(context)){
+      try{built.service.dispose();}catch{}
+      denied("WORKSPACE_GRANT_REVOKED");
+    }
+    disposeLanguageCache(context.id);
+    languageServiceCaches.set(context.id,built);
+    return built.service;
+  }
+  async function getLanguageCapabilities(event,request){
+    const context=await languageRequestContext(
+      event,request,validLanguageCapabilitiesRequest);
+    try{require.resolve("typescript");}
+    catch{return null;}
+    return {
+      hover:false,
+      locationKinds:[...LOCATION_KINDS],
+    };
+  }
+  async function getLanguageLocations(event,request){
+    const context=await languageRequestContext(
+      event,request,validLanguageLocationsRequest);
+    const service=await languageServiceFor(context);
+    if(!languageContextIsCurrent(context))denied("WORKSPACE_GRANT_REVOKED");
+    const locations=service.locations({
+      filename:context.real,kind:request.kind,position:request.position,
+    });
+    if(!languageContextIsCurrent(context))denied("WORKSPACE_GRANT_REVOKED");
+    return locations.filter(location=>isPathInside(context.root,location.path));
+  }
   function revoke(event){
     const id=sender(event);
     clearSender(id);
     return true;
   }
   return {selectDirectory,readTextFile,listDirectory,searchDirectoryFiles,readTreeTextFile,
-    copyFilePath,copyFileContents,revoke,clearSender,
+    copyFilePath,copyFileContents,getLanguageCapabilities,getLanguageLocations,
+    revoke,clearSender,
     // No method intentionally exposes the granted root to a renderer.
   };
 }
