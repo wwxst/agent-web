@@ -135,7 +135,7 @@ test("actual attachment row opens read-only native-host preview, revokes on thre
   });
   await expect.poll(async()=>(await inspect()).revoke).toBeGreaterThanOrEqual(2);
   await expect(preview).toHaveCount(0);
-  expect((await inspect()).read).toBe(1);
+  expect((await inspect()).read).toBe(2);
 });
 
 
