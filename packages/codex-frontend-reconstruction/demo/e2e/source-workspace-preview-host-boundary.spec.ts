@@ -524,6 +524,8 @@ test("native granted workspace directory tree opens new CodeMirror tab without r
         if(relativePath==="src/next.ts")
           return {name:"next.ts",relativePath,
             text:"export const fromNativeNext = true;",readOnly:true};
+        if(relativePath==="README.md")
+          return {name:"README.md",relativePath,text:"# README preview",readOnly:true};
         if(relativePath!=="src/extra.ts")throw Error("WORKSPACE_FILE_UNAVAILABLE");
         return {name:"extra.ts",relativePath,text:"export const fromNativeTree = true;",
           readOnly:true};
