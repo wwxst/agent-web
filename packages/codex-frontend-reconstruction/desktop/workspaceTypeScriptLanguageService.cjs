@@ -68,6 +68,7 @@ function createWorkspaceTypeScriptLanguageService({
   };
   const workspaceDirectoryExists=directory=>{
     const absolute=path.resolve(directory);
+    if(!isWithin(path.resolve(root),absolute,path))return false;
     if(absolute===path.resolve(root))return true;
     for(const record of fileRecords.values()){
       if(isWithin(absolute,record.path,path))return true;
@@ -101,6 +102,7 @@ function createWorkspaceTypeScriptLanguageService({
     },
     readDirectory(directory,extensions,excludes,includes,depth){
       const base=path.resolve(directory);
+      if(!isWithin(path.resolve(root),base,path))return [];
       return [...fileRecords.values()].filter(record=>{
         if(!isWithin(base,record.path,path))return false;
         const relative=path.relative(base,record.path);
@@ -116,6 +118,7 @@ function createWorkspaceTypeScriptLanguageService({
     },
     getDirectories(directory){
       const base=path.resolve(directory);
+      if(!isWithin(path.resolve(root),base,path))return [];
       const children=new Set();
       for(const record of fileRecords.values()){
         const relative=path.relative(base,record.path);
