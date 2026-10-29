@@ -861,8 +861,10 @@ test("source patch file links enter the mounted read-only preview at the first c
       __toolActivityWorkspaceState:{selects:number;reads:Array<{path:string;line?:number;endLine?:number}>};
     }).__toolActivityWorkspaceState);
   expect(state.selects).toBe(1);
-  expect(state.reads.map(read=>read.path)).toEqual([
-    "/projects/agent-web/src/conversation/ToolActivityHistorySource.ts",
-    "/projects/agent-web/src/components/CodexSourceToolActivityLeaves.tsx",
+  // The reader receives only path + one-based line. Renderer-only column
+  // and resetTabState metadata must never cross the native IPC boundary.
+  expect(state.reads).toEqual([
+    {path:"/projects/agent-web/src/conversation/ToolActivityHistorySource.ts",line:2},
+    {path:"/projects/agent-web/src/components/CodexSourceToolActivityLeaves.tsx",line:1},
   ]);
 });
