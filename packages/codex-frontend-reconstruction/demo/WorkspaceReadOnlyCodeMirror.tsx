@@ -111,13 +111,23 @@ export function WorkspaceReadOnlyCodeMirror({
     const onScroll=()=>onScrollTopRef.current?.(view.scrollDOM.scrollTop);
     view.scrollDOM.addEventListener("scroll",onScroll,{passive:true});
     const frame=requestAnimationFrame(()=>{
-      if(initialScrollTop!=null){
+      // Original onOpenLocation passes one-based line/column and sets
+      // resetTabState=true. That navigation must win over a stale saved
+      // scroll offset; ordinary tab switches still restore their own offset.
+      const hasLocation=preview.line!=null&&
+        Number.isSafeInteger(preview.line)&&preview.line>=1;
+      if(initialScrollTop!=null&&!preview.resetTabState){
         view.scrollDOM.scrollTop=initialScrollTop;
-      }else if(preview.line!=null&&
-        Number.isSafeInteger(preview.line)&&preview.line>=1){
-        const n=Math.min(preview.line,view.state.doc.lines);
-        view.dispatch({effects:EditorView.scrollIntoView(
-          view.state.doc.line(n).from,{y:"center"})});
+      }else if(hasLocation){
+        const lineNumber=Math.min(preview.line!,view.state.doc.lines);
+        const target=view.state.doc.line(lineNumber);
+        const column=preview.column!=null&&Number.isSafeInteger(preview.column)&&
+          preview.column>=1?Math.min(preview.column-1,target.length):0;
+        const position=target.from+column;
+        view.dispatch({
+          selection:{anchor:position},
+          effects:EditorView.scrollIntoView(position,{y:"center"}),
+        });
       }
     });
     return ()=>{
@@ -125,7 +135,8 @@ export function WorkspaceReadOnlyCodeMirror({
       view.scrollDOM.removeEventListener("scroll",onScroll);
       view.destroy();
     };
-  },[preview.name,preview.text,preview.line,preview.endLine,initialScrollTop]);
+  },[preview.name,preview.text,preview.line,preview.endLine,preview.column,
+    preview.resetTabState,initialScrollTop]);
   return <div ref={container}
     className="demo-workspace-preview__codemirror"
     data-workspace-file-text=""
