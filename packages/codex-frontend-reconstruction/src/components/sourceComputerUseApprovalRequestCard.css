@@ -1,14 +1,9 @@
 /* Original E composes the existing qbd/eQu/iQu approval surface.
- * This file only adds the Computer Use-specific disclosure and icon fallback.
- * The actual packaged PNG was NOT included in the supplied frontend.zip. */
+ * Only the source-grounded disclosure and connector text are reproduced.
+ * The original PNG is absent from the supplied frontend.zip. */
 .codex-source-computer-use__connector {
   display:inline-flex;align-items:center;gap:8px;min-width:0;
   font-size:12px;line-height:20px;
-}
-.codex-source-computer-use__icon-fallback {
-  display:inline-grid;place-items:center;width:17px;height:17px;
-  flex:none;border-radius:3px;font-size:8px;font-weight:600;letter-spacing:-.03em;
-  background:var(--demo-raised,#e9e9e9);color:var(--demo-text,#333);
 }
 .codex-source-computer-use__disclosure {
   display:block;white-space:pre-line;line-height:1.5;

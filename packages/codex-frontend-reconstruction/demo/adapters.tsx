@@ -739,6 +739,8 @@ export function makeDemoRow(
     /** Source E Computer Use request is distinct from generic MCP tool ye.
      * Both use the same host-scoped MCP elicitation *reply transport*.
      * Demo records are explicitly synthetic; native Electron main rejects. */
+    // The demo deliberately has no onComputerUseApprovalReply capability;
+    // native generic MCP failure transport must NOT confer app approval rights.
     getComputerUseApprovalRequest:(item)=>{
       if(item.type!=="demo-computer-use-approval"||typeof item.id!=="string")return null;
       const highRisk=item.demoComputerUseHighRisk===true;
