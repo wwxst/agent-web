@@ -71,8 +71,8 @@ test("actual attachment row opens read-only native-host preview, revokes on thre
   await expect.poll(async()=>preview.locator(".cm-content:visible").evaluate(content=>{
     const selection=content.ownerDocument.getSelection();
     const anchor=selection?.anchorNode;
-    const line=anchor instanceof Element?anchor.closest(".cm-line:visible"):
-      anchor?.parentElement?.closest(".cm-line:visible");
+    const line=anchor instanceof Element?anchor.closest(".cm-line"):
+      anchor?.parentElement?.closest(".cm-line");
     return {line:line?.textContent?.trim()??null,
       offset:selection?.anchorOffset??null};
   })).toEqual({line:"source line 14",offset:0});
@@ -91,8 +91,8 @@ test("actual attachment row opens read-only native-host preview, revokes on thre
   await expect.poll(async()=>preview.locator(".cm-content:visible").evaluate(content=>{
     const selection=content.ownerDocument.getSelection();
     const anchor=selection?.anchorNode;
-    const line=anchor instanceof Element?anchor.closest(".cm-line:visible"):
-      anchor?.parentElement?.closest(".cm-line:visible");
+    const line=anchor instanceof Element?anchor.closest(".cm-line"):
+      anchor?.parentElement?.closest(".cm-line");
     return {line:line?.textContent?.trim()??null,
       offset:selection?.anchorOffset??null};
   })).toEqual({line:"source line 14",offset:0});
