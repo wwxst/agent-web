@@ -21,7 +21,10 @@ export interface SourceLanguageRange{
   end?:SourceLanguagePosition;
 }
 export interface SourceLanguageLocation{
+  /** Absolute canonical path used only by the existing grant-checked open route. */
   path:string;
+  /** Grant-relative path returned by the native host for display and requests. */
+  relativePath?:string;
   range:SourceLanguageRange;
 }
 export interface SourceLanguageCapabilities{
@@ -53,6 +56,14 @@ function validPosition(value:unknown):value is SourceLanguagePosition{
     (value.line as number)>=0&&(value.line as number)<=MAX_POSITION&&
     Number.isSafeInteger(value.character)&&
     (value.character as number)>=0&&(value.character as number)<=MAX_POSITION;
+}
+/** Same conservative grant-relative path shape enforced by native tree IPC. */
+export function sourceLanguageRelativePathIsSafe(value:unknown):value is string{
+  return typeof value==="string"&&value.length>0&&value.length<=1024&&
+    !/[\\\\:\\u0000-\\u001f\\u007f]/u.test(value)&&
+    !value.startsWith("/")&&!value.endsWith("/")&&
+    value.split("/").every(segment=>segment!==""&&segment!=="."&&segment!==".."&&
+      !/[. ]$/u.test(segment));
 }
 /** Maps only language IDs confirmed by the original TypeScript LSP provider. */
 export function sourceLanguageIdForPath(path:string):string|null{
@@ -92,7 +103,13 @@ export function sourceLanguageLocations(value:unknown):SourceLanguageLocation[]{
     if(validPosition(candidate.range.end))range.end={
       line:candidate.range.end.line,character:candidate.range.end.character,
     };
-    locations.push({path:candidate.path,range});
+    const relativePath=sourceLanguageRelativePathIsSafe(candidate.relativePath)
+      ?candidate.relativePath:undefined;
+    locations.push({
+      path:candidate.path,
+      ...(relativePath===undefined?{}:{relativePath}),
+      range,
+    });
     if(locations.length>=10_000)break;
   }
   return locations;
