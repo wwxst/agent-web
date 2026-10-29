@@ -802,7 +802,7 @@ test("source patch file links enter the mounted read-only preview at the first c
   await expect(preview).toBeVisible();
   await expect(preview.locator("[data-workspace-file-text]"))
     .toContainText("source line 2");
-  await expect(preview.locator(".cm-line:visible",{hasText:"source line 2"}))
+  await expect(preview.getByText("source line 2",{exact:true}))
     .toHaveAttribute("data-workspace-file-selected-range","true");
   await preview.locator(".cm-content:visible").focus();
   await expect.poll(async()=>preview.locator(".cm-content:visible").evaluate(content=>{
