@@ -15,6 +15,10 @@ export interface WorkspaceReadOnlyPreview{
   text:string;
   line?:number;
   endLine?:number;
+  /** One-based source column, as passed by original onOpenLocation. */
+  column?:number;
+  /** Original resetTabState clears stale editor scroll snapshots. */
+  resetTabState?:boolean;
   readOnly:true;
 }
 /**
