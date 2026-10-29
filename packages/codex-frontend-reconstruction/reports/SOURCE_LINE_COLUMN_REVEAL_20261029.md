@@ -40,3 +40,12 @@ This restores the verified reveal metadata only. It does not restore the
 private Codex `contentInstance`, full editor state/persistence, writable
 selection/dirty/save state, remote hosts, or pixel parity. The independent
 editor currently recreates CodeMirror on tab switch and retains scroll only.
+
+
+## Latest integrated route and verification
+
+The existing `demo/adapters.tsx` attachment callback previously discarded `sourceRoute.qe.column` even though the source model provides a one-based column. It now forwards the column to `openWorkspaceAttachment`; `App.tsx` keeps it as renderer metadata and sends only supported `path`, `line`, and `endLine` fields to the native reader. The mounted CodeMirror selection uses `line.from + (column - 1)`, clamped to the actual line length.
+
+A monotonic `locationRequestId` differentiates repeated navigation to the same location from ordinary tab switching. A new location wins over the old scroll snapshot; switching away and back restores the stored scroll offset. Playwright verifies the real caret at the source attachment's line 14 / column 1 and re-opening that location after scrolling to the end. This does not yet wire the separate original related-file `onOpenLocation` callback into the independent panel; that remains the next integration task.
+
+Verification at code head `c71cb40a5212ee32a38849fe24e2641121e20c96`: core 516/516, demo model 5/5, Chromium 66/66, Linux Electron 80/80, Windows Electron 79 passed / 1 skipped / 0 failed. TypeScript/Vite and both real Electron smoke jobs passed. PR #74 remains Draft and is stacked on PR #73; no Agent backend or `main` changes.
