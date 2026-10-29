@@ -246,7 +246,10 @@ const newFile: InlineReviewFile = {
   contents: "const snapshot = freezeSnapshot(initialSnapshot);\nfor (const listener of [...listeners]) listener();",
 };
 
-export function makeDemoRow(notify: (message: string) => void) {
+export function makeDemoRow(
+  notify: (message: string) => void,
+  onOpenWorkspaceAttachment?: (request:{path:string;line?:number})=>Promise<void>,
+) {
   const eventBridge=createSourceConversationHostEventBridge();
   // Subscribe to the independent Electron preload when available, or leave
   // the synthetic browser preview on its existing deterministic event feed.
@@ -349,6 +352,19 @@ export function makeDemoRow(notify: (message: string) => void) {
   }
   const host: ConnectedConversationRendererHost = {
     Markdown,
+    // Original Qe is private. Only a real Electron-local bounded preview
+    // handler may enable workspace file pills; uploads never gain authority.
+    ...(window.agentWebDesktopHost!=null&&onOpenWorkspaceAttachment!=null?{
+      canOpenUserFileAttachment:(_attachment:unknown,target:{kind:string})=>
+        target.kind==="workspace",
+      onUserFileAttachmentOpen:async(_attachment:unknown,target:
+        {kind:string;path?:string;line?:number})=>{
+        if(target.kind==="workspace"&&target.path!=null)
+          await onOpenWorkspaceAttachment({
+            path:target.path,...(target.line==null?{}:{line:target.line}),
+          });
+      },
+    }:{}),
     // Explicit DEMO Wa/Rk adapters: Codex's private unit classifier and persisted
     // collapse state are not represented by synthetic transcript records.
     agentActivity: {

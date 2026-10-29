@@ -205,6 +205,8 @@ export interface ConnectedConversationRendererHost extends ConversationContentAd
   /** Authenticated host supplies actual file open, upload or shared-thread route. */
   onUserFileAttachmentOpen?:(attachment:SourceUserFileAttachment,
     target:SourceUserFileOpenTarget,item:ConversationMessageItem)=>void|Promise<void>;
+  canOpenUserFileAttachment?:(attachment:SourceUserFileAttachment,
+    target:SourceUserFileOpenTarget)=>boolean;
   isUploadedFileViewerEnabled?:boolean;
   /** Private vc upload file-kind classifier must be explicitly resolved by host. */
   isUserFileUploadedPreviewable?:(filename:string)=>boolean;
@@ -361,6 +363,7 @@ export function createConnectedConversationMessageRenderers(host: ConnectedConve
           isUploadedFileViewerEnabled={host.isUploadedFileViewerEnabled}
           isUploadedPreviewable={host.isUserFileUploadedPreviewable}
           isPathPreviewable={host.isUserFileAttachmentPreviewable}
+          canOpenAttachment={host.canOpenUserFileAttachment}
           onOpen={host.onUserFileAttachmentOpen==null?undefined:
             (attachment,target)=>host.onUserFileAttachmentOpen?.(attachment,target,props.item)}/>
           :null}

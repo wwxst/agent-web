@@ -1,6 +1,8 @@
 import * as React from "react";
 import { createPortal } from "react-dom";
 import { CodexComposerLayout } from "../src/components/CodexComposerLayout.js";
+import {WorkspaceReadOnlyPreviewPanel,
+  type WorkspaceReadOnlyPreview} from "./WorkspaceReadOnlyPreviewPanel.js";
 import { CodexSourceComposerHostForm } from "../src/components/CodexSourceComposerHostForm.js";
 import { CodexSourceScrollToBottomButton } from "../src/components/CodexSourceScrollToBottomButton.js";
 import { DemoProseMirrorComposerEditor } from "./DemoProseMirrorComposerEditor.js";
@@ -196,6 +198,12 @@ export function App() {
   const [toast, setToast] = React.useState<string | null>(null);
   const [historyAdded, setHistoryAdded] = React.useState(false);
   const [showDemoTools, setShowDemoTools] = React.useState(false);
+  const [workspacePreview,setWorkspacePreview]=React.useState<WorkspaceReadOnlyPreview|null>(null);
+  const workspaceGrantRef=React.useRef(false);
+  // A file read/dialog is bound to the visible thread lifetime; an old
+  // request cannot install a preview after switching/resetting conversations.
+  const workspaceRequestEpochRef=React.useRef(0);
+  const workspaceOpenInFlightRef=React.useRef(false);
   const [findOpen,setFindOpen]=React.useState(false);
   const [findQuery,setFindQuery]=React.useState("");
   const [findOrdinal,setFindOrdinal]=React.useState(0);
@@ -252,9 +260,52 @@ export function App() {
       if (toastTimerRef.current != null) clearTimeout(toastTimerRef.current);
       toastTimerRef.current = setTimeout(() => setToast(null), 3600);
     }, []);
+  const revokeWorkspacePreview=React.useCallback(()=>{
+    workspaceRequestEpochRef.current++;
+    workspaceGrantRef.current=false;
+    setWorkspacePreview(null);
+    // An outstanding native folder picker may resolve after this revoke;
+    // its call-site checks the epoch again and revokes that late grant.
+    const host=window.agentWebDesktopHost;
+    if(host!=null)void host.revokeWorkspaceDirectory().catch(()=>{});
+  },[]);
+  const openWorkspaceAttachment=React.useCallback(async(
+    request:{path:string;line?:number},
+  )=>{
+    const host=window.agentWebDesktopHost;
+    if(host==null||workspaceOpenInFlightRef.current)return;
+    workspaceOpenInFlightRef.current=true;
+    const epoch=workspaceRequestEpochRef.current;
+    try{
+      if(!workspaceGrantRef.current){
+        const grant=await host.selectWorkspaceDirectory();
+        if(epoch!==workspaceRequestEpochRef.current){
+          if(grant.selected)await host.revokeWorkspaceDirectory().catch(()=>{});
+          return;
+        }
+        if(!grant.selected)return;
+        workspaceGrantRef.current=true;
+      }
+      const file=await host.readWorkspaceTextFile(request);
+      if(epoch!==workspaceRequestEpochRef.current)return;
+      setWorkspacePreview(file);
+    }catch(error){
+      if(epoch!==workspaceRequestEpochRef.current)return;
+      const detail=String(error);
+      if(/WORKSPACE_(?:OUTSIDE_GRANT|NOT_GRANTED|FILE_UNAVAILABLE)/.test(detail)){
+        workspaceGrantRef.current=false;
+        try{await host.revokeWorkspaceDirectory();}catch{}
+      }
+      notify("本地文件无法预览：请选择包含该文件的工作区，或检查权限与格式。");
+    }finally{
+      workspaceOpenInFlightRef.current=false;
+    }
+  },[notify]);
+  React.useEffect(()=>()=>revokeWorkspacePreview(),[revokeWorkspacePreview]);
   // Reset creates a new demo host lifetime. Switching conversations only
     // remounts virtual rows, so historical Rk choices remain host-owned.
-    const DemoRow = React.useMemo(() => makeDemoRow(notify), [notify, generation]);
+    const DemoRow = React.useMemo(() => makeDemoRow(notify,openWorkspaceAttachment),
+      [notify,openWorkspaceAttachment,generation]);
     React.useEffect(() => () => DemoRow.dispose(), [DemoRow]);
     // On real native host pending/settled events, mutate this SAME source
     // consumed by ConnectedLiveConversationTranscript and its virtualizer.
@@ -738,6 +789,7 @@ export function App() {
     notify("已加入 45 条模拟消息。可滚动检查虚拟列表。");
   }
   function reset() {
+    revokeWorkspacePreview();
     scrollController.cancelSourceScrollToBottomAnimation();
     if (timerRef.current != null) clearTimeout(timerRef.current);
     timerRef.current = null;
@@ -759,6 +811,7 @@ export function App() {
   }
   function switchConversation(id: DemoConversationId) {
     if (id === active) return;
+    revokeWorkspacePreview();
     scrollController.cancelSourceScrollToBottomAnimation();
     // Snapshot the existing controller before React remounts the source
     // virtualizer. The outgoing viewport and its follow policy are owned by
@@ -1035,6 +1088,9 @@ export function App() {
         </CodexSourceComposerHostForm>
       </div>
     </div>
+    {workspacePreview!=null?
+      <WorkspaceReadOnlyPreviewPanel preview={workspacePreview}
+        onClose={()=>setWorkspacePreview(null)}/>:null}
     {toast && <div className="demo-toast" role="status"><Icon name="check" size={17}/>{toast}</div>}
   </div></div>;
 }

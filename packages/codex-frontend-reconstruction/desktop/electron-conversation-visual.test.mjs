@@ -1511,6 +1511,33 @@ test("native Electron renders source hn/yn uploaded and workspace attachments wi
  try{
   const page=await app.firstWindow();
   await page.locator('[aria-label="演示会话导航"]').waitFor({timeout:20000});
+  // Reuse this EXISTING native BrowserWindow to assert actual preload/main
+  // denial; a separate concurrent Electron launch can starve CI display.
+  const workspaceSecurity=await page.evaluate(async path=>{
+    const host=window.agentWebDesktopHost;
+    const error=async request=>{
+      try{await host.readWorkspaceTextFile(request);return "UNEXPECTED_SUCCESS";}
+      catch(e){return String(e);}
+    };
+    return {
+      chooser:typeof host.selectWorkspaceDirectory,
+      read:typeof host.readWorkspaceTextFile,
+      revoke:typeof host.revokeWorkspaceDirectory,
+      rawIpc:typeof host.invoke,
+      node:typeof window.require,
+      absentGrant:await error({path:path}),
+      relative:await error({path:"../escape.ts"}),
+      invalidLine:await error({path:path,line:-1}),
+    };
+  },resolve(root,"demo","App.tsx"));
+  assert.equal(workspaceSecurity.chooser,"function");
+  assert.equal(workspaceSecurity.read,"function");
+  assert.equal(workspaceSecurity.revoke,"function");
+  assert.equal(workspaceSecurity.rawIpc,"undefined");
+  assert.equal(workspaceSecurity.node,"undefined");
+  assert.match(workspaceSecurity.absentGrant,/WORKSPACE_NOT_GRANTED|WORKSPACE_INVALID_FILE_REQUEST/);
+  assert.match(workspaceSecurity.relative,/WORKSPACE_INVALID_FILE_REQUEST/);
+  assert.match(workspaceSecurity.invalidLine,/WORKSPACE_INVALID_FILE_REQUEST/);
   await page.getByRole("button",{name:"打开演示工具"}).click();
   await page.getByTestId("demo-source-user-file-attachments").click();
   const row=page.locator('[data-demo-turn-id^="user-file-attachments-"]').last();
@@ -1523,7 +1550,10 @@ test("native Electron renders source hn/yn uploaded and workspace attachments wi
   assert.match(await files.innerText(),/App\.tsx/);
   assert.match(await files.innerText(),/reference-notes\.pdf/);
   assert.equal(await files.locator('[data-source-user-attachment-lines="14-28"]').count(),1);
-  assert.equal(await files.getByRole("button",{name:/App\.tsx/}).isDisabled(),true);
+  // The new narrow native workspace action is enabled, but does not open
+  // any file until explicit folder consent. Other attachment kinds remain
+  // disabled and cannot borrow this local read-only capability.
+  assert.equal(await files.getByRole("button",{name:/App\.tsx/}).isEnabled(),true);
   assert.equal(await files.getByRole("button",{name:"reference-notes.pdf"}).isDisabled(),true);
   assert.equal(await files.getByRole("button",{name:"Detached attachment"}).isDisabled(),true);
   await mkdir(resolve(root,"desktop/test-results"),{recursive:true});
