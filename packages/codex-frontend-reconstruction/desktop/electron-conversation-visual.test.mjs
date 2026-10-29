@@ -1472,7 +1472,9 @@ test("native Electron Browser website access remains fail-closed across site and
   assert.match(await browserCard.locator(".codex-source-mcp-approval__error").innerText(),
     /No permission was confirmed/);
   assert.equal(await browserCard.getByText(/Response sent to host/).count(),0);
-  // Chrome is made the latest turn so the virtual transcript mounts its card.
+  // The fixture picker dismisses after Browser selection; reopen it to
+  // inject the independent Chrome request into the real virtual transcript.
+  await page.getByRole("button",{name:"打开演示工具"}).click();
   await page.getByTestId("demo-chrome-website-approval-request").click();
   const chromeCard=page.locator('[data-demo-turn-id^="browser-website-policy-denied-"]')
     .last().locator("[data-source-browser-website-approval-card]");

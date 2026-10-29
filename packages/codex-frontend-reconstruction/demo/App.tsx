@@ -868,7 +868,21 @@ export function App() {
           onClick={closeFind}>×</button>
         </div>
       </div>,document.body)}
-      {showDemoTools && <div className="demo-tools-popover" data-testid="demo-tools">
+      {showDemoTools && <div className="demo-tools-popover" data-testid="demo-tools"
+        onClick={event=>{
+          // Fixtures append to the real virtualized conversation. Keeping this
+          // demo-only overlay open obscures its newly mounted controls and
+          // prevents actual pointer interaction in Chromium and Electron.
+          // Close only for a selected tool, not for explanatory text clicks.
+          if(event.target instanceof Element&&event.target.closest("button"))
+            setShowDemoTools(false);
+        }}
+        onKeyDown={event=>{
+          if(event.key==="Escape"){
+            event.stopPropagation();
+            setShowDemoTools(false);
+          }
+        }}>
         <p>本地演示工具 · 不执行真实 Agent 请求</p>
         <div className="demo-toolbar">
           <button type="button" onClick={playSample} disabled={playing}><Icon name="play" size={15}/> 模拟运行</button>
