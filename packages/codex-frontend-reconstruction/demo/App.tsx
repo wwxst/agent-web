@@ -217,6 +217,9 @@ export function App() {
   // may finish concurrently and in a different order from user clicks.
   const workspacePickerInFlightRef=React.useRef(false);
   const workspaceSelectionIntentRef=React.useRef(0);
+  // A new source-location navigation must be distinguishable even when the
+  // same file, line and column are opened repeatedly.
+  const workspaceLocationRequestRef=React.useRef(0);
   // Latest *new preview* request wins, independently of tab-selection
   // intent. A slow earlier preview must not replace a newer tree selection.
   const workspaceLatestPreviewIntentRef=React.useRef(0);
@@ -303,6 +306,9 @@ export function App() {
     const host=window.agentWebDesktopHost;
     if(host==null)return;
     const epoch=workspaceRequestEpochRef.current;
+    const locationRequestId=
+      request.line!=null||request.column!=null||request.resetTabState===true
+        ?++workspaceLocationRequestRef.current:undefined;
     try{
       if(!workspaceGrantRef.current){
         // Main-process native folder selection is exclusive. The old global
@@ -333,11 +339,13 @@ export function App() {
           ...(request.line===undefined?{}:{line:request.line}),
           ...(request.endLine===undefined?{}:{endLine:request.endLine}),
         });
-        const locatedFile=request.line==null?file:{
-          ...file,line:request.line,
+        const locatedFile=locationRequestId==null?file:{
+          ...file,
+          ...(request.line===undefined?{}:{line:request.line}),
           ...(request.endLine===undefined?{}:{endLine:request.endLine}),
           ...(request.column===undefined?{}:{column:request.column}),
           ...(request.resetTabState===undefined?{}:{resetTabState:request.resetTabState}),
+          locationRequestId,
         };
         if(epoch===workspaceRequestEpochRef.current&&
             workspaceLatestReadByTabRef.current.get(tabId)===intent)
@@ -383,6 +391,7 @@ export function App() {
     const host=window.agentWebDesktopHost;
     if(host?.readWorkspaceTreeTextFile==null||!workspaceGrantRef.current)return;
     const epoch=workspaceRequestEpochRef.current;
+    const locationRequestId=location==null?undefined:++workspaceLocationRequestRef.current;
     const relative=relativePath.replace(/\\/g,"/");
     const open=workspaceTabs.tabs.find(tab=>
       tab.content.relativePath.replace(/\\/g,"/")===relative);
@@ -394,7 +403,8 @@ export function App() {
       if(location!=null){
         setWorkspaceTabs(current=>({
           tabs:current.tabs.map(tab=>tab.id===open.id?{
-            ...tab,content:{...tab.content,...location},
+            ...tab,content:{...tab.content,...location,
+              ...(locationRequestId==null?{}:{locationRequestId})},
           }:tab),
           activeTabId:open.id,
         }));
@@ -452,6 +462,7 @@ export function App() {
         return sourceOpenLocalReadOnlyFileTab(current,{
           id:tabId,path:relative,content:location==null?file:{
             ...file,...location,
+            ...(locationRequestId==null?{}:{locationRequestId}),
           },isPreview,
         },intent===workspaceSelectionIntentRef.current);
       });
