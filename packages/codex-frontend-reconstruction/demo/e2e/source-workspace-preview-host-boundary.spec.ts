@@ -771,8 +771,9 @@ test("source patch file links enter the mounted read-only preview at the first c
       revokeWorkspaceDirectory:async()=>true,
       readWorkspaceTextFile:async(request:{path:string;line?:number;endLine?:number})=>{
         state.reads.push({...request});
-        return {name:"ToolActivityHistorySource.ts",
-          relativePath:"src/conversation/ToolActivityHistorySource.ts",
+        const relativePath=request.path.replace(/^\/projects\/agent-web\//,"");
+        const name=relativePath.split("/").pop()??"source.ts";
+        return {name,relativePath,
           text:Array.from({length:80},(_,i)=>"source line "+(i+1)).join("\n"),
           line:request.line,endLine:request.endLine,readOnly:true};
       },
@@ -812,13 +813,56 @@ test("source patch file links enter the mounted read-only preview at the first c
       anchor?.parentElement?.closest(".cm-line");
     return {line:line?.textContent?.trim()??null,offset:selection?.anchorOffset??null};
   })).toEqual({line:"source line 2",offset:0});
+  // Open a second source path from the same patch leaf. Each tab must keep
+  // its own mounted EditorView rather than restoring only a scroll number.
+  const firstEditor=preview.locator(".cm-editor:visible");
+  await firstEditor.evaluate(element=>{
+    (window as unknown as {__firstPatchEditor?:Element}).__firstPatchEditor=element;
+  });
+  const firstScroller=preview.locator(".cm-scroller:visible");
+  await firstScroller.evaluate(element=>{element.scrollTop=element.scrollHeight;});
+  await expect.poll(async()=>firstScroller.evaluate(element=>element.scrollTop))
+    .toBeGreaterThan(0);
+  const firstScroll=await firstScroller.evaluate(element=>element.scrollTop);
+
+  const secondFileLink=patch.getByRole("button",{name:"CodexSourceToolActivityLeaves.tsx"}).first();
+  await expect(secondFileLink).toBeVisible();
+  await secondFileLink.click();
+  await expect(preview.getByText("src/components/CodexSourceToolActivityLeaves.tsx"))
+    .toBeVisible();
+  await expect.poll(async()=>page.evaluate(()=>
+    (window as unknown as Window & {__toolActivityWorkspaceState:{reads:unknown[]}})
+      .__toolActivityWorkspaceState.reads.length)).toBe(2);
+  expect(await preview.locator(".cm-editor:visible").evaluate(element=>
+    element!==(window as unknown as {__firstPatchEditor?:Element}).__firstPatchEditor
+  )).toBe(true);
+
+  // Selecting the first tab reactivates the same EditorView, including its
+  // real CodeMirror scroll position and editor selection.
+  const firstTab=preview.getByRole("tab",{name:"ToolActivityHistorySource.ts"});
+  await firstTab.click();
+  await expect(firstTab).toHaveAttribute("aria-selected","true");
+  expect(await preview.locator(".cm-editor:visible").evaluate(element=>
+    element===(window as unknown as {__firstPatchEditor?:Element}).__firstPatchEditor
+  )).toBe(true);
+  await expect.poll(async()=>firstScroller.evaluate(element=>element.scrollTop))
+    .toBe(firstScroll);
+  await preview.locator(".cm-content:visible").focus();
+  await expect.poll(async()=>preview.locator(".cm-content:visible").evaluate(content=>{
+    const selection=content.ownerDocument.getSelection();
+    const anchor=selection?.anchorNode;
+    const line=anchor instanceof Element?anchor.closest(".cm-line"):
+      anchor?.parentElement?.closest(".cm-line");
+    return {line:line?.textContent?.trim()??null,offset:selection?.anchorOffset??null};
+  })).toEqual({line:"source line 2",offset:0});
+
   const state=await page.evaluate(()=>
     (window as unknown as Window & {
       __toolActivityWorkspaceState:{selects:number;reads:Array<{path:string;line?:number;endLine?:number}>};
     }).__toolActivityWorkspaceState);
   expect(state.selects).toBe(1);
-  expect(state.reads).toEqual([{
-    path:"/projects/agent-web/src/conversation/ToolActivityHistorySource.ts",
-    line:2,
-  }]);
+  expect(state.reads.map(read=>read.path)).toEqual([
+    "/projects/agent-web/src/conversation/ToolActivityHistorySource.ts",
+    "/projects/agent-web/src/components/CodexSourceToolActivityLeaves.tsx",
+  ]);
 });
