@@ -62,7 +62,7 @@ export function WorkspaceReadOnlyPreviewPanel({
   onCloseOthers:(id:string)=>void;
   onCloseToRight:(id:string)=>void;
   onClose:()=>void;
-  onOpenTreeFile:(relativePath:string)=>void;
+  onOpenTreeFile:(relativePath:string,isPreview?:boolean)=>void;
 }){
   // IX preserves a tab contentInstance in the original private XL host.
   // This independent CodeMirror view is recreated on tab switch, but its
