@@ -57,22 +57,22 @@ test("actual attachment row opens read-only native-host preview, revokes on thre
   // never enable editing or allow a renderer-originated save.
   await expect(preview.locator('[data-source-workspace-codemirror="read-only"]'))
     .toBeVisible();
-  await expect(preview.locator(".cm-editor")).toBeVisible();
-  await expect(preview.locator(".cm-gutters")).toBeVisible();
-  await expect(preview.locator(".cm-content")).toHaveAttribute("contenteditable","false");
+  await expect(preview.locator(".cm-editor:visible")).toBeVisible();
+  await expect(preview.locator(".cm-gutters:visible")).toBeVisible();
+  await expect(preview.locator(".cm-content:visible")).toHaveAttribute("contenteditable","false");
   const highlightedLines=preview.locator('[data-workspace-file-selected-range]');
   await expect(highlightedLines.first()).toContainText("source line 14");
   await expect(highlightedLines.last()).toContainText("source line 28");
-  await expect(preview.locator(".cm-line", {hasText:"source line 29"}))
+  await expect(preview.locator(".cm-line:visible", {hasText:"source line 29"}))
     .not.toHaveAttribute("data-workspace-file-selected-range","true");
   // Source hn's attachment route carries the one-based column from Qe into
   // the same mounted CodeMirror selection, not merely into a line highlight.
-  await preview.locator(".cm-content").focus();
-  await expect.poll(async()=>preview.locator(".cm-content").evaluate(content=>{
+  await preview.locator(".cm-content:visible").focus();
+  await expect.poll(async()=>preview.locator(".cm-content:visible").evaluate(content=>{
     const selection=content.ownerDocument.getSelection();
     const anchor=selection?.anchorNode;
-    const line=anchor instanceof Element?anchor.closest(".cm-line"):
-      anchor?.parentElement?.closest(".cm-line");
+    const line=anchor instanceof Element?anchor.closest(".cm-line:visible"):
+      anchor?.parentElement?.closest(".cm-line:visible");
     return {line:line?.textContent?.trim()??null,
       offset:selection?.anchorOffset??null};
   })).toEqual({line:"source line 14",offset:0});
@@ -87,17 +87,17 @@ test("actual attachment row opens read-only native-host preview, revokes on thre
   await expect.poll(async()=>(await inspect()).read).toBe(2);
   await expect.poll(async()=>scroller.evaluate(element=>element.scrollTop))
     .toBeLessThan(bottomScroll);
-  await preview.locator(".cm-content").focus();
-  await expect.poll(async()=>preview.locator(".cm-content").evaluate(content=>{
+  await preview.locator(".cm-content:visible").focus();
+  await expect.poll(async()=>preview.locator(".cm-content:visible").evaluate(content=>{
     const selection=content.ownerDocument.getSelection();
     const anchor=selection?.anchorNode;
-    const line=anchor instanceof Element?anchor.closest(".cm-line"):
-      anchor?.parentElement?.closest(".cm-line");
+    const line=anchor instanceof Element?anchor.closest(".cm-line:visible"):
+      anchor?.parentElement?.closest(".cm-line:visible");
     return {line:line?.textContent?.trim()??null,
       offset:selection?.anchorOffset??null};
   })).toEqual({line:"source line 14",offset:0});
   const immutableBefore=await preview.locator("[data-workspace-file-text]").textContent();
-  await preview.locator(".cm-content").focus();
+  await preview.locator(".cm-content:visible").focus();
   await page.keyboard.type("NO_WRITE_PERMITTED");
   await expect(preview.locator("[data-workspace-file-text]"))
     .not.toContainText("NO_WRITE_PERMITTED");
@@ -161,7 +161,8 @@ test("existing canonical user-message files reuse source k3o tabs, switch, close
         const isApp=request.path.endsWith("/App.tsx");
         return {name:isApp?"App.tsx":"index.ts",
           relativePath:isApp?"src/App.tsx":"src/index.ts",
-          text:isApp?"app original\\napp second":"index original\\nindex second",
+          text:isApp?["app original",...Array.from({length:79},(_,i)=>\`app line \${i+2}\`)].join("\n")
+            :"index original\\nindex second",
           line:request.line,endLine:request.endLine,readOnly:true};
       },
     }});
@@ -178,12 +179,32 @@ test("existing canonical user-message files reuse source k3o tabs, switch, close
   const tabs=preview.getByRole("tablist",{name:"Open local files"});
   await expect(tabs.getByRole("tab")).toHaveCount(1);
   await expect(tabs.getByRole("tab",{name:"App.tsx"})).toHaveAttribute("aria-selected","true");
+  // Original IX keeps a tab's contentInstance alive. The independent fallback
+  // now retains the same CodeMirror DOM/state while another file is selected.
+  await preview.locator(".cm-editor:visible").evaluate(element=>{
+    (window as unknown as {__persistedAppEditor?:Element}).__persistedAppEditor=element;
+  });
+  const appScroller=preview.locator(".cm-scroller:visible");
+  await appScroller.evaluate(element=>{element.scrollTop=element.scrollHeight;});
+  await expect.poll(async()=>appScroller.evaluate(element=>element.scrollTop))
+    .toBeGreaterThan(0);
+  const appScrollTop=await appScroller.evaluate(element=>element.scrollTop);
   await index.click();
   await expect(tabs.getByRole("tab")).toHaveCount(2);
   await expect(tabs.getByRole("tab",{name:"index.ts"})).toHaveAttribute("aria-selected","true");
   await expect(preview.locator("[data-workspace-file-text]")).toContainText("index original");
+  expect(await page.evaluate(()=>{
+    const saved=(window as unknown as {__persistedAppEditor?:Element}).__persistedAppEditor;
+    return saved!=null&&saved.isConnected&&
+      Array.from(document.querySelectorAll(".cm-editor")).includes(saved);
+  })).toBe(true);
   await tabs.getByRole("tab",{name:"App.tsx"}).click();
   await expect(preview.locator("[data-workspace-file-text]")).toContainText("app original");
+  await expect.poll(async()=>appScroller.evaluate(element=>element.scrollTop))
+    .toBe(appScrollTop);
+  expect(await preview.locator(".cm-editor:visible").evaluate(element=>
+    element===(window as unknown as {__persistedAppEditor?:Element}).__persistedAppEditor
+  )).toBe(true);
   await app.click();
   await expect(tabs.getByRole("tab")).toHaveCount(2);
   await expect(tabs.getByRole("tab",{name:"App.tsx"})).toHaveAttribute("aria-selected","true");
@@ -606,7 +627,7 @@ test("native granted workspace directory tree opens new CodeMirror tab without r
   await expect(extraTab).toHaveAttribute("aria-selected","true");
   await expect(extraTab).toHaveAttribute("data-source-file-tab-preview","true");
   await expect(extra).toHaveAttribute("aria-selected","true");
-  await expect(panel.locator(".cm-content"))
+  await expect(panel.locator(".cm-content:visible"))
     .toHaveAttribute("contenteditable","false");
   // Re-selecting an already open preview selects its existing tab, not a new read.
   await extra.click();
