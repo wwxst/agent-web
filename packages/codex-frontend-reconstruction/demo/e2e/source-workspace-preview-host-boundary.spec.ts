@@ -868,3 +868,82 @@ test("source patch file links enter the mounted read-only preview at the first c
     {path:"/projects/agent-web/src/components/CodexSourceToolActivityLeaves.tsx",line:1},
   ]);
 });
+
+test("original onOpenLocation payload reuses the granted tab and reveals the one-based line and column",async({page})=>{
+  await page.addInitScript(()=>{
+    const state={
+      selects:0,
+      reads:[] as Array<{path:string;line?:number;endLine?:number}>,
+    };
+    Object.assign(window,{__sourceOpenLocationState:state});
+    Object.defineProperty(window,"agentWebDesktopHost",{configurable:true,value:{
+      subscribeUiCommands:()=>()=>{},
+      subscribeHostEvents:()=>()=>{},
+      getComposerDrafts:async()=>({}),
+      setComposerDraft:async()=>true,
+      openMenu:async()=>false,
+      selectWorkspaceDirectory:async()=>{
+        state.selects++;
+        return {selected:true,name:"fixture-workspace"};
+      },
+      revokeWorkspaceDirectory:async()=>true,
+      readWorkspaceTextFile:async(request:{path:string;line?:number;endLine?:number})=>{
+        state.reads.push({...request});
+        return {
+          name:"App.tsx",relativePath:"src/App.tsx",
+          text:Array.from({length:80},(_,i)=>"source line "+(i+1)).join("\n"),
+          line:request.line,endLine:request.endLine,readOnly:true,
+        };
+      },
+    }});
+  });
+  await page.goto("/");
+  await page.getByRole("button",{name:"打开演示工具"}).click();
+  await page.getByTestId("demo-source-user-file-attachments").click();
+  const row=page.locator('[data-demo-turn-id^="user-file-attachments-"]').last();
+  await row.getByRole("button",{name:/App\\.tsx/}).click();
+
+  const panel=page.getByRole("complementary",{name:"Local file preview"});
+  const appTab=panel.getByRole("tab",{name:"App.tsx"});
+  await expect(appTab).toHaveAttribute("aria-selected","true");
+  await expect(panel.locator("[data-workspace-file-selected-range=\"true\"]").first())
+    .toContainText("source line 14");
+
+  const scroller=panel.locator(".cm-scroller:visible");
+  const bottom=await scroller.evaluate(element=>element.scrollHeight-element.clientHeight);
+  expect(bottom).toBeGreaterThan(0);
+  await scroller.evaluate(element=>{element.scrollTop=element.scrollHeight;});
+  await expect.poll(()=>scroller.evaluate(element=>element.scrollTop)).toBeGreaterThan(0);
+
+  // This demo-only control injects the exact source callback shape:
+  // {path, range.start.line, range.start.character}. It is not an LSP provider.
+  await page.getByTestId("demo-source-open-location").click();
+  await expect(appTab).toHaveAttribute("aria-selected","true");
+  await expect(panel).toContainText("Line 14");
+  await expect(panel.locator("[data-workspace-file-selected-range=\"true\"]").first())
+    .toContainText("source line 14");
+  await panel.locator(".cm-content:visible").focus();
+  await expect.poll(async()=>panel.locator(".cm-content:visible").evaluate(content=>{
+    const selection=content.ownerDocument.getSelection();
+    const anchor=selection?.anchorNode;
+    const line=anchor instanceof Element?anchor.closest(".cm-line"):
+      anchor?.parentElement?.closest(".cm-line");
+    return {line:line?.textContent?.trim()??null,offset:selection?.anchorOffset??null};
+  })).toEqual({line:"source line 14",offset:3});
+  await expect.poll(()=>scroller.evaluate(element=>element.scrollTop))
+    .toBeLessThan(bottom-100);
+
+  const state=await page.evaluate(()=>(
+    window as unknown as Window & {__sourceOpenLocationState:{
+      selects:number;reads:Array<{path:string;line?:number;endLine?:number}>;
+    }
+  }).__sourceOpenLocationState);
+  expect(state.selects).toBe(1);
+  // The first request came from the attachment. The second is onOpenLocation:
+  // column/resetTabState stay renderer-only; no new picker or native API.
+  expect(state.reads).toEqual([
+    {path:"/projects/agent-web/src/App.tsx",line:14,endLine:28},
+    {path:"/projects/agent-web/src/App.tsx",line:14},
+  ]);
+  await expect(panel.getByRole("tab")).toHaveCount(1);
+});
