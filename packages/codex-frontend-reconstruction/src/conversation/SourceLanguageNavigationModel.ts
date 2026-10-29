@@ -82,6 +82,9 @@ export function sourceLanguageLocations(value:unknown):SourceLanguageLocation[]{
   const locations:SourceLanguageLocation[]=[];
   for(const candidate of value){
     if(!isRecord(candidate)||!validPath(candidate.path)||
+      hasTraversalSegment(candidate.path)||
+      !(candidate.path.startsWith("/")||/^[A-Za-z]:[\\\\/]/u.test(candidate.path)||
+        candidate.path.startsWith("\\\\"))||
       !isRecord(candidate.range)||!validPosition(candidate.range.start))continue;
     const range:SourceLanguageRange={start:{
       line:candidate.range.start.line,character:candidate.range.start.character,
@@ -95,7 +98,14 @@ export function sourceLanguageLocations(value:unknown):SourceLanguageLocation[]{
   return locations;
 }
 function normalizePath(path:string):string{
-  return path.replace(/\\/g,"/").replace(/\/{2,}/g,"/");
+  const slash=path.replace(/\\/g,"/");
+  return slash.startsWith("//")
+    ?"//"+slash.slice(2).replace(/\/{2,}/g,"/")
+    :slash.replace(/\/{2,}/g,"/");
+}
+function hasTraversalSegment(path:string):boolean{
+  return normalizePath(path).split("/").some(segment=>
+    segment==="."||segment==="..");
 }
 function isWindowsPath(path:string):boolean{
   return /^[A-Za-z]:\//u.test(path)||path.startsWith("//");
@@ -121,7 +131,8 @@ export function sourceWorkspaceRootFromPath(
 export function sourceLanguageLocationIsWithinRoot(
   path:string,root:string,
 ):boolean{
-  if(!validPath(path)||typeof root!=="string"||root.length===0)return false;
+  if(!validPath(path)||hasTraversalSegment(path)||
+    typeof root!=="string"||root.length===0||hasTraversalSegment(root))return false;
   const windows=isWindowsPath(root)||isWindowsPath(path);
   const target=comparable(path,windows);
   const base=comparable(root,windows);
