@@ -60,7 +60,7 @@ function validPosition(value:unknown):value is SourceLanguagePosition{
 /** Same conservative grant-relative path shape enforced by native tree IPC. */
 export function sourceLanguageRelativePathIsSafe(value:unknown):value is string{
   return typeof value==="string"&&value.length>0&&value.length<=1024&&
-    !/[\\\\:\\u0000-\\u001f\\u007f]/u.test(value)&&
+    !/[\\:\u0000-\u001f\u007f]/u.test(value)&&
     !value.startsWith("/")&&!value.endsWith("/")&&
     value.split("/").every(segment=>segment!==""&&segment!=="."&&segment!==".."&&
       !/[. ]$/u.test(segment));
