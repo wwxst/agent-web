@@ -625,10 +625,12 @@ test("native granted workspace directory tree opens new CodeMirror tab without r
   const tabMenu=page.getByRole("menu",{name:"Local file tab actions"});
   await tabMenu.getByRole("menuitem",{name:"Keep tab"}).click();
   await expect(nextTab).toHaveAttribute("data-source-file-tab-preview","false");
-  // Double-clicking a preview tab also converts it to a kept tab.
-  await tree.getByRole("treeitem",{name:"README.md"}).dblclick();
+  // Single-click opens a preview; double-clicking the tab itself keeps it.
+  await tree.getByRole("treeitem",{name:"README.md"}).click();
   await expect(panel.locator("[data-workspace-file-text]")).toContainText("README");
   const readmeTab=panel.getByRole("tab",{name:"README.md"});
+  await expect(readmeTab).toHaveAttribute("data-source-file-tab-preview","true");
+  await readmeTab.dblclick();
   await expect(readmeTab).toHaveAttribute("data-source-file-tab-preview","false");
   // An earlier unresolved preview cannot replace a later tree selection.
   await tree.getByRole("treeitem",{name:"slow.ts"}).click();
