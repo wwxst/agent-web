@@ -43,6 +43,8 @@ const SEARCH_WORKSPACE_FILES_CHANNEL="agent-web:search-workspace-files";
 const REVOKE_WORKSPACE_CHANNEL="agent-web:revoke-workspace-directory";
 const COPY_WORKSPACE_PATH_CHANNEL="agent-web:copy-workspace-file-path";
 const COPY_WORKSPACE_CONTENTS_CHANNEL="agent-web:copy-workspace-file-contents";
+const GET_WORKSPACE_LANGUAGE_CAPABILITIES_CHANNEL="agent-web:workspace-language-capabilities";
+const GET_WORKSPACE_LANGUAGE_LOCATIONS_CHANNEL="agent-web:workspace-language-locations";
 const devUrl=process.env.AGENT_WEB_DEV_URL || "";
 const devMode=devUrl.length>0;
 const indexPath=path.resolve(__dirname,"../demo-dist/index.html");
@@ -201,6 +203,10 @@ function setupIpc(){
     workspacePreviewHost.copyFilePath(event,path));
   ipcMain.handle(COPY_WORKSPACE_CONTENTS_CHANNEL,(event,request)=>
     workspacePreviewHost.copyFileContents(event,request));
+  ipcMain.handle(GET_WORKSPACE_LANGUAGE_CAPABILITIES_CHANNEL,(event,request)=>
+    workspacePreviewHost.getLanguageCapabilities(event,request));
+  ipcMain.handle(GET_WORKSPACE_LANGUAGE_LOCATIONS_CHANNEL,(event,request)=>
+    workspacePreviewHost.getLanguageLocations(event,request));
   // Original mcp-request-card ye calls a request-scoped host reply method;
   // this standalone app does NOT have that Agent backend protocol. Use
   // existing main-frame navigation/sender guards and fail closed.

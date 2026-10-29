@@ -48,10 +48,10 @@ declare global {
        * navigation is unavailable, not that synthetic locations should be used.
        */
       getWorkspaceLanguageCapabilities?(request:{
-        path:string;languageId:string;
+        relativePath:string;languageId:string;
       }):Promise<SourceLanguageCapabilities|null>;
       getWorkspaceLanguageLocations?(request:{
-        path:string;languageId:string;kind:SourceLanguageLocationKind;
+        relativePath:string;languageId:string;kind:SourceLanguageLocationKind;
         position:SourceLanguagePosition;
       }):Promise<readonly SourceLanguageLocation[]>;
       /** Native grant-relative, single-directory bounded listing. No filesystem

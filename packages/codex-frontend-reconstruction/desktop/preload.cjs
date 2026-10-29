@@ -24,6 +24,19 @@ const SEARCH_WORKSPACE_FILES_CHANNEL="agent-web:search-workspace-files";
 const REVOKE_WORKSPACE_CHANNEL="agent-web:revoke-workspace-directory";
 const COPY_WORKSPACE_PATH_CHANNEL="agent-web:copy-workspace-file-path";
 const COPY_WORKSPACE_CONTENTS_CHANNEL="agent-web:copy-workspace-file-contents";
+const GET_WORKSPACE_LANGUAGE_CAPABILITIES_CHANNEL="agent-web:workspace-language-capabilities";
+const GET_WORKSPACE_LANGUAGE_LOCATIONS_CHANNEL="agent-web:workspace-language-locations";
+const sourceLanguageKinds=new Set([
+  "definition","typeDefinition","implementation","references",
+]);
+const sourceLanguageIds=new Set([
+  "typescript","typescriptreact","javascript","javascriptreact",
+]);
+function validAbsoluteWorkspacePath(value){
+  return typeof value==="string"&&value.length>0&&value.length<=4096&&
+    !/[\u0000-\u001f\u007f]/u.test(value)&&
+    (value.startsWith("/")||/^[A-Za-z]:[\\\\/]/u.test(value)||value.startsWith("\\\\"));
+}
 const draftThreadIds=new Set(["frontend","review"]);
 const allowedUiCommands=new Set([
   "toggle-sidebar","previous-thread","next-thread",
@@ -167,6 +180,38 @@ contextBridge.exposeInMainWorld("agentWebDesktopHost",Object.freeze({
       path:request.path,
       ...(request.line===undefined?{}:{line:request.line}),
       ...(request.endLine===undefined?{}:{endLine:request.endLine}),
+    });
+  },
+  getWorkspaceLanguageCapabilities(request){
+    if(request==null||typeof request!=="object"||Array.isArray(request)||
+      Object.keys(request).length!==2||
+      !Object.hasOwn(request,"path")||!Object.hasOwn(request,"languageId")||
+      !validAbsoluteWorkspacePath(request.path)||
+      !sourceLanguageIds.has(request.languageId))
+      return Promise.reject(new TypeError("WORKSPACE_INVALID_LANGUAGE_REQUEST"));
+    return ipcRenderer.invoke(GET_WORKSPACE_LANGUAGE_CAPABILITIES_CHANNEL,{
+      path:request.path,languageId:request.languageId,
+    });
+  },
+  getWorkspaceLanguageLocations(request){
+    const position=request?.position;
+    if(request==null||typeof request!=="object"||Array.isArray(request)||
+      Object.keys(request).length!==4||
+      !Object.hasOwn(request,"path")||!Object.hasOwn(request,"languageId")||
+      !Object.hasOwn(request,"kind")||!Object.hasOwn(request,"position")||
+      !validAbsoluteWorkspacePath(request.path)||
+      !sourceLanguageIds.has(request.languageId)||
+      !sourceLanguageKinds.has(request.kind)||
+      position==null||typeof position!=="object"||Array.isArray(position)||
+      Object.keys(position).length!==2||
+      !Object.hasOwn(position,"line")||!Object.hasOwn(position,"character")||
+      !Number.isSafeInteger(position.line)||position.line<0||position.line>9999999||
+      !Number.isSafeInteger(position.character)||position.character<0||
+      position.character>9999999)
+      return Promise.reject(new TypeError("WORKSPACE_INVALID_LANGUAGE_REQUEST"));
+    return ipcRenderer.invoke(GET_WORKSPACE_LANGUAGE_LOCATIONS_CHANNEL,{
+      path:request.path,languageId:request.languageId,kind:request.kind,
+      position:{line:position.line,character:position.character},
     });
   },
   // Local workspace tree: strict grant-relative paths, not a root URL or

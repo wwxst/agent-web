@@ -616,3 +616,68 @@ test("in-flight workspace filename search loses grant after native revoke",async
     await assert.rejects(pending,/WORKSPACE_GRANT_REVOKED/);
   }finally{await rm(root,{recursive:true,force:true});}
 });
+
+test("native TypeScript language service resolves grant-scoped definitions and references",async()=>{
+  const root=await mkdtemp(join(tmpdir(),"agent-web-language-workspace-"));
+  const outside=await mkdtemp(join(tmpdir(),"agent-web-language-outside-"));
+  const src=join(root,"src");
+  await mkdir(src);
+  const indexPath=join(src,"index.ts");
+  const appPath=join(src,"App.tsx");
+  const outsidePath=join(outside,"secret.ts");
+  await writeFile(indexPath,"export const answer = 42;\n","utf8");
+  await writeFile(appPath,'import { answer } from "./index";\nexport const result = answer;\n',"utf8");
+  await writeFile(outsidePath,"export const secret = true;\n","utf8");
+  // Native realpath may canonicalize case on Windows; LSP results use
+  // that canonical spelling rather than the pre-grant picker string.
+  const canonicalIndexPath=await realpath(indexPath);
+  const canonicalAppPath=await realpath(appPath);
+  const sender={sender:{id:904}};
+  const host=createTrustedWorkspacePreviewHost({
+    isTrustedRenderer:event=>event===sender,
+    chooseDirectory:async()=>({canceled:false,filePaths:[root]}),
+  });
+  try{
+    await host.selectDirectory(sender);
+    const capabilities=await host.getLanguageCapabilities(sender,{
+      path:appPath,languageId:"typescriptreact",
+    });
+    assert.equal(capabilities.hover,false);
+    assert.deepEqual(capabilities.locationKinds,[
+      "definition","typeDefinition","implementation","references",
+    ]);
+
+    const definitions=await host.getLanguageLocations(sender,{
+      path:appPath,languageId:"typescriptreact",kind:"definition",
+      position:{line:0,character:10},
+    });
+    assert.ok(definitions.some(location=>
+      location.path===canonicalIndexPath&&location.range.start.line===0&&
+      location.range.start.character===13));
+
+    const references=await host.getLanguageLocations(sender,{
+      path:indexPath,languageId:"typescript",kind:"references",
+      position:{line:0,character:14},
+    });
+    assert.ok(references.some(location=>
+      location.path===canonicalIndexPath&&location.range.start.character===13));
+    assert.ok(references.some(location=>
+      location.path===canonicalAppPath&&location.range.start.character===9));
+
+    await assert.rejects(host.getLanguageLocations(sender,{
+      path:outsidePath,languageId:"typescript",kind:"definition",
+      position:{line:0,character:14},
+    }),/WORKSPACE_OUTSIDE_GRANT/);
+    await assert.rejects(host.getLanguageLocations(sender,{
+      path:appPath,languageId:"typescriptreact",kind:"execute",
+      position:{line:0,character:10},
+    }),/WORKSPACE_INVALID_LANGUAGE_REQUEST/);
+    await host.revoke(sender);
+    await assert.rejects(host.getLanguageCapabilities(sender,{
+      path:appPath,languageId:"typescriptreact",
+    }),/WORKSPACE_NOT_GRANTED/);
+  }finally{
+    await rm(root,{recursive:true,force:true});
+    await rm(outside,{recursive:true,force:true});
+  }
+});
