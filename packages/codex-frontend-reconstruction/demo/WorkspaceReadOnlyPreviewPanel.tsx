@@ -244,10 +244,11 @@ export function WorkspaceReadOnlyPreviewPanel({
           }))}
           activeTabId={activeTabId}
           onSelectTab={onSelectTab}/>}
-      <WorkspaceReadOnlyCodeMirror key={activeTabId}
-        preview={preview}
-        initialScrollTop={scrollByTab.current.get(activeTabId)}
-        onScrollTop={top=>scrollByTab.current.set(activeTabId,top)}/>
+      {tabs.map(tab=><WorkspaceReadOnlyCodeMirror key={tab.id}
+        preview={tab.content}
+        active={tab.id===activeTabId}
+        initialScrollTop={scrollByTab.current.get(tab.id)}
+        onScrollTop={top=>scrollByTab.current.set(tab.id,top)}/>)}
     </div>
     </div>
     {tabMenu!=null&&menuItems.length>0?createPortal(
