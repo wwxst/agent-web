@@ -108,7 +108,8 @@ function hasTraversalSegment(path:string):boolean{
     segment==="."||segment==="..");
 }
 function isWindowsPath(path:string):boolean{
-  return /^[A-Za-z]:\//u.test(path)||path.startsWith("//");
+  const normalized=normalizePath(path);
+  return /^[A-Za-z]:\//u.test(normalized)||normalized.startsWith("//");
 }
 function comparable(path:string,windows:boolean):string{
   const normalized=normalizePath(path).replace(/\/$/u,"");
