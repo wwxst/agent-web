@@ -39,15 +39,17 @@ function isZeroBasedPosition(value:unknown):value is {line:number;character:numb
 export function sourceOpenLocationRequest(
   location:unknown,
 ):SourceOpenLocationRequest|null{
-  if(!isRecord(location)||typeof location.path!=="string"||
-    location.path.length===0||location.path.length>4096||
-    /[\u0000-\u001f\u007f]/u.test(location.path)||
-    !isRecord(location.range)||!isZeroBasedPosition(location.range.start))
-    return null;
+  if(!isRecord(location)||typeof location.path!=="string")return null;
+  const path=location.path;
+  const range=location.range;
+  if(path.length===0||path.length>4096||
+    /[\u0000-\u001f\u007f]/u.test(path)||!isRecord(range))return null;
+  const start=range.start;
+  if(!isZeroBasedPosition(start))return null;
   return {
-    path:location.path,
-    line:location.range.start.line+1,
-    column:location.range.start.character+1,
+    path,
+    line:start.line+1,
+    column:start.character+1,
     resetTabState:true,
   };
 }
