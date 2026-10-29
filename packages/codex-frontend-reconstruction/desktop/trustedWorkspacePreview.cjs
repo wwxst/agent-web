@@ -162,11 +162,18 @@ function createTrustedWorkspacePreviewHost({
   // its captured generation so no late chooser response can restore a grant.
   const epochs=new Map();
   const pendingPickers=new Set();
+  const languageServiceCaches=new Map();
   const currentEpoch=id=>epochs.get(id)??0;
+  const disposeLanguageCache=id=>{
+    const cached=languageServiceCaches.get(id);
+    try{cached?.service?.dispose?.();}catch{}
+    languageServiceCaches.delete(id);
+  };
   const clearSender=id=>{
     epochs.set(id,currentEpoch(id)+1);
     grants.delete(id);
     directoryIdentities.delete(id);
+    disposeLanguageCache(id);
   };
   function stillCurrent(event,id,epoch){
     if(currentEpoch(id)!==epoch||event?.sender?.id!==id)return false;
@@ -200,6 +207,7 @@ function createTrustedWorkspacePreviewHost({
       const stat=await filesystem.stat(root);
       if(!stillCurrent(event,id,epoch))return {selected:false};
       if(!stat.isDirectory())denied("WORKSPACE_INVALID_DIRECTORY");
+      disposeLanguageCache(id);
       grants.set(id,root);
       directoryIdentities.set(id,stat);
       return {selected:true,name:path.basename(root)};
