@@ -13,9 +13,8 @@ import {
   SOURCE_LANGUAGE_LOCATION_KINDS,
   sourceLanguageCapabilities,
   sourceLanguageIdForPath,
-  sourceLanguageLocationIsWithinRoot,
   sourceLanguageLocations,
-  sourceRelativeLanguageLocationPath,
+  sourceLanguageRelativePathIsSafe,
   type SourceLanguageCapabilities,
   type SourceLanguageLocation,
   type SourceLanguageLocationKind,
@@ -134,17 +133,15 @@ function positionReadOnlyEditor(
 
 export interface WorkspaceReadOnlyCodeMirrorProps {
   preview:WorkspaceReadOnlyPreview;
-  /** Absolute path is only a lookup key; native host still checks its grant. */
-  path:string;
-  /** Renderer-derived display root, never treated as filesystem authority. */
-  workspaceRoot:string|null;
+  /** Grant-relative path returned by the native read-only file host. */
+  relativePath:string;
   onOpenLocation:(location:SourceLanguageLocation)=>void;
   active?:boolean;
   initialScrollTop?:number;
   onScrollTop?:(top:number)=>void;
 }
 export function WorkspaceReadOnlyCodeMirror({
-  preview,path,workspaceRoot,onOpenLocation,
+  preview,relativePath,onOpenLocation,
   active=true,initialScrollTop,onScrollTop,
 }:WorkspaceReadOnlyCodeMirrorProps){
   const surfaceRef=React.useRef<HTMLDivElement|null>(null);
@@ -160,12 +157,10 @@ export function WorkspaceReadOnlyCodeMirror({
   const [contextMenu,setContextMenu]=React.useState<SourceLanguageContextMenuState|null>(null);
   const [locationList,setLocationList]=React.useState<SourceLanguageLocationListState|null>(null);
   const locationRequestIdRef=React.useRef(0);
-  const pathRef=React.useRef(path);
-  pathRef.current=path;
-  const workspaceRootRef=React.useRef(workspaceRoot);
-  workspaceRootRef.current=workspaceRoot;
-  const languageIdRef=React.useRef(sourceLanguageIdForPath(path));
-  languageIdRef.current=sourceLanguageIdForPath(path);
+  const relativePathRef=React.useRef(relativePath.replace(/\\/g,"/"));
+  relativePathRef.current=relativePath.replace(/\\/g,"/");
+  const languageIdRef=React.useRef(sourceLanguageIdForPath(relativePath));
+  languageIdRef.current=sourceLanguageIdForPath(relativePath);
   const capabilitiesRef=React.useRef(capabilities);
   capabilitiesRef.current=capabilities;
   const onOpenLocationRef=React.useRef(onOpenLocation);
@@ -180,11 +175,10 @@ export function WorkspaceReadOnlyCodeMirror({
     anchor:{left:number;top:number},
   )=>{
     const host=window.agentWebDesktopHost;
-    const activePath=pathRef.current;
+    const activeRelativePath=relativePathRef.current;
     const languageId=languageIdRef.current;
-    const root=workspaceRootRef.current;
-    if(host?.getWorkspaceLanguageLocations==null||activePath===""||
-      languageId==null||root==null||
+    if(host?.getWorkspaceLanguageLocations==null||activeRelativePath===""||
+      languageId==null||
       !capabilitiesRef.current?.locationKinds.includes(kind))return;
     const requestId=++locationRequestIdRef.current;
     setContextMenu(null);
@@ -192,13 +186,13 @@ export function WorkspaceReadOnlyCodeMirror({
       locations:[],visibleCount:100});
     try{
       const raw=await host.getWorkspaceLanguageLocations({
-        path:activePath,languageId,kind,position,
+        relativePath:activeRelativePath,languageId,kind,position,
       });
       if(locationRequestIdRef.current!==requestId)return;
       // Even a buggy provider must not turn a symbol result into access to a
       // path outside the directory the user explicitly granted.
       const locations=sourceLanguageLocations(raw).filter(location=>
-        sourceLanguageLocationIsWithinRoot(location.path,root));
+        sourceLanguageRelativePathIsSafe(location.relativePath));
       if(locations.length===1){
         setLocationList(null);
         onOpenLocationRef.current(locations[0]!);
@@ -215,7 +209,8 @@ export function WorkspaceReadOnlyCodeMirror({
   const languageId=sourceLanguageIdForPath(path);
   React.useEffect(()=>{
     const host=window.agentWebDesktopHost;
-    if(!active||path===""||workspaceRoot==null||languageId==null||
+    const activeRelativePath=relativePath.replace(/\\/g,"/");
+    if(!active||activeRelativePath===""||languageId==null||
       host?.getWorkspaceLanguageCapabilities==null||
       host.getWorkspaceLanguageLocations==null){
       setCapabilities(null);
@@ -225,11 +220,13 @@ export function WorkspaceReadOnlyCodeMirror({
     }
     let current=true;
     setCapabilities(null);
-    void host.getWorkspaceLanguageCapabilities({path,languageId}).then(value=>{
+    void host.getWorkspaceLanguageCapabilities({
+      relativePath:activeRelativePath,languageId,
+    }).then(value=>{
       if(current)setCapabilities(sourceLanguageCapabilities(value));
     }).catch(()=>{if(current)setCapabilities(null);});
     return ()=>{current=false;};
-  },[active,path,workspaceRoot,languageId]);
+  },[active,relativePath,languageId]);
   React.useEffect(()=>{
     if(active)return;
     locationRequestIdRef.current++;
@@ -456,19 +453,18 @@ export function WorkspaceReadOnlyCodeMirror({
           <p role="status">Loading locations…</p>:
           <div className="demo-source-language__location-items">
             {locationList.locations.slice(0,locationList.visibleCount).map((location,index)=>{
-              const relativePath=sourceRelativeLanguageLocationPath(
-                location.path,workspaceRoot??"");
+              const displayPath=location.relativePath??location.path;
               const line=location.range.start.line+1;
               const column=location.range.start.character+1;
               return <button key={`${location.path}:${line}:${column}:${index}`}
                 type="button"
-                aria-label={`Open ${relativePath}, line ${line}, column ${column}`}
+                aria-label={`Open ${displayPath}, line ${line}, column ${column}`}
                 onClick={()=>{
                   locationRequestIdRef.current++;
                   setLocationList(null);
                   onOpenLocationRef.current(location);
                 }}>
-                <span>{relativePath}</span><small>{line}:{column}</small>
+                <span>{displayPath}</span><small>{line}:{column}</small>
               </button>;
             })}
             {locationList.visibleCount<locationList.locations.length?
