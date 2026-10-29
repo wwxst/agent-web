@@ -78,6 +78,35 @@ test("real mounted user file attachment opens source-gated menu; clipboard and c
   await pill.click({button:"right"});
   await page.keyboard.press("Escape");
   await expect(menu).toHaveCount(0);
+  // Source Hxn/xO explicitly handles ContextMenu and Shift+F10, with
+  // menu focus and Radix arrow/Home/End roving keyboard behavior.
+  await pill.focus();
+  await expect(pill).toHaveAttribute("aria-haspopup","menu");
+  await page.keyboard.press("Shift+F10");
+  await expect(menu).toBeVisible();
+  await expect(pill).toHaveAttribute("aria-expanded","true");
+  const first=menu.getByRole("menuitem").first();
+  const last=menu.getByRole("menuitem").last();
+  await expect(first).toBeFocused();
+  await page.keyboard.press("ArrowDown");
+  await expect(last).toBeFocused();
+  await page.keyboard.press("ArrowDown");
+  await expect(first).toBeFocused();
+  await page.keyboard.press("End");
+  await expect(last).toBeFocused();
+  await page.keyboard.press("Home");
+  await expect(first).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(menu).toHaveCount(0);
+  await expect(pill).toBeFocused();
+  await expect(pill).toHaveAttribute("aria-expanded","false");
+  await page.keyboard.press("ContextMenu");
+  await expect(menu).toBeVisible();
+  await expect(first).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(menu).toHaveCount(0);
+  await expect(pill).toBeFocused();
+
   await pill.click({button:"right"});
   await page.getByRole("navigation",{name:"会话"}).getByRole("button").nth(1).click();
   await expect(menu).toHaveCount(0);

@@ -1596,6 +1596,21 @@ test("native Electron renders source hn/yn uploaded and workspace attachments wi
     });
   }else await page.keyboard.press("Escape");
   assert.equal(await menu.count(),0);
+  // Source Hxn keyboard invocation and focus return on the actual
+  // context-isolated Electron renderer, not merely a Playwright mock.
+  const nativeWorkspacePill=files.getByRole("button",{name:/App/});
+  await nativeWorkspacePill.focus();
+  await page.keyboard.press("Shift+F10");
+  await menu.waitFor({timeout:10000});
+  assert.equal(await menu.getByRole("menuitem").first().evaluate(
+    e=>document.activeElement===e),true);
+  await page.keyboard.press("ArrowDown");
+  assert.equal(await menu.getByRole("menuitem").last().evaluate(
+    e=>document.activeElement===e),true);
+  await page.keyboard.press("Escape");
+  assert.equal(await menu.count(),0);
+  assert.equal(await nativeWorkspacePill.evaluate(
+    e=>document.activeElement===e),true);
   await mkdir(resolve(root,"desktop/test-results"),{recursive:true});
   await page.screenshot({
    path:resolve(root,"desktop/test-results/source-user-file-attachments-readonly.png"),
