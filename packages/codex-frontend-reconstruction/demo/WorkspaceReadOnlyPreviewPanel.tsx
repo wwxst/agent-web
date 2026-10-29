@@ -51,7 +51,9 @@ export function WorkspaceReadOnlyPreviewPanel({
   preview:WorkspaceReadOnlyPreview;
   /** Source IX opens a tab keyed by k3o, not a separate preview window.
    * Contents remain explicitly independent local read-only fallbacks. */
-  tabs:readonly {id:string;path:string;content:WorkspaceReadOnlyPreview}[];
+  tabs:readonly {
+    id:string;path:string;content:WorkspaceReadOnlyPreview;isPreview?:boolean;
+  }[];
   activeTabId:string;
   onSelectTab:(id:string)=>void;
   /** Keeps an XL-style preview in the strip after double-click or menu use. */
