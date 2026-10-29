@@ -19,6 +19,8 @@ export interface WorkspaceReadOnlyPreview{
   column?:number;
   /** Original resetTabState clears stale editor scroll snapshots. */
   resetTabState?:boolean;
+  /** Distinguishes repeated navigations to the same line from tab re-selection. */
+  locationRequestId?:number;
   readOnly:true;
 }
 /**
