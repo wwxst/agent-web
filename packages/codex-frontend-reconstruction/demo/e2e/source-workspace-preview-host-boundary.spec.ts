@@ -506,6 +506,7 @@ test("native granted workspace directory tree opens new CodeMirror tab without r
         if(relativePath==="src")return {relativePath,entries:[
           {name:"App.tsx",relativePath:"src/App.tsx",kind:"file"},
           {name:"extra.ts",relativePath:"src/extra.ts",kind:"file"},
+          {name:"next.ts",relativePath:"src/next.ts",kind:"file"},
         ],truncated:false};
         throw Error("WORKSPACE_DIRECTORY_UNAVAILABLE");
       },
@@ -520,6 +521,9 @@ test("native granted workspace directory tree opens new CodeMirror tab without r
         if(relativePath==="src/deep/unopened.ts")
           return {name:"unopened.ts",relativePath,
             text:"export const fromNativeSearch = true;",readOnly:true};
+        if(relativePath==="src/next.ts")
+          return {name:"next.ts",relativePath,
+            text:"export const fromNativeNext = true;",readOnly:true};
         if(relativePath!=="src/extra.ts")throw Error("WORKSPACE_FILE_UNAVAILABLE");
         return {name:"extra.ts",relativePath,text:"export const fromNativeTree = true;",
           readOnly:true};
@@ -543,11 +547,20 @@ test("native granted workspace directory tree opens new CodeMirror tab without r
   await extra.click();
   await expect(panel.locator("[data-workspace-file-text]"))
     .toContainText("fromNativeTree = true");
-  await expect(panel.getByRole("tab",{name:"extra.ts"}))
-    .toHaveAttribute("aria-selected","true");
+  const extraTab=panel.getByRole("tab",{name:"extra.ts"});
+  await expect(extraTab).toHaveAttribute("aria-selected","true");
+  await expect(extraTab).toHaveAttribute("data-source-file-tab-preview","true");
   await expect(extra).toHaveAttribute("aria-selected","true");
   await expect(panel.locator(".cm-content"))
     .toHaveAttribute("contenteditable","false");
+  // Re-selecting an already open preview selects its existing tab, not a new read.
+  await extra.click();
+  await page.waitForTimeout(300);
+  const afterReselect=await page.evaluate(()=>
+    (window as unknown as Window & {
+      __nativeTreeBridgeTest:{treeReads:string[]};
+    }).__nativeTreeBridgeTest.treeReads);
+  expect(afterReselect).toEqual(["src/extra.ts"]);
   // Original Un / Ve separates tree expansion and host filename search:
   // find a file which the directory tree has NEVER expanded to.
   const filter=panel.getByRole("searchbox",{name:"Filter workspace files"});
@@ -557,13 +570,42 @@ test("native granted workspace directory tree opens new CodeMirror tab without r
   await searchResult.click();
   await expect(panel.locator("[data-workspace-file-text]"))
     .toContainText("fromNativeSearch = true");
-  await expect(panel.getByRole("tab",{name:"unopened.ts"}))
-    .toHaveAttribute("aria-selected","true");
+  const unopenedTab=panel.getByRole("tab",{name:"unopened.ts"});
+  await expect(unopenedTab).toHaveAttribute("aria-selected","true");
+  await expect(unopenedTab).toHaveAttribute("data-source-file-tab-preview","true");
+  await expect(panel.getByRole("tab",{name:"extra.ts"})).toHaveCount(0);
   await expect(searchResult).toHaveAttribute("aria-selected","true");
   await filter.fill("not-present");
   await expect(tree).toContainText("No matching files");
   await filter.fill("");
   await expect(extra).toBeVisible();
+  // Double-click opens a kept tab, so it does not evict the current preview.
+  await extra.dblclick();
+  await expect(panel.locator("[data-workspace-file-text]"))
+    .toContainText("fromNativeTree = true");
+  const keptExtra=panel.getByRole("tab",{name:"extra.ts"});
+  await expect(keptExtra).toHaveAttribute("data-source-file-tab-preview","false");
+  await expect(unopenedTab).toBeVisible();
+  // A subsequent single-click preview replaces the old preview but leaves
+  // the kept tab and original attachment tab untouched.
+  const next=tree.getByRole("treeitem",{name:"next.ts"});
+  await next.click();
+  await expect(panel.locator("[data-workspace-file-text]"))
+    .toContainText("fromNativeNext = true");
+  const nextTab=panel.getByRole("tab",{name:"next.ts"});
+  await expect(nextTab).toHaveAttribute("data-source-file-tab-preview","true");
+  await expect(panel.getByRole("tab",{name:"unopened.ts"})).toHaveCount(0);
+  await expect(panel.getByRole("tab")).toHaveText(["App.tsx","extra.ts","next.ts"]);
+  // The accessible Eqi-style menu exposes the local keep-tab action.
+  await nextTab.click({button:"right"});
+  const tabMenu=panel.getByRole("menu",{name:"Local file tab actions"});
+  await tabMenu.getByRole("menuitem",{name:"Keep tab"}).click();
+  await expect(nextTab).toHaveAttribute("data-source-file-tab-preview","false");
+  // Double-clicking a preview tab also converts it to a kept tab.
+  await tree.getByRole("treeitem",{name:"README.md"}).dblclick();
+  await expect(panel.locator("[data-workspace-file-text]")).toContainText("README");
+  const readmeTab=panel.getByRole("tab",{name:"README.md"});
+  await expect(readmeTab).toHaveAttribute("data-source-file-tab-preview","false");
   const state=await page.evaluate(()=>
     (window as unknown as Window & {
       __nativeTreeBridgeTest:{
@@ -574,16 +616,10 @@ test("native granted workspace directory tree opens new CodeMirror tab without r
   expect(state.grant).toBe(1);
   expect(state.searches).toEqual(["unopened","not-present"]);
   expect(state.absoluteReads).toBe(1);
-  expect(state.treeReads).toEqual(["src/extra.ts","src/deep/unopened.ts"]);
+  expect(state.treeReads).toEqual([
+    "src/extra.ts","src/deep/unopened.ts","src/extra.ts","src/next.ts","README.md",
+  ]);
   expect(state.lists).toEqual(["","src"]);
-
-  // Already-open tree file must not issue a second filesystem read.
-  await extra.click();
-  const after=await page.evaluate(()=>
-    (window as unknown as Window & {
-      __nativeTreeBridgeTest:{treeReads:string[]};
-    }).__nativeTreeBridgeTest.treeReads);
-  expect(after).toEqual(["src/extra.ts","src/deep/unopened.ts"]);
   // Original an refreshKey invalidates root AND current expanded branches;
   // the independent native fallback must not refresh only the root.
   await panel.getByRole("button",{name:"Refresh workspace directory"}).click();
