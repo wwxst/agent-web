@@ -368,6 +368,7 @@ export function App() {
    * It never accepts the root or generic filesystem paths from React. */
   const openWorkspaceTreeFile=React.useCallback(async(
     relativePath:string,isPreview=true,
+    location?:{line?:number;endLine?:number;column?:number;resetTabState?:boolean},
   )=>{
     const host=window.agentWebDesktopHost;
     if(host?.readWorkspaceTreeTextFile==null||!workspaceGrantRef.current)return;
@@ -377,6 +378,18 @@ export function App() {
       tab.content.relativePath.replace(/\\/g,"/")===relative);
     const intent=++workspaceSelectionIntentRef.current;
     if(open!=null){
+      // Original IX preserves the tab identity and forwards source location
+      // props. A resetTabState location intentionally clears the stale
+      // scroll snapshot; ordinary re-selection preserves it.
+      if(location!=null){
+        setWorkspaceTabs(current=>({
+          tabs:current.tabs.map(tab=>tab.id===open.id?{
+            ...tab,content:{...tab.content,...location},
+          }:tab),
+          activeTabId:open.id,
+        }));
+        return;
+      }
       // Re-selecting an already-pinned tab must not cancel a different
       // pending preview. Re-selecting the current preview is a newer preview
       // intent and invalidates unresolved preview reads.
@@ -427,7 +440,9 @@ export function App() {
         }
         workspacePendingPreviewTabIdsRef.current.delete(tabId);
         return sourceOpenLocalReadOnlyFileTab(current,{
-          id:tabId,path:relative,content:file,isPreview,
+          id:tabId,path:relative,content:location==null?file:{
+            ...file,...location,
+          },isPreview,
         },intent===workspaceSelectionIntentRef.current);
       });
     }catch(error){
