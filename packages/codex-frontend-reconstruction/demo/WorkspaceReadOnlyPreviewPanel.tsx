@@ -7,10 +7,7 @@ import {
   sourceLocalFileTabContextMenu,
   type SourceLocalFileTabContextAction,
 } from "../src/conversation/SourceReviewFileTabModel.js";
-import {
-  sourceWorkspaceRootFromPath,
-  type SourceLanguageLocation,
-} from "../src/conversation/SourceLanguageNavigationModel.js";
+import type {SourceLanguageLocation} from "../src/conversation/SourceLanguageNavigationModel.js";
 import "./workspaceReadOnlyPreview.css";
 
 export interface WorkspaceReadOnlyPreview{
@@ -252,8 +249,7 @@ export function WorkspaceReadOnlyPreviewPanel({
           onSelectTab={onSelectTab}/>}
       {tabs.map(tab=><WorkspaceReadOnlyCodeMirror key={tab.id}
         preview={tab.content}
-        path={tab.path}
-        workspaceRoot={sourceWorkspaceRootFromPath(tab.path,tab.content.relativePath)}
+        relativePath={tab.content.relativePath.replace(/\\/g,"/")}
         onOpenLocation={onOpenLocation}
         active={tab.id===activeTabId}
         initialScrollTop={scrollByTab.current.get(tab.id)}
