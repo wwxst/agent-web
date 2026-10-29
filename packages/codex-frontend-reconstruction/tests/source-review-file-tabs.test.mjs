@@ -138,7 +138,7 @@ test("source XL preserves existing pinned status and an explicit open keeps an e
   assert.equal(previewReopen.tabs.find(tab=>tab.id===pinned.id)?.isPreview,false);
   assert.equal(previewReopen.tabs.find(tab=>tab.id===preview.id)?.isPreview,true);
   const explicitOpen=sourceOpenLocalReadOnlyFileTab(previewReopen,{
-    ...preview,content:"explicit open",
+    id:preview.id,path:preview.path,content:"explicit open",
   });
   assert.equal(explicitOpen.tabs.find(tab=>tab.id===preview.id)?.isPreview,undefined);
   assert.equal(explicitOpen.activeTabId,preview.id);
