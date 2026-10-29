@@ -5,7 +5,7 @@ import {
   sourceOpenLocalReadOnlyFileTab,sourceSelectLocalReadOnlyFileTab,
   sourceCloseLocalReadOnlyFileTab,
   sourceLocalFileTabContextMenu,sourceCloseOtherLocalReadOnlyFileTabs,
-  sourceCloseLocalReadOnlyTabsToRight,
+  sourceCloseLocalReadOnlyTabsToRight,sourceKeepLocalReadOnlyFileTab,
 } from "../build/SourceReviewFileTabModel.js";
 
 test("original app-initial k3o file tab id uses host and environment only when present",()=>{
@@ -110,4 +110,67 @@ test("source close right removes only following tabs and preserves existing left
   },"closing active rightmost tab selects the initiating tab in the independent fallback");
   assert.equal(sourceCloseLocalReadOnlyTabsToRight(state,c.id),state);
   assert.equal(sourceCloseLocalReadOnlyTabsToRight(state,"missing"),state);
+});
+
+
+test("source XL replaces only the previous preview and keeps explicit tabs",()=>{
+  const pinned={id:"file:pinned.ts",path:"pinned.ts",content:"pinned"};
+  const previewA={id:"file:a.ts",path:"a.ts",content:"a",isPreview:true};
+  const previewB={id:"file:b.ts",path:"b.ts",content:"b",isPreview:true};
+  const base=sourceOpenLocalReadOnlyFileTab(sourceEmptyLocalReadOnlyTabState(),pinned);
+  const withA=sourceOpenLocalReadOnlyFileTab(base,previewA);
+  assert.deepEqual(withA.tabs,[pinned,previewA]);
+  const withB=sourceOpenLocalReadOnlyFileTab(withA,previewB);
+  assert.deepEqual(withB.tabs,[pinned,previewB]);
+  assert.equal(withB.activeTabId,previewB.id);
+  assert.equal(withB.tabs.some(tab=>tab.id===pinned.id),true);
+  assert.equal(withB.tabs.some(tab=>tab.id===previewA.id),false);
+});
+
+test("source XL preserves existing pinned status and an explicit open keeps an existing preview",()=>{
+  const pinned={id:"file:pinned.ts",path:"pinned.ts",content:"old"};
+  const preview={id:"file:preview.ts",path:"preview.ts",content:"preview",isPreview:true};
+  const state=sourceOpenLocalReadOnlyFileTab(
+    sourceOpenLocalReadOnlyFileTab(sourceEmptyLocalReadOnlyTabState(),pinned),preview);
+  const previewReopen=sourceOpenLocalReadOnlyFileTab(state,{
+    ...pinned,content:"reopened",isPreview:true,
+  });
+  assert.equal(previewReopen.tabs.find(tab=>tab.id===pinned.id)?.isPreview,false);
+  assert.equal(previewReopen.tabs.find(tab=>tab.id===preview.id)?.isPreview,true);
+  const explicitOpen=sourceOpenLocalReadOnlyFileTab(previewReopen,{
+    ...preview,content:"explicit open",
+  });
+  assert.equal(explicitOpen.tabs.find(tab=>tab.id===preview.id)?.isPreview,undefined);
+  assert.equal(explicitOpen.activeTabId,preview.id);
+  assert.equal(explicitOpen.tabs.length,2);
+});
+
+test("source XL pinTab behavior keeps a preview in the strip and adds Keep tab menu action",()=>{
+  const pinned={id:"file:pinned.ts",path:"pinned.ts",content:"pinned"};
+  const preview={id:"file:preview.ts",path:"preview.ts",content:"preview",isPreview:true};
+  const state=sourceOpenLocalReadOnlyFileTab(
+    sourceOpenLocalReadOnlyFileTab(sourceEmptyLocalReadOnlyTabState(),pinned),preview);
+  assert.deepEqual(sourceLocalFileTabContextMenu(state,preview.id).map(item=>item.id),[
+    "keep-tab","close-tab","close-other-tabs","close-tabs-to-the-right",
+  ]);
+  const kept=sourceKeepLocalReadOnlyFileTab(state,preview.id);
+  assert.equal(kept.tabs.find(tab=>tab.id===preview.id)?.isPreview,false);
+  assert.equal(kept.activeTabId,state.activeTabId);
+  assert.deepEqual(sourceLocalFileTabContextMenu(kept,preview.id).map(item=>item.id),[
+    "close-tab","close-other-tabs","close-tabs-to-the-right",
+  ]);
+  assert.equal(sourceKeepLocalReadOnlyFileTab(kept,preview.id),kept);
+  assert.equal(sourceKeepLocalReadOnlyFileTab(kept,"missing"),kept);
+});
+
+test("background preview replacement never leaves activeTabId pointing at the disposed preview",()=>{
+  const pinned={id:"file:pinned.ts",path:"pinned.ts",content:"pinned"};
+  const preview={id:"file:preview.ts",path:"preview.ts",content:"preview",isPreview:true};
+  const next={id:"file:next.ts",path:"next.ts",content:"next",isPreview:true};
+  const state=sourceOpenLocalReadOnlyFileTab(
+    sourceOpenLocalReadOnlyFileTab(sourceEmptyLocalReadOnlyTabState(),pinned),preview);
+  const selectedPreview=sourceSelectLocalReadOnlyFileTab(state,preview.id);
+  const background=sourceOpenLocalReadOnlyFileTab(selectedPreview,next,false);
+  assert.deepEqual(background.tabs,[pinned,next]);
+  assert.equal(background.activeTabId,pinned.id);
 });
