@@ -945,6 +945,9 @@ test("original onOpenLocation opens a related file at one-based line/column and 
   // snapshot, even though the destination file/tab already exists.
   await locationScroller.evaluate(element=>{element.scrollTop=element.scrollHeight;});
   await expect.poll(()=>locationScroller.evaluate(element=>element.scrollTop)).toBeGreaterThan(0);
+  // The demo fixture closes its tools surface after dispatch, so reopen it
+  // for the second synthetic location event.
+  await page.getByRole("button",{name:"打开演示工具"}).click();
   await page.getByTestId("demo-source-open-location").click();
   await expect(indexTab).toHaveAttribute("aria-selected","true");
   await panel.locator(".cm-content:visible").focus();
