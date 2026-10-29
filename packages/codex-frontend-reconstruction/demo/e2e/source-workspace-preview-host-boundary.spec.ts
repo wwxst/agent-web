@@ -168,3 +168,113 @@ test("existing canonical user-message files reuse source k3o tabs, switch, close
   expect(result.selects).toBe(1);
   expect(result.reads).toHaveLength(4);
 });
+
+
+test("authorized file tabs accept overlapping reads, reject stale reopen results and do not resurrect closed tabs",async({page})=>{
+  await page.addInitScript(()=>{
+    type Preview={name:string;relativePath:string;text:string;readOnly:true};
+    const state={
+      selections:0,revocations:0,completed:0,
+      reads:[] as Array<{path:string;resolve:(value:Preview)=>void}>,
+    };
+    Object.assign(window,{__asyncPreviewTestState:state});
+    Object.defineProperty(window,"agentWebDesktopHost",{configurable:true,value:{
+      subscribeUiCommands:()=>()=>{},
+      subscribeHostEvents:()=>()=>{},
+      getComposerDrafts:async()=>({}),
+      setComposerDraft:async()=>true,
+      openMenu:async()=>false,
+      selectWorkspaceDirectory:async()=>{
+        state.selections++;
+        return {selected:true,name:"fixture-workspace"};
+      },
+      revokeWorkspaceDirectory:async()=>{state.revocations++;return true;},
+      readWorkspaceTextFile:(request:{path:string})=>new Promise<Preview>(resolve=>{
+        state.reads.push({path:request.path,resolve});
+      }),
+    }});
+  });
+  const readCount=()=>page.evaluate(()=>
+    (window as unknown as Window & {
+      __asyncPreviewTestState:{reads:unknown[]};
+    }).__asyncPreviewTestState.reads.length);
+  // The page-side deterministic completion plan avoids passing extra
+  // arguments through the project's strict Playwright evaluate declaration.
+  const finishNextRead=()=>page.evaluate(()=>{
+    const state=(window as unknown as Window & {
+      __asyncPreviewTestState:{
+        completed:number;
+        reads:Array<{path:string;resolve:(file:{
+          name:string;relativePath:string;text:string;readOnly:true,
+        })=>void}>;
+      };
+    }).__asyncPreviewTestState;
+    const plan=[
+      {index:1,text:"newer index body"},
+      {index:0,text:"late app body"},
+      {index:3,text:"fresh app response"},
+      {index:2,text:"stale app response"},
+      {index:4,text:"closed tab response"},
+    ];
+    const next=plan[state.completed++];
+    if(next==null)throw new Error("Unexpected deferred workspace completion");
+    const pending=state.reads[next.index];
+    if(pending==null)throw new Error("Missing deferred workspace read");
+    const isApp=pending.path.endsWith("/App.tsx");
+    pending.resolve({
+      name:isApp?"App.tsx":"index.ts",
+      relativePath:isApp?"src/App.tsx":"src/index.ts",
+      text:next.text,readOnly:true,
+    });
+  });
+  await page.goto("/");
+  await page.getByRole("button",{name:"打开演示工具"}).click();
+  await page.getByTestId("demo-source-user-file-attachments").click();
+  const row=page.locator('[data-demo-turn-id^="user-file-attachments-"]').last();
+  const app=row.getByRole("button",{name:/App\.tsx/});
+  const index=row.getByRole("button",{name:/index\.ts/});
+  const preview=page.getByRole("complementary",{name:"Local file preview"});
+  await app.click();
+  await expect.poll(readCount).toBe(1);
+  // The single folder chooser has finished, so a slower read cannot swallow
+  // the next file click even when its Promise has not resolved yet.
+  await index.click();
+  await expect.poll(readCount).toBe(2);
+  await finishNextRead();
+  await expect(preview).toBeVisible();
+  const tabs=preview.getByRole("tablist",{name:"Open local files"});
+  await expect(tabs.getByRole("tab",{name:"index.ts"})).toHaveAttribute("aria-selected","true");
+  await finishNextRead();
+  await expect(tabs.getByRole("tab")).toHaveCount(2);
+  await expect(tabs.getByRole("tab",{name:"index.ts"})).toHaveAttribute("aria-selected","true");
+  await expect(preview.locator("[data-workspace-file-text]")).toContainText("newer index body");
+
+  // Reopening the same file twice must not let the older IO response replace
+  // the content of the newer tab identity.
+  await app.click();
+  await expect.poll(readCount).toBe(3);
+  await app.click();
+  await expect.poll(readCount).toBe(4);
+  await finishNextRead();
+  await expect(tabs.getByRole("tab",{name:"App.tsx"})).toHaveAttribute("aria-selected","true");
+  await finishNextRead();
+  await expect(preview.locator("[data-workspace-file-text]")).toContainText("fresh app response");
+  await expect(preview.locator("[data-workspace-file-text]")).not.toContainText("stale app response");
+  await expect(tabs.getByRole("tab")).toHaveCount(2);
+
+  // Closing a tab invalidates its pending request. A late read cannot
+  // recreate the just-closed tab or steal focus from the survivor.
+  await app.click();
+  await expect.poll(readCount).toBe(5);
+  await tabs.getByRole("button",{name:"Close App.tsx tab"}).click();
+  await expect(tabs.getByRole("tab",{name:"App.tsx"})).toHaveCount(0);
+  await finishNextRead();
+  await expect(tabs.getByRole("tab",{name:"App.tsx"})).toHaveCount(0);
+  await expect(tabs.getByRole("tab",{name:"index.ts"})).toHaveAttribute("aria-selected","true");
+  const counters=await page.evaluate(()=>
+    (window as unknown as Window & {
+      __asyncPreviewTestState:{selections:number};
+    }).__asyncPreviewTestState.selections);
+  // All concurrent reads must share the single explicit native grant.
+  expect(counters).toBe(1);
+});

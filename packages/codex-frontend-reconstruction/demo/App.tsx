@@ -211,7 +211,11 @@ export function App() {
   // A file read/dialog is bound to the visible thread lifetime; an old
   // request cannot install a preview after switching/resetting conversations.
   const workspaceRequestEpochRef=React.useRef(0);
-  const workspaceOpenInFlightRef=React.useRef(false);
+  // Only the native folder chooser is single-flight; authorized file reads
+  // may finish concurrently and in a different order from user clicks.
+  const workspacePickerInFlightRef=React.useRef(false);
+  const workspaceSelectionIntentRef=React.useRef(0);
+  const workspaceLatestReadByTabRef=React.useRef(new Map<string,number>());
   const [findOpen,setFindOpen]=React.useState(false);
   const [findQuery,setFindQuery]=React.useState("");
   const [findOrdinal,setFindOrdinal]=React.useState(0);
@@ -270,6 +274,8 @@ export function App() {
     }, []);
   const revokeWorkspacePreview=React.useCallback(()=>{
     workspaceRequestEpochRef.current++;
+    workspaceSelectionIntentRef.current++;
+    workspaceLatestReadByTabRef.current.clear();
     workspaceGrantRef.current=false;
     setWorkspaceTabs(sourceEmptyLocalReadOnlyTabState());
     // An outstanding native folder picker may resolve after this revoke;
@@ -282,12 +288,17 @@ export function App() {
     mode:"preview"|"copy"="preview",
   )=>{
     const host=window.agentWebDesktopHost;
-    if(host==null||workspaceOpenInFlightRef.current)return;
-    workspaceOpenInFlightRef.current=true;
+    if(host==null)return;
     const epoch=workspaceRequestEpochRef.current;
     try{
       if(!workspaceGrantRef.current){
-        const grant=await host.selectWorkspaceDirectory();
+        // Main-process native folder selection is exclusive. The old global
+        // busy flag also swallowed unrelated already-authorized file opens.
+        if(workspacePickerInFlightRef.current)return;
+        workspacePickerInFlightRef.current=true;
+        let grant;
+        try{grant=await host.selectWorkspaceDirectory();}
+        finally{workspacePickerInFlightRef.current=false;}
         if(epoch!==workspaceRequestEpochRef.current){
           if(grant.selected)await host.revokeWorkspaceDirectory().catch(()=>{});
           return;
@@ -295,17 +306,25 @@ export function App() {
         if(!grant.selected)return;
         workspaceGrantRef.current=true;
       }
+      // A click dropped while the exclusive native directory chooser is
+      // running must not invalidate its first request's result.
+      const tabId=mode==="preview"?sourceReviewFileTabId(request.path):null;
+      const intent=tabId==null?null:++workspaceSelectionIntentRef.current;
+      if(tabId!=null&&intent!=null)workspaceLatestReadByTabRef.current.set(tabId,intent);
       if(mode==="copy"){
         await host.copyWorkspaceFileContents(request);
         if(epoch===workspaceRequestEpochRef.current)notify("已复制文件内容");
-      }else{
+      }else if(tabId!=null&&intent!=null){
         const file=await host.readWorkspaceTextFile(request);
-        if(epoch===workspaceRequestEpochRef.current)
-          setWorkspaceTabs(current=>epoch===workspaceRequestEpochRef.current
-            ?sourceOpenLocalReadOnlyFileTab(current,{
-              id:sourceReviewFileTabId(request.path),
-              path:request.path,content:file,
-            }):current);
+        if(epoch===workspaceRequestEpochRef.current&&
+            workspaceLatestReadByTabRef.current.get(tabId)===intent)
+          setWorkspaceTabs(current=>{
+            if(epoch!==workspaceRequestEpochRef.current||
+                workspaceLatestReadByTabRef.current.get(tabId)!==intent)return current;
+            return sourceOpenLocalReadOnlyFileTab(current,{
+              id:tabId,path:request.path,content:file,
+            },intent===workspaceSelectionIntentRef.current);
+          });
       }
     }catch(error){
       if(epoch!==workspaceRequestEpochRef.current)return;
@@ -317,8 +336,6 @@ export function App() {
       notify(mode==="copy"
         ?"无法复制文件内容：请确认目录授权和剪贴板权限。"
         :"本地文件无法预览：请选择包含该文件的工作区，或检查权限与格式。");
-    }finally{
-      workspaceOpenInFlightRef.current=false;
     }
   },[notify]);
   React.useEffect(()=>()=>revokeWorkspacePreview(),[revokeWorkspacePreview]);
@@ -1118,12 +1135,22 @@ export function App() {
         activeTabId={workspaceTabs.activeTabId}
         preview={workspaceTabs.tabs.find(tab=>
           tab.id===workspaceTabs.activeTabId)!.content}
-        onSelectTab={id=>setWorkspaceTabs(current=>
-          sourceSelectLocalReadOnlyFileTab(current,id))}
-        onCloseTab={id=>setWorkspaceTabs(current=>
-          sourceCloseLocalReadOnlyFileTab(current,id))}
-        onClose={()=>setWorkspaceTabs(current=>
-          sourceCloseLocalReadOnlyFileTab(current,current.activeTabId??""))}
+        onSelectTab={id=>{
+          workspaceSelectionIntentRef.current++;
+          setWorkspaceTabs(current=>sourceSelectLocalReadOnlyFileTab(current,id));
+        }}
+        onCloseTab={id=>{
+          workspaceSelectionIntentRef.current++;
+          workspaceLatestReadByTabRef.current.delete(id);
+          setWorkspaceTabs(current=>sourceCloseLocalReadOnlyFileTab(current,id));
+        }}
+        onClose={()=>{
+          workspaceSelectionIntentRef.current++;
+          const id=workspaceTabs.activeTabId;
+          if(id!=null)workspaceLatestReadByTabRef.current.delete(id);
+          setWorkspaceTabs(current=>
+            sourceCloseLocalReadOnlyFileTab(current,current.activeTabId??""));
+        }}
       />:null}
     {toast && <div className="demo-toast" role="status"><Icon name="check" size={17}/>{toast}</div>}
   </div></div>;
