@@ -118,6 +118,13 @@ function positionReadOnlyEditor(
       selection:{anchor:position},
       effects:EditorView.scrollIntoView(position,{y:"center"}),
     });
+    // A retained EditorView can have an ancestor hidden during a tab switch.
+    // After the source-confirmed scroll effect, enforce the same centered
+    // reveal against CodeMirror's own scrollDOM so a stale bottom snapshot
+    // cannot win a repeated navigation.
+    const block=view.lineBlockAt(position);
+    view.scrollDOM.scrollTop=Math.max(0,
+      block.top-(view.scrollDOM.clientHeight-block.height)/2);
   }else if(initialScrollTop!=null&&!preview.resetTabState){
     view.scrollDOM.scrollTop=initialScrollTop;
   }else if(preview.resetTabState){
