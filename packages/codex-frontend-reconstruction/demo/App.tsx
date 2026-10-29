@@ -1,6 +1,11 @@
 import * as React from "react";
 import { createPortal } from "react-dom";
 import { CodexComposerLayout } from "../src/components/CodexComposerLayout.js";
+import {SourceLocalSubagentsPanel} from "../src/components/SourceLocalSubagentsPanel.js";
+import type {SourceLocalSubagent} from "../src/conversation/SourceLocalSubagentsPanelModel.js";
+import {makeSyntheticSubagentsFixture} from "./demoSubagentsFixture.js";
+import {DemoSubagentTranscript} from "./DemoSubagentTranscript.js";
+import "./subagentsDemoShell.css";
 import {WorkspaceReadOnlyPreviewPanel,
   type WorkspaceReadOnlyPreview} from "./WorkspaceReadOnlyPreviewPanel.js";
 import {
@@ -207,6 +212,11 @@ export function App() {
   const [toast, setToast] = React.useState<string | null>(null);
   const [historyAdded, setHistoryAdded] = React.useState(false);
   const [showDemoTools, setShowDemoTools] = React.useState(false);
+  // Host-owned background agents; synthetic records are loaded only by demo tools.
+  const [subagentFixture,setSubagentFixture]=React.useState<readonly SourceLocalSubagent[]|null>(null);
+  const [showSubagentsPanel,setShowSubagentsPanel]=React.useState(false);
+  const [selectedSubagent,setSelectedSubagent]=React.useState<string|null>(null);
+  const [requestedSubagentName,setRequestedSubagentName]=React.useState<string|null>(null);
   const [workspaceTabs,setWorkspaceTabs]=React.useState<
     SourceLocalReadOnlyTabState<WorkspaceReadOnlyPreview>
   >(sourceEmptyLocalReadOnlyTabState);
@@ -1037,6 +1047,11 @@ export function App() {
     setHistoryAdded(historyByConversationRef.current.has(id));
     setDraft(draftByConversationRef.current.get(id)??"");
     setActive(id);
+    // Source F children belong to one verified parent host/conversation.
+    setShowSubagentsPanel(false);
+    setSubagentFixture(null);
+    setSelectedSubagent(null);
+    setRequestedSubagentName(null);
     // Never retain result offsets from an unrelated demo conversation.
     setFindOrdinal(0);
   }
@@ -1123,6 +1138,10 @@ export function App() {
           <span className="demo-header-folder"><Icon name="folder" size={17}/></span><strong>{DEMO_CONVERSATIONS.find((c) => c.id === active)?.title}</strong></div>
         <div className="demo-header-actions">
           <span className="demo-header-static" title="原版桌面按钮布局参考，暂未接通功能"><Icon name="dots" size={17}/></span>
+          {subagentFixture!==null?<button type="button" className="demo-icon-button"
+            title="Subagents · synthetic fixture" aria-label="Open Subagents"
+            aria-expanded={showSubagentsPanel}
+            onClick={()=>setShowSubagentsPanel(true)}><Icon name="branch" size={17}/></button>:null}
           <button type="button" className="demo-icon-button" title={showDemoTools ? "收起演示工具" : "打开演示工具"} aria-label={showDemoTools ? "收起演示工具" : "打开演示工具"} aria-expanded={showDemoTools} onClick={() => setShowDemoTools((value) => !value)}><Icon name="sliders" size={17}/></button>
           <button type="button" className="demo-icon-button demo-collapse-toggle" aria-label={collapsed ? "展开侧边栏" : "收起侧边栏"} onClick={() => setCollapsed((value) => !value)}><Icon name="panel" size={17}/></button>
         </div>
@@ -1206,6 +1225,20 @@ export function App() {
             data-testid="demo-computer-use-approval-request">
             <Icon name="panel" size={15}/> 演示 Computer Use 授权请求（模拟）
           </button>
+          <button type="button" data-testid="demo-source-subagents-panel"
+            onClick={()=>{
+              setSubagentFixture(makeSyntheticSubagentsFixture());
+              setSelectedSubagent(null);
+              setRequestedSubagentName(null);
+              setShowSubagentsPanel(true);
+            }}><Icon name="branch" size={15}/> 演示 Subagents 列表（合成数据）</button>
+          <button type="button" data-testid="demo-source-subagents-empty"
+            onClick={()=>{
+              setSubagentFixture([]);
+              setSelectedSubagent(null);
+              setRequestedSubagentName(null);
+              setShowSubagentsPanel(true);
+            }}><Icon name="branch" size={15}/> 演示无 Subagents（空宿主）</button>
           <button type="button" onClick={playUserFileAttachmentsFixture}
             data-testid="demo-source-user-file-attachments">
             <Icon name="folder" size={15}/> 演示用户文件附件（合成数据）
@@ -1356,6 +1389,22 @@ export function App() {
             sourceCloseLocalReadOnlyFileTab(current,current.activeTabId??""));
         }}
       />:null}
+    {showSubagentsPanel&&subagentFixture!==null?<div className="demo-subagents-right-tab-host"
+      data-demo-source-subagents-right-tab="">
+      <SourceLocalSubagentsPanel
+        hostId="demo-host" parentConversationId={active}
+        subagents={subagentFixture}
+        selectedConversationId={selectedSubagent}
+        requestedDisplayName={requestedSubagentName}
+        onSelect={(id,name)=>{
+          setSelectedSubagent(id);
+          setRequestedSubagentName(name);
+        }}
+        onClose={()=>setShowSubagentsPanel(false)}
+        renderTranscript={({conversationId})=><DemoSubagentTranscript
+          key={conversationId} conversationId={conversationId}
+          RowComponent={DemoRow}/>}/>
+    </div>:null}
     {toast && <div className="demo-toast" role="status"><Icon name="check" size={17}/>{toast}</div>}
   </div></div>;
 }
