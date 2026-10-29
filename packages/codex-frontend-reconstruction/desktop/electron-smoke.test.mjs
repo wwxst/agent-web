@@ -61,6 +61,18 @@ test("independent Electron file renderer starts, isolates preload and routes Fc 
       readNotGranted:await failure(()=>api.readWorkspaceTreeTextFile({
         relativePath:"src/App.tsx",
       })),
+      hasLanguageCapabilities:typeof api?.getWorkspaceLanguageCapabilities==="function",
+      hasLanguageLocations:typeof api?.getWorkspaceLanguageLocations==="function",
+      invalidLanguage:await failure(()=>api.getWorkspaceLanguageCapabilities({
+        path:"../outside.ts",languageId:"typescript",
+      })),
+      noGrantLanguage:await failure(()=>api.getWorkspaceLanguageCapabilities({
+        path:"/tmp/agent-web-no-grant/src/App.tsx",languageId:"typescriptreact",
+      })),
+      invalidLanguagePosition:await failure(()=>api.getWorkspaceLanguageLocations({
+        path:"/tmp/agent-web-no-grant/src/App.tsx",languageId:"typescriptreact",
+        kind:"definition",position:{line:-1,character:0},
+      })),
     };
   });
   assert.equal(treeBoundary.hasList,true);
@@ -71,6 +83,11 @@ test("independent Electron file renderer starts, isolates preload and routes Fc 
   assert.match(treeBoundary.traversal,/WORKSPACE_INVALID_DIRECTORY_REQUEST/);
   assert.match(treeBoundary.notGranted,/WORKSPACE_NOT_GRANTED/);
   assert.match(treeBoundary.readNotGranted,/WORKSPACE_NOT_GRANTED/);
+  assert.equal(treeBoundary.hasLanguageCapabilities,true);
+  assert.equal(treeBoundary.hasLanguageLocations,true);
+  assert.match(treeBoundary.invalidLanguage,/WORKSPACE_INVALID_LANGUAGE_REQUEST/);
+  assert.match(treeBoundary.noGrantLanguage,/WORKSPACE_NOT_GRANTED/);
+  assert.match(treeBoundary.invalidLanguagePosition,/WORKSPACE_INVALID_LANGUAGE_REQUEST/);
   const prefs=await app.evaluate(({BrowserWindow})=>{
     const win=BrowserWindow.getAllWindows()[0];
     return win.webContents.getLastWebPreferences();
