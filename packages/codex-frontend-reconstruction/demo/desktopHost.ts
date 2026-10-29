@@ -12,6 +12,12 @@ import type {
  SourceConversationHostEventBridge,
  SourceConversationHostEventTransport,
 } from "../src/conversation/SourceConversationHostEventBridge.js";
+import type {
+  SourceLanguageCapabilities,
+  SourceLanguageLocation,
+  SourceLanguageLocationKind,
+  SourceLanguagePosition,
+} from "../src/conversation/SourceLanguageNavigationModel.js";
 
 /**
  * The original private preload exposes electronBridge (documented in
@@ -35,6 +41,19 @@ declare global {
       readWorkspaceTextFile(request:{path:string;line?:number;endLine?:number}):Promise<{
         name:string;relativePath:string;text:string;line?:number;endLine?:number;readOnly:true;
       }>;
+      /**
+       * Optional native language-service contract. The host must resolve the
+       * provider and derive its workspace root from the existing native grant;
+       * renderer-supplied paths never expand that grant. Missing methods mean
+       * navigation is unavailable, not that synthetic locations should be used.
+       */
+      getWorkspaceLanguageCapabilities?(request:{
+        path:string;languageId:string;
+      }):Promise<SourceLanguageCapabilities|null>;
+      getWorkspaceLanguageLocations?(request:{
+        path:string;languageId:string;kind:SourceLanguageLocationKind;
+        position:SourceLanguagePosition;
+      }):Promise<readonly SourceLanguageLocation[]>;
       /** Native grant-relative, single-directory bounded listing. No filesystem
        * root or arbitrary renderer paths are exposed. */
       listWorkspaceDirectory?(request:{relativePath:string}):Promise<{
