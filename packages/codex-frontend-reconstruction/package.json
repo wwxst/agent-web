@@ -44,7 +44,9 @@
     "@codemirror/lang-python": "^6.2.1",
     "@codemirror/lang-css": "^6.3.0",
     "@codemirror/lang-html": "^6.4.9",
-    "@lezer/highlight": "^1.2.1"
+    "@lezer/highlight": "^1.2.1",
+    "@codemirror/state": "^6.5.2",
+    "@codemirror/view": "^6.38.0"
   },
   "main": "desktop/main.cjs"
 }

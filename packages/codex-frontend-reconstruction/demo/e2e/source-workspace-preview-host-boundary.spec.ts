@@ -53,12 +53,25 @@ test("actual attachment row opens read-only native-host preview, revokes on thre
   await expect(preview).toBeVisible();
   await expect(preview.getByText("src/App.tsx")).toBeVisible();
   await expect(preview.locator('[data-workspace-file-text]')).toContainText("source line 28");
-  await expect(preview.locator('[data-workspace-file-selected-range]'))
-    .toContainText("source line 14");
-  await expect(preview.locator('[data-workspace-file-selected-range]'))
-    .toContainText("source line 28");
-  await expect(preview.locator('[data-workspace-file-selected-range]'))
-    .not.toContainText("source line 29");
+  // Original Kr/Or is a CodeMirror EditorView. The independent host must
+  // never enable editing or allow a renderer-originated save.
+  await expect(preview.locator('[data-source-workspace-codemirror="read-only"]'))
+    .toBeVisible();
+  await expect(preview.locator(".cm-editor")).toBeVisible();
+  await expect(preview.locator(".cm-gutters")).toBeVisible();
+  await expect(preview.locator(".cm-content")).toHaveAttribute("contenteditable","false");
+  const highlightedLines=preview.locator('[data-workspace-file-selected-range]');
+  await expect(highlightedLines.first()).toContainText("source line 14");
+  await expect(highlightedLines.last()).toContainText("source line 28");
+  await expect(preview.locator(".cm-line", {hasText:"source line 29"}))
+    .not.toHaveAttribute("data-workspace-file-selected-range","true");
+  const immutableBefore=await preview.locator("[data-workspace-file-text]").textContent();
+  await preview.locator(".cm-content").focus();
+  await page.keyboard.type("NO_WRITE_PERMITTED");
+  await expect(preview.locator("[data-workspace-file-text]"))
+    .not.toContainText("NO_WRITE_PERMITTED");
+  expect(await preview.locator("[data-workspace-file-text]").textContent())
+    .toBe(immutableBefore);
   await expect(preview).toContainText("Lines 14-28");
   await expect.poll(async()=>(await inspect()).read).toBe(1);
 
