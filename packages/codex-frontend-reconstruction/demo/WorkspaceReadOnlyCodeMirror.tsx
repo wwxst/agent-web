@@ -206,7 +206,7 @@ export function WorkspaceReadOnlyCodeMirror({
   },[]);
   const requestLocationsRef=React.useRef(requestLocations);
   requestLocationsRef.current=requestLocations;
-  const languageId=sourceLanguageIdForPath(path);
+  const languageId=sourceLanguageIdForPath(relativePath);
   React.useEffect(()=>{
     const host=window.agentWebDesktopHost;
     const activeRelativePath=relativePath.replace(/\\/g,"/");
