@@ -1212,7 +1212,7 @@ export function App() {
           </button>
           <button type="button" onClick={playSourceOpenLocationFixture}
             data-testid="demo-source-open-location">
-            <Icon name="code" size={15}/> 演示源码位置跳转（合成事件）
+            <Icon name="search" size={15}/> 演示源码位置跳转（合成事件）
           </button>
           <button type="button" onClick={injectHistory} disabled={historyAdded}><Icon name="plus" size={15}/> 添加 45 条历史</button>
           <button type="button" onClick={() => void virtualizerApiRef.current?.scrollToKey(`history-content:turn:${source.getSnapshot().entries[0]?.turnId ?? ""}`, undefined, {align:"top"})}><Icon name="top" size={15}/> 跳到开头</button>
