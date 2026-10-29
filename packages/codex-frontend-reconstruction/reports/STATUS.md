@@ -291,3 +291,14 @@ Follow `reports/NEXT_BATCH.md`: add the typed controller paste-event contract an
   full original history/tab navigation, real Agent host event protocol,
   Windows installer and version-specific visual parity. Backend and main
   unchanged.
+ 
+
+## 2026-10-29 — XL preview/pinned file-tab lifecycle connected to the existing tree
+
+- Continued on stacked Draft PR #73, based on PR #72's green bounded filename search. Verified original `app-initial-5851df3f6cb1.js` (`IX`, `XL` tab controller, `P` preview disposal and `pinTab`) plus `review-file-tree-side-pane-6403b8872f72.js`: single-click tree/search selection uses `isPreview:true`; explicit double-click/open uses `isPreview:false`.
+- `SourceLocalReadOnlyFileTab` now models the source preview flag. A newly opened preview replaces only the previous preview; kept/direct-attachment tabs survive. Reopening an existing kept tab as a preview does not demote it, while explicit normal open/Keep tab promotes a preview to a permanent local tab.
+- Connected this behavior to the existing `WorkspaceGrantedDirectoryTree`, native search results and `WorkspaceReadOnlyPreviewPanel`. Single-click is delayed 250 ms to distinguish double-click. Preview labels are italic; double-clicking the tab or the local **Keep tab** action preserves it. The actual source **Pin to sidebar** registry remains explicitly unimplemented.
+- The existing conversation-attachment open route remains permanent by default. Read results now reuse an already-open tree tab with the same normalized grant-relative path, avoiding duplicate tabs across the two existing entry points. Preview-request identity rejects stale asynchronous completions.
+- Added core and canonical mounted-browser coverage for preview replacement, kept-tab survival, direct-open promotion, same-file dedup, double-click, Keep tab, and a slow old preview completing after a newer preview. Source evidence and exact limitations: `reports/SOURCE_PREVIEW_PINNED_TAB_LIFECYCLE_20261029.md`.
+- Verified final feature head `a24d7023f31061bca0d03c853e1d8ba0bc708b2c`: core 516/516, demo model 5/5, Chromium 66/66, Linux Electron 80/80, Windows Electron 79 passed / 1 skipped / 0 failed; TypeScript/Vite and both actual Electron smoke paths passed. Both push and PR workflows completed successfully.
+- PR #73 is still Draft, stacked on PR #72's branch, and has not been merged to `main`. No Agent backend or `main` changes.

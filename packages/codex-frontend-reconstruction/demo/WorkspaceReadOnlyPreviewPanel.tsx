@@ -45,20 +45,24 @@ export function sourceWorkspacePreviewRange(
     after:text.slice(end),selectedLine:line};
 }
 export function WorkspaceReadOnlyPreviewPanel({
-  preview,tabs,activeTabId,onSelectTab,onCloseTab,onCloseOthers,
+  preview,tabs,activeTabId,onSelectTab,onKeepTab,onCloseTab,onCloseOthers,
   onCloseToRight,onClose,onOpenTreeFile,
 }:{
   preview:WorkspaceReadOnlyPreview;
   /** Source IX opens a tab keyed by k3o, not a separate preview window.
    * Contents remain explicitly independent local read-only fallbacks. */
-  tabs:readonly {id:string;path:string;content:WorkspaceReadOnlyPreview}[];
+  tabs:readonly {
+    id:string;path:string;content:WorkspaceReadOnlyPreview;isPreview?:boolean;
+  }[];
   activeTabId:string;
   onSelectTab:(id:string)=>void;
+  /** Keeps an XL-style preview in the strip after double-click or menu use. */
+  onKeepTab:(id:string)=>void;
   onCloseTab:(id:string)=>void;
   onCloseOthers:(id:string)=>void;
   onCloseToRight:(id:string)=>void;
   onClose:()=>void;
-  onOpenTreeFile:(relativePath:string)=>void;
+  onOpenTreeFile:(relativePath:string,isPreview?:boolean)=>void;
 }){
   // IX preserves a tab contentInstance in the original private XL host.
   // This independent CodeMirror view is recreated on tab switch, but its
@@ -149,7 +153,8 @@ export function WorkspaceReadOnlyPreviewPanel({
         item.id===action&&item.enabled))return;
     focusAfterClose.current=current.trigger;
     setTabMenu(null);
-    if(action==="close-tab")onCloseTab(current.tabId);
+    if(action==="keep-tab")onKeepTab(current.tabId);
+    else if(action==="close-tab")onCloseTab(current.tabId);
     else if(action==="close-other-tabs")onCloseOthers(current.tabId);
     else onCloseToRight(current.tabId);
   }
@@ -168,14 +173,19 @@ export function WorkspaceReadOnlyPreviewPanel({
       aria-label="Open local files">
       {tabs.map(tab=><div key={tab.id} className="demo-workspace-preview__tab"
         data-source-file-tab-id={tab.id}
+        data-source-file-tab-preview={tab.isPreview===true?"true":"false"}
         data-source-file-tab-active={tab.id===activeTabId?"true":"false"}>
         <button type="button" role="tab"
+          data-source-file-tab-preview={tab.isPreview===true?"true":"false"}
           aria-selected={tab.id===activeTabId}
           aria-haspopup="menu"
           aria-expanded={tabMenu?.tabId===tab.id}
           aria-controls="demo-workspace-preview-panel"
           title={tab.content.relativePath}
           onClick={()=>onSelectTab(tab.id)}
+          onDoubleClick={()=>{
+            if(tab.isPreview===true)onKeepTab(tab.id);
+          }}
           onKeyDown={event=>{
             if(event.target!==event.currentTarget||
               event.altKey||event.ctrlKey||event.metaKey||

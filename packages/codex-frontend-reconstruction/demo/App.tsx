@@ -8,6 +8,7 @@ import {
   sourceOpenLocalReadOnlyFileTab,sourceSelectLocalReadOnlyFileTab,
   sourceCloseLocalReadOnlyFileTab,
   sourceCloseOtherLocalReadOnlyFileTabs,sourceCloseLocalReadOnlyTabsToRight,
+  sourceKeepLocalReadOnlyFileTab,
   type SourceLocalReadOnlyTabState,
 } from "../src/conversation/SourceReviewFileTabModel.js";
 import { CodexSourceComposerHostForm } from "../src/components/CodexSourceComposerHostForm.js";
@@ -216,7 +217,16 @@ export function App() {
   // may finish concurrently and in a different order from user clicks.
   const workspacePickerInFlightRef=React.useRef(false);
   const workspaceSelectionIntentRef=React.useRef(0);
+  // Latest *new preview* request wins, independently of tab-selection
+  // intent. A slow earlier preview must not replace a newer tree selection.
+  const workspaceLatestPreviewIntentRef=React.useRef(0);
+  const workspacePendingPreviewTabIdsRef=React.useRef(new Set<string>());
   const workspaceLatestReadByTabRef=React.useRef(new Map<string,number>());
+  const cancelPendingWorkspacePreviews=React.useCallback(()=>{
+    for(const pendingId of workspacePendingPreviewTabIdsRef.current)
+      workspaceLatestReadByTabRef.current.delete(pendingId);
+    workspacePendingPreviewTabIdsRef.current.clear();
+  },[]);
   const [findOpen,setFindOpen]=React.useState(false);
   const [findQuery,setFindQuery]=React.useState("");
   const [findOrdinal,setFindOrdinal]=React.useState(0);
@@ -276,6 +286,8 @@ export function App() {
   const revokeWorkspacePreview=React.useCallback(()=>{
     workspaceRequestEpochRef.current++;
     workspaceSelectionIntentRef.current++;
+    workspaceLatestPreviewIntentRef.current++;
+    workspacePendingPreviewTabIdsRef.current.clear();
     workspaceLatestReadByTabRef.current.clear();
     workspaceGrantRef.current=false;
     setWorkspaceTabs(sourceEmptyLocalReadOnlyTabState());
@@ -322,6 +334,19 @@ export function App() {
           setWorkspaceTabs(current=>{
             if(epoch!==workspaceRequestEpochRef.current||
                 workspaceLatestReadByTabRef.current.get(tabId)!==intent)return current;
+            // Attachment opens and workspace-tree opens can resolve to the
+            // same granted relative path even though the root must never be
+            // exposed to React. Reuse that live tab identity rather than
+            // creating two tabs for the same file.
+            const normalized=file.relativePath.replace(/\\/g,"/");
+            const existing=current.tabs.find(tab=>
+              tab.content.relativePath.replace(/\\/g,"/")===normalized);
+            if(existing!=null&&existing.id!==tabId){
+              workspaceLatestReadByTabRef.current.delete(existing.id);
+              return sourceOpenLocalReadOnlyFileTab(current,{
+                id:existing.id,path:existing.path,content:file,
+              },intent===workspaceSelectionIntentRef.current);
+            }
             return sourceOpenLocalReadOnlyFileTab(current,{
               id:tabId,path:request.path,content:file,
             },intent===workspaceSelectionIntentRef.current);
@@ -341,7 +366,9 @@ export function App() {
   },[notify]);
   /** Native workspace tree uses only a grant-relative, validated path.
    * It never accepts the root or generic filesystem paths from React. */
-  const openWorkspaceTreeFile=React.useCallback(async(relativePath:string)=>{
+  const openWorkspaceTreeFile=React.useCallback(async(
+    relativePath:string,isPreview=true,
+  )=>{
     const host=window.agentWebDesktopHost;
     if(host?.readWorkspaceTreeTextFile==null||!workspaceGrantRef.current)return;
     const epoch=workspaceRequestEpochRef.current;
@@ -350,27 +377,68 @@ export function App() {
       tab.content.relativePath.replace(/\\/g,"/")===relative);
     const intent=++workspaceSelectionIntentRef.current;
     if(open!=null){
-      setWorkspaceTabs(current=>sourceSelectLocalReadOnlyFileTab(current,open.id));
+      // Re-selecting an already-pinned tab must not cancel a different
+      // pending preview. Re-selecting the current preview is a newer preview
+      // intent and invalidates unresolved preview reads.
+      if(isPreview&&open.isPreview===true){
+        workspaceLatestPreviewIntentRef.current++;
+        cancelPendingWorkspacePreviews();
+      }
+      setWorkspaceTabs(current=>{
+        const kept=isPreview?current:sourceKeepLocalReadOnlyFileTab(current,open.id);
+        return sourceSelectLocalReadOnlyFileTab(kept,open.id);
+      });
       return;
     }
+    const previewIntent=isPreview?++workspaceLatestPreviewIntentRef.current:null;
+    if(isPreview){
+      // A new preview supersedes older unresolved preview reads, but does not
+      // close any visible tab until the new read has actually succeeded.
+      cancelPendingWorkspacePreviews();
+      for(const tab of workspaceTabs.tabs)
+        if(tab.isPreview===true)
+          workspaceLatestReadByTabRef.current.delete(tab.id);
+    }
     const tabId=sourceReviewFileTabId("workspace-tree:"+relative);
+    // A double-click/pinned open of the same path supersedes any delayed
+    // preview request that already made it through its click timer.
+    if(!isPreview)workspacePendingPreviewTabIdsRef.current.delete(tabId);
     workspaceLatestReadByTabRef.current.set(tabId,intent);
+    if(isPreview)workspacePendingPreviewTabIdsRef.current.add(tabId);
     try{
       const file=await host.readWorkspaceTreeTextFile({relativePath:relative});
-      if(epoch!==workspaceRequestEpochRef.current||
-        workspaceLatestReadByTabRef.current.get(tabId)!==intent)return;
+      if(epoch!==workspaceRequestEpochRef.current)return;
+      if(workspaceLatestReadByTabRef.current.get(tabId)!==intent)return;
+      if(isPreview&&previewIntent!==workspaceLatestPreviewIntentRef.current){
+        workspaceLatestReadByTabRef.current.delete(tabId);
+        workspacePendingPreviewTabIdsRef.current.delete(tabId);
+        return;
+      }
       setWorkspaceTabs(current=>{
         if(epoch!==workspaceRequestEpochRef.current||
-          workspaceLatestReadByTabRef.current.get(tabId)!==intent)return current;
+          workspaceLatestReadByTabRef.current.get(tabId)!==intent||
+          isPreview&&previewIntent!==workspaceLatestPreviewIntentRef.current){
+          if(isPreview&&workspaceLatestReadByTabRef.current.get(tabId)===intent&&
+            previewIntent!==workspaceLatestPreviewIntentRef.current)
+            workspaceLatestReadByTabRef.current.delete(tabId);
+          if(workspaceLatestReadByTabRef.current.get(tabId)===intent)
+            workspacePendingPreviewTabIdsRef.current.delete(tabId);
+          return current;
+        }
+        workspacePendingPreviewTabIdsRef.current.delete(tabId);
         return sourceOpenLocalReadOnlyFileTab(current,{
-          id:tabId,path:relative,content:file,
+          id:tabId,path:relative,content:file,isPreview,
         },intent===workspaceSelectionIntentRef.current);
       });
     }catch(error){
       if(epoch!==workspaceRequestEpochRef.current)return;
-      notify("无法读取所选工作区文件：请确认权限及文件格式。");
+      if(workspaceLatestReadByTabRef.current.get(tabId)===intent){
+        workspaceLatestReadByTabRef.current.delete(tabId);
+        workspacePendingPreviewTabIdsRef.current.delete(tabId);
+      }
+      notify("无法读取所选工作区文件：请确认权限及格式。");
     }
-  },[workspaceTabs.tabs,notify]);
+  },[workspaceTabs.tabs,notify,cancelPendingWorkspacePreviews]);
   React.useEffect(()=>()=>revokeWorkspacePreview(),[revokeWorkspacePreview]);
   // Reset creates a new demo host lifetime. Switching conversations only
     // remounts virtual rows, so historical Rk choices remain host-owned.
@@ -1169,12 +1237,21 @@ export function App() {
         preview={workspaceTabs.tabs.find(tab=>
           tab.id===workspaceTabs.activeTabId)!.content}
         onSelectTab={id=>{
+          if(workspaceTabs.tabs.find(tab=>tab.id===id)?.isPreview===true){
+            workspaceLatestPreviewIntentRef.current++;
+            cancelPendingWorkspacePreviews();
+          }
           workspaceSelectionIntentRef.current++;
           setWorkspaceTabs(current=>sourceSelectLocalReadOnlyFileTab(current,id));
+        }}
+        onKeepTab={id=>{
+          workspaceSelectionIntentRef.current++;
+          setWorkspaceTabs(current=>sourceKeepLocalReadOnlyFileTab(current,id));
         }}
         onCloseTab={id=>{
           workspaceSelectionIntentRef.current++;
           workspaceLatestReadByTabRef.current.delete(id);
+          workspacePendingPreviewTabIdsRef.current.delete(id);
           setWorkspaceTabs(current=>sourceCloseLocalReadOnlyFileTab(current,id));
         }}
         onCloseOthers={id=>{
@@ -1183,6 +1260,7 @@ export function App() {
           // not yet produced visible tabs; otherwise they can resurrect.
           const latest=workspaceLatestReadByTabRef.current.get(id);
           workspaceLatestReadByTabRef.current.clear();
+          workspacePendingPreviewTabIdsRef.current.clear();
           if(latest!=null)workspaceLatestReadByTabRef.current.set(id,latest);
           setWorkspaceTabs(current=>sourceCloseOtherLocalReadOnlyFileTabs(current,id));
         }}
@@ -1196,6 +1274,8 @@ export function App() {
           // Pending, unmounted tabs are not authorized to reappear.
           for(const key of workspaceLatestReadByTabRef.current.keys())
             if(!retain.has(key))workspaceLatestReadByTabRef.current.delete(key);
+          for(const key of workspacePendingPreviewTabIdsRef.current)
+            if(!retain.has(key))workspacePendingPreviewTabIdsRef.current.delete(key);
           setWorkspaceTabs(current=>sourceCloseLocalReadOnlyTabsToRight(current,id));
         }}
         onClose={()=>{

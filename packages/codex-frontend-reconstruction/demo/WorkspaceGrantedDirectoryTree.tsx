@@ -11,7 +11,8 @@ export function WorkspaceGrantedDirectoryTree({
   visible,activeRelativePath,onOpenFile,
 }:{
   visible:boolean;activeRelativePath:string;
-  onOpenFile:(relativePath:string)=>void;
+  /** Single-click opens an XL preview; double-click opens a kept tab. */
+  onOpenFile:(relativePath:string,isPreview?:boolean)=>void;
 }){
   const [loaded,setLoaded]=React.useState<ReadonlyMap<string,Listing>>(new Map());
   const [pending,setPending]=React.useState<ReadonlySet<string>>(new Set());
@@ -28,6 +29,28 @@ export function WorkspaceGrantedDirectoryTree({
   const searchCallback=window.agentWebDesktopHost?.searchWorkspaceFiles;
   const searchEnabled=searchCallback!=null;
   const treeRef=React.useRef<HTMLDivElement|null>(null);
+  const onOpenFileRef=React.useRef(onOpenFile);
+  onOpenFileRef.current=onOpenFile;
+  const pendingFileOpenRef=React.useRef<{timer:number;relativePath:string}|null>(null);
+  const cancelPendingFileOpen=React.useCallback(()=>{
+    const pending=pendingFileOpenRef.current;
+    if(pending!=null)window.clearTimeout(pending.timer);
+    pendingFileOpenRef.current=null;
+  },[]);
+  const schedulePreviewOpen=React.useCallback((relativePath:string)=>{
+    cancelPendingFileOpen();
+    const timer=window.setTimeout(()=>{
+      pendingFileOpenRef.current=null;
+      onOpenFileRef.current(relativePath,true);
+    },250);
+    pendingFileOpenRef.current={timer,relativePath};
+  },[cancelPendingFileOpen]);
+  const openPinnedFile=React.useCallback((relativePath:string)=>{
+    cancelPendingFileOpen();
+    onOpenFileRef.current(relativePath,false);
+  },[cancelPendingFileOpen]);
+  React.useEffect(()=>()=>cancelPendingFileOpen(),[cancelPendingFileOpen]);
+  React.useEffect(()=>{cancelPendingFileOpen();},[query,cancelPendingFileOpen]);
   const lifecycle=React.useRef(0);
   const pendingRef=React.useRef(new Set<string>());
   const requestSequence=React.useRef(new Map<string,number>());
@@ -122,15 +145,16 @@ export function WorkspaceGrantedDirectoryTree({
   function navigate(event:React.KeyboardEvent<HTMLButtonElement>,row:TreeRow){
     if(event.key==="Enter"||event.key===" "){
       event.preventDefault();
+      cancelPendingFileOpen();
       if(row.kind==="directory")toggle(row.relativePath);
-      else onOpenFile(row.relativePath);
+      else onOpenFileRef.current(row.relativePath,true);
       return;
     }
     if(event.key==="ArrowRight"&&row.kind==="directory"&&!row.expanded){
-      event.preventDefault();toggle(row.relativePath);return;
+      event.preventDefault();cancelPendingFileOpen();toggle(row.relativePath);return;
     }
     if(event.key==="ArrowLeft"&&row.kind==="directory"&&row.expanded){
-      event.preventDefault();toggle(row.relativePath);return;
+      event.preventDefault();cancelPendingFileOpen();toggle(row.relativePath);return;
     }
     if(!["ArrowUp","ArrowDown","Home","End"].includes(event.key))return;
     event.preventDefault();
@@ -149,6 +173,7 @@ export function WorkspaceGrantedDirectoryTree({
       <button type="button" title="Refresh granted workspace listing"
         aria-label="Refresh workspace directory"
         onClick={()=>{
+          cancelPendingFileOpen();
           for(const path of ["",...expanded])load(path,true);
           setRefreshKey(value=>value+1);
         }}>↻</button>
@@ -180,7 +205,8 @@ export function WorkspaceGrantedDirectoryTree({
             data-item-type="file" data-item-path={file.relativePath}
             title={file.relativePath}
             className="demo-workspace-preview__tree-item"
-            onClick={()=>onOpenFile(file.relativePath)}
+            onClick={()=>schedulePreviewOpen(file.relativePath)}
+            onDoubleClick={()=>openPinnedFile(file.relativePath)}
             onKeyDown={event=>navigate(event,{
               ...file,kind:"file",depth:1,
             })}>
@@ -203,8 +229,15 @@ export function WorkspaceGrantedDirectoryTree({
         data-item-type={row.kind==="directory"?"folder":"file"}
         style={{paddingInlineStart:`${8+(row.depth-1)*14}px`}}
         className="demo-workspace-preview__tree-item"
-        onClick={()=>row.kind==="directory"?
-          toggle(row.relativePath):onOpenFile(row.relativePath)}
+        onClick={()=>{
+          if(row.kind==="directory"){
+            cancelPendingFileOpen();
+            toggle(row.relativePath);
+          }else schedulePreviewOpen(row.relativePath);
+        }}
+        onDoubleClick={()=>{
+          if(row.kind==="file")openPinnedFile(row.relativePath);
+        }}
         onKeyDown={event=>navigate(event,row)}>
         <span className="demo-workspace-preview__tree-icon" aria-hidden="true">
           {row.kind==="directory"?(row.expanded?"⌄":"›"):"▤"}
