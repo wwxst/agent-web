@@ -111,13 +111,21 @@ export function WorkspaceReadOnlyCodeMirror({
     if(parent==null)return;
     const selectedLines=ViewPlugin.fromClass(class{
       decorations:DecorationSet;
+      line:number|undefined;
+      endLine:number|undefined;
       constructor(view:EditorView){
-        this.decorations=visibleSelectedLines(view,preview.line,preview.endLine);
+        const current=previewRef.current;
+        this.line=current.line;this.endLine=current.endLine;
+        this.decorations=visibleSelectedLines(view,this.line,this.endLine);
       }
       update(update:ViewUpdate){
-        if(update.viewportChanged||update.docChanged)
+        const current=previewRef.current;
+        if(update.viewportChanged||update.docChanged||
+          this.line!==current.line||this.endLine!==current.endLine){
+          this.line=current.line;this.endLine=current.endLine;
           this.decorations=visibleSelectedLines(
-            update.view,preview.line,preview.endLine);
+            update.view,this.line,this.endLine);
+        }
       }
     },{decorations:plugin=>plugin.decorations});
     const view=new EditorView({
@@ -151,12 +159,14 @@ export function WorkspaceReadOnlyCodeMirror({
     const onScroll=()=>onScrollTopRef.current?.(view.scrollDOM.scrollTop);
     view.scrollDOM.addEventListener("scroll",onScroll,{passive:true});
     const frame=requestAnimationFrame(()=>{
-      // An asynchronously completed background tab may still be hidden.
-      // Defer its first scroll/selection until it has a measurable viewport.
+      // Initial mount restores this tab's saved view; a first location open
+      // without a saved snapshot reveals its line. New navigations are handled
+      // separately so they never require destroying this EditorView.
+      const current=previewRef.current;
       if(activeRef.current){
-        positionReadOnlyEditor(view,preview,initialScrollTop,locationRequestChanged);
+        positionReadOnlyEditor(view,current,initialScrollTop,false);
       }else{
-        pendingPositionRef.current={initialScrollTop,locationRequestChanged};
+        pendingPositionRef.current={initialScrollTop,locationRequestChanged:false};
       }
     });
     return ()=>{
@@ -166,8 +176,28 @@ export function WorkspaceReadOnlyCodeMirror({
       if(viewRef.current===view)viewRef.current=null;
       view.destroy();
     };
-  },[preview.name,preview.text,preview.line,preview.endLine,preview.column,
-    preview.resetTabState,preview.locationRequestId]);
+  },[preview.name,preview.text]);
+  // A source onOpenLocation is a new selection/scroll request on the same tab,
+  // not a reason to recreate CodeMirror's private EditorView. Keep the existing
+  // view, update visible line decorations through its transaction, and defer
+  // navigation when the tab is hidden.
+  React.useLayoutEffect(()=>{
+    const locationRequestChanged=
+      lastLocationRequestIdRef.current!==preview.locationRequestId;
+    lastLocationRequestIdRef.current=preview.locationRequestId;
+    if(!locationRequestChanged&&!preview.resetTabState)return;
+    const view=viewRef.current;
+    if(view==null)return;
+    const shouldReveal=locationRequestChanged||preview.resetTabState===true;
+    if(activeRef.current){
+      positionReadOnlyEditor(view,preview,undefined,shouldReveal);
+    }else{
+      pendingPositionRef.current={
+        initialScrollTop:undefined,locationRequestChanged:shouldReveal,
+      };
+    }
+  },[preview.line,preview.endLine,preview.column,preview.resetTabState,
+    preview.locationRequestId]);
   // Keep this tab's EditorView mounted while another tab is active. CodeMirror
   // owns selection, scroll and viewport state; remeasure after a hidden view
   // becomes visible instead of rebuilding it from a scroll-only snapshot.
