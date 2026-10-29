@@ -104,9 +104,6 @@ export function WorkspaceReadOnlyCodeMirror({
   }|null>(null);
   const lastLocationRequestIdRef=React.useRef(preview.locationRequestId);
   React.useLayoutEffect(()=>{
-    const locationRequestChanged=
-      lastLocationRequestIdRef.current!==preview.locationRequestId;
-    lastLocationRequestIdRef.current=preview.locationRequestId;
     const parent=container.current;
     if(parent==null)return;
     const selectedLines=ViewPlugin.fromClass(class{
