@@ -783,11 +783,8 @@ test("source patch file links enter the mounted read-only preview at the first c
   const navigation=page.getByRole("navigation",{name:"会话"});
   await navigation.getByRole("button").nth(1).click();
   // The transcript virtualizer only mounts rows around its current viewport.
-  // Jump to the top, then reveal the patch fixture by scrolling the real host.
-  await page.getByRole("button",{name:"跳到开头"}).click();
+  // Move the actual transcript scroller to the fixture's estimated position.
   const transcript=page.locator('[data-testid="transcript-scroll"]');
-  await expect.poll(async()=>transcript.evaluate(element=>element.scrollTop))
-    .toBe(0);
   await transcript.evaluate(element=>{
     element.scrollTop=520;
     element.dispatchEvent(new Event("scroll",{bubbles:true}));
