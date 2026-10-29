@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {mkdtemp,mkdir,writeFile,symlink,rm} from "node:fs/promises";
+import {mkdtemp,mkdir,writeFile,symlink,rm,realpath,stat} from "node:fs/promises";
 import {tmpdir} from "node:os";
 import {join,resolve} from "node:path";
 import {
@@ -131,4 +131,139 @@ test("source SXo native clipboard copies paths without grant and contents only a
     await rm(root,{recursive:true,force:true});
     await rm(outside,{recursive:true,force:true});
   }
+});
+
+function deferredNativeOperation(){
+  let settle;
+  const promise=new Promise(resolve=>{settle=resolve;});
+  return {promise,settle:value=>settle(value)};
+}
+
+test("late native folder chooser after explicit revoke never re-grants access",async()=>{
+  const root=await mkdtemp(join(tmpdir(),"agent-web-chooser-revoke-"));
+  try{
+    const file=join(root,"visible.ts");
+    await writeFile(file,"safe");
+    const event={sender:{id:201}};
+    const picker=deferredNativeOperation();
+    let choices=0;
+    const host=createTrustedWorkspacePreviewHost({
+      isTrustedRenderer:e=>e===event,
+      chooseDirectory:()=>++choices===1?picker.promise:
+        Promise.resolve({canceled:false,filePaths:[root]}),
+    });
+    const pending=host.selectDirectory(event);
+    await assert.rejects(host.selectDirectory(event),/WORKSPACE_PICKER_IN_PROGRESS/);
+    assert.equal(choices,1,"only one native chooser can be opened at a time");
+    assert.equal(host.revoke(event),true);
+    picker.settle({canceled:false,filePaths:[root]});
+    assert.deepEqual(await pending,{selected:false});
+    await assert.rejects(host.readTextFile(event,{path:file}),/WORKSPACE_NOT_GRANTED/);
+    // The same trusted renderer may request a fresh explicit chooser later.
+    assert.deepEqual(await host.selectDirectory(event),{
+      selected:true,name:resolve(root).split(/[\\/]/).at(-1),
+    });
+    assert.equal(choices,2);
+    assert.equal((await host.readTextFile(event,{path:file})).text,"safe");
+  }finally{await rm(root,{recursive:true,force:true});}
+});
+
+test("window close or allowed navigation invalidates a chooser that has not returned",async()=>{
+  const root=await mkdtemp(join(tmpdir(),"agent-web-chooser-close-"));
+  try{
+    const file=join(root,"visible.ts");
+    await writeFile(file,"safe");
+    const event={sender:{id:202}};
+    let trusted=true;
+    const first=deferredNativeOperation();
+    const second=deferredNativeOperation();
+    let calls=0;
+    const host=createTrustedWorkspacePreviewHost({
+      isTrustedRenderer:e=>e===event&&trusted,
+      chooseDirectory:()=>++calls===1?first.promise:second.promise,
+    });
+    const afterClose=host.selectDirectory(event);
+    host.clearSender(202); // main Window "closed" / "did-navigate"
+    first.settle({canceled:false,filePaths:[root]});
+    assert.deepEqual(await afterClose,{selected:false});
+    await assert.rejects(host.readTextFile(event,{path:file}),/WORKSPACE_NOT_GRANTED/);
+    const afterTrustChange=host.selectDirectory(event);
+    trusted=false; // a new, no-longer-trusted document in same webContents
+    second.settle({canceled:false,filePaths:[root]});
+    assert.deepEqual(await afterTrustChange,{selected:false});
+    trusted=true;
+    await assert.rejects(host.readTextFile(event,{path:file}),/WORKSPACE_NOT_GRANTED/);
+  }finally{await rm(root,{recursive:true,force:true});}
+});
+
+test("late file root realpath/stat resolution never restores a revoked grant",async()=>{
+  const root=await mkdtemp(join(tmpdir(),"agent-web-chooser-io-"));
+  try{
+    const event={sender:{id:203}};
+    const realpathGate=deferredNativeOperation();
+    const realpathStarted=deferredNativeOperation();
+    const statGate=deferredNativeOperation();
+    const statStarted=deferredNativeOperation();
+    let realpathCalls=0;
+    const host=createTrustedWorkspacePreviewHost({
+      isTrustedRenderer:e=>e===event,
+      chooseDirectory:async()=>({canceled:false,filePaths:[root]}),
+      filesystem:{
+        realpath:async path=>{
+          if(++realpathCalls===1){
+            realpathStarted.settle(true);
+            return realpathGate.promise;
+          }
+          return realpath(path);
+        },
+        stat:async()=>{
+          statStarted.settle(true);
+          return statGate.promise;
+        },
+        readFile:async()=>Buffer.from("safe"),
+      },
+    });
+    const pendingPath=host.selectDirectory(event);
+    await realpathStarted.promise; // Dialog completed, canonicalization is pending.
+    host.revoke(event);
+    realpathGate.settle(root);
+    assert.deepEqual(await pendingPath,{selected:false});
+    // New picker enters stat stage; invalidation there must also fail closed.
+    const pendingStat=host.selectDirectory(event);
+    await statStarted.promise;
+    host.clearSender(203);
+    statGate.settle(await stat(root));
+    assert.deepEqual(await pendingStat,{selected:false});
+    await assert.rejects(host.readTextFile(event,{path:join(root,"a.ts")}),
+      /WORKSPACE_NOT_GRANTED/);
+  }finally{await rm(root,{recursive:true,force:true});}
+});
+
+test("in-flight read and clipboard copy cannot disclose contents after revoke",async()=>{
+  const root=await mkdtemp(join(tmpdir(),"agent-web-revoked-read-"));
+  try{
+    const file=join(root,"notes.ts");
+    await writeFile(file,"important");
+    const event={sender:{id:204}};
+    const reading=deferredNativeOperation();
+    const started=deferredNativeOperation();
+    const writes=[];
+    const host=createTrustedWorkspacePreviewHost({
+      isTrustedRenderer:e=>e===event,
+      chooseDirectory:async()=>({canceled:false,filePaths:[root]}),
+      filesystem:{
+        realpath,stat,
+        readFile:async()=>{started.settle(true);return reading.promise;},
+      },
+      writeClipboardText:text=>writes.push(text),
+    });
+    await host.selectDirectory(event);
+    const copying=host.copyFileContents(event,{path:file});
+    await started.promise; // Realpath, allowlist, stat have all passed.
+    host.clearSender(204); // window close while bytes are in flight
+    reading.settle(Buffer.from("important"));
+    await assert.rejects(copying,/WORKSPACE_GRANT_REVOKED/);
+    assert.deepEqual(writes,[],"clipboard must not receive bytes after sender close");
+    await assert.rejects(host.readTextFile(event,{path:file}),/WORKSPACE_NOT_GRANTED/);
+  }finally{await rm(root,{recursive:true,force:true});}
 });
