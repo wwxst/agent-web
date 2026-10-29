@@ -57,7 +57,9 @@ import { projectSourceRepeatedActivityRows } from "../src/conversation/SourceRep
 import {resolveSourceMcpToolActivityLabel,sourceMcpLabelInputFromActivity} from "../src/conversation/SourceMcpToolActivityLabel.js";
 import { partitionSourceAeonActivity } from "../src/conversation/SourceAeonActivityPartitions.js";
 import { classifyRawActivityItem } from "../src/conversation/AgentActivityRawClassifier.js";
-import type { ExecCommandLeafProps } from "../src/components/CodexToolActivityLeafRenderer.js";
+import type {
+  ExecCommandLeafProps,ToolActivityOpenFileRequest,
+} from "../src/components/CodexToolActivityLeafRenderer.js";
 import {
   CodexSourceExecCommandLeaf,
   CodexSourceExecListFilesLeaf,
@@ -247,6 +249,31 @@ const newFile: InlineReviewFile = {
   name: "LiveConversationSource.ts",
   contents: "const snapshot = freezeSnapshot(initialSnapshot);\nfor (const listener of [...listeners]) listener();",
 };
+
+function sourceToolActivityAbsolutePath(
+  request:ToolActivityOpenFileRequest,
+):string|null {
+  // Reuse the already-recovered source path join. The native host still
+  // validates the resulting absolute path against the user's explicit grant.
+  return sourceWorkspaceFileCopyPath({
+    kind:"workspace",
+    qe:{
+      path:request.path,
+      ...(request.cwd==null?{}:{cwd:request.cwd}),
+      hostId:request.hostId,
+      isAttachmentPreview:false,
+      openInSidePanel:true,
+    },
+    contextMenu:{
+      path:request.path,
+      ...(request.line==null?{}:{line:request.line}),
+      ...(request.cwd==null?{}:{cwd:request.cwd}),
+      hostId:request.hostId,
+      isAttachmentPreview:false,
+      openInSidePanel:true,
+    },
+  });
+}
 
 export function makeDemoRow(
   notify: (message: string) => void,
@@ -547,6 +574,19 @@ export function makeDemoRow(
         isReadOnly: false, isTurnInProgress: isActive, isTurnCancelled: false,
         threadDetailLevel: "STEPS_PROSE", summaryTone: "default", showSummaryIcon: true,
         hideRawCommand: false,mcpLabelHost:demoMcpLabelHost,
+        onOpenFile:window.agentWebDesktopHost==null||
+          onOpenWorkspaceAttachment==null?undefined:request=>{
+            const path=sourceToolActivityAbsolutePath(request);
+            if(path==null)return;
+            // Source IX's location route resets stale editor state and reveals
+            // the requested line. The read-only host receives no column/reset
+            // fields; those remain renderer-only editor navigation metadata.
+            void onOpenWorkspaceAttachment({
+              path,
+              ...(request.line==null?{}:{line:request.line}),
+              resetTabState:true,
+            });
+          },
       }),
       leafAdapters: {
         Read: CodexSourceExecReadLeaf,

@@ -71,8 +71,9 @@ export function WorkspaceReadOnlyPreviewPanel({
   onOpenTreeFile:(relativePath:string,isPreview?:boolean)=>void;
 }){
   // IX preserves a tab contentInstance in the original private XL host.
-  // This independent CodeMirror view is recreated on tab switch, but its
-  // scroll offset is retained by stable k3o IDs within the mounted panel.
+  // Keep one independent CodeMirror EditorView mounted per stable tab ID:
+  // hiding a tab preserves its selection, viewport and scroll without a
+  // synthetic restore transaction when the user selects it again.
   const scrollByTab=React.useRef(new Map<string,number>());
   const asideRef=React.useRef<HTMLElement|null>(null);
   const menuRef=React.useRef<HTMLDivElement|null>(null);
@@ -244,10 +245,11 @@ export function WorkspaceReadOnlyPreviewPanel({
           }))}
           activeTabId={activeTabId}
           onSelectTab={onSelectTab}/>}
-      <WorkspaceReadOnlyCodeMirror key={activeTabId}
-        preview={preview}
-        initialScrollTop={scrollByTab.current.get(activeTabId)}
-        onScrollTop={top=>scrollByTab.current.set(activeTabId,top)}/>
+      {tabs.map(tab=><WorkspaceReadOnlyCodeMirror key={tab.id}
+        preview={tab.content}
+        active={tab.id===activeTabId}
+        initialScrollTop={scrollByTab.current.get(tab.id)}
+        onScrollTop={top=>scrollByTab.current.set(tab.id,top)}/>)}
     </div>
     </div>
     {tabMenu!=null&&menuItems.length>0?createPortal(

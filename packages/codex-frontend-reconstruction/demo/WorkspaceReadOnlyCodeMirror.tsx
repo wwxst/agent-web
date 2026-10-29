@@ -56,33 +56,73 @@ function visibleSelectedLines(
   return ranges.length===0?Decoration.none:
     Decoration.set(ranges.map(entry=>entry.value.range(entry.from)),true);
 }
+function positionReadOnlyEditor(
+  view:EditorView,
+  preview:WorkspaceReadOnlyPreview,
+  initialScrollTop:number|undefined,
+  locationRequestChanged:boolean,
+):void {
+  const hasLocation=preview.line!=null&&
+    Number.isSafeInteger(preview.line)&&preview.line>=1;
+  if(hasLocation&&
+    (locationRequestChanged||preview.resetTabState||initialScrollTop==null)){
+    const lineNumber=Math.min(preview.line!,view.state.doc.lines);
+    const target=view.state.doc.line(lineNumber);
+    const column=preview.column!=null&&Number.isSafeInteger(preview.column)&&
+      preview.column>=1?Math.min(preview.column-1,target.length):0;
+    const position=target.from+column;
+    view.dispatch({
+      selection:{anchor:position},
+      effects:EditorView.scrollIntoView(position,{y:"center"}),
+    });
+  }else if(initialScrollTop!=null&&!preview.resetTabState){
+    view.scrollDOM.scrollTop=initialScrollTop;
+  }else if(preview.resetTabState){
+    view.scrollDOM.scrollTop=0;
+  }
+}
+
 export interface WorkspaceReadOnlyCodeMirrorProps {
   preview:WorkspaceReadOnlyPreview;
+  active?:boolean;
   initialScrollTop?:number;
   onScrollTop?:(top:number)=>void;
 }
 export function WorkspaceReadOnlyCodeMirror({
-  preview,initialScrollTop,onScrollTop,
+  preview,active=true,initialScrollTop,onScrollTop,
 }:WorkspaceReadOnlyCodeMirrorProps){
   const container=React.useRef<HTMLDivElement|null>(null);
+  const viewRef=React.useRef<EditorView|null>(null);
   const onScrollTopRef=React.useRef(onScrollTop);
   onScrollTopRef.current=onScrollTop;
+  const activeRef=React.useRef(active);
+  activeRef.current=active;
+  const previewRef=React.useRef(preview);
+  previewRef.current=preview;
+  const pendingPositionRef=React.useRef<{
+    initialScrollTop:number|undefined;locationRequestChanged:boolean;
+  }|null>(null);
   const lastLocationRequestIdRef=React.useRef(preview.locationRequestId);
   React.useLayoutEffect(()=>{
-    const locationRequestChanged=
-      lastLocationRequestIdRef.current!==preview.locationRequestId;
-    lastLocationRequestIdRef.current=preview.locationRequestId;
     const parent=container.current;
     if(parent==null)return;
     const selectedLines=ViewPlugin.fromClass(class{
       decorations:DecorationSet;
+      line:number|undefined;
+      endLine:number|undefined;
       constructor(view:EditorView){
-        this.decorations=visibleSelectedLines(view,preview.line,preview.endLine);
+        const current=previewRef.current;
+        this.line=current.line;this.endLine=current.endLine;
+        this.decorations=visibleSelectedLines(view,this.line,this.endLine);
       }
       update(update:ViewUpdate){
-        if(update.viewportChanged||update.docChanged)
+        const current=previewRef.current;
+        if(update.viewportChanged||update.docChanged||
+          this.line!==current.line||this.endLine!==current.endLine){
+          this.line=current.line;this.endLine=current.endLine;
           this.decorations=visibleSelectedLines(
-            update.view,preview.line,preview.endLine);
+            update.view,this.line,this.endLine);
+        }
       }
     },{decorations:plugin=>plugin.decorations});
     const view=new EditorView({
@@ -110,45 +150,71 @@ export function WorkspaceReadOnlyCodeMirror({
         }),
       ],
     });
+    viewRef.current=view;
     view.contentDOM.setAttribute("aria-label",preview.name+" read-only source");
     view.contentDOM.setAttribute("tabindex","0");
     const onScroll=()=>onScrollTopRef.current?.(view.scrollDOM.scrollTop);
     view.scrollDOM.addEventListener("scroll",onScroll,{passive:true});
     const frame=requestAnimationFrame(()=>{
-      // Original onOpenLocation passes one-based line/column and sets
-      // resetTabState=true. That navigation must win over a stale saved
-      // scroll offset; ordinary tab switches still restore their own offset.
-      const hasLocation=preview.line!=null&&
-        Number.isSafeInteger(preview.line)&&preview.line>=1;
-      if(hasLocation&&
-        (locationRequestChanged||preview.resetTabState||initialScrollTop==null)){
-        const lineNumber=Math.min(preview.line!,view.state.doc.lines);
-        const target=view.state.doc.line(lineNumber);
-        const column=preview.column!=null&&Number.isSafeInteger(preview.column)&&
-          preview.column>=1?Math.min(preview.column-1,target.length):0;
-        const position=target.from+column;
-        view.dispatch({
-          selection:{anchor:position},
-          effects:EditorView.scrollIntoView(position,{y:"center"}),
-        });
-      }else if(initialScrollTop!=null&&!preview.resetTabState){
-        // A tab switch is not a new location request: restore that tab's
-        // scroll snapshot instead of repeatedly jumping to its initial line.
-        view.scrollDOM.scrollTop=initialScrollTop;
-      }else if(preview.resetTabState){
-        view.scrollDOM.scrollTop=0;
+      // Initial mount restores this tab's saved view; a first location open
+      // without a saved snapshot reveals its line. New navigations are handled
+      // separately so they never require destroying this EditorView.
+      const current=previewRef.current;
+      if(activeRef.current){
+        positionReadOnlyEditor(view,current,initialScrollTop,false);
+      }else{
+        pendingPositionRef.current={initialScrollTop,locationRequestChanged:false};
       }
     });
     return ()=>{
       cancelAnimationFrame(frame);
+      pendingPositionRef.current=null;
       view.scrollDOM.removeEventListener("scroll",onScroll);
+      if(viewRef.current===view)viewRef.current=null;
       view.destroy();
     };
-  },[preview.name,preview.text,preview.line,preview.endLine,preview.column,
-    preview.resetTabState,preview.locationRequestId,initialScrollTop]);
+  },[preview.name,preview.text]);
+  // A source onOpenLocation is a new selection/scroll request on the same tab,
+  // not a reason to recreate CodeMirror's private EditorView. Keep the existing
+  // view, update visible line decorations through its transaction, and defer
+  // navigation when the tab is hidden.
+  React.useLayoutEffect(()=>{
+    const locationRequestChanged=
+      lastLocationRequestIdRef.current!==preview.locationRequestId;
+    lastLocationRequestIdRef.current=preview.locationRequestId;
+    if(!locationRequestChanged&&!preview.resetTabState)return;
+    const view=viewRef.current;
+    if(view==null)return;
+    const shouldReveal=locationRequestChanged||preview.resetTabState===true;
+    if(activeRef.current){
+      positionReadOnlyEditor(view,preview,undefined,shouldReveal);
+    }else{
+      pendingPositionRef.current={
+        initialScrollTop:undefined,locationRequestChanged:shouldReveal,
+      };
+    }
+  },[preview.line,preview.endLine,preview.column,preview.resetTabState,
+    preview.locationRequestId]);
+  // Keep this tab's EditorView mounted while another tab is active. CodeMirror
+  // owns selection, scroll and viewport state; remeasure after a hidden view
+  // becomes visible instead of rebuilding it from a scroll-only snapshot.
+  React.useLayoutEffect(()=>{
+    if(!active)return;
+    const view=viewRef.current;
+    if(view==null)return;
+    view.requestMeasure();
+    const pending=pendingPositionRef.current;
+    if(pending!=null){
+      pendingPositionRef.current=null;
+      positionReadOnlyEditor(view,previewRef.current,
+        pending.initialScrollTop,pending.locationRequestChanged);
+    }
+  },[active]);
   return <div ref={container}
+    hidden={!active}
+    aria-hidden={!active}
     className="demo-workspace-preview__codemirror"
-    data-workspace-file-text=""
-    data-source-workspace-codemirror="read-only"
-    aria-label="Read-only file source"/>;
+    data-workspace-file-text={active?"":undefined}
+    data-source-workspace-codemirror={active?"read-only":undefined}
+    aria-label={active?"Read-only file source":undefined}/>;
 }
