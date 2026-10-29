@@ -65,6 +65,17 @@ test("actual attachment row opens read-only native-host preview, revokes on thre
   await expect(highlightedLines.last()).toContainText("source line 28");
   await expect(preview.locator(".cm-line", {hasText:"source line 29"}))
     .not.toHaveAttribute("data-workspace-file-selected-range","true");
+  // Source hn's attachment route carries the one-based column from Qe into
+  // the same mounted CodeMirror selection, not merely into a line highlight.
+  await preview.locator(".cm-content").focus();
+  await expect.poll(async()=>preview.locator(".cm-content").evaluate(content=>{
+    const selection=content.ownerDocument.getSelection();
+    const anchor=selection?.anchorNode;
+    const line=anchor instanceof Element?anchor.closest(".cm-line"):
+      anchor?.parentElement?.closest(".cm-line");
+    return {line:line?.textContent?.trim()??null,
+      offset:selection?.anchorOffset??null};
+  })).toEqual({line:"source line 14",offset:0});
   const immutableBefore=await preview.locator("[data-workspace-file-text]").textContent();
   await preview.locator(".cm-content").focus();
   await page.keyboard.type("NO_WRITE_PERMITTED");
