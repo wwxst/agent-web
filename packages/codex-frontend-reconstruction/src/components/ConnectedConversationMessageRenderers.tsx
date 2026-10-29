@@ -3,6 +3,7 @@ import type { ConversationMessageItem } from "../conversation/ConversationMessag
 import type { AgentActivityUnit, AgentActivityCollapseOptions } from "../conversation/AgentActivityProjection.js";
 import { CodexAgentActivity } from "./CodexAgentActivity.js";
 import { CodexSourceCollapsibleUserMessage } from "./CodexSourceCollapsibleUserMessage.js";
+import { SourceConversationRoleHeading } from "./SourceConversationRoleHeading.js";
 import {SourceUserFileAttachments} from "./SourceUserFileAttachments.js";
 import {sourceUserFileAttachmentsFromMessage,
   type SourceUserFileAttachment,type SourceUserFileOpenTarget}
@@ -84,6 +85,8 @@ import type { ConversationMessageRenderers } from "./ConversationMessageBlocks.j
  */
 export interface ConnectedConversationRendererHost extends ConversationContentAdapters {
   Markdown: React.ComponentType<{ text: string; role: "user" | "assistant" | "activity"; isStreaming?:boolean }>;
+  /** Original Ft speaker headings are localized by Codex private intl. */
+  roleHeadings?: Readonly<{user:string;assistant:string}>;
   /** The private Wa unit factory and turn-level Rk state must be host-provided.
    * Without them, preserve the existing ActivityGroup layout unchanged. */
   agentActivity?: {
@@ -374,6 +377,7 @@ export function createConnectedConversationMessageRenderers(host: ConnectedConve
         data-content-search-unit-key={typeof props.item.id==="string"?props.item.id:undefined}
         data-source-user-message-format={isAeonFormatted?"compact":"standard"}
         className="flex flex-col gap-2">
+        <SourceConversationRoleHeading role="user" label={host.roleHeadings?.user}/>
         {attachments.length>0?<SourceUserFileAttachments
           attachments={attachments}
           isUploadedFileViewerEnabled={host.isUploadedFileViewerEnabled}
@@ -404,6 +408,7 @@ export function createConnectedConversationMessageRenderers(host: ConnectedConve
       return <div data-conversation-message="assistant"
         data-content-search-unit-key={typeof props.item.id==="string"?props.item.id:undefined}
         className="flex flex-col gap-2">
+        <SourceConversationRoleHeading role="assistant" label={host.roleHeadings?.assistant}/>
         {content.kind === "markdown" ? <host.Markdown text={content.text} role="assistant"
             isStreaming={props.item.completed===false} />
           : <host.ActivityDetails item={props.item} isActive={false} presentation="ordinary" />}
