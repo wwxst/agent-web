@@ -480,7 +480,8 @@ test("mounted source path tree selects real consented CodeMirror tabs, filters a
 test("native granted workspace directory tree opens new CodeMirror tab without root disclosure or extra picker",async({page})=>{
   await page.addInitScript(()=>{
     const state={grant:0,lists:[] as string[],treeReads:[] as string[],
-      searches:[] as string[],absoluteReads:0,revokes:0};
+      searches:[] as string[],absoluteReads:0,revokes:0,
+      resolveSlow:null as (()=>void)|null,resolveFast:null as (()=>void)|null};
     Object.assign(window,{__nativeTreeBridgeTest:state});
     Object.defineProperty(window,"agentWebDesktopHost",{configurable:true,value:{
       subscribeUiCommands:()=>()=>{},
@@ -506,7 +507,9 @@ test("native granted workspace directory tree opens new CodeMirror tab without r
         if(relativePath==="src")return {relativePath,entries:[
           {name:"App.tsx",relativePath:"src/App.tsx",kind:"file"},
           {name:"extra.ts",relativePath:"src/extra.ts",kind:"file"},
+          {name:"fast.ts",relativePath:"src/fast.ts",kind:"file"},
           {name:"next.ts",relativePath:"src/next.ts",kind:"file"},
+          {name:"slow.ts",relativePath:"src/slow.ts",kind:"file"},
         ],truncated:false};
         throw Error("WORKSPACE_DIRECTORY_UNAVAILABLE");
       },
@@ -524,6 +527,14 @@ test("native granted workspace directory tree opens new CodeMirror tab without r
         if(relativePath==="src/next.ts")
           return {name:"next.ts",relativePath,
             text:"export const fromNativeNext = true;",readOnly:true};
+        if(relativePath==="src/slow.ts")return new Promise(resolve=>{
+          state.resolveSlow=()=>resolve({name:"slow.ts",relativePath,
+            text:"export const staleSlowPreview = true;",readOnly:true});
+        });
+        if(relativePath==="src/fast.ts")return new Promise(resolve=>{
+          state.resolveFast=()=>resolve({name:"fast.ts",relativePath,
+            text:"export const latestFastPreview = true;",readOnly:true});
+        });
         if(relativePath==="README.md")
           return {name:"README.md",relativePath,text:"# README preview",readOnly:true};
         if(relativePath!=="src/extra.ts")throw Error("WORKSPACE_FILE_UNAVAILABLE");
@@ -608,6 +619,30 @@ test("native granted workspace directory tree opens new CodeMirror tab without r
   await expect(panel.locator("[data-workspace-file-text]")).toContainText("README");
   const readmeTab=panel.getByRole("tab",{name:"README.md"});
   await expect(readmeTab).toHaveAttribute("data-source-file-tab-preview","false");
+  // An earlier unresolved preview cannot replace a later tree selection.
+  await tree.getByRole("treeitem",{name:"slow.ts"}).click();
+  await expect.poll(async()=>page.evaluate(()=>
+    (window as unknown as Window & {
+      __nativeTreeBridgeTest:{treeReads:string[]};
+    }).__nativeTreeBridgeTest.treeReads.includes("src/slow.ts"))).toBe(true);
+  await tree.getByRole("treeitem",{name:"fast.ts"}).click();
+  await expect.poll(async()=>page.evaluate(()=>
+    (window as unknown as Window & {
+      __nativeTreeBridgeTest:{treeReads:string[]};
+    }).__nativeTreeBridgeTest.treeReads.includes("src/fast.ts"))).toBe(true);
+  await page.evaluate(()=>
+    (window as unknown as Window & {
+      __nativeTreeBridgeTest:{resolveFast:(()=>void)|null};
+    }).__nativeTreeBridgeTest.resolveFast?.());
+  await expect(panel.locator("[data-workspace-file-text]"))
+    .toContainText("latestFastPreview = true");
+  await page.evaluate(()=>
+    (window as unknown as Window & {
+      __nativeTreeBridgeTest:{resolveSlow:(()=>void)|null};
+    }).__nativeTreeBridgeTest.resolveSlow?.());
+  await expect(panel.getByRole("tab",{name:"fast.ts"}))
+    .toHaveAttribute("data-source-file-tab-preview","true");
+  await expect(panel.getByRole("tab",{name:"slow.ts"})).toHaveCount(0);
   const state=await page.evaluate(()=>
     (window as unknown as Window & {
       __nativeTreeBridgeTest:{
@@ -620,6 +655,7 @@ test("native granted workspace directory tree opens new CodeMirror tab without r
   expect(state.absoluteReads).toBe(1);
   expect(state.treeReads).toEqual([
     "src/extra.ts","src/deep/unopened.ts","src/extra.ts","src/next.ts","README.md",
+    "src/slow.ts","src/fast.ts",
   ]);
   expect(state.lists).toEqual(["","src"]);
   // Original an refreshKey invalidates root AND current expanded branches;
