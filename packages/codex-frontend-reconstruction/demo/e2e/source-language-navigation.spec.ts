@@ -4,9 +4,9 @@ test("source language capabilities gate definition/reference menus and open real
   await page.addInitScript(()=>{
     const state={
       selects:0,
-      capabilityRequests:[] as Array<{path:string;languageId:string}>,
+      capabilityRequests:[] as Array<{relativePath:string;languageId:string}>,
       locationRequests:[] as Array<{
-        path:string;languageId:string;kind:string;
+        relativePath:string;languageId:string;kind:string;
         position:{line:number;character:number};
       }>,
       reads:[] as Array<{path:string;line?:number;endLine?:number}>,
@@ -33,7 +33,7 @@ test("source language capabilities gate definition/reference menus and open real
           line:request.line,endLine:request.endLine,readOnly:true,
         };
       },
-      getWorkspaceLanguageCapabilities:async(request:{path:string;languageId:string})=>{
+      getWorkspaceLanguageCapabilities:async(request:{relativePath:string;languageId:string})=>{
         state.capabilityRequests.push({...request});
         return {
           hover:false,
@@ -41,26 +41,26 @@ test("source language capabilities gate definition/reference menus and open real
         };
       },
       getWorkspaceLanguageLocations:async(request:{
-        path:string;languageId:string;kind:string;
+        relativePath:string;languageId:string;kind:string;
         position:{line:number;character:number};
       })=>{
         state.locationRequests.push({...request,position:{...request.position}});
         const sameKindCalls=state.locationRequests.filter(item=>
-          item.path===request.path&&item.kind===request.kind).length;
-        if(request.kind==="definition"&&request.path.endsWith("/App.tsx")){
+          item.relativePath===request.relativePath&&item.kind===request.kind).length;
+        if(request.kind==="definition"&&request.relativePath.endsWith("/App.tsx")){
           if(sameKindCalls===1)return [
-            {path:"/projects/agent-web/src/index.ts",
+            {path:"/projects/agent-web/src/index.ts",relativePath:"src/index.ts",
               range:{start:{line:2,character:2},end:{line:2,character:8}}},
-            {path:"/projects/agent-web/src/App.tsx",
+            {path:"/projects/agent-web/src/App.tsx",relativePath:"src/App.tsx",
               range:{start:{line:4,character:0},end:{line:4,character:5}}},
           ];
-          return [{path:"/projects/agent-web/src/index.ts",
+          return [{path:"/projects/agent-web/src/index.ts",relativePath:"src/index.ts",
             range:{start:{line:2,character:2}}}];
         }
-        if(request.kind==="references"&&request.path.endsWith("/index.ts"))return [
-          {path:"/projects/agent-web/src/App.tsx",
+        if(request.kind==="references"&&request.relativePath.endsWith("/index.ts"))return [
+          {path:"/projects/agent-web/src/App.tsx",relativePath:"src/App.tsx",
             range:{start:{line:6,character:1},end:{line:6,character:5}}},
-          {path:"/projects/agent-web/src/index.ts",
+          {path:"/projects/agent-web/src/index.ts",relativePath:"src/index.ts",
             range:{start:{line:2,character:2}}},
         ];
         return [];
@@ -70,9 +70,9 @@ test("source language capabilities gate definition/reference menus and open real
   const readState=()=>page.evaluate(()=>(
     window as unknown as Window & {__sourceLanguageNavigationState:{
       selects:number;
-      capabilityRequests:Array<{path:string;languageId:string}>;
+      capabilityRequests:Array<{relativePath:string;languageId:string}>;
       locationRequests:Array<{
-        path:string;languageId:string;kind:string;
+        relativePath:string;languageId:string;kind:string;
         position:{line:number;character:number};
       }>;
       reads:Array<{path:string;line?:number;endLine?:number}>;
@@ -88,7 +88,7 @@ test("source language capabilities gate definition/reference menus and open real
   const appTab=panel.getByRole("tab",{name:"App.tsx"});
   await expect(appTab).toHaveAttribute("aria-selected","true");
   await expect.poll(async()=>(await readState()).capabilityRequests.some(request=>
-    request.path.endsWith("/App.tsx")&&request.languageId==="typescriptreact")).toBe(true);
+    request.relativePath==="src/App.tsx"&&request.languageId==="typescriptreact")).toBe(true);
 
   await panel.locator(".cm-content:visible .cm-line").nth(2)
     .click({button:"right",position:{x:20,y:8}});
@@ -140,11 +140,11 @@ test("source language capabilities gate definition/reference menus and open real
   const state=await readState();
   expect(state.selects).toBe(1);
   expect(state.locationRequests.map(request=>({
-    path:request.path,languageId:request.languageId,kind:request.kind,
+    relativePath:request.relativePath,languageId:request.languageId,kind:request.kind,
   }))).toEqual([
-    {path:"/projects/agent-web/src/App.tsx",languageId:"typescriptreact",kind:"definition"},
-    {path:"/projects/agent-web/src/index.ts",languageId:"typescript",kind:"references"},
-    {path:"/projects/agent-web/src/App.tsx",languageId:"typescriptreact",kind:"definition"},
+    {relativePath:"src/App.tsx",languageId:"typescriptreact",kind:"definition"},
+    {relativePath:"src/index.ts",languageId:"typescript",kind:"references"},
+    {relativePath:"src/App.tsx",languageId:"typescriptreact",kind:"definition"},
   ]);
   expect(state.reads).toEqual([
     {path:"/projects/agent-web/src/App.tsx",line:14,endLine:28},
