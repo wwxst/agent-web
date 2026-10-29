@@ -222,6 +222,11 @@ export function App() {
   const workspaceLatestPreviewIntentRef=React.useRef(0);
   const workspacePendingPreviewTabIdsRef=React.useRef(new Set<string>());
   const workspaceLatestReadByTabRef=React.useRef(new Map<string,number>());
+  const cancelPendingWorkspacePreviews=React.useCallback(()=>{
+    for(const pendingId of workspacePendingPreviewTabIdsRef.current)
+      workspaceLatestReadByTabRef.current.delete(pendingId);
+    workspacePendingPreviewTabIdsRef.current.clear();
+  },[]);
   const [findOpen,setFindOpen]=React.useState(false);
   const [findQuery,setFindQuery]=React.useState("");
   const [findOrdinal,setFindOrdinal]=React.useState(0);
@@ -377,9 +382,7 @@ export function App() {
       // intent and invalidates unresolved preview reads.
       if(isPreview&&open.isPreview===true){
         workspaceLatestPreviewIntentRef.current++;
-        for(const pendingId of workspacePendingPreviewTabIdsRef.current)
-          workspaceLatestReadByTabRef.current.delete(pendingId);
-        workspacePendingPreviewTabIdsRef.current.clear();
+        cancelPendingWorkspacePreviews();
       }
       setWorkspaceTabs(current=>{
         const kept=isPreview?current:sourceKeepLocalReadOnlyFileTab(current,open.id);
@@ -391,9 +394,7 @@ export function App() {
     if(isPreview){
       // A new preview supersedes older unresolved preview reads, but does not
       // close any visible tab until the new read has actually succeeded.
-      for(const pendingId of workspacePendingPreviewTabIdsRef.current)
-        workspaceLatestReadByTabRef.current.delete(pendingId);
-      workspacePendingPreviewTabIdsRef.current.clear();
+      cancelPendingWorkspacePreviews();
       for(const tab of workspaceTabs.tabs)
         if(tab.isPreview===true)
           workspaceLatestReadByTabRef.current.delete(tab.id);
@@ -437,7 +438,7 @@ export function App() {
       }
       notify("无法读取所选工作区文件：请确认权限及格式。");
     }
-  },[workspaceTabs.tabs,notify]);
+  },[workspaceTabs.tabs,notify,cancelPendingWorkspacePreviews]);
   React.useEffect(()=>()=>revokeWorkspacePreview(),[revokeWorkspacePreview]);
   // Reset creates a new demo host lifetime. Switching conversations only
     // remounts virtual rows, so historical Rk choices remain host-owned.
@@ -1236,6 +1237,10 @@ export function App() {
         preview={workspaceTabs.tabs.find(tab=>
           tab.id===workspaceTabs.activeTabId)!.content}
         onSelectTab={id=>{
+          if(workspaceTabs.tabs.find(tab=>tab.id===id)?.isPreview===true){
+            workspaceLatestPreviewIntentRef.current++;
+            cancelPendingWorkspacePreviews();
+          }
           workspaceSelectionIntentRef.current++;
           setWorkspaceTabs(current=>sourceSelectLocalReadOnlyFileTab(current,id));
         }}
