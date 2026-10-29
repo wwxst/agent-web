@@ -574,19 +574,19 @@ export function makeDemoRow(
         isReadOnly: false, isTurnInProgress: isActive, isTurnCancelled: false,
         threadDetailLevel: "STEPS_PROSE", summaryTone: "default", showSummaryIcon: true,
         hideRawCommand: false,mcpLabelHost:demoMcpLabelHost,
-        onOpenFile:request=>{
-          if(onOpenWorkspaceAttachment==null)return;
-          const path=sourceToolActivityAbsolutePath(request);
-          if(path==null)return;
-          // Source IX's location route resets stale editor state and reveals
-          // the requested line. The read-only host receives no column/reset
-          // fields; those remain renderer-only editor navigation metadata.
-          void onOpenWorkspaceAttachment({
-            path,
-            ...(request.line==null?{}:{line:request.line}),
-            resetTabState:true,
-          });
-        },
+        onOpenFile:window.agentWebDesktopHost==null||
+          onOpenWorkspaceAttachment==null?undefined:request=>{
+            const path=sourceToolActivityAbsolutePath(request);
+            if(path==null)return;
+            // Source IX's location route resets stale editor state and reveals
+            // the requested line. The read-only host receives no column/reset
+            // fields; those remain renderer-only editor navigation metadata.
+            void onOpenWorkspaceAttachment({
+              path,
+              ...(request.line==null?{}:{line:request.line}),
+              resetTabState:true,
+            });
+          },
       }),
       leafAdapters: {
         Read: CodexSourceExecReadLeaf,
