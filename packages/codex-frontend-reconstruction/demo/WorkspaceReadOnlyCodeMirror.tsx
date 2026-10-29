@@ -58,13 +58,15 @@ function visibleSelectedLines(
 }
 export interface WorkspaceReadOnlyCodeMirrorProps {
   preview:WorkspaceReadOnlyPreview;
+  active?:boolean;
   initialScrollTop?:number;
   onScrollTop?:(top:number)=>void;
 }
 export function WorkspaceReadOnlyCodeMirror({
-  preview,initialScrollTop,onScrollTop,
+  preview,active=true,initialScrollTop,onScrollTop,
 }:WorkspaceReadOnlyCodeMirrorProps){
   const container=React.useRef<HTMLDivElement|null>(null);
+  const viewRef=React.useRef<EditorView|null>(null);
   const onScrollTopRef=React.useRef(onScrollTop);
   onScrollTopRef.current=onScrollTop;
   const lastLocationRequestIdRef=React.useRef(preview.locationRequestId);
@@ -110,6 +112,7 @@ export function WorkspaceReadOnlyCodeMirror({
         }),
       ],
     });
+    viewRef.current=view;
     view.contentDOM.setAttribute("aria-label",preview.name+" read-only source");
     view.contentDOM.setAttribute("tabindex","0");
     const onScroll=()=>onScrollTopRef.current?.(view.scrollDOM.scrollTop);
@@ -142,13 +145,23 @@ export function WorkspaceReadOnlyCodeMirror({
     return ()=>{
       cancelAnimationFrame(frame);
       view.scrollDOM.removeEventListener("scroll",onScroll);
+      if(viewRef.current===view)viewRef.current=null;
       view.destroy();
     };
   },[preview.name,preview.text,preview.line,preview.endLine,preview.column,
-    preview.resetTabState,preview.locationRequestId,initialScrollTop]);
+    preview.resetTabState,preview.locationRequestId]);
+  // Keep this tab's EditorView mounted while another tab is active. CodeMirror
+  // owns selection, scroll and viewport state; remeasure after a hidden view
+  // becomes visible instead of rebuilding it from a scroll-only snapshot.
+  React.useLayoutEffect(()=>{
+    if(!active)return;
+    viewRef.current?.requestMeasure();
+  },[active]);
   return <div ref={container}
+    hidden={!active}
+    aria-hidden={!active}
     className="demo-workspace-preview__codemirror"
-    data-workspace-file-text=""
-    data-source-workspace-codemirror="read-only"
-    aria-label="Read-only file source"/>;
+    data-workspace-file-text={active?"":undefined}
+    data-source-workspace-codemirror={active?"read-only":undefined}
+    aria-label={active?"Read-only file source":undefined}/>;
 }
