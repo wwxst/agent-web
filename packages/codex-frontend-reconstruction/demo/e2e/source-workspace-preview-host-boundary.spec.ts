@@ -611,7 +611,7 @@ test("native granted workspace directory tree opens new CodeMirror tab without r
   await expect(panel.getByRole("tab")).toHaveText(["App.tsx","extra.ts","next.ts"]);
   // The accessible Eqi-style menu exposes the local keep-tab action.
   await nextTab.click({button:"right"});
-  const tabMenu=panel.getByRole("menu",{name:"Local file tab actions"});
+  const tabMenu=page.getByRole("menu",{name:"Local file tab actions"});
   await tabMenu.getByRole("menuitem",{name:"Keep tab"}).click();
   await expect(nextTab).toHaveAttribute("data-source-file-tab-preview","false");
   // Double-clicking a preview tab also converts it to a kept tab.
