@@ -11,6 +11,7 @@ import {
   sourceKeepLocalReadOnlyFileTab,
   type SourceLocalReadOnlyTabState,
 } from "../src/conversation/SourceReviewFileTabModel.js";
+import {sourceOpenLocationRequest} from "../src/conversation/SourceOpenLocationModel.js";
 import { CodexSourceComposerHostForm } from "../src/components/CodexSourceComposerHostForm.js";
 import { CodexSourceScrollToBottomButton } from "../src/components/CodexSourceScrollToBottomButton.js";
 import { DemoProseMirrorComposerEditor } from "./DemoProseMirrorComposerEditor.js";
@@ -382,6 +383,25 @@ export function App() {
         :"本地文件无法预览：请选择包含该文件的工作区，或检查权限与格式。");
     }
   },[notify]);
+  /**
+   * Source app-initial onOpenLocation receives a language-service Location.
+   * Route it through the existing granted, read-only attachment/tab path. A
+   * location is not allowed to silently request a new folder grant: it must
+   * originate from an already-open local workspace preview, and Electron
+   * independently enforces that the target remains inside the granted root.
+   */
+  const openWorkspaceLocation=React.useCallback((location:unknown)=>{
+    const request=sourceOpenLocationRequest(location);
+    if(request==null){
+      notify("无法打开源码位置：位置数据无效。");
+      return;
+    }
+    if(!workspaceGrantRef.current){
+      notify("源码位置跳转需要当前已授权的本地工作区。");
+      return;
+    }
+    void openWorkspaceAttachment(request);
+  },[openWorkspaceAttachment,notify]);
   /** Native workspace tree uses only a grant-relative, validated path.
    * It never accepts the root or generic filesystem paths from React. */
   const openWorkspaceTreeFile=React.useCallback(async(
@@ -950,6 +970,16 @@ export function App() {
     ]);
   }
 
+  /** DEMO ONLY: source-shaped LSP location event; no language server is simulated. */
+  function playSourceOpenLocationFixture(){
+    if(playing)return;
+    markFollow();
+    openWorkspaceLocation({
+      path:"/projects/agent-web/src/index.ts",
+      range:{start:{line:2,character:2},end:{line:2,character:8}},
+    });
+  }
+
   function stopSample() {
     if (timerRef.current != null) clearTimeout(timerRef.current);
     timerRef.current = null;
@@ -1179,6 +1209,10 @@ export function App() {
           <button type="button" onClick={playUserFileAttachmentsFixture}
             data-testid="demo-source-user-file-attachments">
             <Icon name="folder" size={15}/> 演示用户文件附件（合成数据）
+          </button>
+          <button type="button" onClick={playSourceOpenLocationFixture}
+            data-testid="demo-source-open-location">
+            <Icon name="search" size={15}/> 演示源码位置跳转（合成事件）
           </button>
           <button type="button" onClick={injectHistory} disabled={historyAdded}><Icon name="plus" size={15}/> 添加 45 条历史</button>
           <button type="button" onClick={() => void virtualizerApiRef.current?.scrollToKey(`history-content:turn:${source.getSnapshot().entries[0]?.turnId ?? ""}`, undefined, {align:"top"})}><Icon name="top" size={15}/> 跳到开头</button>
