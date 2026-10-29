@@ -179,7 +179,7 @@ test("existing canonical user-message files reuse source k3o tabs, switch, close
   const tabs=preview.getByRole("tablist",{name:"Open local files"});
   await expect(tabs.getByRole("tab")).toHaveCount(1);
   await expect(tabs.getByRole("tab",{name:"App.tsx"})).toHaveAttribute("aria-selected","true");
-  await expect(preview.locator("[data-workspace-file-text]")).toContainText("app original");
+  await expect(preview.locator("[data-workspace-file-text]")).toContainText("app line 14");
   // Original IX keeps a tab's contentInstance alive. The independent fallback
   // now retains the same CodeMirror DOM/state while another file is selected.
   await preview.locator(".cm-editor:visible").evaluate(element=>{
