@@ -744,3 +744,62 @@ test("native granted workspace directory tree opens new CodeMirror tab without r
       __nativeTreeBridgeTest:{revokes:number};
     }).__nativeTreeBridgeTest.revokes)).toBeGreaterThanOrEqual(1);
 });
+
+
+test("source patch file links enter the mounted read-only preview at the first changed line",async({page})=>{
+  await page.addInitScript(()=>{
+    const state={selects:0,reads:[] as Array<{path:string;line?:number;endLine?:number}>};
+    Object.assign(window,{__toolActivityWorkspaceState:state});
+    Object.defineProperty(window,"agentWebDesktopHost",{configurable:true,value:{
+      subscribeUiCommands:()=>()=>{},
+      subscribeHostEvents:()=>()=>{},
+      getComposerDrafts:async()=>({}),
+      setComposerDraft:async()=>true,
+      openMenu:async()=>false,
+      selectWorkspaceDirectory:async()=>{
+        state.selects++;
+        return {selected:true,name:"fixture-workspace"};
+      },
+      revokeWorkspaceDirectory:async()=>true,
+      readWorkspaceTextFile:async(request:{path:string;line?:number;endLine?:number})=>{
+        state.reads.push({...request});
+        return {name:"ToolActivityHistorySource.ts",
+          relativePath:"src/conversation/ToolActivityHistorySource.ts",
+          text:Array.from({length:80},(_,i)=>"source line "+(i+1)).join("\n"),
+          line:request.line,endLine:request.endLine,readOnly:true};
+      },
+    }});
+  });
+  await page.goto("/");
+  await page.getByRole("button",{name:"打开演示工具"}).click();
+  const navigation=page.getByRole("navigation",{name:"会话"});
+  await navigation.getByRole("button").nth(1).click();
+  const patch=page.locator('[data-demo-turn-id="review-patch"]');
+  const fileLink=patch.getByRole("button",{name:"ToolActivityHistorySource.ts"}).first();
+  await expect(fileLink).toBeVisible();
+  await fileLink.click();
+
+  const preview=page.getByRole("complementary",{name:"Local file preview"});
+  await expect(preview).toBeVisible();
+  await expect(preview.locator("[data-workspace-file-text]"))
+    .toContainText("source line 2");
+  await expect(preview.locator(".cm-line:visible",{hasText:"source line 2"}))
+    .toHaveAttribute("data-workspace-file-selected-range","true");
+  await preview.locator(".cm-content:visible").focus();
+  await expect.poll(async()=>preview.locator(".cm-content:visible").evaluate(content=>{
+    const selection=content.ownerDocument.getSelection();
+    const anchor=selection?.anchorNode;
+    const line=anchor instanceof Element?anchor.closest(".cm-line"):
+      anchor?.parentElement?.closest(".cm-line");
+    return {line:line?.textContent?.trim()??null,offset:selection?.anchorOffset??null};
+  })).toEqual({line:"source line 2",offset:0});
+  const state=await page.evaluate(()=>
+    (window as unknown as Window & {
+      __toolActivityWorkspaceState:{selects:number;reads:Array<{path:string;line?:number;endLine?:number}>};
+    }).__toolActivityWorkspaceState);
+  expect(state.selects).toBe(1);
+  expect(state.reads).toEqual([{
+    path:"/projects/agent-web/src/conversation/ToolActivityHistorySource.ts",
+    line:2,
+  }]);
+});
