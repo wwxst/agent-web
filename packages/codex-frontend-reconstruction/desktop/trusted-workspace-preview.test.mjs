@@ -625,9 +625,9 @@ test("native TypeScript language service resolves grant-scoped definitions and r
   const indexPath=join(src,"index.ts");
   const appPath=join(src,"App.tsx");
   const outsidePath=join(outside,"secret.ts");
-  await writeFile(indexPath,"export const answer = 42;\\n","utf8");
-  await writeFile(appPath,'import { answer } from "./index";\\nexport const result = answer;\\n',"utf8");
-  await writeFile(outsidePath,"export const secret = true;\\n","utf8");
+  await writeFile(indexPath,"export const answer = 42;\n","utf8");
+  await writeFile(appPath,'import { answer } from "./index";\nexport const result = answer;\n',"utf8");
+  await writeFile(outsidePath,"export const secret = true;\n","utf8");
   const sender={sender:{id:904}};
   const host=createTrustedWorkspacePreviewHost({
     isTrustedRenderer:event=>event===sender,
