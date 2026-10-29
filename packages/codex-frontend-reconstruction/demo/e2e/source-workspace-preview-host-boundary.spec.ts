@@ -926,7 +926,7 @@ test("original onOpenLocation opens a related file at one-based line/column and 
   await expect(appTab).toHaveAttribute("aria-selected","false");
   await expect(indexTab).toHaveAttribute("aria-selected","true");
   await expect(panel).toContainText("Line 3");
-  await expect(panel.locator("[data-workspace-file-selected-range=\"true\"]").first())
+  await expect(panel.locator(".cm-content:visible [data-workspace-file-selected-range=\"true\"]").first())
     .toContainText("source line 3");
   const locationScroller=panel.locator(".cm-scroller:visible");
   const locationBottom=await locationScroller.evaluate(element=>element.scrollHeight-element.clientHeight);
