@@ -782,13 +782,15 @@ test("source patch file links enter the mounted read-only preview at the first c
   await page.getByRole("button",{name:"打开演示工具"}).click();
   const navigation=page.getByRole("navigation",{name:"会话"});
   await navigation.getByRole("button").nth(1).click();
+  await expect(page.getByRole("heading",{name:"工具调用与审批交互"})).toBeVisible();
   // The transcript virtualizer only mounts rows around its current viewport.
-  // Move the actual transcript scroller to the fixture's estimated position.
+  // Use actual wheel input so the source scroll controller drops bottom-follow.
   const transcript=page.locator('[data-testid="transcript-scroll"]');
-  await transcript.evaluate(element=>{
-    element.scrollTop=520;
-    element.dispatchEvent(new Event("scroll",{bubbles:true}));
-  });
+  await transcript.hover();
+  await page.mouse.wheel(0,-5000);
+  await expect.poll(async()=>transcript.evaluate(element=>element.scrollTop))
+    .toBe(0);
+  await page.mouse.wheel(0,520);
   const patch=page.locator('[data-demo-turn-id="review-patch"]');
   const fileLink=patch.getByRole("button",{name:"ToolActivityHistorySource.ts"}).first();
   await expect(fileLink).toBeVisible();
