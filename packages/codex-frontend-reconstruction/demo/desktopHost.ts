@@ -27,6 +27,11 @@ declare global {
        * Path never comes from React; native folder picker owns the grant. */
       selectWorkspaceDirectory():Promise<{selected:boolean;name?:string}>;
       revokeWorkspaceDirectory():Promise<boolean>;
+      /** Source SXo copy-path via narrow trusted main-process clipboard. */
+      copyWorkspaceFilePath(path:string):Promise<boolean>;
+      /** Source _Xo: same user-granted read policy as readWorkspaceTextFile,
+       * but direct native clipboard write (no arbitrary clipboard IPC). */
+      copyWorkspaceFileContents(request:{path:string;line?:number;endLine?:number}):Promise<boolean>;
       readWorkspaceTextFile(request:{path:string;line?:number;endLine?:number}):Promise<{
         name:string;relativePath:string;text:string;line?:number;endLine?:number;readOnly:true;
       }>;

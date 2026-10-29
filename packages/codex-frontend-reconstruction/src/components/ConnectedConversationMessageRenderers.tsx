@@ -10,6 +10,9 @@ import {sourceUserFileAttachmentsFromMessage,
 import type {
   SourceUserFileQeContext,SourceUserFileQeHostClassifiers,SourceUserFileRoute,
 } from "../conversation/SourceUserFileQeRouteModel.js";
+import type {
+  SourceWorkspaceFileContextMenuCapabilities,SourceWorkspaceFileMenuActionId,
+} from "../conversation/SourceWorkspaceFileContextMenuModel.js";
 import { combineSourceActivityTrace } from "../conversation/SourceCombinedActivityTrace.js";
 import { filterSourceLatestActivityUnits } from "../conversation/SourceLatestActivityVisibility.js";
 import type { SourceRepeatedActivityRow } from "../conversation/SourceRepeatedActivityGroups.js";
@@ -213,6 +216,11 @@ export interface ConnectedConversationRendererHost extends ConversationContentAd
   getUserFileQeContext?:(item:ConversationMessageItem)=>
     Omit<SourceUserFileQeContext,"featuredViewerEnabled">|undefined;
   userFileQeHostClassifiers?:SourceUserFileQeHostClassifiers;
+  /** Source SXo workspace context menu actions, only host-backed capabilities. */
+  userFileMenuCapabilities?:SourceWorkspaceFileContextMenuCapabilities;
+  onUserFileMenuAction?:(attachment:SourceUserFileAttachment,
+    route:SourceUserFileRoute,action:SourceWorkspaceFileMenuActionId,
+    item:ConversationMessageItem)=>void|Promise<void>;
   canOpenUserFileAttachment?:(attachment:SourceUserFileAttachment,
     target:SourceUserFileOpenTarget)=>boolean;
   isUploadedFileViewerEnabled?:boolean;
@@ -374,6 +382,10 @@ export function createConnectedConversationMessageRenderers(host: ConnectedConve
           canOpenAttachment={host.canOpenUserFileAttachment}
           fileOpenContext={host.getUserFileQeContext?.(props.item)}
           fileOpenClassifiers={host.userFileQeHostClassifiers}
+          fileMenuCapabilities={host.userFileMenuCapabilities}
+          onFileMenuAction={host.onUserFileMenuAction==null?undefined:
+            (attachment,route,action)=>host.onUserFileMenuAction?.(
+              attachment,route,action,props.item)}
           onOpen={host.onUserFileAttachmentOpen==null?undefined:
             (attachment,target,sourceRoute)=>host.onUserFileAttachmentOpen?.(
               attachment,target,props.item,sourceRoute)}/>

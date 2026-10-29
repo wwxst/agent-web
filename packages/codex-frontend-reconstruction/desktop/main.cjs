@@ -9,7 +9,7 @@
  * We intentionally DO NOT impersonate its private electronBridge API.
  */
 const path = require("node:path");
-const {app, BrowserWindow, ipcMain, shell, nativeTheme, screen, Menu, dialog} = require("electron");
+const {app, BrowserWindow, ipcMain, shell, nativeTheme, screen, Menu, dialog, clipboard} = require("electron");
 const {
   PRIMARY_MIN_WIDTH,PRIMARY_MIN_HEIGHT,sourcePrimaryChromeOptions,
 } = require("./windowChrome.cjs");
@@ -38,6 +38,8 @@ const OPEN_EXTERNAL_URL_CHANNEL="agent-web:open-external-url";
 const SELECT_WORKSPACE_CHANNEL="agent-web:select-workspace-directory";
 const READ_WORKSPACE_TEXT_CHANNEL="agent-web:read-workspace-text";
 const REVOKE_WORKSPACE_CHANNEL="agent-web:revoke-workspace-directory";
+const COPY_WORKSPACE_PATH_CHANNEL="agent-web:copy-workspace-file-path";
+const COPY_WORKSPACE_CONTENTS_CHANNEL="agent-web:copy-workspace-file-contents";
 const devUrl=process.env.AGENT_WEB_DEV_URL || "";
 const devMode=devUrl.length>0;
 const indexPath=path.resolve(__dirname,"../demo-dist/index.html");
@@ -174,6 +176,7 @@ function setupIpc(){
   const template=installNativeMenu();
   workspacePreviewHost=createTrustedWorkspacePreviewHost({
     isTrustedRenderer,
+    writeClipboardText:value=>clipboard.writeText(value),
     chooseDirectory:event=>dialog.showOpenDialog(
       BrowserWindow.fromWebContents(event.sender),
       {title:"Select workspace folder for read-only previews",
@@ -185,6 +188,10 @@ function setupIpc(){
     workspacePreviewHost.readTextFile(event,request));
   ipcMain.handle(REVOKE_WORKSPACE_CHANNEL,event=>
     workspacePreviewHost.revoke(event));
+  ipcMain.handle(COPY_WORKSPACE_PATH_CHANNEL,(event,path)=>
+    workspacePreviewHost.copyFilePath(event,path));
+  ipcMain.handle(COPY_WORKSPACE_CONTENTS_CHANNEL,(event,request)=>
+    workspacePreviewHost.copyFileContents(event,request));
   // Original mcp-request-card ye calls a request-scoped host reply method;
   // this standalone app does NOT have that Agent backend protocol. Use
   // existing main-frame navigation/sender guards and fail closed.
@@ -235,7 +242,7 @@ app.on("window-all-closed",()=>{if(process.platform!=="darwin")app.quit();});
 app.on("activate",()=>{if(BrowserWindow.getAllWindows().length===0)createWindow();});
 app.whenReady().then(()=>{setupIpc();createWindow();});
 app.on("before-quit",()=>{
-  for(const channel of [HOST_INFO_CHANNEL,OPEN_MENU_CHANNEL,READ_DRAFTS_CHANNEL,WRITE_DRAFT_CHANNEL,MCP_APPROVAL_REPLY_CHANNEL,OPEN_EXTERNAL_URL_CHANNEL,USER_VERIFICATION_CANCEL_CHANNEL,UNSUPPORTED_FORM_REPLY_CHANNEL,TEXT_FORM_REPLY_CHANNEL,SELECT_WORKSPACE_CHANNEL,READ_WORKSPACE_TEXT_CHANNEL,REVOKE_WORKSPACE_CHANNEL]){
+  for(const channel of [HOST_INFO_CHANNEL,OPEN_MENU_CHANNEL,READ_DRAFTS_CHANNEL,WRITE_DRAFT_CHANNEL,MCP_APPROVAL_REPLY_CHANNEL,OPEN_EXTERNAL_URL_CHANNEL,USER_VERIFICATION_CANCEL_CHANNEL,UNSUPPORTED_FORM_REPLY_CHANNEL,TEXT_FORM_REPLY_CHANNEL,SELECT_WORKSPACE_CHANNEL,READ_WORKSPACE_TEXT_CHANNEL,REVOKE_WORKSPACE_CHANNEL,COPY_WORKSPACE_PATH_CHANNEL,COPY_WORKSPACE_CONTENTS_CHANNEL]){
     ipcMain.removeHandler(channel);
   }
 });

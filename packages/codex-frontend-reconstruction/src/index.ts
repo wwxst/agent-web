@@ -191,6 +191,11 @@ export {
   sourceUserFileAttachmentsFromMessage,
 } from "./conversation/SourceUserFileAttachmentsModel.js";
 export {projectSourceUserFileQeRoute} from "./conversation/SourceUserFileQeRouteModel.js";
+export {sourceWorkspaceFileContextMenuItems} from "./conversation/SourceWorkspaceFileContextMenuModel.js";
+export type {
+  SourceWorkspaceFileMenuActionId,SourceWorkspaceFileContextMenuCapabilities,
+  SourceWorkspaceFileMenuItem,
+} from "./conversation/SourceWorkspaceFileContextMenuModel.js";
 export type {
   SourceUserFileQeHostClassifiers,SourceUserFileQeContext,
   SourceUserFileQeRequest,SourceUserFileRoute,

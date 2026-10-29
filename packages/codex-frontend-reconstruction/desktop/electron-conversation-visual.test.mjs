@@ -1523,6 +1523,16 @@ test("native Electron renders source hn/yn uploaded and workspace attachments wi
       chooser:typeof host.selectWorkspaceDirectory,
       read:typeof host.readWorkspaceTextFile,
       revoke:typeof host.revokeWorkspaceDirectory,
+      copyPath:typeof host.copyWorkspaceFilePath,
+      copyContents:typeof host.copyWorkspaceFileContents,
+      ungrantedCopy:await (async()=>{
+        try{await host.copyWorkspaceFileContents({path});return "UNEXPECTED_SUCCESS";}
+        catch(e){return String(e);}
+      })(),
+      invalidCopyPath:await (async()=>{
+        try{await host.copyWorkspaceFilePath("../relative.ts");return "UNEXPECTED_SUCCESS";}
+        catch(e){return String(e);}
+      })(),
       rawIpc:typeof host.invoke,
       node:typeof window.require,
       absentGrant:await error({path:path}),
@@ -1535,6 +1545,10 @@ test("native Electron renders source hn/yn uploaded and workspace attachments wi
   assert.equal(workspaceSecurity.chooser,"function");
   assert.equal(workspaceSecurity.read,"function");
   assert.equal(workspaceSecurity.revoke,"function");
+  assert.equal(workspaceSecurity.copyPath,"function");
+  assert.equal(workspaceSecurity.copyContents,"function");
+  assert.match(workspaceSecurity.ungrantedCopy,/WORKSPACE_NOT_GRANTED/);
+  assert.match(workspaceSecurity.invalidCopyPath,/WORKSPACE_INVALID_FILE_REQUEST/);
   assert.equal(workspaceSecurity.rawIpc,"undefined");
   assert.equal(workspaceSecurity.node,"undefined");
   assert.match(workspaceSecurity.absentGrant,/WORKSPACE_NOT_GRANTED|WORKSPACE_INVALID_FILE_REQUEST/);
@@ -1560,6 +1574,28 @@ test("native Electron renders source hn/yn uploaded and workspace attachments wi
   assert.equal(await files.getByRole("button",{name:/App\.tsx/}).isEnabled(),true);
   assert.equal(await files.getByRole("button",{name:"reference-notes.pdf"}).isDisabled(),true);
   assert.equal(await files.getByRole("button",{name:"Detached attachment"}).isDisabled(),true);
+  // The real context-isolated Electron host advertises only copy-path and
+  // consented read-only copy-contents; never generic shell/file-manager.
+  await files.getByRole("button",{name:/App/}).click({button:"right"});
+  const menu=page.getByRole("menu",{name:"Workspace file actions"});
+  await menu.waitFor({timeout:10000});
+  assert.deepEqual(await menu.getByRole("menuitem").allTextContents(),[
+    "Copy path","Copy file contents",
+  ]);
+  if(process.platform==="win32"){
+    // Assert the actual Windows clipboard, not an injected JS fake.
+    await menu.getByRole("menuitem",{name:"Copy path"}).click();
+    // The copy action crosses isolated preload -> main asynchronously.
+    // Wait for the real native IPC success feedback before reading clipboard.
+    await page.getByRole("status").getByText("已复制文件路径").waitFor({
+      timeout:10000,
+    });
+    await assert.doesNotReject(async()=>{
+      const value=await app.evaluate(({clipboard})=>clipboard.readText());
+      assert.equal(value,"/projects/agent-web/src/App.tsx");
+    });
+  }else await page.keyboard.press("Escape");
+  assert.equal(await menu.count(),0);
   await mkdir(resolve(root,"desktop/test-results"),{recursive:true});
   await page.screenshot({
    path:resolve(root,"desktop/test-results/source-user-file-attachments-readonly.png"),

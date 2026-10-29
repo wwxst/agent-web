@@ -19,6 +19,8 @@ const OPEN_EXTERNAL_URL_CHANNEL="agent-web:open-external-url";
 const SELECT_WORKSPACE_CHANNEL="agent-web:select-workspace-directory";
 const READ_WORKSPACE_TEXT_CHANNEL="agent-web:read-workspace-text";
 const REVOKE_WORKSPACE_CHANNEL="agent-web:revoke-workspace-directory";
+const COPY_WORKSPACE_PATH_CHANNEL="agent-web:copy-workspace-file-path";
+const COPY_WORKSPACE_CONTENTS_CHANNEL="agent-web:copy-workspace-file-contents";
 const draftThreadIds=new Set(["frontend","review"]);
 const allowedUiCommands=new Set([
   "toggle-sidebar","previous-thread","next-thread",
@@ -159,6 +161,33 @@ contextBridge.exposeInMainWorld("agentWebDesktopHost",Object.freeze({
          request.endLine>10000000)))
       return Promise.reject(new TypeError("WORKSPACE_INVALID_FILE_REQUEST"));
     return ipcRenderer.invoke(READ_WORKSPACE_TEXT_CHANNEL,{
+      path:request.path,
+      ...(request.line===undefined?{}:{line:request.line}),
+      ...(request.endLine===undefined?{}:{endLine:request.endLine}),
+    });
+  },
+  // Source SXo copy-path does not read the file. Main still validates the
+  // absolute typed path and trusted main-frame sender.
+  copyWorkspaceFilePath(path){
+    if(typeof path!=="string"||path.length<1||path.length>4096||
+       /[\u0000-\u001f\u007f]/u.test(path))
+      return Promise.reject(new TypeError("WORKSPACE_INVALID_FILE_REQUEST"));
+    return ipcRenderer.invoke(COPY_WORKSPACE_PATH_CHANNEL,path);
+  },
+  // Source _Xo copies contents. No generic arbitrary clipboard API:
+  // main applies the same grant/realpath/text restrictions as file preview.
+  copyWorkspaceFileContents(request){
+    if(request==null||typeof request!=="object"||Array.isArray(request)||
+       Object.keys(request).some(k=>!["path","line","endLine"].includes(k))||
+       typeof request.path!=="string"||request.path.length<1||
+       request.path.length>4096||/[\u0000-\u001f\u007f]/u.test(request.path)||
+       (request.line!==undefined&&(!Number.isSafeInteger(request.line)||
+         request.line<1||request.line>10000000))||
+       (request.endLine!==undefined&&(!Number.isSafeInteger(request.endLine)||
+         request.line===undefined||request.endLine<request.line||
+         request.endLine>10000000)))
+      return Promise.reject(new TypeError("WORKSPACE_INVALID_FILE_REQUEST"));
+    return ipcRenderer.invoke(COPY_WORKSPACE_CONTENTS_CHANNEL,{
       path:request.path,
       ...(request.line===undefined?{}:{line:request.line}),
       ...(request.endLine===undefined?{}:{endLine:request.endLine}),
