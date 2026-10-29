@@ -11,7 +11,22 @@ const fs=require("node:fs/promises");
 const {constants:fsConstants}=require("node:fs");
 const path=require("node:path");
 const {TextDecoder}=require("node:util");
+const {
+  createWorkspaceTypeScriptLanguageService,languageIdForPath,LOCATION_KINDS,
+}=require("./workspaceTypeScriptLanguageService.cjs");
 const MAX_PREVIEW_BYTES=1024*1024;
+const MAX_LANGUAGE_DIRECTORIES=256;
+const MAX_LANGUAGE_FILES=1500;
+const MAX_LANGUAGE_SOURCE_BYTES=24*1024*1024;
+const MAX_LANGUAGE_CACHE_AGE_MS=5000;
+const MAX_LANGUAGE_POSITION=9_999_999;
+const LANGUAGE_FILE_EXTENSIONS=new Set([
+  ".ts",".tsx",".js",".jsx",".mjs",".cjs",".json",
+]);
+const SKIP_LANGUAGE_DIRECTORIES=new Set([
+  ".git","node_modules","dist","build",".next",".vite","coverage","out",
+  ".turbo","vendor",
+]);
 const MAX_DIRECTORY_ENTRIES=200;
 const MAX_DIRECTORY_SCAN=400;
 const MAX_SEARCH_DIRECTORIES=32;
@@ -50,6 +65,28 @@ function validTreeFileRequest(request){
     (request.endLine===undefined||(Number.isSafeInteger(request.endLine)&&
       request.line!==undefined&&request.endLine>=request.line&&
       request.endLine<=10000000));
+}
+function validLanguageCapabilitiesRequest(request){
+  return request!=null&&typeof request==="object"&&!Array.isArray(request)&&
+    Object.keys(request).length===2&&Object.hasOwn(request,"path")&&
+    Object.hasOwn(request,"languageId")&&isSafePathInput(request.path)&&
+    ["typescript","typescriptreact","javascript","javascriptreact"].includes(request.languageId);
+}
+function validLanguageLocationsRequest(request){
+  const position=request?.position;
+  return request!=null&&typeof request==="object"&&!Array.isArray(request)&&
+    Object.keys(request).length===4&&Object.hasOwn(request,"path")&&
+    Object.hasOwn(request,"languageId")&&Object.hasOwn(request,"kind")&&
+    Object.hasOwn(request,"position")&&isSafePathInput(request.path)&&
+    ["typescript","typescriptreact","javascript","javascriptreact"].includes(request.languageId)&&
+    typeof request.kind==="string"&&LOCATION_KINDS.has(request.kind)&&
+    position!=null&&typeof position==="object"&&!Array.isArray(position)&&
+    Object.keys(position).length===2&&Object.hasOwn(position,"line")&&
+    Object.hasOwn(position,"character")&&
+    Number.isSafeInteger(position.line)&&position.line>=0&&
+    position.line<=MAX_LANGUAGE_POSITION&&
+    Number.isSafeInteger(position.character)&&position.character>=0&&
+    position.character<=MAX_LANGUAGE_POSITION;
 }
 function sameDirectoryIdentity(a,b){
   return a!=null&&b!=null&&a.isDirectory()&&b.isDirectory()&&
