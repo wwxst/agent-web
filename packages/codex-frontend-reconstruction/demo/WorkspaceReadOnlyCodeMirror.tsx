@@ -56,6 +56,32 @@ function visibleSelectedLines(
   return ranges.length===0?Decoration.none:
     Decoration.set(ranges.map(entry=>entry.value.range(entry.from)),true);
 }
+function positionReadOnlyEditor(
+  view:EditorView,
+  preview:WorkspaceReadOnlyPreview,
+  initialScrollTop:number|undefined,
+  locationRequestChanged:boolean,
+):void {
+  const hasLocation=preview.line!=null&&
+    Number.isSafeInteger(preview.line)&&preview.line>=1;
+  if(hasLocation&&
+    (locationRequestChanged||preview.resetTabState||initialScrollTop==null)){
+    const lineNumber=Math.min(preview.line!,view.state.doc.lines);
+    const target=view.state.doc.line(lineNumber);
+    const column=preview.column!=null&&Number.isSafeInteger(preview.column)&&
+      preview.column>=1?Math.min(preview.column-1,target.length):0;
+    const position=target.from+column;
+    view.dispatch({
+      selection:{anchor:position},
+      effects:EditorView.scrollIntoView(position,{y:"center"}),
+    });
+  }else if(initialScrollTop!=null&&!preview.resetTabState){
+    view.scrollDOM.scrollTop=initialScrollTop;
+  }else if(preview.resetTabState){
+    view.scrollDOM.scrollTop=0;
+  }
+}
+
 export interface WorkspaceReadOnlyCodeMirrorProps {
   preview:WorkspaceReadOnlyPreview;
   active?:boolean;
@@ -69,6 +95,13 @@ export function WorkspaceReadOnlyCodeMirror({
   const viewRef=React.useRef<EditorView|null>(null);
   const onScrollTopRef=React.useRef(onScrollTop);
   onScrollTopRef.current=onScrollTop;
+  const activeRef=React.useRef(active);
+  activeRef.current=active;
+  const previewRef=React.useRef(preview);
+  previewRef.current=preview;
+  const pendingPositionRef=React.useRef<{
+    initialScrollTop:number|undefined;locationRequestChanged:boolean;
+  }|null>(null);
   const lastLocationRequestIdRef=React.useRef(preview.locationRequestId);
   React.useLayoutEffect(()=>{
     const locationRequestChanged=
@@ -118,32 +151,17 @@ export function WorkspaceReadOnlyCodeMirror({
     const onScroll=()=>onScrollTopRef.current?.(view.scrollDOM.scrollTop);
     view.scrollDOM.addEventListener("scroll",onScroll,{passive:true});
     const frame=requestAnimationFrame(()=>{
-      // Original onOpenLocation passes one-based line/column and sets
-      // resetTabState=true. That navigation must win over a stale saved
-      // scroll offset; ordinary tab switches still restore their own offset.
-      const hasLocation=preview.line!=null&&
-        Number.isSafeInteger(preview.line)&&preview.line>=1;
-      if(hasLocation&&
-        (locationRequestChanged||preview.resetTabState||initialScrollTop==null)){
-        const lineNumber=Math.min(preview.line!,view.state.doc.lines);
-        const target=view.state.doc.line(lineNumber);
-        const column=preview.column!=null&&Number.isSafeInteger(preview.column)&&
-          preview.column>=1?Math.min(preview.column-1,target.length):0;
-        const position=target.from+column;
-        view.dispatch({
-          selection:{anchor:position},
-          effects:EditorView.scrollIntoView(position,{y:"center"}),
-        });
-      }else if(initialScrollTop!=null&&!preview.resetTabState){
-        // A tab switch is not a new location request: restore that tab's
-        // scroll snapshot instead of repeatedly jumping to its initial line.
-        view.scrollDOM.scrollTop=initialScrollTop;
-      }else if(preview.resetTabState){
-        view.scrollDOM.scrollTop=0;
+      // An asynchronously completed background tab may still be hidden.
+      // Defer its first scroll/selection until it has a measurable viewport.
+      if(activeRef.current){
+        positionReadOnlyEditor(view,preview,initialScrollTop,locationRequestChanged);
+      }else{
+        pendingPositionRef.current={initialScrollTop,locationRequestChanged};
       }
     });
     return ()=>{
       cancelAnimationFrame(frame);
+      pendingPositionRef.current=null;
       view.scrollDOM.removeEventListener("scroll",onScroll);
       if(viewRef.current===view)viewRef.current=null;
       view.destroy();
@@ -155,7 +173,15 @@ export function WorkspaceReadOnlyCodeMirror({
   // becomes visible instead of rebuilding it from a scroll-only snapshot.
   React.useLayoutEffect(()=>{
     if(!active)return;
-    viewRef.current?.requestMeasure();
+    const view=viewRef.current;
+    if(view==null)return;
+    view.requestMeasure();
+    const pending=pendingPositionRef.current;
+    if(pending!=null){
+      pendingPositionRef.current=null;
+      positionReadOnlyEditor(view,previewRef.current,
+        pending.initialScrollTop,pending.locationRequestChanged);
+    }
   },[active]);
   return <div ref={container}
     hidden={!active}
