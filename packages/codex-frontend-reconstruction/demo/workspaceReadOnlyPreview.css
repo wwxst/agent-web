@@ -40,3 +40,41 @@
   background:rgba(100,111,205,.16);
   box-shadow:inset 3px 0 0 rgba(100,111,205,.58);
 }
+
+/* Independent local read-only IX/k3o tabs. The original XL tab theme,
+ * preview/pinning actions and contentInstance lifecycle remain private. */
+.demo-workspace-preview__tabs{
+  flex:none;display:flex;align-items:stretch;gap:1px;min-height:35px;
+  overflow-x:auto;overflow-y:hidden;border-bottom:1px solid var(--demo-border,#e7e7e7);
+  scrollbar-width:thin;
+}
+.demo-workspace-preview__tab{
+  display:flex;align-items:center;gap:2px;flex:none;min-width:0;
+  max-width:180px;padding:3px 5px;border-right:1px solid var(--demo-border,#eee);
+  color:var(--demo-muted,#757575);
+}
+.demo-workspace-preview__tab[data-source-file-tab-active="true"]{
+  color:var(--demo-text,#222);
+  box-shadow:inset 0 -2px 0 var(--demo-focus,#7373d8);
+  background:var(--demo-raised,#f8f8f8);
+}
+.demo-workspace-preview__tab button{
+  border:0;background:transparent;color:inherit;border-radius:5px;
+  font:inherit;cursor:pointer;white-space:nowrap;min-width:0;
+}
+.demo-workspace-preview__tab [role="tab"]{
+  font-size:12px;max-width:135px;overflow:hidden;text-overflow:ellipsis;
+  padding:5px 3px;
+}
+.demo-workspace-preview__tab [aria-label^="Close"]{
+  flex:none;font-size:16px;width:21px;height:22px;
+}
+.demo-workspace-preview__tab button:hover{
+  background:rgba(120,120,120,.13);
+}
+.demo-workspace-preview__tab button:focus-visible{
+  outline:2px solid var(--demo-focus,#7373d8);
+}
+.demo-workspace-preview__tabpanel{
+  flex:1;display:flex;flex-direction:column;min-height:0;min-width:0;
+}
