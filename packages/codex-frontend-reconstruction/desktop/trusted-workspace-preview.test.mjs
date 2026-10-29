@@ -628,6 +628,10 @@ test("native TypeScript language service resolves grant-scoped definitions and r
   await writeFile(indexPath,"export const answer = 42;\n","utf8");
   await writeFile(appPath,'import { answer } from "./index";\nexport const result = answer;\n',"utf8");
   await writeFile(outsidePath,"export const secret = true;\n","utf8");
+  // Native realpath may canonicalize case on Windows; LSP results use
+  // that canonical spelling rather than the pre-grant picker string.
+  const canonicalIndexPath=await realpath(indexPath);
+  const canonicalAppPath=await realpath(appPath);
   const sender={sender:{id:904}};
   const host=createTrustedWorkspacePreviewHost({
     isTrustedRenderer:event=>event===sender,
@@ -648,7 +652,7 @@ test("native TypeScript language service resolves grant-scoped definitions and r
       position:{line:0,character:10},
     });
     assert.ok(definitions.some(location=>
-      location.path===indexPath&&location.range.start.line===0&&
+      location.path===canonicalIndexPath&&location.range.start.line===0&&
       location.range.start.character===13));
 
     const references=await host.getLanguageLocations(sender,{
@@ -656,9 +660,9 @@ test("native TypeScript language service resolves grant-scoped definitions and r
       position:{line:0,character:14},
     });
     assert.ok(references.some(location=>
-      location.path===indexPath&&location.range.start.character===13));
+      location.path===canonicalIndexPath&&location.range.start.character===13));
     assert.ok(references.some(location=>
-      location.path===appPath&&location.range.start.character===9));
+      location.path===canonicalAppPath&&location.range.start.character===9));
 
     await assert.rejects(host.getLanguageLocations(sender,{
       path:outsidePath,languageId:"typescript",kind:"definition",
