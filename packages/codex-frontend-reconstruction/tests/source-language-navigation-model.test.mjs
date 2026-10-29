@@ -41,6 +41,8 @@ test("malformed location results are dropped and only bounded LSP positions surv
     {path:"/repo/src/c.ts",range:{start:{line:-1,character:0}}},
     {path:"/repo/src/d.ts",range:{start:{line:0,character:Infinity}}},
     {path:"/repo/src/e.ts",range:{start:{line:10_000_000,character:0}}},
+    {path:"/repo/../outside.ts",range:{start:{line:0,character:0}}},
+    {path:"relative.ts",range:{start:{line:0,character:0}}},
     null,
   ]),[
     {path:"/repo/src/a.ts",range:{start:{line:1,character:2},end:{line:1,character:4}}},
@@ -72,6 +74,9 @@ test("location paths are constrained to the active workspace root",()=>{
   ),true);
   assert.equal(sourceLanguageLocationIsWithinRoot(
     "/outside/secret.ts","/projects/agent-web",
+  ),false);
+  assert.equal(sourceLanguageLocationIsWithinRoot(
+    "/projects/agent-web/../outside/secret.ts","/projects/agent-web",
   ),false);
   assert.equal(sourceRelativeLanguageLocationPath(
     "/projects/agent-web/src/index.ts","/projects/agent-web",
