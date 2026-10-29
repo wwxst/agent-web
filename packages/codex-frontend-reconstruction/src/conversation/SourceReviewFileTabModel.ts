@@ -95,10 +95,9 @@ export function sourceCloseLocalReadOnlyFileTab<T>(
   return {tabs,activeTabId};
 }
 
-/** Original app-initial Eqi emits these three actions in tab-strip placement.
- * This local preview has no private pinned/home tab registry; all its tabs
- * are user-closeable. The source guards the other two actions by the number
- * of available closeable neighbors. */
+/** Source Eqi close actions plus an explicitly local Keep tab fallback.
+ * The original sidebar "Pin to sidebar" action owns a separate pinned-content
+ * registry and is not claimed here. All local tabs remain closeable. */
 export type SourceLocalFileTabContextAction =
   |"keep-tab"|"close-tab"|"close-other-tabs"|"close-tabs-to-the-right";
 export interface SourceLocalFileTabContextMenuItem {
