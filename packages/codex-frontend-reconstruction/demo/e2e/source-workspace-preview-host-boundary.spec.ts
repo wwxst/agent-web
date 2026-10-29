@@ -947,6 +947,7 @@ test("original onOpenLocation opens a related file at one-based line/column and 
   await expect.poll(()=>locationScroller.evaluate(element=>element.scrollTop)).toBeGreaterThan(0);
   await page.getByTestId("demo-source-open-location").click();
   await expect(indexTab).toHaveAttribute("aria-selected","true");
+  await panel.locator(".cm-content:visible").focus();
   await expect.poll(readCaret).toEqual({line:"source line 3",offset:2});
   await expect.poll(()=>locationScroller.evaluate(element=>element.scrollTop))
     .toBeLessThan(locationBottom-100);
