@@ -312,3 +312,11 @@ Follow `reports/NEXT_BATCH.md`: add the typed controller paste-event contract an
 - Source evidence: `reports/SOURCE_LINE_COLUMN_REVEAL_20261029.md`.
 - CI at `c71cb40a5212ee32a38849fe24e2641121e20c96`: core 516/516, demo model 5/5, Chromium 66/66, Linux Electron 80/80, Windows Electron 79 passed / 1 skipped / 0 failed. Type-check/bundle, browser smoke, Linux Electron and Windows Electron jobs passed.
 - PR #74 is Draft, correctly stacked on PR #73. The original related-file `onOpenLocation` callback is not yet wired end-to-end; this stage validates the existing attachment route and editor contract only. Private editor `contentInstance`, durable state, write/save, real Agent transport and pixel parity remain outstanding. Backend and `main` unchanged.
+
+## 2026-10-29 — source `onOpenLocation` routed into the existing local preview
+
+- Continued on `recovery/source-open-location-route-20261029`, stacked on the green PR #76 head; no changes to `main` or the Agent backend.
+- Traced the original callback from `app-initial-5851df3f6cb1.js` through `review-file-source-item-ea4a7f8c2999.js` and `review-file-source-breadcrumb-987458adbcad.js`. The source language wrapper obtains host capabilities and uses Go to Definition / Type Definition / Implementations / References plus Ctrl/Cmd-click; its location result reaches `onOpenLocation`.
+- Added `SourceOpenLocationModel.ts` and routed a source-shaped zero-based LSP range through the existing read-only local file-tab flow. The handler requires an already-granted local workspace; native IPC still receives only path + line, with column/reset metadata kept renderer-side.
+- Added model tests, a clearly synthetic demo event, and a mounted browser regression for same-tab reuse, one-based line 14 / column 4, stale-scroll replacement, and native-reader argument boundaries. Corrected the earlier source report: this specific callback does not forward `range.end` as `endLine`.
+- CI for the new branch is pending. Full language-service capability query, definition/reference results, and the original context-menu/Ctrl-click UI are **not** restored; the fixture does not simulate an LSP provider. See `reports/SOURCE_OPEN_LOCATION_ROUTE_20261029.md`.
