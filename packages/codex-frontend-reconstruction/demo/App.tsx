@@ -220,6 +220,7 @@ export function App() {
   // Latest *new preview* request wins, independently of tab-selection
   // intent. A slow earlier preview must not replace a newer tree selection.
   const workspaceLatestPreviewIntentRef=React.useRef(0);
+  const workspacePendingPreviewTabIdsRef=React.useRef(new Set<string>());
   const workspaceLatestReadByTabRef=React.useRef(new Map<string,number>());
   const [findOpen,setFindOpen]=React.useState(false);
   const [findQuery,setFindQuery]=React.useState("");
@@ -281,6 +282,7 @@ export function App() {
     workspaceRequestEpochRef.current++;
     workspaceSelectionIntentRef.current++;
     workspaceLatestPreviewIntentRef.current++;
+    workspacePendingPreviewTabIdsRef.current.clear();
     workspaceLatestReadByTabRef.current.clear();
     workspaceGrantRef.current=false;
     setWorkspaceTabs(sourceEmptyLocalReadOnlyTabState());
@@ -367,6 +369,13 @@ export function App() {
     const epoch=workspaceRequestEpochRef.current;
     const relative=relativePath.replace(/\\/g,"/");
     const previewIntent=isPreview?++workspaceLatestPreviewIntentRef.current:null;
+    if(isPreview){
+      // A newer preview selection supersedes pending preview reads even when
+      // it reuses an already-open tab instead of starting another disk read.
+      for(const pendingId of workspacePendingPreviewTabIdsRef.current)
+        workspaceLatestReadByTabRef.current.delete(pendingId);
+      workspacePendingPreviewTabIdsRef.current.clear();
+    }
     const open=workspaceTabs.tabs.find(tab=>
       tab.content.relativePath.replace(/\\/g,"/")===relative);
     const intent=++workspaceSelectionIntentRef.current;
@@ -385,23 +394,43 @@ export function App() {
           workspaceLatestReadByTabRef.current.delete(tab.id);
     }
     const tabId=sourceReviewFileTabId("workspace-tree:"+relative);
+    // A double-click/pinned open of the same path supersedes any delayed
+    // preview request that already made it through its click timer.
+    if(!isPreview)workspacePendingPreviewTabIdsRef.current.delete(tabId);
     workspaceLatestReadByTabRef.current.set(tabId,intent);
+    if(isPreview)workspacePendingPreviewTabIdsRef.current.add(tabId);
     try{
       const file=await host.readWorkspaceTreeTextFile({relativePath:relative});
-      if(epoch!==workspaceRequestEpochRef.current||
-        workspaceLatestReadByTabRef.current.get(tabId)!==intent||
-        isPreview&&previewIntent!==workspaceLatestPreviewIntentRef.current)return;
+      if(epoch!==workspaceRequestEpochRef.current)return;
+      if(workspaceLatestReadByTabRef.current.get(tabId)!==intent)return;
+      if(isPreview&&previewIntent!==workspaceLatestPreviewIntentRef.current){
+        workspaceLatestReadByTabRef.current.delete(tabId);
+        workspacePendingPreviewTabIdsRef.current.delete(tabId);
+        return;
+      }
       setWorkspaceTabs(current=>{
         if(epoch!==workspaceRequestEpochRef.current||
           workspaceLatestReadByTabRef.current.get(tabId)!==intent||
-          isPreview&&previewIntent!==workspaceLatestPreviewIntentRef.current)return current;
+          isPreview&&previewIntent!==workspaceLatestPreviewIntentRef.current){
+          if(isPreview&&workspaceLatestReadByTabRef.current.get(tabId)===intent&&
+            previewIntent!==workspaceLatestPreviewIntentRef.current)
+            workspaceLatestReadByTabRef.current.delete(tabId);
+          if(workspaceLatestReadByTabRef.current.get(tabId)===intent)
+            workspacePendingPreviewTabIdsRef.current.delete(tabId);
+          return current;
+        }
+        workspacePendingPreviewTabIdsRef.current.delete(tabId);
         return sourceOpenLocalReadOnlyFileTab(current,{
           id:tabId,path:relative,content:file,isPreview,
         },intent===workspaceSelectionIntentRef.current);
       });
     }catch(error){
       if(epoch!==workspaceRequestEpochRef.current)return;
-      notify("无法读取所选工作区文件：请确认权限及文件格式。");
+      if(workspaceLatestReadByTabRef.current.get(tabId)===intent){
+        workspaceLatestReadByTabRef.current.delete(tabId);
+        workspacePendingPreviewTabIdsRef.current.delete(tabId);
+      }
+      notify("无法读取所选工作区文件：请确认权限及格式。");
     }
   },[workspaceTabs.tabs,notify]);
   React.useEffect(()=>()=>revokeWorkspacePreview(),[revokeWorkspacePreview]);
@@ -1212,6 +1241,7 @@ export function App() {
         onCloseTab={id=>{
           workspaceSelectionIntentRef.current++;
           workspaceLatestReadByTabRef.current.delete(id);
+          workspacePendingPreviewTabIdsRef.current.delete(id);
           setWorkspaceTabs(current=>sourceCloseLocalReadOnlyFileTab(current,id));
         }}
         onCloseOthers={id=>{
@@ -1220,6 +1250,7 @@ export function App() {
           // not yet produced visible tabs; otherwise they can resurrect.
           const latest=workspaceLatestReadByTabRef.current.get(id);
           workspaceLatestReadByTabRef.current.clear();
+          workspacePendingPreviewTabIdsRef.current.clear();
           if(latest!=null)workspaceLatestReadByTabRef.current.set(id,latest);
           setWorkspaceTabs(current=>sourceCloseOtherLocalReadOnlyFileTabs(current,id));
         }}
@@ -1233,6 +1264,8 @@ export function App() {
           // Pending, unmounted tabs are not authorized to reappear.
           for(const key of workspaceLatestReadByTabRef.current.keys())
             if(!retain.has(key))workspaceLatestReadByTabRef.current.delete(key);
+          for(const key of workspacePendingPreviewTabIdsRef.current)
+            if(!retain.has(key))workspacePendingPreviewTabIdsRef.current.delete(key);
           setWorkspaceTabs(current=>sourceCloseLocalReadOnlyTabsToRight(current,id));
         }}
         onClose={()=>{
