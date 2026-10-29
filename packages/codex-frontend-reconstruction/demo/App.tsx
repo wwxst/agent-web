@@ -368,27 +368,32 @@ export function App() {
     if(host?.readWorkspaceTreeTextFile==null||!workspaceGrantRef.current)return;
     const epoch=workspaceRequestEpochRef.current;
     const relative=relativePath.replace(/\\/g,"/");
-    const previewIntent=isPreview?++workspaceLatestPreviewIntentRef.current:null;
-    if(isPreview){
-      // A newer preview selection supersedes pending preview reads even when
-      // it reuses an already-open tab instead of starting another disk read.
-      for(const pendingId of workspacePendingPreviewTabIdsRef.current)
-        workspaceLatestReadByTabRef.current.delete(pendingId);
-      workspacePendingPreviewTabIdsRef.current.clear();
-    }
     const open=workspaceTabs.tabs.find(tab=>
       tab.content.relativePath.replace(/\\/g,"/")===relative);
     const intent=++workspaceSelectionIntentRef.current;
     if(open!=null){
+      // Re-selecting an already-pinned tab must not cancel a different
+      // pending preview. Re-selecting the current preview is a newer preview
+      // intent and invalidates unresolved preview reads.
+      if(isPreview&&open.isPreview===true){
+        workspaceLatestPreviewIntentRef.current++;
+        for(const pendingId of workspacePendingPreviewTabIdsRef.current)
+          workspaceLatestReadByTabRef.current.delete(pendingId);
+        workspacePendingPreviewTabIdsRef.current.clear();
+      }
       setWorkspaceTabs(current=>{
         const kept=isPreview?current:sourceKeepLocalReadOnlyFileTab(current,open.id);
         return sourceSelectLocalReadOnlyFileTab(kept,open.id);
       });
       return;
     }
+    const previewIntent=isPreview?++workspaceLatestPreviewIntentRef.current:null;
     if(isPreview){
-      // Pending reads for an older visible preview may no longer be accepted
-      // once a newer preview selection supersedes it.
+      // A new preview supersedes older unresolved preview reads, but does not
+      // close any visible tab until the new read has actually succeeded.
+      for(const pendingId of workspacePendingPreviewTabIdsRef.current)
+        workspaceLatestReadByTabRef.current.delete(pendingId);
+      workspacePendingPreviewTabIdsRef.current.clear();
       for(const tab of workspaceTabs.tabs)
         if(tab.isPreview===true)
           workspaceLatestReadByTabRef.current.delete(tab.id);
