@@ -160,3 +160,11 @@
   transcript search UI, integrate without new unrelated mock state; audit
   original dynamic command keymap and Windows native screenshot against
   matching source build. Real Agent and native installer still outstanding.
+
+
+## 2026-10-29 — XL preview and permanent local tabs
+
+- The mounted file tree now follows the original `review-file-tree-side-pane` selection contract: single-click/search result opens a replaceable preview, double-click opens a kept tab, and opening a new preview replaces only the prior preview. Direct conversation-attachment opens remain permanent when `isPreview` is omitted by original `IX`.
+- Kept-tab state, italic preview labels, the local Keep tab action and stale async preview fencing are integrated into the existing React panel. This is not the private `XL` registry, and the original **Pin to sidebar** action is still separate and unsupported.
+- Verify PR #73's final-head CI before handoff; it must include the existing native host checks plus the new tree double-click, preview replacement and slow-completion browser scenario.
+- **Next:** restore source-confirmed file navigation state on the already mounted editor/tree—selected path and line/endLine/column reveal when opening a related file—then investigate preserving actual editor/content state across tab switches. Keep the current read-only and grant boundaries; do not invent write/save or remote-host behavior.
