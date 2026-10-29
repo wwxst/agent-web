@@ -782,6 +782,16 @@ test("source patch file links enter the mounted read-only preview at the first c
   await page.getByRole("button",{name:"打开演示工具"}).click();
   const navigation=page.getByRole("navigation",{name:"会话"});
   await navigation.getByRole("button").nth(1).click();
+  // The transcript virtualizer only mounts rows around its current viewport.
+  // Jump to the top, then reveal the patch fixture by scrolling the real host.
+  await page.getByRole("button",{name:"跳到开头"}).click();
+  const transcript=page.locator('[data-testid="transcript-scroll"]');
+  await expect.poll(async()=>transcript.evaluate(element=>element.scrollTop))
+    .toBe(0);
+  await transcript.evaluate(element=>{
+    element.scrollTop=520;
+    element.dispatchEvent(new Event("scroll",{bubbles:true}));
+  });
   const patch=page.locator('[data-demo-turn-id="review-patch"]');
   const fileLink=patch.getByRole("button",{name:"ToolActivityHistorySource.ts"}).first();
   await expect(fileLink).toBeVisible();
