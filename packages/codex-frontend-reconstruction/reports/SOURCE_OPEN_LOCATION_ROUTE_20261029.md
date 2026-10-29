@@ -22,7 +22,7 @@ All observations below come from the user-provided `frontend.zip`; proprietary b
 - Added `SourceOpenLocationModel.ts` to validate the source-shaped location and map the zero-based LSP start position to one-based `line` / `column`. The range end is intentionally not forwarded by this callback route.
 - Connected `App.tsx`'s `openWorkspaceLocation` to the existing attachment/read-only-tab flow. It requires an already granted local workspace and does not open a new directory picker in response to a location event.
 - The existing native bridge still receives only the absolute `path` and one-based `line` (plus `endLine` only when an existing caller supplies one). `column`, `resetTabState`, and the LSP range never become filesystem authority or new IPC arguments.
-- Added a clearly labeled synthetic demo event and a mounted Playwright regression that verifies the existing tab is reused, line 14 / column 4 is revealed, stale scroll is superseded, and only path + line cross the native-reader boundary.
+- Added a clearly labeled synthetic demo event and a mounted Playwright regression that opens a related file in a second tab at line 3 / column 3, repeats the same location after scrolling to the end, verifies stale scroll is superseded, and asserts only path + line cross the native-reader boundary.
 - Added core model tests for zero-based conversion, path preservation, omitted range-end forwarding, and fail-closed malformed positions.
 
 ## Verification boundary
