@@ -5,6 +5,7 @@ import {
   sourceLanguageCapabilities,
   sourceLanguageIdForPath,
   sourceLanguageLocationIsWithinRoot,
+  sourceLanguageRelativePathIsSafe,
   sourceLanguageLocations,
   sourceRelativeLanguageLocationPath,
   sourceWorkspaceRootFromPath,
@@ -17,6 +18,18 @@ test("maps only original TypeScript LSP language IDs",()=>{
   assert.equal(sourceLanguageIdForPath("/repo/src/App.jsx"),"javascriptreact");
   assert.equal(sourceLanguageIdForPath("C:\\repo\\src\\App.mjs"),"javascript");
   assert.equal(sourceLanguageIdForPath("/repo/src/style.css"),null);
+});
+
+test("grant-relative language paths accept normal names and reject unsafe traversal",()=>{
+  for(const path of ["src/App.tsx","src/index.ts","src/file0.ts",
+    "nested/Folder/NewFile.ts","docs/readme.md"]){
+    assert.equal(sourceLanguageRelativePathIsSafe(path),true,path);
+  }
+  for(const path of ["../outside.ts","/root/secret.ts","src//file.ts",
+    "src\\file.ts","src/file:name.ts","src/file\u0000.ts",
+    "src/./file.ts","src/../file.ts","src/file."]){
+    assert.equal(sourceLanguageRelativePathIsSafe(path),false,path);
+  }
 });
 
 test("capabilities are normalized and unknown location kinds are not exposed",()=>{
