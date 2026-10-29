@@ -593,9 +593,11 @@ function createTrustedWorkspacePreviewHost({
 }
 module.exports={
   MAX_PREVIEW_BYTES,MAX_DIRECTORY_ENTRIES,MAX_SEARCH_DIRECTORIES,
-  MAX_SEARCH_RESULTS,validWorkspaceSearchRequest,validRelativePath,
-  validDirectoryRequest,validTreeFileRequest,
-  isSafePathInput,isPathInside,isPreviewableTextFile,
-  isSameFileIdentity,readOpenedText,
-  isValidPreviewRequest,createTrustedWorkspacePreviewHost,
+  MAX_SEARCH_RESULTS,MAX_LANGUAGE_DIRECTORIES,MAX_LANGUAGE_FILES,
+  MAX_LANGUAGE_SOURCE_BYTES,MAX_LANGUAGE_CACHE_AGE_MS,
+  validWorkspaceSearchRequest,validLanguageCapabilitiesRequest,
+  validLanguageLocationsRequest,validRelativePath,validDirectoryRequest,
+  validTreeFileRequest,isSafePathInput,isPathInside,isPreviewableTextFile,
+  isSameFileIdentity,readOpenedText,isValidPreviewRequest,
+  createTrustedWorkspacePreviewHost,
 };
