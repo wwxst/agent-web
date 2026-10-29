@@ -270,7 +270,7 @@ export function App() {
     if(host!=null)void host.revokeWorkspaceDirectory().catch(()=>{});
   },[]);
   const openWorkspaceAttachment=React.useCallback(async(
-    request:{path:string;line?:number},
+    request:{path:string;line?:number;endLine?:number},
   )=>{
     const host=window.agentWebDesktopHost;
     if(host==null||workspaceOpenInFlightRef.current)return;

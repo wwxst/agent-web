@@ -34,10 +34,13 @@ function isPreviewableTextFile(filename){
 }
 function isValidPreviewRequest(input){
   return input!=null&&typeof input==="object"&&!Array.isArray(input)&&
-    Object.keys(input).every(k=>["path","line"].includes(k))&&
+    Object.keys(input).every(k=>["path","line","endLine"].includes(k))&&
     Object.hasOwn(input,"path")&&isSafePathInput(input.path)&&
     (input.line===undefined||(Number.isSafeInteger(input.line)&&
-      input.line>=1&&input.line<=10000000));
+      input.line>=1&&input.line<=10000000))&&
+    (input.endLine===undefined||(Number.isSafeInteger(input.endLine)&&
+      input.line!==undefined&&input.endLine>=input.line&&
+      input.endLine<=10000000));
 }
 function createTrustedWorkspacePreviewHost({
   isTrustedRenderer,chooseDirectory,filesystem=fs,
@@ -90,6 +93,7 @@ function createTrustedWorkspacePreviewHost({
     return {
       name:path.basename(real),relativePath:path.relative(root,real),
       text,...(request.line===undefined?{}:{line:request.line}),
+      ...(request.endLine===undefined?{}:{endLine:request.endLine}),
       readOnly:true,
     };
   }

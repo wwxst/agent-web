@@ -248,7 +248,7 @@ const newFile: InlineReviewFile = {
 
 export function makeDemoRow(
   notify: (message: string) => void,
-  onOpenWorkspaceAttachment?: (request:{path:string;line?:number})=>Promise<void>,
+  onOpenWorkspaceAttachment?: (request:{path:string;line?:number;endLine?:number})=>Promise<void>,
 ) {
   const eventBridge=createSourceConversationHostEventBridge();
   // Subscribe to the independent Electron preload when available, or leave
@@ -357,12 +357,20 @@ export function makeDemoRow(
     ...(window.agentWebDesktopHost!=null&&onOpenWorkspaceAttachment!=null?{
       canOpenUserFileAttachment:(_attachment:unknown,target:{kind:string})=>
         target.kind==="workspace",
-      onUserFileAttachmentOpen:async(_attachment:unknown,target:
-        {kind:string;path?:string;line?:number})=>{
-        if(target.kind==="workspace"&&target.path!=null)
-          await onOpenWorkspaceAttachment({
-            path:target.path,...(target.line==null?{}:{line:target.line}),
-          });
+      onUserFileAttachmentOpen:async(
+        _attachment,_target,_item,sourceRoute)=>{
+        // In original hn the click only passes line/column to Qe, whereas
+        // wrapping Et passes endLine to the file context-menu. This
+        // independent read-only preview may use both for a highlighted range.
+        if(sourceRoute.kind!=="workspace")return;
+        await onOpenWorkspaceAttachment({
+          path:sourceRoute.qe.path,
+          ...(sourceRoute.qe.line==null?{}:{line:sourceRoute.qe.line}),
+          ...(sourceRoute.qe.line==null||
+            sourceRoute.contextMenu.endLine==null||
+            sourceRoute.contextMenu.endLine<sourceRoute.qe.line?{}:
+            {endLine:sourceRoute.contextMenu.endLine}),
+        });
       },
     }:{}),
     // Explicit DEMO Wa/Rk adapters: Codex's private unit classifier and persisted

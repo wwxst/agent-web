@@ -27,10 +27,12 @@ test("actual attachment row opens read-only native-host preview, revokes on thre
         return Promise.resolve({selected:true,name:"fixture-workspace"});
       },
       revokeWorkspaceDirectory:async()=>{state.revokeCalls++;return true;},
-      readWorkspaceTextFile:async(request:{path:string;line?:number})=>{
+      readWorkspaceTextFile:async(request:{path:string;line?:number;endLine?:number})=>{
         state.readCalls++;
         return {name:"App.tsx",relativePath:"src/App.tsx",
-          line:request.line,text:"first line\nsecond line",readOnly:true};
+          line:request.line,endLine:request.endLine,
+          text:Array.from({length:32},(_,i)=>`source line ${i+1}`).join("\n"),
+          readOnly:true};
       },
     }});
   });
@@ -50,8 +52,14 @@ test("actual attachment row opens read-only native-host preview, revokes on thre
   const preview=page.getByRole("complementary",{name:"Local file preview"});
   await expect(preview).toBeVisible();
   await expect(preview.getByText("src/App.tsx")).toBeVisible();
-  await expect(preview.locator('[data-workspace-file-text]')).toContainText("second line");
-  await expect(preview).toContainText("Line 14");
+  await expect(preview.locator('[data-workspace-file-text]')).toContainText("source line 28");
+  await expect(preview.locator('[data-workspace-file-selected-range]'))
+    .toContainText("source line 14");
+  await expect(preview.locator('[data-workspace-file-selected-range]'))
+    .toContainText("source line 28");
+  await expect(preview.locator('[data-workspace-file-selected-range]'))
+    .not.toContainText("source line 29");
+  await expect(preview).toContainText("Lines 14-28");
   await expect.poll(async()=>(await inspect()).read).toBe(1);
 
   // Source conversation identity is the authorization lifetime, not the

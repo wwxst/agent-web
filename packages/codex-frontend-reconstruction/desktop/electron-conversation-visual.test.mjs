@@ -1528,6 +1528,8 @@ test("native Electron renders source hn/yn uploaded and workspace attachments wi
       absentGrant:await error({path:path}),
       relative:await error({path:"../escape.ts"}),
       invalidLine:await error({path:path,line:-1}),
+      invalidEndLine:await error({path,line:28,endLine:14}),
+      missingStartLine:await error({path,endLine:28}),
     };
   },resolve(root,"demo","App.tsx"));
   assert.equal(workspaceSecurity.chooser,"function");
@@ -1538,6 +1540,8 @@ test("native Electron renders source hn/yn uploaded and workspace attachments wi
   assert.match(workspaceSecurity.absentGrant,/WORKSPACE_NOT_GRANTED|WORKSPACE_INVALID_FILE_REQUEST/);
   assert.match(workspaceSecurity.relative,/WORKSPACE_INVALID_FILE_REQUEST/);
   assert.match(workspaceSecurity.invalidLine,/WORKSPACE_INVALID_FILE_REQUEST/);
+  assert.match(workspaceSecurity.invalidEndLine,/WORKSPACE_INVALID_FILE_REQUEST/);
+  assert.match(workspaceSecurity.missingStartLine,/WORKSPACE_INVALID_FILE_REQUEST/);
   await page.getByRole("button",{name:"打开演示工具"}).click();
   await page.getByTestId("demo-source-user-file-attachments").click();
   const row=page.locator('[data-demo-turn-id^="user-file-attachments-"]').last();

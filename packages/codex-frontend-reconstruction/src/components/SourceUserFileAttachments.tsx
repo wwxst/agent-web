@@ -10,6 +10,12 @@ import {
   type SourceUserWorkspaceFile,
   type SourceUserFileOpenTarget,
 } from "../conversation/SourceUserFileAttachmentsModel.js";
+import {
+  projectSourceUserFileQeRoute,
+  type SourceUserFileQeContext,
+  type SourceUserFileQeHostClassifiers,
+  type SourceUserFileRoute,
+} from "../conversation/SourceUserFileQeRouteModel.js";
 import "./sourceUserFileAttachments.css";
 
 export interface SourceUserFileAttachmentsProps {
@@ -20,10 +26,14 @@ export interface SourceUserFileAttachmentsProps {
   isUploadedPreviewable?:(filename:string)=>boolean;
   /** The resource kind classifier is host-owned, not inferred from a suffix. */
   isPathPreviewable?:(attachment:SourceUserWorkspaceFile)=>boolean;
+  /** Original Ba provides cwd/hostId and original hn needs host classifiers. */
+  fileOpenContext?:Omit<SourceUserFileQeContext,"featuredViewerEnabled">;
+  fileOpenClassifiers?:SourceUserFileQeHostClassifiers;
   /** Optional host-specific capability filter, e.g. native local files only. */
   canOpenAttachment?:(attachment:SourceUserFileAttachment,target:SourceUserFileOpenTarget)=>boolean;
   /** No callback means a readonly attachment, never a fake file opener. */
-  onOpen?:(attachment:SourceUserFileAttachment,target:SourceUserFileOpenTarget)=>void|Promise<void>;
+  onOpen?:(attachment:SourceUserFileAttachment,target:SourceUserFileOpenTarget,
+    sourceRoute:SourceUserFileRoute)=>void|Promise<void>;
   openDisabledLabel?:string;
 }
 /**
@@ -33,7 +43,8 @@ export interface SourceUserFileAttachmentsProps {
  */
 export function SourceUserFileAttachments({
   attachments,isUploadedFileViewerEnabled=false,isUploadedPreviewable,isPathPreviewable,
-  canOpenAttachment,onOpen,openDisabledLabel="File opening unavailable",
+  canOpenAttachment,fileOpenContext,fileOpenClassifiers,onOpen,
+  openDisabledLabel="File opening unavailable",
 }:SourceUserFileAttachmentsProps){
   if(attachments.length===0)return null;
   const groups=sourceUserFileAttachmentGroups(
@@ -43,6 +54,9 @@ export function SourceUserFileAttachments({
     const uploaded=isSourceUserUploadedFile(attachment);
     const name=sourceUserFileDisplayName(attachment);
     const target=sourceUserFileOpenTarget(attachment);
+    const sourceRoute=projectSourceUserFileQeRoute(attachment,{
+      ...fileOpenContext,featuredViewerEnabled:featured,
+    },fileOpenClassifiers);
     const line=uploaded?null:sourceUserFileLineInfo(attachment);
     // Original hn -> Wmd uses pasted text string, never a thumbnail.
     const pastedTextPreview=uploaded&&attachment.preview!=null;
@@ -57,7 +71,7 @@ export function SourceUserFileAttachments({
         disabled={!canOpen}
         title={!canOpen?openDisabledLabel:name}
         aria-label={line!=null?`${name}, lines ${line}`:name}
-        onClick={()=>{if(canOpen)void onOpen?.(attachment,target);}}>
+        onClick={()=>{if(canOpen)void onOpen?.(attachment,target,sourceRoute);}}>
         <span className="codex-user-file-attachments__icon" aria-hidden="true">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
             strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">

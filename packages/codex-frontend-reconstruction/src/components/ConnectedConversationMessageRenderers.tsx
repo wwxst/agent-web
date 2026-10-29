@@ -7,6 +7,9 @@ import {SourceUserFileAttachments} from "./SourceUserFileAttachments.js";
 import {sourceUserFileAttachmentsFromMessage,
   type SourceUserFileAttachment,type SourceUserFileOpenTarget}
   from "../conversation/SourceUserFileAttachmentsModel.js";
+import type {
+  SourceUserFileQeContext,SourceUserFileQeHostClassifiers,SourceUserFileRoute,
+} from "../conversation/SourceUserFileQeRouteModel.js";
 import { combineSourceActivityTrace } from "../conversation/SourceCombinedActivityTrace.js";
 import { filterSourceLatestActivityUnits } from "../conversation/SourceLatestActivityVisibility.js";
 import type { SourceRepeatedActivityRow } from "../conversation/SourceRepeatedActivityGroups.js";
@@ -204,7 +207,12 @@ export interface ConnectedConversationRendererHost extends ConversationContentAd
   getUserFileAttachments?:(item:ConversationMessageItem)=>readonly SourceUserFileAttachment[]|null|undefined;
   /** Authenticated host supplies actual file open, upload or shared-thread route. */
   onUserFileAttachmentOpen?:(attachment:SourceUserFileAttachment,
-    target:SourceUserFileOpenTarget,item:ConversationMessageItem)=>void|Promise<void>;
+    target:SourceUserFileOpenTarget,item:ConversationMessageItem,
+    sourceRoute:SourceUserFileRoute)=>void|Promise<void>;
+  /** Real source Ba passes cwd/hostId outside individual attachment fields. */
+  getUserFileQeContext?:(item:ConversationMessageItem)=>
+    Omit<SourceUserFileQeContext,"featuredViewerEnabled">|undefined;
+  userFileQeHostClassifiers?:SourceUserFileQeHostClassifiers;
   canOpenUserFileAttachment?:(attachment:SourceUserFileAttachment,
     target:SourceUserFileOpenTarget)=>boolean;
   isUploadedFileViewerEnabled?:boolean;
@@ -364,8 +372,11 @@ export function createConnectedConversationMessageRenderers(host: ConnectedConve
           isUploadedPreviewable={host.isUserFileUploadedPreviewable}
           isPathPreviewable={host.isUserFileAttachmentPreviewable}
           canOpenAttachment={host.canOpenUserFileAttachment}
+          fileOpenContext={host.getUserFileQeContext?.(props.item)}
+          fileOpenClassifiers={host.userFileQeHostClassifiers}
           onOpen={host.onUserFileAttachmentOpen==null?undefined:
-            (attachment,target)=>host.onUserFileAttachmentOpen?.(attachment,target,props.item)}/>
+            (attachment,target,sourceRoute)=>host.onUserFileAttachmentOpen?.(
+              attachment,target,props.item,sourceRoute)}/>
           :null}
         {content.kind === "markdown"
           ? <CodexSourceCollapsibleUserMessage text={content.text}

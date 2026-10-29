@@ -33,6 +33,19 @@ test("native directory grant is per trusted renderer, path canonical and revoked
     name:"entry.ts",relativePath:join("nested","entry.ts"),
     text:"line one\nline two\n",line:2,readOnly:true,
   });
+  assert.deepEqual(await host.readTextFile(senderA,{
+    path:good,line:1,endLine:2,
+  }),{
+    name:"entry.ts",relativePath:join("nested","entry.ts"),
+    text:"line one\nline two\n",line:1,endLine:2,readOnly:true,
+  });
+  await assert.rejects(host.readTextFile(senderA,{
+    path:good,endLine:2,
+  }),/WORKSPACE_INVALID_FILE_REQUEST/);
+  await assert.rejects(host.readTextFile(senderA,{
+    path:good,line:14,endLine:3,
+  }),/WORKSPACE_INVALID_FILE_REQUEST/);
+
   await assert.rejects(host.readTextFile(senderB,request),/WORKSPACE_NOT_GRANTED/);
   await assert.rejects(host.readTextFile(senderA,{path:bad}),/WORKSPACE_OUTSIDE_GRANT/);
   await assert.rejects(host.readTextFile(senderA,{path:oversized}),/WORKSPACE_FILE_TOO_LARGE/);

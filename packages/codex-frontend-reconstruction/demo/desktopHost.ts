@@ -27,8 +27,8 @@ declare global {
        * Path never comes from React; native folder picker owns the grant. */
       selectWorkspaceDirectory():Promise<{selected:boolean;name?:string}>;
       revokeWorkspaceDirectory():Promise<boolean>;
-      readWorkspaceTextFile(request:{path:string;line?:number}):Promise<{
-        name:string;relativePath:string;text:string;line?:number;readOnly:true;
+      readWorkspaceTextFile(request:{path:string;line?:number;endLine?:number}):Promise<{
+        name:string;relativePath:string;text:string;line?:number;endLine?:number;readOnly:true;
       }>;
       /** Real native external HTTPS open. Never grants or settles an Agent request. */
       openExternalUrl(url:string):Promise<boolean>;

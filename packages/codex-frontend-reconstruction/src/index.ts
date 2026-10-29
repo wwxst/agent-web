@@ -190,6 +190,11 @@ export {
   sourceUserFileAttachmentGroups,
   sourceUserFileAttachmentsFromMessage,
 } from "./conversation/SourceUserFileAttachmentsModel.js";
+export {projectSourceUserFileQeRoute} from "./conversation/SourceUserFileQeRouteModel.js";
+export type {
+  SourceUserFileQeHostClassifiers,SourceUserFileQeContext,
+  SourceUserFileQeRequest,SourceUserFileRoute,
+} from "./conversation/SourceUserFileQeRouteModel.js";
 export type {
   SourceUserUploadedFile,
   SourceUserWorkspaceFile,

@@ -34,3 +34,9 @@
   font-size:12px;line-height:18px;tab-size:2;
 }
 .demo-workspace-preview__text:focus-visible{outline:2px solid var(--demo-focus,#7979cf);outline-offset:-2px}
+
+/* Independent bounded preview, source line/endLine selection emphasis. */
+.demo-workspace-preview__selection{
+  background:rgba(100,111,205,.16);
+  box-shadow:inset 3px 0 0 rgba(100,111,205,.58);
+}

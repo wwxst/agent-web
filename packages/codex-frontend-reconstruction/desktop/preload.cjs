@@ -149,15 +149,19 @@ contextBridge.exposeInMainWorld("agentWebDesktopHost",Object.freeze({
   revokeWorkspaceDirectory:()=>ipcRenderer.invoke(REVOKE_WORKSPACE_CHANNEL),
   readWorkspaceTextFile(request){
     if(request==null||typeof request!=="object"||Array.isArray(request)||
-       Object.keys(request).some(k=>!["path","line"].includes(k))||
+       Object.keys(request).some(k=>!["path","line","endLine"].includes(k))||
        typeof request.path!=="string"||request.path.length<1||
        request.path.length>4096||/[\u0000-\u001f\u007f]/u.test(request.path)||
        (request.line!==undefined&&(!Number.isSafeInteger(request.line)||
-         request.line<1||request.line>10000000)))
+         request.line<1||request.line>10000000))||
+       (request.endLine!==undefined&&(!Number.isSafeInteger(request.endLine)||
+         request.line===undefined||request.endLine<request.line||
+         request.endLine>10000000)))
       return Promise.reject(new TypeError("WORKSPACE_INVALID_FILE_REQUEST"));
     return ipcRenderer.invoke(READ_WORKSPACE_TEXT_CHANNEL,{
       path:request.path,
       ...(request.line===undefined?{}:{line:request.line}),
+      ...(request.endLine===undefined?{}:{endLine:request.endLine}),
     });
   },
   getComposerDrafts:()=>ipcRenderer.invoke(READ_DRAFTS_CHANNEL),
