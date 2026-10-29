@@ -302,8 +302,14 @@ export function WorkspaceReadOnlyCodeMirror({
           },
           contextmenu:(event,view)=>{
             if(!activeRef.current)return false;
-            // Ctrl/Cmd-click is a navigation gesture, not a second context menu.
-            if(event.metaKey||event.ctrlKey){event.preventDefault();return true;}
+            // Ctrl/Cmd-click is a navigation gesture only when definition
+            // navigation is supported; otherwise retain the native context menu.
+            if(event.metaKey||event.ctrlKey){
+              if(capabilitiesRef.current?.locationKinds.includes("definition")){
+                event.preventDefault();return true;
+              }
+              return false;
+            }
             const available=capabilitiesRef.current;
             if(available==null||available.locationKinds.length===0)return false;
             const position=sourceLanguagePositionAt(view,event);
