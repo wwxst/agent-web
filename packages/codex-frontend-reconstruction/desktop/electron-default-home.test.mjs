@@ -45,6 +45,24 @@ test("normal packaged Electron launch opens the empty Codex home, never a synthe
       animations:"disabled",fullPage:false,
     });
 
+    // Verify the original plus-button context entry in the actual Windows
+    // renderer, not a screenshot-only component or a fake upload dialog.
+    const addContext=page.getByRole("button",{name:"添加文件"});
+    await addContext.waitFor({state:"visible"});
+    await addContext.click();
+    const actions=page.getByRole("menu",{name:"添加附件"});
+    assert.equal(await actions.count(),1);
+    assert.equal(await actions.getByRole("menuitem",{name:"Add photos"}).count(),1);
+    assert.equal(await actions.getByRole("menuitem",{name:"Add files"}).count(),1);
+    assert.equal(await actions.getByRole("menuitem",{name:"Add folder"}).count(),1);
+    await page.screenshot({
+      path:resolve(root,"desktop/test-results/electron-home-attachment-actions.png"),
+      animations:"disabled",fullPage:false,
+    });
+    await page.keyboard.press("Escape");
+    assert.equal(await actions.count(),0);
+    assert.equal(await addContext.getAttribute("aria-expanded"),"false");
+
     // A normal Home action must not expose fixtures either.
     await page.getByRole("button",{name:"Home"}).click();
     assert.equal(await page.locator(".demo-header-location strong").textContent(),"New chat");

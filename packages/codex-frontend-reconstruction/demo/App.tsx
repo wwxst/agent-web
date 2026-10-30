@@ -254,6 +254,33 @@ export function App() {
     new Map<DemoConversationId,readonly ComposerDraftAttachment[]>(),
   );
   const composerFileInputRef=React.useRef<HTMLInputElement|null>(null);
+  const composerPhotoInputRef=React.useRef<HTMLInputElement|null>(null);
+  const composerFolderInputRef=React.useRef<HTMLInputElement|null>(null);
+  const composerAttachmentTriggerRef=React.useRef<HTMLButtonElement|null>(null);
+  const composerAttachmentMenuRef=React.useRef<HTMLDivElement|null>(null);
+  const [composerAttachmentMenuOpen,setComposerAttachmentMenuOpen]=React.useState(false);
+  React.useEffect(()=>setComposerAttachmentMenuOpen(false),[active]);
+  React.useEffect(()=>{
+    if(!composerAttachmentMenuOpen)return;
+    const onOutside=(event:PointerEvent)=>{
+      const node=event.target as Node|null;
+      if(node!=null&&!composerAttachmentMenuRef.current?.contains(node)&&
+        !composerAttachmentTriggerRef.current?.contains(node))
+        setComposerAttachmentMenuOpen(false);
+    };
+    const onEscape=(event:KeyboardEvent)=>{
+      if(event.key!=="Escape")return;
+      event.preventDefault();
+      setComposerAttachmentMenuOpen(false);
+      composerAttachmentTriggerRef.current?.focus();
+    };
+    document.addEventListener("pointerdown",onOutside);
+    document.addEventListener("keydown",onEscape);
+    return ()=>{
+      document.removeEventListener("pointerdown",onOutside);
+      document.removeEventListener("keydown",onEscape);
+    };
+  },[composerAttachmentMenuOpen]);
   const [draftHydrated,setDraftHydrated]=React.useState(()=>
     typeof window==="undefined" || window.agentWebDesktopHost==null);
   const activeConversationRef=React.useRef(active);
@@ -1692,12 +1719,53 @@ export function App() {
               <input ref={composerFileInputRef} type="file" multiple
                 className="demo-composer-file-input" data-testid="composer-file-input"
                 aria-label="选择要添加的文件" onChange={handleComposerFileInputChange}/>
-              <button type="button" className="demo-composer-plus"
-                title="添加文件（本地预览，尚未上传）" aria-label="添加文件"
-                disabled={!draftHydrated}
-                onClick={()=>composerFileInputRef.current?.click()}>
-                <Icon name="plus" size={20}/>
-              </button>
+              <input ref={composerPhotoInputRef} type="file" multiple accept="image/*"
+                className="demo-composer-file-input" data-testid="composer-photo-input"
+                aria-label="选择要添加的照片" onChange={handleComposerFileInputChange}/>
+              <input ref={node=>{
+                  composerFolderInputRef.current=node;
+                  if(node!=null)node.setAttribute("webkitdirectory","");
+                }} type="file" multiple
+                className="demo-composer-file-input" data-testid="composer-folder-input"
+                aria-label="选择要添加的文件夹" onChange={handleComposerFileInputChange}/>
+              <div className="demo-composer-attachment-picker" data-composer-attachment-picker="">
+                <button ref={composerAttachmentTriggerRef} type="button" className="demo-composer-plus"
+                  title="添加附件（本地暂存，尚未上传）" aria-label="添加文件"
+                  aria-haspopup="menu" aria-expanded={composerAttachmentMenuOpen}
+                  disabled={!draftHydrated}
+                  onClick={()=>setComposerAttachmentMenuOpen(open=>!open)}>
+                  <Icon name="plus" size={20}/>
+                </button>
+                {composerAttachmentMenuOpen&&<div ref={composerAttachmentMenuRef}
+                  className="demo-composer-attachment-menu" role="menu" aria-label="添加附件"
+                  data-composer-attachment-menu="">
+                  <button type="button" role="menuitem"
+                    onClick={()=>{
+                      setComposerAttachmentMenuOpen(false);
+                      composerPhotoInputRef.current?.click();
+                    }}>
+                    <Icon name="file" size={16}/><span>Add photos</span>
+                  </button>
+                  <div className="demo-composer-attachment-menu__heading">Files and folders</div>
+                  <button type="button" role="menuitem"
+                    onClick={()=>{
+                      setComposerAttachmentMenuOpen(false);
+                      composerFileInputRef.current?.click();
+                    }}>
+                    <Icon name="file" size={16}/><span>Add files</span>
+                  </button>
+                  <button type="button" role="menuitem"
+                    onClick={()=>{
+                      setComposerAttachmentMenuOpen(false);
+                      composerFolderInputRef.current?.click();
+                    }}>
+                    <Icon name="folder" size={16}/><span>Add folder</span>
+                  </button>
+                  <p className="demo-composer-attachment-menu__note">
+                    Local preview only. Files are not uploaded to an Agent.
+                  </p>
+                </div>}
+              </div>
               <CodexComposerPermissionModeControl key={active} controls={composerControls}/>
             </div>}
             trailingControls={<div className="demo-composer-right">

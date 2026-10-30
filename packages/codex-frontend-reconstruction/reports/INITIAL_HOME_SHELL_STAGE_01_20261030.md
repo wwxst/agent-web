@@ -49,3 +49,26 @@ This stage is only the initial new-chat shell/home Composer. It does not claim c
 - The original `?visualScenario=shell-empty` remains available for strict
   saved-pin-isolated screenshot baselines and takes precedence over any
   fixture flag. No agent-cil changes were made.
+
+
+## Composer attachment context entry (2026-10-30)
+
+The source `app-primary-fe8a450b3b04.js` composer context acquisition
+uses the `composer.addPhotos` and `composer.contextAction.filesAndFolders`
+labels and routes its picker actions to the host. The independent frontend
+previously opened a file input immediately when clicking `+`, so no context
+actions were visible.
+
+The existing `+` button now opens an accessible menu exposing source-aligned
+**Add photos**, **Add files**, and **Add folder** actions. Separate native
+file/photo/directory inputs are used because this standalone host has no
+combined picker IPC. File and folder selections feed the already-existing
+local attachment staging and removal tray; no fabricated upload ids, Agent
+actions, or backend modifications are involved. Directory selections stage
+the selected files only: project context and folder hierarchy persistence
+are NOT claimed. Disabled Agent send remains fail-closed on the new home.
+
+The menu handles Escape, outside pointer dismissal, focus restoration and
+conversation switches. Browser E2E verifies menu semantics, file/photo
+staging and lack of submission. Native Windows Electron smoke captures
+`electron-home-attachment-actions.png` and exercises menu dismissal.

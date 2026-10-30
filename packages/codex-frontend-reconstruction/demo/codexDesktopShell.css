@@ -959,3 +959,36 @@ button:focus-visible, textarea:focus-visible { outline: 2px solid #578cda; outli
     padding-block-end: calc(var(--spacing, 4px) * 8);
   }
 }
+
+
+/* Composer context entry: original Rdt/pZ menu in
+ * app-primary-fe8a450b3b04.js. The independent host uses separate native
+ * file inputs for photos/files/folders; this does not simulate an upload. */
+.demo-composer-attachment-picker{position:relative;display:flex;align-items:center;}
+.demo-composer-plus[aria-expanded="true"]{background:#ededed;}
+.demo-composer-attachment-menu{
+  position:absolute;bottom:calc(100% + 12px);left:-8px;z-index:95;
+  display:flex;flex-direction:column;gap:1px;width:238px;
+  max-width:min(320px,calc(100vw - 30px));padding:7px;
+  background:var(--color-surface-elevated-secondary,#fff);color:#303030;
+  border:1px solid #e7e7e7;border-radius:12px;
+  box-shadow:0 12px 32px #00000024;
+}
+.demo-composer-attachment-menu > button[role="menuitem"]{
+  display:flex;align-items:center;gap:11px;min-height:35px;
+  padding:8px 10px;border:0;border-radius:7px;
+  background:transparent;color:inherit;text-align:left;font-size:12px;
+  cursor:pointer;
+}
+.demo-composer-attachment-menu > button[role="menuitem"]:hover,
+.demo-composer-attachment-menu > button[role="menuitem"]:focus-visible{
+  background:#f2f2f2;outline:none;
+}
+.demo-composer-attachment-menu__heading{
+  margin:4px 5px 2px;padding-top:7px;border-top:1px solid #ededed;
+  color:#808080;font-size:10.5px;
+}
+.demo-composer-attachment-menu__note{
+  margin:5px 5px 1px;padding-top:8px;
+  border-top:1px solid #ededed;color:#888;font-size:10px;line-height:1.45;
+}
