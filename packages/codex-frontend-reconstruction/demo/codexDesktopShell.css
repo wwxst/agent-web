@@ -867,7 +867,7 @@ button:focus-visible, textarea:focus-visible { outline: 2px solid #578cda; outli
  */
 .demo-main[data-codex-home="true"] {
   --home-composer-inline-inset: calc(var(--spacing, 4px) * 3.25);
-  --home-composer-top: max(0px, calc(42svh - var(--height-toolbar, 46px)));
+  --home-composer-top: max(0px, calc(42svh / var(--codex-window-zoom, 1) - var(--app-shell-main-content-top-offset, var(--height-toolbar, 46px))));
 }
 .demo-nav-action.is-active {
   background: #e7e7e7;
@@ -885,7 +885,7 @@ button:focus-visible, textarea:focus-visible { outline: 2px solid #578cda; outli
   display: none;
 }
 .demo-main[data-codex-home="true"] .demo-composer-zone {
-  top: calc(var(--home-composer-top) + var(--height-toolbar, 46px));
+  top: calc(var(--home-composer-top) + var(--app-shell-main-content-top-offset, var(--height-toolbar, 46px)));
   bottom: auto;
   padding: 0 var(--home-composer-inline-inset);
   background: transparent;
