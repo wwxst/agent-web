@@ -67,7 +67,7 @@ import {
   demoActivityEntry, demoItem, demoMessageEntry, makeLongHistory,
   demoStreamingCodeEntry, updateDemoStreamingCodeEntry,
   demoAutomaticReviewEntry, updateDemoAutomaticReviewEntry,
-  demoMcpApprovalEntry, demoComputerUseApprovalEntry, demoBrowserWebsiteApprovalEntry, demoUrlActionEntry, demoToolSuggestionEntry, demoUserVerificationEntry, demoUnsupportedOpenAIFormEntry, demoTextFormElicitationEntry, demoMixedFormElicitationEntry,
+  demoMcpApprovalEntry, demoComputerUseApprovalEntry, demoBrowserWebsiteApprovalEntry, demoUrlActionEntry, demoToolSuggestionEntry, demoUserVerificationEntry, demoUnsupportedOpenAIFormEntry, demoTextFormElicitationEntry, demoMixedFormElicitationEntry, demoChoiceFormElicitationEntry,
   type DemoConversationId,
 } from "./mockConversation.js";
 
@@ -1136,6 +1136,14 @@ export function App() {
     ]);
   }
 
+  function playChoiceFormFixture() {
+    if(playing)return;
+    markFollow();
+    appendDemoEntries(source,[
+      demoChoiceFormElicitationEntry(nextId("choice-form-elicitation")),
+    ]);
+  }
+
   function playMixedFormFixture() {
     if(playing)return;
     markFollow();
@@ -1456,6 +1464,10 @@ export function App() {
           <button type="button" onClick={playBrowserWebsiteApprovalFixture}
             data-testid="demo-browser-website-approval-request">
             <Icon name="panel" size={15}/> 演示 Browser 网站授权请求（模拟）
+          </button>
+          <button type="button" onClick={playChoiceFormFixture}
+            data-testid="demo-choice-form-elicitation-request">
+            <Icon name="panel" size={15}/> 演示 MCP 单选与多选表单（模拟）
           </button>
           <button type="button" onClick={playMixedFormFixture}
             data-testid="demo-mixed-form-elicitation-request">

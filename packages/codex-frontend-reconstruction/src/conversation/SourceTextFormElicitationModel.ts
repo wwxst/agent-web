@@ -1,18 +1,21 @@
 /**
  * Recovered from original Windows request-panel-26c348285c1a.js:
- * ei -> Wr -> ur switch(string|boolean|integer|number).
+ * ei -> Wr -> ur: native scalar, oneOf radio and array multi-choice Hn.
  *
  * The original boolean is a checkbox (l === true, onChange to !current).
  * integer/number use a native number input, step 1/any, and integer minimum
  * is rounded upward. Submitted values must be JSON booleans/numbers, never
  * the textual raw state from the native input.
  *
- * This conservative formElicitation subset intentionally excludes choices,
- * format variants, arrays, files, custom OpenAI extensions and confirmations.
+ * OneOf choices project only strict source const/title/description options.
+ * Files, custom answers, formats and private OpenAI extensions stay excluded.
  */
-export type SourceFormScalarType="string"|"boolean"|"integer"|"number";
-export type SourceFormDraftValue=string|boolean;
-export type SourceFormAnswerValue=string|boolean|number;
+export type SourceFormScalarType="string"|"boolean"|"integer"|"number"|"array";
+export type SourceFormDraftValue=string|boolean|string[];
+export type SourceFormAnswerValue=string|boolean|number|string[];
+export interface SourceFormOption{
+ value:string;title:string;description:string;
+}
 export type SourceFormDraftValues=Readonly<Record<string,SourceFormDraftValue>>;
 export type SourceFormAnswerContent=Record<string,SourceFormAnswerValue>;
 
@@ -21,6 +24,8 @@ export interface SourceTextFormField {
  type:SourceFormScalarType;
  minLength?:number;maxLength?:number;
  minimum?:number;maximum?:number;
+ choices?:readonly SourceFormOption[];
+ minItems?:number;maxItems?:number;
 }
 export interface SourceTextFormRequest {
  hostId:string;conversationId:string;requestId:string;
@@ -46,6 +51,28 @@ const lengthBound=(v:unknown)=>v===undefined||
 const numericBound=(v:unknown)=>v===undefined||
  typeof v==="number"&&Number.isFinite(v)&&Math.abs(v)<=1e12;
 const ALLOWED_TEXT=new Set(["type","title","description","minLength","maxLength"]);
+const ALLOWED_SINGLE_CHOICE=new Set(["type","title","description","oneOf"]);
+const ALLOWED_MULTI_CHOICE=new Set([
+ "type","title","description","items","minItems","maxItems","uniqueItems",
+]);
+const ALLOWED_OPTION=new Set(["const","title","description"]);
+const ALLOWED_CHOICE_ITEMS=new Set(["type","oneOf"]);
+function projectChoices(value:unknown):SourceFormOption[]|null{
+ if(!Array.isArray(value)||value.length<2||value.length>12)return null;
+ const used=new Set<string>(),result:SourceFormOption[]=[];
+ for(const raw of value){
+   const opt=object(raw);
+   if(!opt||Object.keys(opt).some(k=>!ALLOWED_OPTION.has(k))||
+      !string(opt.const,256)||!opt.const.trim()||
+      !string(opt.title,256)||!opt.title.trim()||
+      opt.description!==undefined&&!string(opt.description,4096)||
+      used.has(opt.const))return null;
+   used.add(opt.const);
+   result.push({value:opt.const,title:opt.title,
+     description:typeof opt.description==="string"?opt.description:""});
+ }
+ return result;
+}
 const ALLOWED_BOOLEAN=new Set(["type","title","description"]);
 const ALLOWED_NUMBER=new Set(["type","title","description","minimum","maximum"]);
 const ALLOWED_SCHEMA_KEYS=new Set([
@@ -86,11 +113,13 @@ export function projectSourceTextFormElicitation(
    if(!id(name)||["__proto__","constructor","prototype"].includes(name))return null;
    const f=object(value);
    const type=f?.type;
-   if(f==null||!["string","boolean","integer","number"].includes(String(type))||
+   if(f==null||!["string","boolean","integer","number","array"].includes(String(type))||
      f.title!==undefined&&!string(f.title,256)||
      f.description!==undefined&&!string(f.description,4096))return null;
-   const allowed=type==="string"?ALLOWED_TEXT:
-     type==="boolean"?ALLOWED_BOOLEAN:ALLOWED_NUMBER;
+   const allowed=type==="string"
+     ?Object.hasOwn(f,"oneOf")?ALLOWED_SINGLE_CHOICE:ALLOWED_TEXT
+     :type==="array"?ALLOWED_MULTI_CHOICE
+     :type==="boolean"?ALLOWED_BOOLEAN:ALLOWED_NUMBER;
    if(Object.keys(f).some(k=>!allowed.has(k)))return null;
    const field:SourceTextFormField={
      name,type:type as SourceFormScalarType,
@@ -98,7 +127,28 @@ export function projectSourceTextFormElicitation(
      description:typeof f.description==="string"?f.description:"",
      required:required.has(name),
    };
-   if(type==="string"){
+   if(type==="string"&&Object.hasOwn(f,"oneOf")){
+     const choices=projectChoices(f.oneOf);
+     if(choices==null)return null;
+     field.choices=choices;
+   }
+   if(type==="array"){
+     const items=object(f.items);
+     if(!items||items.type!=="string"||
+       Object.keys(items).some(k=>!ALLOWED_CHOICE_ITEMS.has(k))||
+       f.uniqueItems!==undefined&&f.uniqueItems!==true||
+       !lengthBound(f.minItems)||!lengthBound(f.maxItems))return null;
+     const choices=projectChoices(items.oneOf);
+     if(choices==null)return null;
+     const min=f.minItems as number|undefined,max=f.maxItems as number|undefined;
+     if(min!==undefined&&min>choices.length||
+       max!==undefined&&(max<1||max>choices.length)||
+       min!==undefined&&max!==undefined&&min>max)return null;
+     field.choices=choices;
+     if(min!==undefined)field.minItems=min;
+     if(max!==undefined)field.maxItems=max;
+   }
+   if(type==="string"&&!Object.hasOwn(f,"oneOf")){
      if(!lengthBound(f.minLength)||!lengthBound(f.maxLength)||
        f.minLength!==undefined&&f.maxLength!==undefined&&
        (f.minLength as number)>(f.maxLength as number))return null;
@@ -138,6 +188,18 @@ export function sourceFormNumber(raw:string):number|null{
 export function sourceFormFieldAnswer(
  field:SourceTextFormField,value:SourceFormDraftValue|undefined,
 ):{valid:boolean;answered:boolean;value?:SourceFormAnswerValue}{
+ if(field.type==="array"){
+   if(value===undefined)return {valid:!field.required,answered:false};
+   if(!Array.isArray(value))return {valid:false,answered:true};
+   const allowed=new Set(field.choices?.map(c=>c.value)??[]);
+   if(value.length>12||value.some(item=>typeof item!=="string"||!allowed.has(item))||
+      new Set(value).size!==value.length||
+      field.minItems!==undefined&&value.length<field.minItems||
+      field.maxItems!==undefined&&value.length>field.maxItems||
+      field.required&&value.length===0)return {valid:false,answered:true};
+   return value.length>0?{valid:true,answered:true,value:[...value]}:
+     {valid:true,answered:false};
+ }
  if(value===undefined||value===""){
    return {valid:!field.required,answered:false};
  }
@@ -146,6 +208,11 @@ export function sourceFormFieldAnswer(
      ?{valid:true,answered:true,value}:{valid:false,answered:true};
  }
  if(typeof value!=="string")return {valid:false,answered:true};
+ if(field.choices!=null){
+   const option=field.choices.find(o=>o.value===value);
+   return option!=null?{valid:true,answered:true,value}:
+     {valid:false,answered:true};
+ }
  if(field.type==="string"){
    if(!string(value,16384)||
      field.minLength!==undefined&&value.length<field.minLength||

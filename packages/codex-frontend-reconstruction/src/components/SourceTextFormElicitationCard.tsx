@@ -137,7 +137,41 @@ export function SourceTextFormElicitationCard({
        {active.description?<div className="codex-source-text-form__description">
          {active.description}
        </div>:null}
-       {active.type==="boolean"
+       {active.choices!=null
+         ?<fieldset className="codex-source-text-form__choices"
+           aria-label={active.title} data-mcp-form-choices="true"
+           aria-invalid={hasError}>
+           {active.choices.map(choice=>{
+             const multiple=active.type==="array";
+             const selected=multiple
+               ?Array.isArray(currentValue)&&currentValue.includes(choice.value)
+               :currentValue===choice.value;
+             const chosen=Array.isArray(currentValue)?currentValue:[];
+             return <label key={choice.value}
+               className="codex-source-text-form__choice">
+               <input type={multiple?"checkbox":"radio"}
+                 name={active.name} value={choice.value}
+                 aria-label={choice.title}
+                 checked={selected} disabled={disabled||
+                   multiple&&!selected&&active.maxItems!==undefined&&
+                   chosen.length>=active.maxItems}
+                 onChange={()=>{
+                   if(multiple){
+                     setCurrent(selected?chosen.filter(x=>x!==choice.value)
+                       :[...chosen,choice.value]);
+                   }else setCurrent(choice.value);
+                 }}/>
+               <span className="codex-source-text-form__choice-content">
+                 <span className="codex-source-text-form__choice-title">
+                   {choice.title}</span>
+                 {choice.description?<span
+                   className="codex-source-text-form__choice-description">
+                   {choice.description}</span>:null}
+               </span>
+             </label>;
+           })}
+         </fieldset>
+         :active.type==="boolean"
          ?<label className="codex-source-text-form__checkbox-row">
            <input type="checkbox" id={"source-form-field-"+key}
              name={active.name} aria-label={active.title}
@@ -164,7 +198,8 @@ export function SourceTextFormElicitationCard({
              disabled={disabled} rows={3}
              onChange={e=>setCurrent(e.currentTarget.value)}/>}
        {hasError?<p role="alert" className="codex-source-text-form__error">
-         {active.required&&(currentValue===undefined||currentValue==="")
+         {active.required&&(currentValue===undefined||currentValue===""||
+             Array.isArray(currentValue)&&currentValue.length===0)
            ?"This question is required.":
           active.type==="string"&&typeof currentValue==="string"&&
             active.minLength!==undefined&&currentValue.length<active.minLength
@@ -172,6 +207,8 @@ export function SourceTextFormElicitationCard({
           active.type==="string"&&typeof currentValue==="string"&&
             active.maxLength!==undefined&&currentValue.length>active.maxLength
             ?"Use at most "+active.maxLength+" characters.":
+          active.type==="array"?"Choose the required number of options.":
+          active.choices!=null?"Choose a valid option.":
           active.type==="integer"?"Enter a whole number within the allowed range.":
           active.type==="number"?"Enter a number within the allowed range.":
           "Invalid response."}

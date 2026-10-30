@@ -128,5 +128,52 @@ test("native source formElicitation fields, q2t reject, host update and real set
   assert.equal(await mixed.getByRole("checkbox",{name:"Allow processing"}).isChecked(),false);
   await send({type:"elicitation-settled",query:mixedScope});
   await mixed.waitFor({state:"detached",timeout:10000});
+
+  const choiceScope={...scope,requestId:"host-choice-form-1"};
+  const options=[
+   {const:"plan",title:"Planning",description:"Outline the steps"},
+   {const:"code",title:"Coding",description:"Implement components"},
+   {const:"review",title:"Review",description:"Inspect results"},
+  ];
+  await send({type:"pending-elicitation",request:{...choiceScope,
+   elicitation:{kind:"formElicitation",serverName:"Project Choices",
+    message:"Select required options",schema:{type:"object",properties:{
+     mode:{type:"string",title:"Primary mode",oneOf:options},
+     tasks:{type:"array",title:"Selected tasks",
+      items:{type:"string",oneOf:options},minItems:1,maxItems:2,
+      uniqueItems:true},
+    },required:["mode","tasks"]}},
+  }});
+  const choices=page.locator("[data-source-text-form-request-id]");
+  await choices.waitFor({timeout:14000});
+  const mode=choices.getByRole("radio",{name:"Coding"});
+  await mode.check();
+  await choices.getByRole("button",{name:"Next",exact:true}).last().click();
+  await choices.getByRole("checkbox",{name:"Planning"}).check();
+  await choices.getByRole("checkbox",{name:"Review"}).check();
+  assert.equal(await choices.getByRole("checkbox",{name:"Coding"}).isEnabled(),false);
+  await mkdir(resolve(root,"desktop/test-results"),{recursive:true});
+  await page.screenshot({path:resolve(root,"desktop/test-results/host-choice-form.png"),
+   fullPage:false});
+  await choices.getByRole("button",{name:"Continue"}).click();
+  await choices.getByRole("alert").filter({hasText:"backend unavailable"})
+   .waitFor({timeout:12000});
+  assert.equal(await choices.count(),1,"no Agent means no fake submit/settlement");
+  const validations=await page.evaluate(async()=>{
+   const host=window.agentWebDesktopHost;
+   const ids={hostId:"demo-host",conversationId:"frontend",requestId:"host-choice-form-1"};
+   return {
+    invalid:await host.replyToTextForm({...ids,action:"accept",
+      content:{tasks:["plan","plan"]}}).then(()=>false,e=>String(e)),
+    valid:await host.replyToTextForm({...ids,action:"accept",
+      content:{mode:"code",tasks:["plan","review"]}}).then(()=>false,e=>String(e)),
+   };
+  });
+  assert.match(validations.invalid,/TEXT_FORM_INVALID_REPLY/);
+  assert.match(validations.valid,/TEXT_FORM_BACKEND_UNAVAILABLE/);
+  await send({type:"elicitation-settled",query:{...choiceScope,requestId:"unrelated"}});
+  assert.equal(await choices.count(),1);
+  await send({type:"elicitation-settled",query:choiceScope});
+  await choices.waitFor({state:"detached",timeout:10000});
  }finally{await app.close();await rm(profile,{recursive:true,force:true});}
 });

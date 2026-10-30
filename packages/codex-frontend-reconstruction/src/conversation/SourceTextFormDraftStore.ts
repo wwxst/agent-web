@@ -44,15 +44,23 @@ export function createSourceTextFormDraftStore():SourceTextFormDraftStore {
   for(const [name,value] of Object.entries(draft.values)){
    const field=allowed.get(name);
    if(field==null)throw new TypeError("unknown form draft field");
-   const valid=field.type==="boolean"
+   const valid=field.type==="array"
+     ?Array.isArray(value)&&value.length<=12&&
+       new Set(value).size===value.length&&
+       value.every(item=>typeof item==="string"&&
+         field.choices?.some(c=>c.value===item))
+     :field.type==="boolean"
      ?typeof value==="boolean"
      :typeof value==="string"&&
        value.length<=(field.type==="string"?16384:128)&&
        !/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/u.test(value);
    if(!valid)throw new TypeError("invalid form draft field");
-   total+=typeof value==="string"?value.length:1;
+   total+=Array.isArray(value)?value.reduce((n,item)=>n+item.length,0)
+     :typeof value==="string"?value.length:1;
    if(total>32768)throw new TypeError("text form draft too large");
-   Object.defineProperty(values,name,{value,enumerable:true});
+   Object.defineProperty(values,name,{
+     value:Array.isArray(value)?Object.freeze([...value]):value,enumerable:true,
+   });
   }
   const key=sourceTextFormKey(request);
   drafts.delete(key);

@@ -83,7 +83,9 @@ button:focus-visible, textarea:focus-visible { outline: 2px solid #578cda; outli
 .demo-header-actions{gap:10px;color:#939393;}
 .demo-header-static{display:flex;align-items:center;color:#8b8b8b;}
 .demo-tools-popover {
-  position:absolute; top:55px; right:22px; z-index:8; width:min(390px,calc(100vw - 40px));
+  position:absolute; top:55px; bottom:120px; right:22px; z-index:8;
+  width:min(390px,calc(100vw - 40px));
+  max-height:calc(100% - 175px); overflow-y:auto; overscroll-behavior:contain;
   border:1px solid #dddddd; border-radius:12px; box-shadow:0 12px 35px #0002;
   padding:11px;background:#fff;
 }
