@@ -120,6 +120,14 @@ export function demoMcpApprovalEntry(turnId:string,disabled=false):ConversationR
 /** Original ur boolean/number/integer, synthetic visual fixture only. */
 /** Original Hn oneOf radio/array checkbox; synthetic visual fixture. */
 /** Original or + Hn custom suggestion, synthetic visual fixture only. */
+/** Source ur/or array custom suggestions, synthetic demonstration only. */
+export function demoMultiCustomSuggestionFormEntry(turnId:string):ConversationRenderEntry{
+ return demoActivityEntry(turnId,[
+   demoItem(turnId+"-request","demo-multi-custom-suggestion-form",undefined,{
+     heading:"MCP 多选自定义答案（模拟）",state:"Needs input",
+   }),
+ ]);
+}
 export function demoCustomSuggestionFormEntry(turnId:string):ConversationRenderEntry{
  return demoActivityEntry(turnId,[
    demoItem(turnId+"-request","demo-custom-suggestion-form",undefined,{

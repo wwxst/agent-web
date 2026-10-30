@@ -8,7 +8,8 @@
  * and thread-clear, and never sent to Agent except on user submit.
  */
 import {
- sourceTextFormKey,type SourceTextFormRequest,type SourceFormDraftValue,
+ sourceTextFormKey,sourceFormCustomValueIsValid,
+ type SourceTextFormRequest,type SourceFormDraftValue,
 } from "./SourceTextFormElicitationModel.js";
 export interface SourceFormCustomDraft{
  text:string;
@@ -53,7 +54,8 @@ export function createSourceTextFormDraftStore():SourceTextFormDraftStore {
      ?Array.isArray(value)&&value.length<=12&&
        new Set(value).size===value.length&&
        value.every(item=>typeof item==="string"&&
-         field.choices?.some(c=>c.value===item))
+         (field.choices?.some(c=>c.value===item)||
+           sourceFormCustomValueIsValid(field,item)))
      :field.type==="boolean"
      ?typeof value==="boolean"
      :typeof value==="string"&&
@@ -74,7 +76,7 @@ export function createSourceTextFormDraftStore():SourceTextFormDraftStore {
       custom==null||typeof custom!=="object"||
       Object.keys(custom).length!==2||
       typeof custom.text!=="string"||
-      custom.text.length>Math.min(16384,field.maxLength??16384)||
+      custom.text.length>(field.type==="array"?(field.itemMaxLength??256):Math.min(16384,field.maxLength??16384))||
       /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/u.test(custom.text)||
       typeof custom.selected!=="boolean")
       throw new TypeError("invalid custom form draft");

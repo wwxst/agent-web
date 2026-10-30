@@ -634,6 +634,21 @@ export function makeDemoRow(
       if(live!=null)return projectSourceTextFormElicitation(live.elicitation,{
         hostId:live.hostId,conversationId:live.threadId,requestId:live.requestId,
       });
+      if(item.type==="demo-multi-custom-suggestion-form"&&typeof item.id==="string")
+        return projectSourceTextFormElicitation({
+          kind:"formElicitation",serverName:"Sample Multi Tasks MCP (synthetic)",
+          message:"Select and add tasks (synthetic)",
+          schema:{type:"object",properties:{
+            tasks:{type:"array",title:"Tasks",
+              items:{type:"string",minLength:3,maxLength:48,
+                "x-openai-suggestions":[
+                  {const:"build",title:"Build",description:"Compile application"},
+                  {const:"test",title:"Test",description:"Run regression"},
+                ]},
+              minItems:1,maxItems:3,uniqueItems:true},
+            notes:{type:"string",title:"Notes"},
+          },required:["tasks"]},
+        },{hostId:"demo-host",conversationId:"frontend",requestId:item.id});
       if(item.type==="demo-custom-suggestion-form"&&typeof item.id==="string")
         return projectSourceTextFormElicitation({
           kind:"formElicitation",serverName:"Sample Request MCP (synthetic)",
