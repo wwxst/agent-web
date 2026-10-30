@@ -17,12 +17,12 @@ The supplied Windows build resources for Codex 26.1013.40934 were inspected dire
 - The left **Home** rail keeps its existing host/demo destination; it is deliberately not conflated with New chat.
 - The blank home does not display the synthetic `agent web` project, demo recent threads, project-folder breadcrumb, demo-tools button, or synthetic subagent action. It now retains the source sidebar sections with the correct empty states, **No projects** and **No chats**.
 - The home Composer has an explicit `data-composer-placement="home"`, source-derived 42svh positioning, source-derived inline inset, and the source home placeholder/accessibility label.
-- Existing conversation threads retain their thread placement and `Work with Codex` placeholder.
+- Existing conversation threads retain their thread placement and `Work with Codex` placeholder. The home send action now fails closed without an Agent host: typed drafts remain editable, and Enter/send cannot append a fake user or Agent response.
 - The original no-project hero heading and source-shaped Codex icon now render in the actual empty home; ordinary demo threads do not render this hero.
 
 ## Verification
 
-- Playwright visual-shell test checks the home placement, geometry at 1352×760, source-backed hero and heading/Composer gap, empty transcript, source-backed sidebar empty states, and the home/new-chat navigation path.
+- Playwright visual-shell test checks the home placement, geometry at 1352×760, source-backed hero and heading/Composer gap, empty transcript, source-backed sidebar empty states, and the home/new-chat navigation path. A focused regression asserts that the unconnected home preserves typed drafts instead of sending simulated responses.
 - Navigation-rail regression checks that the existing Home destination remains unchanged while New chat opens the blank home.
 - The real Electron smoke now captures `electron-home-new-chat.png` after navigating the actual file renderer to the empty-home scenario. It checks the same placement, geometry and sidebar empty states in a native BrowserWindow.
 - CI results are tracked by PR #86. Visual acceptance still requires comparing the new Electron screenshot with the matching original Codex screenshot at the same window size, theme, DPI and crop.

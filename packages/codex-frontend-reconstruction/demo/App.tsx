@@ -1028,11 +1028,17 @@ export function App() {
     hasUploadPolicy: false,
     hasText: draft.trim().length > 0,
     hasAttachments: composerAttachments.length>0,
-    hostSendDisabled: draft.trim().length === 0&&composerAttachments.length===0,
+    // The blank home has no Agent send host. Do not route it into the
+    // synthetic demo responder or claim a submission succeeded.
+    hostSendDisabled: isNewChat || (draft.trim().length === 0&&composerAttachments.length===0),
     submitLoading: false,
   });
 
   function sendMessage() {
+    // The empty Codex home is a visual/interaction shell, not a fake Agent.
+    // Once the native host exposes real thread creation, route that action
+    // here; until then preserve its draft and refuse synthetic submission.
+    if (isNewChat) return;
     const message = draft.trim();
     const stagedAttachments=composerAttachmentsRef.current;
     if (!message&&stagedAttachments.length===0) return;
@@ -1682,7 +1688,7 @@ export function App() {
             </div>}
             trailingControls={<div className="demo-composer-right">
               <CodexComposerModelReasoningControl key={active} controls={composerControls}/>
-              <button type={composerAction.type} data-testid="send-button" data-composer-action={composerAction.kind} aria-busy={composerAction.loading} aria-label={composerAction.kind === "stop" ? "停止模拟" : "发送模拟消息"} title={composerAction.kind === "stop" ? "停止模拟" : "发送模拟消息"} className="demo-send-button" disabled={composerAction.disabled} onClick={composerAction.kind === "stop" ? stopSample : undefined}><Icon name={composerAction.kind === "stop" ? "stop" : "up"} size={16}/></button>
+              <button type={composerAction.type} data-testid="send-button" data-composer-action={composerAction.kind} aria-busy={composerAction.loading} aria-label={isNewChat ? "发送消息（Agent 未连接）" : composerAction.kind === "stop" ? "停止模拟" : "发送模拟消息"} title={isNewChat ? "Agent 未连接，暂不可发送" : composerAction.kind === "stop" ? "停止模拟" : "发送模拟消息"} className="demo-send-button" disabled={composerAction.disabled} onClick={composerAction.kind === "stop" ? stopSample : undefined}><Icon name={composerAction.kind === "stop" ? "stop" : "up"} size={16}/></button>
             </div>}
           />
         </CodexSourceComposerHostForm>

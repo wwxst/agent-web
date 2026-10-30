@@ -81,3 +81,17 @@ test("New chat opens the empty Codex home while the Home rail retains its existi
   await expect(page.locator(".demo-row").first()).toBeVisible();
   await expect(page.locator(".demo-composer")).toHaveAttribute("data-composer-placement","thread");
 });
+
+
+test("empty Codex home preserves drafts and never silently sends to the demo responder",async({page})=>{
+  await page.goto("/?visualScenario=shell-empty");
+  const editor=page.getByRole("textbox",{name:"Do anything"});
+  await editor.fill("实际任务不能变成模拟回复");
+  await expect(page.getByTestId("send-button")).toBeDisabled();
+  await expect(page.getByTestId("send-button")).toHaveAttribute("title","Agent 未连接，暂不可发送");
+  await editor.press("Enter");
+  await expect(editor).toContainText("实际任务不能变成模拟回复");
+  await expect(page.locator(".demo-row")).toHaveCount(0);
+  await expect(page.getByText("已收到你的消息",{exact:false})).toHaveCount(0);
+  await expect(page.getByRole("heading",{name:"What should we build?"})).toBeVisible();
+});
