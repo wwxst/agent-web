@@ -72,3 +72,31 @@ The menu handles Escape, outside pointer dismissal, focus restoration and
 conversation switches. Browser E2E verifies menu semantics, file/photo
 staging and lack of submission. Native Windows Electron smoke captures
 `electron-home-attachment-actions.png` and exercises menu dismissal.
+
+
+## Source-home local directory selection (2026-10-30)
+
+Source `DBt` from `app-primary-fe8a450b3b04.js` supplies distinct hero text
+for projectless and project-selected home states. The independent Electron host
+already exposes the *real* `selectWorkspaceDirectory` IPC with basename-only
+result, a trusted-renderer check, read-only file APIs and explicit revocation.
+
+The home **Projects** heading now offers a native `Open local folder` control.
+Only a successful trusted native picker result displays the selected basename
+and changes the hero to the source non-git-context wording
+`What should we work on in <name>?` with an interactive project selector.
+The folder is labeled **Read-only**, rather than misleading users that it is
+a writable Codex/Agent project. Clear selection revokes the existing native
+directory grant. New chat/thread switching revokes the old grant as before.
+Late picker completions cannot resurrect a revoked workspace, and selecting
+a new root invalidates in-flight file-preview reads and old tabs.
+
+Browser regression tests verify grant, hero, no fabricated messages and
+revocation. Windows Electron normal-launch smoke exercises a real main-process
+IPC grant with a deterministic OS dialog response and captures
+`electron-home-readonly-workspace.png`. The normal projectless screenshot
+remains unchanged apart from the Projects affordance.
+
+**Limit:** this is not an agent-cil workspace binding or durable Agent project.
+The granted folder is available only for existing read-only preview/search IPC;
+the send action remains unavailable without an Agent host.

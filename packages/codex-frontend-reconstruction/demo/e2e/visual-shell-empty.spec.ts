@@ -95,3 +95,40 @@ test("empty Codex home preserves drafts and never silently sends to the demo res
   await expect(page.getByText("已收到你的消息",{exact:false})).toHaveCount(0);
   await expect(page.getByRole("heading",{name:"What should we build?"})).toBeVisible();
 });
+
+
+test("real read-only workspace grant updates original home project Hero without inventing an Agent thread",async({page})=>{
+  await page.addInitScript(()=>{
+    const state={selects:0,revokes:0,delayed:false,resolve:null as null|((v:{selected:boolean;name?:string})=>void)};
+    Object.defineProperty(window,"__homeWorkspaceTest",{configurable:true,value:state});
+    Object.defineProperty(window,"agentWebDesktopHost",{configurable:true,value:{
+      getHostInfo:async()=>({windowType:"electron",platform:"test",theme:"light",backendConnected:false}),
+      getComposerDrafts:async()=>({}),setComposerDraft:async()=>true,
+      subscribeHostEvents:()=>()=>{},subscribeUiCommands:()=>()=>{},
+      selectWorkspaceDirectory:()=>{
+        state.selects++;
+        if(state.delayed)return new Promise(resolve=>{state.resolve=resolve;});
+        return Promise.resolve({selected:true,name:"codex-frontend-reconstruction"});
+      },
+      revokeWorkspaceDirectory:async()=>{state.revokes++;return true;},
+    }});
+  });
+  await page.goto("/?visualScenario=shell-empty");
+  const choose=page.getByRole("button",{name:"Open local folder"});
+  await expect(choose).toBeEnabled();
+  await expect(page.getByText("No projects",{exact:true})).toBeVisible();
+  await choose.click();
+  await expect(page.getByRole("heading",{name:/What should we work on in codex-frontend-reconstruction/}))
+    .toBeVisible();
+  await expect(page.locator("[data-local-workspace-project]")).toContainText("Read-only");
+  await expect(page.getByText("No projects",{exact:true})).toHaveCount(0);
+  await expect(page.locator(".demo-row")).toHaveCount(0);
+  await expect(page.getByTestId("send-button")).toBeDisabled();
+  await page.getByRole("button",{name:"Clear local folder"}).click();
+  await expect(page.getByRole("heading",{name:"What should we build?"})).toBeVisible();
+  await expect(page.getByText("No projects",{exact:true})).toBeVisible();
+  const result=await page.evaluate(()=>
+    (window as Window&{__homeWorkspaceTest?:{selects:number;revokes:number}}).__homeWorkspaceTest);
+  expect(result?.selects).toBe(1);
+  expect(result?.revokes).toBeGreaterThanOrEqual(1);
+});

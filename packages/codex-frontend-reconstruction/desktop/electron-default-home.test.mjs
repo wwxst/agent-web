@@ -63,6 +63,26 @@ test("normal packaged Electron launch opens the empty Codex home, never a synthe
     assert.equal(await actions.count(),0);
     assert.equal(await addContext.getAttribute("aria-expanded"),"false");
 
+    // The native permission dialog returns only a directory basename to the
+    // renderer; it does not provide a path or create an Agent project.
+    await app.evaluate(({dialog})=>{
+      dialog.showOpenDialog=async()=>({canceled:false,filePaths:[process.cwd()]});
+    });
+    await page.getByRole("button",{name:"Open local folder"}).click();
+    await page.getByRole("heading",{name:/What should we work on in/})
+      .waitFor({state:"visible",timeout:15000});
+    assert.equal(await page.locator("[data-local-workspace-project]").count(),1);
+    assert.equal(await page.getByText("No projects",{exact:true}).count(),0);
+    assert.equal(await page.getByTestId("send-button").isDisabled(),true);
+    await page.screenshot({
+      path:resolve(root,"desktop/test-results/electron-home-readonly-workspace.png"),
+      animations:"disabled",fullPage:false,
+    });
+    await page.getByRole("button",{name:"Clear local folder"}).click();
+    await page.getByRole("heading",{name:"What should we build?"})
+      .waitFor({state:"visible",timeout:10000});
+    assert.equal(await page.getByText("No projects",{exact:true}).count(),1);
+
     // A normal Home action must not expose fixtures either.
     await page.getByRole("button",{name:"Home"}).click();
     assert.equal(await page.locator(".demo-header-location strong").textContent(),"New chat");

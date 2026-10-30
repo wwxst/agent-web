@@ -126,6 +126,11 @@ function ConversationSidebar(props: {
   onToggle: () => void;
   onSelect: (id: DemoConversationId) => void;
   onNewChat: () => void;
+  workspaceProjectName:string|null;
+  workspaceProjectBusy:boolean;
+  workspaceProjectAvailable:boolean;
+  onOpenWorkspaceProject:()=>void;
+  onClearWorkspaceProject:()=>void;
   navigationRailEnabled: boolean;
   pinnedItems:readonly PinnedSidebarItem[];
   onSelectPinned:(pinId:string)=>void;
@@ -134,6 +139,8 @@ function ConversationSidebar(props: {
 }) {
   const {
     active,collapsed,onToggle,onSelect,onNewChat,navigationRailEnabled,
+    workspaceProjectName,workspaceProjectBusy,workspaceProjectAvailable,
+    onOpenWorkspaceProject,onClearWorkspaceProject,
     pinnedItems,onSelectPinned,onUnpinPinned,resizeHandle,
   } = props;
   return <aside className={`demo-sidebar ${collapsed ? "demo-sidebar--collapsed" : ""}`} aria-label="演示会话导航">
@@ -177,8 +184,31 @@ function ConversationSidebar(props: {
         </nav>
       </section>:null}
       {active === "visual-empty" ? <>
-      <div className="demo-section-heading">Projects</div>
-      <div className="demo-sidebar-empty">No projects</div>
+      <div className="demo-sidebar-projects-header">
+        <div className="demo-section-heading">Projects</div>
+        <button type="button" className="demo-sidebar-project-add"
+          aria-label="Open local folder" title={workspaceProjectAvailable
+            ? "Choose a local folder (read-only preview)"
+            : "Local folder selection requires the Electron desktop host"}
+          disabled={!workspaceProjectAvailable||workspaceProjectBusy}
+          onClick={onOpenWorkspaceProject}>
+          <Icon name="plus" size={15}/>
+        </button>
+      </div>
+      {workspaceProjectName==null
+        ?<div className="demo-sidebar-empty">No projects</div>
+        :<div className="demo-sidebar-local-project" data-local-workspace-project="">
+          <button type="button" className="demo-sidebar-local-project__name"
+            aria-label="Change local folder" title="Change read-only local folder"
+            onClick={onOpenWorkspaceProject} disabled={workspaceProjectBusy}>
+            <Icon name="folder" size={15}/>
+            <span>{workspaceProjectName}</span>
+            <small>Read-only</small>
+          </button>
+          <button type="button" className="demo-sidebar-local-project__clear"
+            aria-label="Clear local folder" title="Revoke folder access"
+            onClick={onClearWorkspaceProject} disabled={workspaceProjectBusy}>×</button>
+        </div>}
       <div className="demo-section-heading demo-recent-heading">Recents</div>
       <div className="demo-sidebar-empty">No chats</div>
       </> : <>
@@ -364,6 +394,10 @@ export function App() {
   });
   const pinnedOwnerTokensRef=React.useRef(new Map<string,string>());
   const workspaceGrantRef=React.useRef(false);
+  // This is a read-only grant display, not a persistent Agent project or a
+  // claim that the selected folder is bound to an execution backend.
+  const [workspaceProjectName,setWorkspaceProjectName]=React.useState<string|null>(null);
+  const [workspaceProjectBusy,setWorkspaceProjectBusy]=React.useState(false);
   // A file read/dialog is bound to the visible thread lifetime; an old
   // request cannot install a preview after switching/resetting conversations.
   const workspaceRequestEpochRef=React.useRef(0);
@@ -499,12 +533,46 @@ export function App() {
     workspacePendingPreviewTabIdsRef.current.clear();
     workspaceLatestReadByTabRef.current.clear();
     workspaceGrantRef.current=false;
+    setWorkspaceProjectName(null);
+    setWorkspaceProjectBusy(false);
     setWorkspaceTabs(sourceEmptyLocalReadOnlyTabState());
     // An outstanding native folder picker may resolve after this revoke;
     // its call-site checks the epoch again and revokes that late grant.
     const host=window.agentWebDesktopHost;
     if(host!=null)void host.revokeWorkspaceDirectory().catch(()=>{});
   },[]);
+  const openWorkspaceProject=React.useCallback(async()=>{
+    const host=window.agentWebDesktopHost;
+    if(host?.selectWorkspaceDirectory==null||workspacePickerInFlightRef.current)return;
+    const epoch=workspaceRequestEpochRef.current;
+    workspacePickerInFlightRef.current=true;
+    setWorkspaceProjectBusy(true);
+    try{
+      const grant=await host.selectWorkspaceDirectory();
+      if(epoch!==workspaceRequestEpochRef.current){
+        // Revocation/route change while the OS picker is open wins.
+        if(grant.selected)await host.revokeWorkspaceDirectory().catch(()=>{});
+        return;
+      }
+      if(!grant.selected)return;
+      // This grant replaces the previous workspace, so invalidate every
+      // outstanding relative file read before showing the new folder.
+      workspaceRequestEpochRef.current++;
+      workspaceSelectionIntentRef.current++;
+      workspaceLatestPreviewIntentRef.current++;
+      workspaceLatestReadByTabRef.current.clear();
+      workspacePendingPreviewTabIdsRef.current.clear();
+      setWorkspaceTabs(sourceEmptyLocalReadOnlyTabState());
+      workspaceGrantRef.current=true;
+      setWorkspaceProjectName(grant.name);
+    }catch{
+      notify("无法打开本地文件夹，请检查文件系统权限。");
+    }finally{
+      workspacePickerInFlightRef.current=false;
+      setWorkspaceProjectBusy(false);
+    }
+  },[notify]);
+
   const openWorkspaceAttachment=React.useCallback(async(
     request:{path:string;line?:number;endLine?:number;column?:number;resetTabState?:boolean},
     mode:"preview"|"copy"="preview",
@@ -530,6 +598,7 @@ export function App() {
         }
         if(!grant.selected)return;
         workspaceGrantRef.current=true;
+        setWorkspaceProjectName(grant.name);
       }
       // A click dropped while the exclusive native directory chooser is
       // running must not invalidate its first request's result.
@@ -1478,6 +1547,10 @@ export function App() {
       </>}
     />}
     <ConversationSidebar active={active} collapsed={collapsed} navigationRailEnabled={navigationRailEnabled} onToggle={() => setCollapsed((v) => !v)} onSelect={switchConversation} onNewChat={startNewChat}
+      workspaceProjectName={workspaceProjectName} workspaceProjectBusy={workspaceProjectBusy}
+      workspaceProjectAvailable={window.agentWebDesktopHost?.selectWorkspaceDirectory!=null}
+      onOpenWorkspaceProject={()=>void openWorkspaceProject()}
+      onClearWorkspaceProject={revokeWorkspacePreview}
       pinnedItems={pinnedSidebarItems}
       onSelectPinned={selectPinnedContentTab}
       onUnpinPinned={unpinPinnedContentTab}
@@ -1513,7 +1586,14 @@ export function App() {
             <path d="M276.533 309.154L303.468 357.831C304.433 359.575 304.412 361.698 303.414 363.423L276.533 409.854"
               stroke="currentColor" strokeWidth="24" strokeLinecap="round"/>
           </svg>
-          <h1 className="demo-home-hero__heading">What should we build?</h1>
+          <h1 className="demo-home-hero__heading">
+            {workspaceProjectName==null?"What should we build?":<>
+              What should we work on in{" "}
+              <button type="button" className="demo-home-hero__project-select"
+                onClick={()=>void openWorkspaceProject()} disabled={workspaceProjectBusy}
+                title="Change read-only local folder">{workspaceProjectName}</button>?
+            </>}
+          </h1>
         </div>
       </section>}
       {findOpen && createPortal(<div className="demo-thread-find-portal" data-source-thread-find-portal="true">

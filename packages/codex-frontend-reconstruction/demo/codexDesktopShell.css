@@ -992,3 +992,46 @@ button:focus-visible, textarea:focus-visible { outline: 2px solid #578cda; outli
   margin:5px 5px 1px;padding-top:8px;
   border-top:1px solid #ededed;color:#888;font-size:10px;line-height:1.45;
 }
+
+
+/* Source DBt home Hero has a project selector; the independent host only
+ * grants an ephemeral read-only local directory (not an Agent project). */
+.demo-sidebar-projects-header{
+  display:flex;align-items:center;justify-content:space-between;
+  margin:29px 8px 9px;min-height:19px;
+}
+.demo-sidebar-projects-header > .demo-section-heading {margin:0;}
+.demo-sidebar-project-add{
+  display:grid;place-items:center;width:24px;height:24px;
+  border:0;border-radius:6px;background:transparent;color:#777;cursor:pointer;
+}
+.demo-sidebar-project-add:hover:not(:disabled){background:#e8e8e8;color:#333;}
+.demo-sidebar-project-add:disabled{opacity:.45;cursor:not-allowed;}
+.demo-sidebar-local-project{display:flex;align-items:center;gap:4px;margin:0 7px 9px;}
+.demo-sidebar-local-project__name{
+  display:flex;align-items:center;gap:9px;min-width:0;flex:1;
+  padding:7px 5px;border:0;border-radius:7px;
+  background:transparent;color:#424242;text-align:left;cursor:pointer;
+  font-size:12.5px;
+}
+.demo-sidebar-local-project__name:hover:not(:disabled){background:#e8e8e8;}
+.demo-sidebar-local-project__name > span{
+  flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.demo-sidebar-local-project__name > small{color:#929292;font-size:10px;}
+.demo-sidebar-local-project__clear{
+  flex:none;width:23px;height:23px;border:0;border-radius:6px;
+  background:transparent;color:#888;cursor:pointer;
+}
+.demo-sidebar-local-project__clear:hover:not(:disabled){background:#e8e8e8;color:#333;}
+.demo-home-hero__project-select{
+  display:inline;color:inherit;cursor:pointer;vertical-align:baseline;
+  border:0;padding:0;background:transparent;font:inherit;
+  text-decoration:underline dotted;text-decoration-color:#999;
+  text-underline-offset:4px;overflow-wrap:anywhere;
+  pointer-events:auto;
+}
+.demo-home-hero__project-select:hover:not(:disabled){color:#666;}
+.demo-main[data-codex-home="true"] .demo-home-hero:has(.demo-home-hero__project-select){
+  pointer-events:auto;
+}
