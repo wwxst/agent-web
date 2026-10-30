@@ -1,6 +1,10 @@
 import * as React from "react";
 import { createPortal } from "react-dom";
 import { CodexComposerLayout } from "../src/components/CodexComposerLayout.js";
+import {
+  CodexComposerModelReasoningControl,CodexComposerPermissionModeControl,
+  useCodexComposerControls,
+} from "../src/components/CodexComposerHostControls.js";
 import {CodexComposerDraftAttachmentTray} from "../src/components/CodexComposerDraftAttachmentTray.js";
 import {
   appendComposerDraftAttachments,removeComposerDraftAttachment,
@@ -193,6 +197,9 @@ export function App() {
   const isVisualShellScenario=visualScenario==="shell-empty";
   const [active, setActive] = React.useState<DemoConversationId>(()=>
     isVisualShellScenario?"visual-empty":"frontend");
+  const composerControlsHost=typeof window==="undefined"
+    ?undefined:window.agentWebDesktopHost;
+  const composerControls=useCodexComposerControls(composerControlsHost,active);
   const [generation, setGeneration] = React.useState(0);
   // The host owns this feature flag. The preview chooses rail-enabled mode
   // to exercise the independently reconstructed original navigation layout.
@@ -1587,10 +1594,10 @@ export function App() {
                 onClick={()=>composerFileInputRef.current?.click()}>
                 <Icon name="plus" size={20}/>
               </button>
-              <span className="demo-composer-permission" title="演示模式，无真实权限授予">♧ Full access <span>· mock</span></span>
+              <CodexComposerPermissionModeControl key={active} controls={composerControls}/>
             </div>}
             trailingControls={<div className="demo-composer-right">
-              <span className="demo-composer-model">Demo Agent <span>Medium</span> <Icon name="chevron" size={12}/></span>
+              <CodexComposerModelReasoningControl key={active} controls={composerControls}/>
               <button type={composerAction.type} data-testid="send-button" data-composer-action={composerAction.kind} aria-busy={composerAction.loading} aria-label={composerAction.kind === "stop" ? "停止模拟" : "发送模拟消息"} title={composerAction.kind === "stop" ? "停止模拟" : "发送模拟消息"} className="demo-send-button" disabled={composerAction.disabled} onClick={composerAction.kind === "stop" ? stopSample : undefined}><Icon name={composerAction.kind === "stop" ? "stop" : "up"} size={16}/></button>
             </div>}
           />
