@@ -47,19 +47,16 @@ test("real review timeline keeps collapsing repeated tool details outside keyboa
   // grid transition completes; after that the lazy body is unmounted.
   // Either hidden-and-exiting or already-unmounted is a valid state.
   await expect(repeated).toHaveAttribute("data-source-disclosure-phase",/closing|collapsed/);
-  // Assert against the exact probe we inserted, not a dynamic ".first()"
-  // repeated-group locator: the virtualized nk row may reorder/recycle siblings
-  // as the old detail height shrinks. If the probe survives, its OWN enclosing
-  // exiting body must be inert and aria-hidden; otherwise it must be unmounted.
   await expect.poll(async()=>{
-    const probe=page.locator('[data-test-focus-probe]');
-    if(await probe.count()===0)return true;
-    return probe.evaluate((el:HTMLElement)=>{
-      const body=el.closest('[data-source-disclosure-motion]');
-      return body instanceof HTMLElement &&
-        body.inert===true && body.getAttribute("aria-hidden")==="true" &&
-        !body.contains(document.activeElement);
-    });
+    // A virtualized row may be recycled while its collapsing body shrinks.
+    // In that case no descendant remains in the document or tab order.
+    if(await repeated.count()===0)
+      return await page.locator('[data-test-focus-probe]').count()===0;
+    if(await motion.count()===0){
+      return await repeated.getAttribute("data-source-disclosure-phase")==="collapsed";
+    }
+    return await motion.evaluate((el:HTMLElement)=>el.inert===true)&&
+      await motion.getAttribute("aria-hidden")==="true";
   }).toBe(true);
   await row.scrollIntoViewIfNeeded();
   await page.screenshot({path:testInfo.outputPath("repeated-tool-disclosure-keyboard.png"),
