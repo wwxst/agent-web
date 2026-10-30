@@ -371,3 +371,23 @@ Follow `reports/NEXT_BATCH.md`: add the typed controller paste-event contract an
 - Next Composer owner slice is the original `i9e` / `f9e` model+reasoning controls and `fG` permission-mode selector. Choices must come from host state; no static mock model inventory or fake permission mutation.
 
 - CI completed green on code head `0ec1b00942c7ddd04e8abeed46c5dace30b72468`: Actions push run 40994743866 and PR run 40994749349 passed. Core 547/547; demo models 5/5; comparator 1/1; browser 81/81 (including 3 attachment scenarios); Linux Electron 82/82; Windows Electron 81 passed / 1 skipped / 0 failed; React/Vite and Electron renderer builds passed. CI uploaded updated Linux Electron and browser preview screenshots. The follow-up commit records this evidence only.
+
+
+## 2026-10-30 — PR consolidation on main
+
+The earlier draft/stacked status notes above are historical. The current state supersedes them:
+
+- PR #80 merged source read-only file Find into `main` (merge commit `5bbf14aef3e8264afcd857209d69c9baa31eb681`).
+- PR #81 merged source-pinned content tabs into `main` (merge commit `ad64372125e4b0f969d556e9f163009579f83c82`).
+- PR #82 merged the screenshot comparison workflow, deterministic Electron empty-shell scenario and Composer attachment intake into `main` (merge commit `518020894efb446aefdaea377d8f7df3d6c1de7d`).
+- The main push workflow run `40997373538` initially hit one browser activity-collapse assertion; the failed job was rerun and completed green. Final rerun totals: core 547/547, demo models 5/5, comparator 1/1, Chromium 81/81, Linux Electron 82/82, Windows Electron 82/82. No code change was needed for the transient failure.
+- PR #83 was a temporary main-based replacement created while resolving the stacked PR ancestry. The original PR #81 was auto-updated/merged first; PR #83's resulting tree was already present and it added no additional feature delta.
+
+## 2026-10-30 — Composer model/reasoning and permission controls stage 01
+
+- Source audit uses Codex 26.1013.40934 `app-primary` Composer footer/model picker and `permissions-mode-dropdown` compiled assets. Original model catalog, reasoning options and permission policy are host/configuration-owned.
+- Added `SourceComposerControlsModel.ts` to validate thread-scoped host snapshots, host-only model/reasoning requests, permission confirmation plans and mutation acknowledgements.
+- Added `CodexComposerHostControls.tsx` with model/reasoning and permission-mode controls, host-provided menus, risk confirmation and stale-response fencing on conversation changes.
+- Replaced the previous `Demo Agent / Medium` and `Full access · mock` labels. The current Electron preload still has no model/policy endpoints and reports `backendConnected:false`; the controls correctly remain disabled as `模型未连接` / `权限未连接` instead of inventing selectable defaults.
+- Added core parser/policy tests and browser tests for host-driven selection, reasoning changes, confirmation-gated Full Access, rejected mutations, unavailable-host placeholders and stale cross-thread responses.
+- CI is pending on the new Composer controls branch. No Agent CIL or Electron main-process permission mutation was added.
