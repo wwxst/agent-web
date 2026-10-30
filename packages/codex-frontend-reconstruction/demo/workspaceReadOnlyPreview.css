@@ -257,3 +257,54 @@
 .demo-source-language__location-items>button.demo-source-language__load-more{
   justify-content:center;color:var(--demo-muted,#777);font-size:11px;
 }
+
+/* Original text-file-editor-search-panel: top-right overlay, with only the
+ * read-only Find controls exposed in this local preview. */
+.demo-workspace-preview .cm-panels.cm-panels-top:has(.cm-text-file-search-panel){
+  position:absolute;inset:0 0 auto;z-index:10;box-sizing:border-box;
+  display:flex;justify-content:flex-end;padding:12px;
+  pointer-events:none;background:transparent;border:0;
+}
+.demo-workspace-preview .cm-text-file-search-panel{
+  max-width:100%;pointer-events:auto;background:transparent;
+}
+.demo-workspace-preview .cm-searchMatch{
+  background-color:var(--color-background-info-soft,rgba(91,145,220,.28));
+}
+.demo-workspace-preview .cm-searchMatch.cm-searchMatch-selected{
+  background-color:var(--color-background-info-surface,rgba(91,145,220,.48));
+}
+.demo-workspace-preview__search-controls{
+  display:flex;align-items:center;gap:3px;max-width:100%;
+  padding:5px;border:1px solid var(--demo-border,#dedede);
+  border-radius:8px;background:var(--demo-panel,#fff);
+  color:var(--demo-text,#242424);
+  box-shadow:0 4px 16px rgba(0,0,0,.12);
+}
+.demo-workspace-preview__search-controls input{
+  box-sizing:border-box;width:190px;max-width:min(34vw,190px);
+  min-width:72px;height:28px;padding:4px 8px;
+  border:1px solid var(--demo-border,#dedede);border-radius:5px;
+  outline:none;background:transparent;color:inherit;
+  font:inherit;font-size:12px;
+}
+.demo-workspace-preview__search-controls input:focus{
+  border-color:var(--demo-focus,#7373d8);
+  box-shadow:0 0 0 1px var(--demo-focus,#7373d8);
+}
+.demo-workspace-preview__search-controls button{
+  flex:none;width:26px;height:26px;padding:0;border:0;border-radius:5px;
+  background:transparent;color:inherit;font:inherit;font-size:15px;
+  line-height:26px;cursor:pointer;
+}
+.demo-workspace-preview__search-controls button:hover:not(:disabled),
+.demo-workspace-preview__search-controls button:focus-visible{
+  outline:none;background:var(--demo-raised,#f3f3f3);
+}
+.demo-workspace-preview__search-controls button:disabled{
+  opacity:.38;cursor:default;
+}
+.demo-workspace-preview__search-results{
+  min-width:66px;padding:0 3px;text-align:center;
+  color:var(--demo-muted,#777);font-size:10px;white-space:nowrap;
+}
