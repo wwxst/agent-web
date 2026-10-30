@@ -51,8 +51,9 @@ test("read-only local CodeMirror restores the original file Find panel and navig
 
   await input.press("Enter");
   await expect(searchPanel.getByRole("status")).toHaveText("2 / 11 results");
-  await expect(editor.locator(".cm-searchMatch-selected"))
-    .toHaveText("source line 20");
+  await expect.poll(async()=>editor.locator(".cm-searchMatch-selected")
+    .evaluate(element=>element.closest(".cm-line")?.textContent?.trim()??null))
+    .toBe("source line 20");
 
   await content.press("Shift+F3");
   await expect(searchPanel.getByRole("status")).toHaveText("1 / 11 results");
@@ -61,8 +62,9 @@ test("read-only local CodeMirror restores the original file Find panel and navig
 
   await searchPanel.getByRole("button",{name:"Previous match"}).click();
   await expect(searchPanel.getByRole("status")).toHaveText("1 / 11 results");
-  await expect(editor.locator(".cm-searchMatch-selected"))
-    .toHaveText("source line 2");
+  await expect.poll(async()=>editor.locator(".cm-searchMatch-selected")
+    .evaluate(element=>element.closest(".cm-line")?.textContent?.trim()??null))
+    .toBe("source line 2");
 
   await input.focus();
   await input.press("Escape");
