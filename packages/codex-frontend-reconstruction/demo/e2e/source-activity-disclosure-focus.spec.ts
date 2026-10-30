@@ -27,6 +27,9 @@ test("real review timeline keeps collapsing repeated tool details outside keyboa
   const toggle=repeated.locator('[data-codex-source-repeated-toggle]');
   await toggle.click();
   await expect(toggle).toHaveAttribute("aria-expanded","true");
+  // Opening the repeated group changes its measured height. Keep the same
+  // virtualized turn mounted before testing focus transfer on close.
+  await row.scrollIntoViewIfNeeded();
   const motion=repeated.locator('[data-source-disclosure-motion]');
   await expect(motion).not.toHaveAttribute("inert","");
   // Add only a keyboard-focus probe to the *real* expanded content container;
