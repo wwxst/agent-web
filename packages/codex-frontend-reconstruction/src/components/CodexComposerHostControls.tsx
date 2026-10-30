@@ -13,7 +13,8 @@ import {
 export interface CodexComposerControlsController {
   readonly status:"loading"|"ready"|"unavailable"|"error";
   readonly snapshot:SourceComposerControlsSnapshot|null;
-  readonly errorMessage:string|null;
+  readonly modelErrorMessage:string|null;
+  readonly permissionErrorMessage:string|null;
   readonly pending:boolean;
   readonly canChangeModel:boolean;
   readonly canChangePermission:boolean;
@@ -35,7 +36,8 @@ export function useCodexComposerControls(
 ):CodexComposerControlsController{
   const [status,setStatus]=React.useState<CodexComposerControlsController["status"]>("loading");
   const [snapshot,setSnapshot]=React.useState<SourceComposerControlsSnapshot|null>(null);
-  const [errorMessage,setErrorMessage]=React.useState<string|null>(null);
+  const [modelErrorMessage,setModelErrorMessage]=React.useState<string|null>(null);
+  const [permissionErrorMessage,setPermissionErrorMessage]=React.useState<string|null>(null);
   const [pending,setPending]=React.useState(false);
   const [pendingPermissionConfirmation,setPendingPermissionConfirmation]=
     React.useState<SourceComposerPermissionOption|null>(null);
@@ -46,24 +48,27 @@ export function useCodexComposerControls(
     setPending(false);
     setPendingPermissionConfirmation(null);
     setSnapshot(null);
+    setModelErrorMessage(null);setPermissionErrorMessage(null);
     if(typeof host?.getComposerControls!=="function"){
-      setStatus("unavailable");setErrorMessage(null);return;
+      setStatus("unavailable");return;
     }
-    setStatus("loading");setErrorMessage(null);
+    setStatus("loading");
     try{
       const raw=await host.getComposerControls({conversationId});
       if(epoch!==requestEpoch.current)return;
       const next=parseSourceComposerControlsSnapshot(raw,conversationId);
       if(next==null){
         setSnapshot(null);setStatus("unavailable");
-        setErrorMessage("The host did not provide a valid Composer controls snapshot.");
+        const message="The host did not provide a valid Composer controls snapshot.";
+        setModelErrorMessage(message);setPermissionErrorMessage(message);
         return;
       }
       setSnapshot(next);setStatus("ready");
     }catch{
       if(epoch!==requestEpoch.current)return;
       setSnapshot(null);setStatus("error");
-      setErrorMessage("Could not read model and permission settings from the host.");
+      const message="Could not read model and permission settings from the host.";
+      setModelErrorMessage(message);setPermissionErrorMessage(message);
     }
   },[host,conversationId]);
 
@@ -73,17 +78,22 @@ export function useCodexComposerControls(
   },[refresh]);
 
   const applyMutation=React.useCallback(async<T,>(
+    scope:"model"|"permission",
     operation:(request:T)=>Promise<unknown>,
     request:T,
   ):Promise<boolean>=>{
     const epoch=requestEpoch.current;
-    setPending(true);setErrorMessage(null);
+    const setScopedError=(message:string|null)=>{
+      if(scope==="model")setModelErrorMessage(message);
+      else setPermissionErrorMessage(message);
+    };
+    setPending(true);setScopedError(null);
     try{
       const raw=await operation(request);
       if(epoch!==requestEpoch.current)return false;
       const result=parseSourceComposerControlsMutationResult(raw,conversationId);
       if(result==null||!result.ok){
-        setErrorMessage(result?.errorMessage??"The host rejected this Composer setting.");
+        setScopedError(result?.errorMessage??"The host rejected this Composer setting.");
         return false;
       }
       if(result.snapshot!=null){
@@ -95,7 +105,7 @@ export function useCodexComposerControls(
       return true;
     }catch{
       if(epoch===requestEpoch.current)
-        setErrorMessage("The host could not apply this Composer setting. The previous selection is unchanged.");
+        setScopedError("The host could not apply this Composer setting. The previous selection is unchanged.");
       return false;
     }finally{
       if(epoch===requestEpoch.current)setPending(false);
@@ -105,28 +115,28 @@ export function useCodexComposerControls(
   const requestModelChange=React.useCallback(async(modelId:string,reasoningEffortId?:string)=>{
     if(snapshot==null)return;
     if(typeof host?.setComposerModelAndReasoningEffort!=="function"){
-      setErrorMessage("The host does not expose model selection.");
+      setModelErrorMessage("The host does not expose model selection.");
       return;
     }
     const request=sourceComposerModelChangeRequest(snapshot,modelId,reasoningEffortId);
     if(request==null){
-      setErrorMessage("This model or reasoning effort is not available from the host.");
+      setModelErrorMessage("This model or reasoning effort is not available from the host.");
       return;
     }
     await applyMutation(
-      host.setComposerModelAndReasoningEffort,
+      "model",host.setComposerModelAndReasoningEffort,
       request,
     );
   },[applyMutation,host,snapshot]);
 
   const applyPermission=React.useCallback(async(option:SourceComposerPermissionOption,userConfirmed:boolean)=>{
     if(typeof host?.setComposerPermissionMode!=="function"){
-      setErrorMessage("The host does not expose permission-mode changes.");
+      setPermissionErrorMessage("The host does not expose permission-mode changes.");
       return false;
     }
     const request={conversationId,permissionModeId:option.id,userConfirmed};
     return applyMutation(
-      host.setComposerPermissionMode,
+      "permission",host.setComposerPermissionMode,
       request,
     );
   },[applyMutation,conversationId,host]);
@@ -135,7 +145,7 @@ export function useCodexComposerControls(
     if(snapshot==null)return;
     const plan=planSourceComposerPermissionSelection(snapshot,permissionModeId);
     if(plan.kind==="disabled"){
-      setErrorMessage(plan.reason);return;
+      setPermissionErrorMessage(plan.reason);return;
     }
     if(plan.kind==="confirm"){
       setPendingPermissionConfirmation(plan.option);return;
@@ -154,7 +164,7 @@ export function useCodexComposerControls(
     if(!pending)setPendingPermissionConfirmation(null);
   },[pending]);
 
-  return {status,snapshot,errorMessage,pending,
+  return {status,snapshot,modelErrorMessage,permissionErrorMessage,pending,
     canChangeModel:typeof host?.setComposerModelAndReasoningEffort==="function",
     canChangePermission:typeof host?.setComposerPermissionMode==="function",
     pendingPermissionConfirmation,
@@ -165,8 +175,9 @@ export function useCodexComposerControls(
 function controlUnavailableTitle(
   controls:CodexComposerControlsController,
   unavailableReason:string|undefined,
+  errorMessage:string|null,
 ):string{
-  return unavailableReason??controls.errorMessage??
+  return unavailableReason??errorMessage??
     (controls.status==="loading"?"正在读取 Agent 设置…":
       "Agent 后端尚未提供此设置");
 }
@@ -206,7 +217,8 @@ export function CodexComposerModelReasoningControl(props:{
     ?controls.status==="loading"?"读取模型…":"模型未连接"
     :selected.label;
   const effort=selected?.reasoningEffortLabel;
-  const title=controlUnavailableTitle(controls,snapshot?.model.unavailableReason);
+  const errorMessage=controls.modelErrorMessage;
+  const title=controlUnavailableTitle(controls,snapshot?.model.unavailableReason,errorMessage);
   const close=()=>{setOpen(false);triggerRef.current?.focus();};
 
   return <div className="demo-composer-host-control demo-composer-host-control--model"
@@ -260,11 +272,11 @@ export function CodexComposerModelReasoningControl(props:{
             {option.id===selected?.reasoningEffortId?<span aria-hidden="true">✓</span>:null}
           </button>)}
         </>:null}
-      {controls.errorMessage!=null
-        ?<div className="demo-composer-control-menu__error" role="status">{controls.errorMessage}</div>:null}
+      {errorMessage!=null
+        ?<div className="demo-composer-control-menu__error" role="status">{errorMessage}</div>:null}
     </div>:null}
-    {controls.errorMessage!=null&&!open
-      ?<span role="status" className="demo-composer-control-error">{controls.errorMessage}</span>:null}
+    {errorMessage!=null&&!open
+      ?<span role="status" className="demo-composer-control-error">{errorMessage}</span>:null}
   </div>;
 }
 
@@ -282,7 +294,8 @@ export function CodexComposerPermissionModeControl(props:{
   const disabled=controls.status!=="ready"||snapshot==null||
     !hasSelectablePermission||controls.pending||!controls.canChangePermission;
   const label=selected?.label??(controls.status==="loading"?"读取权限…":"权限未连接");
-  const title=controlUnavailableTitle(controls,snapshot?.permissions.unavailableReason);
+  const errorMessage=controls.permissionErrorMessage;
+  const title=controlUnavailableTitle(controls,snapshot?.permissions.unavailableReason,errorMessage);
   const close=()=>{setOpen(false);triggerRef.current?.focus();};
   const confirmation=controls.pendingPermissionConfirmation;
 
@@ -323,11 +336,11 @@ export function CodexComposerPermissionModeControl(props:{
         </span>
         {option.id===selected?.id?<span aria-hidden="true">✓</span>:null}
       </button>)}
-      {controls.errorMessage!=null
-        ?<div className="demo-composer-control-menu__error" role="status">{controls.errorMessage}</div>:null}
+      {errorMessage!=null
+        ?<div className="demo-composer-control-menu__error" role="status">{errorMessage}</div>:null}
     </div>:null}
-    {controls.errorMessage!=null&&!open&&confirmation==null
-      ?<span role="status" className="demo-composer-control-error">{controls.errorMessage}</span>:null}
+    {errorMessage!=null&&!open&&confirmation==null
+      ?<span role="status" className="demo-composer-control-error">{errorMessage}</span>:null}
     {confirmation?.confirmation!=null?<div className="demo-composer-permission-confirmation-backdrop"
       data-composer-permission-confirmation="">
       <section className="demo-composer-permission-confirmation" role="alertdialog"
@@ -341,8 +354,8 @@ export function CodexComposerPermissionModeControl(props:{
         {confirmation.confirmation.capabilities.length>0
           ?<ul>{confirmation.confirmation.capabilities.map((item,index)=>
             <li key={index}>{item}</li>)}</ul>:null}
-        {controls.errorMessage!=null?<p role="alert"
-          className="demo-composer-control-menu__error">{controls.errorMessage}</p>:null}
+        {errorMessage!=null?<p role="alert"
+          className="demo-composer-control-menu__error">{errorMessage}</p>:null}
         <div className="demo-composer-permission-confirmation__actions">
           <button type="button" disabled={controls.pending}
             onClick={controls.cancelPermissionChange}>
