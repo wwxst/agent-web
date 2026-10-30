@@ -48,7 +48,7 @@ function SearchPanelContents({view,snapshot}:{
   return <div className="demo-workspace-preview__search-controls"
     role="group" aria-label="File search">
     <input type="text" value={query.search} placeholder="Find"
-      aria-label="Find" main-field="true"
+      aria-label="Find" main-field="true" autoFocus
       onFocus={event=>event.currentTarget.select()}
       onChange={event=>view.dispatch({
         effects:setSearchQuery.of(nextSearchQuery(query,event.target.value)),
