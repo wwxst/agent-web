@@ -82,11 +82,12 @@ test("read-only local CodeMirror restores the original file Find panel and navig
   await expect(searchPanel.getByRole("status")).toHaveText("2 / 11 results");
   await expect(content).toHaveAttribute("contenteditable","false");
 
-  const state=await page.evaluate(()=>(
-    window as unknown as Window & {__readOnlyFileSearchState:{
+  const state=await page.evaluate(()=>{
+    const target=window as unknown as {__readOnlyFileSearchState:{
       selects:number;reads:Array<{path:string;line?:number;endLine?:number}>;
-    }
-  ).__readOnlyFileSearchState);
+    }};
+    return target.__readOnlyFileSearchState;
+  });
   expect(state.selects).toBe(1);
   expect(state.reads).toHaveLength(1);
 });
