@@ -1044,7 +1044,7 @@ button:focus-visible, textarea:focus-visible { outline: 2px solid #578cda; outli
  * pinned content tab list is capped to keep section headings usable; that
  * cap is an implementation guard, not a claimed original pixel measurement.
  */
-.demo-sidebar{min-height:0;overflow:hidden;}
+.demo-sidebar{min-height:0;/* Keep overflow visible for the source right-edge resize hit target. */}
 .demo-sidebar-head,.demo-sidebar-actions{flex-shrink:0;}
 .demo-sidebar-scroll{
   display:flex;flex:1 1 auto;flex-direction:column;min-height:0;
