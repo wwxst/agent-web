@@ -919,10 +919,15 @@ test("real Electron repeated MCP activity collapses with inert children and keyb
   await historyToggle.click();
   const outer=row.locator('[data-codex-activity-group] [aria-expanded]').first();
   await outer.click();
+  // Opening the historical group changes its measured height. Keep the same
+  // virtualized row mounted before looking up the repeated activity.
+  await row.scrollIntoViewIfNeeded();
   const repeated=row.locator('[data-codex-source-repeated-group]').first();
   await repeated.waitFor({timeout:12000});
   const toggle=repeated.locator('[data-codex-source-repeated-toggle]');
   await toggle.click();
+  // Keep the row mounted after the nested group expands as well.
+  await row.scrollIntoViewIfNeeded();
   const motion=repeated.locator('[data-source-disclosure-motion]');
   await motion.waitFor({timeout:12000});
   await motion.evaluate(el=>{
