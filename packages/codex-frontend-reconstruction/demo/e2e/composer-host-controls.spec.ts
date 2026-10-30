@@ -91,7 +91,8 @@ test("Composer model and reasoning choices come from the host and apply only aft
   await expect(dialog).toHaveCount(0);
   await expect(permission).toContainText("Full access");
 
-  const calls=await page.evaluate(()=>window.__composerCalls);
+  const calls=await page.evaluate(()=>
+    (window as Window & {__composerCalls?:unknown}).__composerCalls);
   expect(calls).toEqual([
     {kind:"model",conversationId:"frontend",modelId:"model-b",reasoningEffortId:"medium"},
     {kind:"model",conversationId:"frontend",modelId:"model-b",reasoningEffortId:"high"},
