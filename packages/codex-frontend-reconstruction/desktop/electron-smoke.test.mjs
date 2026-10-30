@@ -561,15 +561,23 @@ test("independent Electron file renderer starts, isolates preload and routes Fc 
   assert.equal(await page.getByText("No projects",{exact:true}).count(),1);
   assert.equal(await page.getByText("No chats",{exact:true}).count(),1);
   assert.equal(await page.locator(".demo-header-folder").count(),0);
+  assert.equal(await page.getByRole("heading",{name:"What should we build?"}).count(),1);
+  assert.equal(await page.locator(".demo-home-hero__icon").getAttribute("width"),"56");
   assert.equal(await page.locator('.demo-composer [contenteditable="true"][aria-label="Do anything"]').count(),1);
   const homeGeometry=await page.evaluate(()=>{
     const main=document.querySelector(".demo-main")?.getBoundingClientRect();
     const composer=document.querySelector(".demo-composer")?.getBoundingClientRect();
+    const heroHeading=document.querySelector(".demo-home-hero__heading")?.getBoundingClientRect();
     return {mainTop:main?.top??null,composerTop:composer?.top??null,
       expectedTop:main==null?null:main.top+innerHeight*.42,
-      placement:document.querySelector(".demo-composer")?.getAttribute("data-composer-placement")};
+      placement:document.querySelector(".demo-composer")?.getAttribute("data-composer-placement"),
+      heroHeadingBottom:heroHeading?.bottom??null};
   });
   assert.equal(homeGeometry.placement,"home");
+  assert.ok(homeGeometry.heroHeadingBottom!=null&&homeGeometry.composerTop!=null&&
+    homeGeometry.composerTop-homeGeometry.heroHeadingBottom>15&&
+    homeGeometry.composerTop-homeGeometry.heroHeadingBottom<30,
+    JSON.stringify(homeGeometry));
   assert.ok(homeGeometry.composerTop!=null&&homeGeometry.expectedTop!=null&&
     Math.abs(homeGeometry.composerTop-homeGeometry.expectedTop)<4,
     JSON.stringify(homeGeometry));

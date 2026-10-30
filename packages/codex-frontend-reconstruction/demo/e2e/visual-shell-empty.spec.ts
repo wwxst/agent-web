@@ -15,6 +15,8 @@ test("shell-empty visual route mounts the real desktop shell and idle Composer w
   await expect(page.locator(".demo-header-location strong")).toHaveText("New chat");
   await expect(page.locator(".demo-row")).toHaveCount(0);
   await expect(page.locator(".demo-composer")).toBeVisible();
+  await expect(page.getByRole("heading",{name:"What should we build?"})).toBeVisible();
+  await expect(page.locator(".demo-home-hero__icon")).toHaveAttribute("width","56");
   await expect(page.locator(".demo-composer")).toHaveAttribute("data-composer-placement","home");
   await expect(page.locator('.demo-composer [contenteditable="true"]')).toBeVisible();
   await expect(page.getByRole("textbox",{name:"Do anything"})).toBeVisible();
@@ -40,6 +42,8 @@ test("shell-empty visual route mounts the real desktop shell and idle Composer w
     sidebar:document.querySelector(".demo-sidebar")?.getBoundingClientRect().width??null,
     header:document.querySelector(".demo-header")?.getBoundingClientRect().height??null,
     composer:document.querySelector(".demo-composer")?.getBoundingClientRect().toJSON()??null,
+    hero:document.querySelector(".demo-home-hero")?.getBoundingClientRect().toJSON()??null,
+    heroHeading:document.querySelector(".demo-home-hero__heading")?.getBoundingClientRect().toJSON()??null,
     composerPlacement:document.querySelector(".demo-composer")?.getAttribute("data-composer-placement"),
     rowCount:document.querySelectorAll(".demo-row").length,
     savedPin:localStorage.getItem("pinned-content-tabs-v1"),
@@ -50,6 +54,10 @@ test("shell-empty visual route mounts the real desktop shell and idle Composer w
   expect(capture.header).toBeGreaterThan(0);
   expect(capture.composerPlacement).toBe("home");
   expect(capture.composer).not.toBeNull();
+  expect(capture.hero).not.toBeNull();
+  expect(capture.heroHeading).not.toBeNull();
+  expect((capture.composer?.top??0)-(capture.heroHeading?.bottom??0)).toBeGreaterThan(15);
+  expect((capture.composer?.top??0)-(capture.heroHeading?.bottom??0)).toBeLessThan(30);
   expect(Math.abs((capture.composer?.top??0)-(36+760*0.42))).toBeLessThan(4);
   expect(capture.rowCount).toBe(0);
   expect(capture.savedPin).toBe("visual-baseline-preserve-me");
@@ -61,10 +69,12 @@ test("New chat opens the empty Codex home while the Home rail retains its existi
   await page.goto("/");
   await expect(page.locator(".demo-header-location strong")).toHaveText("恢复 Codex 会话界面");
   await expect(page.locator(".demo-row").first()).toBeVisible();
+  await expect(page.locator(".demo-home-hero")).toHaveCount(0);
   await page.getByRole("button",{name:"New chat"}).click();
   await expect(page.locator(".demo-header-location strong")).toHaveText("New chat");
   await expect(page.locator(".demo-row")).toHaveCount(0);
   await expect(page.locator(".demo-composer")).toHaveAttribute("data-composer-placement","home");
+  await expect(page.getByRole("heading",{name:"What should we build?"})).toBeVisible();
   await expect(page.getByRole("textbox",{name:"Do anything"})).toBeVisible();
   await page.getByRole("button",{name:"Home"}).click();
   await expect(page.locator(".demo-header-location strong")).toHaveText("恢复 Codex 会话界面");

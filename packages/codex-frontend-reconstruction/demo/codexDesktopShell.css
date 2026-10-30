@@ -907,3 +907,55 @@ button:focus-visible, textarea:focus-visible { outline: 2px solid #578cda; outli
   font-size: 12px;
   line-height: 18px;
 }
+
+/*
+ * Source DBt home hero (app-primary-fe8a450b3b04.js):
+ * no-project default heading is "What should we build?"; the Codex icon is
+ * size-14 (56px), 30% opacity, with a 24px gap above heading-xl.
+ * The source home layout bottom-aligns the hero within the 42svh anchor,
+ * with sm:pb-5.5 (22px). The source icon's optional animated hover effect is
+ * intentionally not represented by a fake interaction here.
+ */
+.demo-main[data-codex-home="true"] .demo-home-hero {
+  position: absolute;
+  top: var(--height-toolbar, 46px);
+  inset-inline: 0;
+  height: var(--home-composer-top);
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  padding-block-end: calc(var(--spacing, 4px) * 5.5);
+  pointer-events: none;
+}
+.demo-home-hero__content {
+  width: min(100%, var(--thread-content-max-width, 48rem));
+  min-height: 112px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: calc(var(--spacing, 4px) * 6);
+  padding-inline: var(--padding-panel, 16px);
+}
+.demo-home-hero__icon {
+  flex: none;
+  width: 56px;
+  height: 56px;
+  opacity: .3;
+  color: var(--color-text, #292929);
+}
+.demo-home-hero__heading {
+  margin: 0;
+  color: var(--color-text, #292929);
+  font-size: var(--text-xl, 20px);
+  font-weight: 400;
+  line-height: 1.2;
+  text-align: center;
+  white-space: pre-wrap;
+}
+@media (max-width: 639px) {
+  .demo-main[data-codex-home="true"] .demo-home-hero {
+    align-items: center;
+    padding-block-end: calc(var(--spacing, 4px) * 8);
+  }
+}
