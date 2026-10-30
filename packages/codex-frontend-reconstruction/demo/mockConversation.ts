@@ -117,6 +117,14 @@ export function demoMcpApprovalEntry(turnId:string,disabled=false):ConversationR
 /** Source Re biometric surface; browser fixture has no native provider. */
 /** Source unsupported OpenAI form, explicitly a synthetic visual fixture. */
 /** Original simple source formElicitation: synthetic fixture only. */
+/** Original ur boolean/number/integer, synthetic visual fixture only. */
+export function demoMixedFormElicitationEntry(turnId:string):ConversationRenderEntry{
+ return demoActivityEntry(turnId,[
+   demoItem(turnId+"-request","demo-mixed-form-elicitation",undefined,{
+     heading:"MCP 类型化表单（模拟）",state:"Needs input",
+   }),
+ ]);
+}
 export function demoTextFormElicitationEntry(turnId:string):ConversationRenderEntry{
  return demoActivityEntry(turnId,[
    demoItem(turnId+"-request","demo-text-form-elicitation",undefined,{

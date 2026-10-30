@@ -39,7 +39,7 @@ test("field schema changes invalidate old draft; clear-thread and disposal erase
  assert.equal(bridge.textFormDrafts.get(changed),null);
  assert.throws(()=>bridge.textFormDrafts.save(changed,{
   fieldIndex:0,values:{subject:"untrusted"},
- }),/invalid text form draft field/);
+ }),/unknown form draft field|invalid form draft field/);
  assert.throws(()=>bridge.textFormDrafts.save(one,{
   fieldIndex:12,values:{subject:"bad"},
  }),/invalid field index/);
@@ -51,4 +51,34 @@ test("field schema changes invalidate old draft; clear-thread and disposal erase
  assert.equal(bridge.textFormDrafts.get(other).values.subject,"elsewhere");
  bridge.dispose();
  assert.equal(bridge.textFormDrafts.get(other),null);
+});
+
+test("host draft tracks boolean checked state and numeric raw text independently",()=>{
+ const bridge=createSourceConversationHostEventBridge();
+ const form=projectSourceTextFormElicitation({
+  kind:"formElicitation",serverName:"MCP",message:"Settings",
+  schema:{type:"object",properties:{
+   approved:{type:"boolean",title:"Approved"},
+   retries:{type:"integer",title:"Retries"},
+  },required:["approved"]},
+ },{hostId:"h",conversationId:"frontend",requestId:"typed"});
+ assert.ok(form);
+ bridge.textFormDrafts.save(form,{
+  fieldIndex:1,values:{approved:false,retries:"3"},
+ });
+ const resumed=bridge.textFormDrafts.get(form);
+ assert.equal(resumed.fieldIndex,1);
+ assert.equal(resumed.values.approved,false);
+ assert.equal(resumed.values.retries,"3");
+ assert.throws(()=>bridge.textFormDrafts.save(form,{
+  fieldIndex:1,values:{approved:"false"},
+ }),/invalid form draft field/);
+ assert.throws(()=>bridge.textFormDrafts.save(form,{
+  fieldIndex:1,values:{retries:3},
+ }),/invalid form draft field/);
+ bridge.publish({type:"elicitation-settled",query:{
+  hostId:"h",threadId:"frontend",requestId:"typed",
+ }});
+ assert.equal(bridge.textFormDrafts.get(form),null);
+ bridge.dispose();
 });

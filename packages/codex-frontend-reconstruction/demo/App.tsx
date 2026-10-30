@@ -67,7 +67,7 @@ import {
   demoActivityEntry, demoItem, demoMessageEntry, makeLongHistory,
   demoStreamingCodeEntry, updateDemoStreamingCodeEntry,
   demoAutomaticReviewEntry, updateDemoAutomaticReviewEntry,
-  demoMcpApprovalEntry, demoComputerUseApprovalEntry, demoBrowserWebsiteApprovalEntry, demoUrlActionEntry, demoToolSuggestionEntry, demoUserVerificationEntry, demoUnsupportedOpenAIFormEntry, demoTextFormElicitationEntry,
+  demoMcpApprovalEntry, demoComputerUseApprovalEntry, demoBrowserWebsiteApprovalEntry, demoUrlActionEntry, demoToolSuggestionEntry, demoUserVerificationEntry, demoUnsupportedOpenAIFormEntry, demoTextFormElicitationEntry, demoMixedFormElicitationEntry,
   type DemoConversationId,
 } from "./mockConversation.js";
 
@@ -1136,6 +1136,14 @@ export function App() {
     ]);
   }
 
+  function playMixedFormFixture() {
+    if(playing)return;
+    markFollow();
+    appendDemoEntries(source,[
+      demoMixedFormElicitationEntry(nextId("mixed-form-elicitation")),
+    ]);
+  }
+
   function playTextFormFixture() {
     if(playing)return;
     markFollow();
@@ -1448,6 +1456,10 @@ export function App() {
           <button type="button" onClick={playBrowserWebsiteApprovalFixture}
             data-testid="demo-browser-website-approval-request">
             <Icon name="panel" size={15}/> 演示 Browser 网站授权请求（模拟）
+          </button>
+          <button type="button" onClick={playMixedFormFixture}
+            data-testid="demo-mixed-form-elicitation-request">
+            <Icon name="panel" size={15}/> 演示 MCP 布尔与数值表单（模拟）
           </button>
           <button type="button" onClick={playTextFormFixture}
             data-testid="demo-text-form-elicitation-request">

@@ -634,6 +634,16 @@ export function makeDemoRow(
       if(live!=null)return projectSourceTextFormElicitation(live.elicitation,{
         hostId:live.hostId,conversationId:live.threadId,requestId:live.requestId,
       });
+      if(item.type==="demo-mixed-form-elicitation"&&typeof item.id==="string")
+        return projectSourceTextFormElicitation({
+          kind:"formElicitation",serverName:"Sample MCP settings (synthetic)",
+          message:"Configure project settings (synthetic)",
+          schema:{type:"object",properties:{
+            approved:{type:"boolean",title:"Allow processing",description:"Consent checkbox"},
+            attempts:{type:"integer",title:"Retry count",minimum:1,maximum:5},
+            ratio:{type:"number",title:"Scale ratio",minimum:0.25,maximum:2.5},
+          },required:["approved","attempts","ratio"],additionalProperties:false},
+        },{hostId:"demo-host",conversationId:"frontend",requestId:item.id});
       if(item.type!=="demo-text-form-elicitation"||typeof item.id!=="string")return null;
       return projectSourceTextFormElicitation({
         kind:"formElicitation",serverName:"Sample MCP form server (synthetic)",

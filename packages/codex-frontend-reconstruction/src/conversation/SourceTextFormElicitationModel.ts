@@ -1,44 +1,61 @@
 /**
- * Source: uploaded Windows Codex compiled request-panel-26c348285c1a.js
- * ei (form controller), _n (draft), vn -> Mt(schema, values), Yr (question
- * header/nav), Wr -> ur (field rendering), wn (Skip for now/Next/Continue).
- * This is the **plain string** subset of original formElicitation, not a
- * generic replacement for fileOptions, choices, arrays, special formats,
- * confirmation presentations, or openai/legacy schemas.
+ * Recovered from original Windows request-panel-26c348285c1a.js:
+ * ei -> Wr -> ur switch(string|boolean|integer|number).
+ *
+ * The original boolean is a checkbox (l === true, onChange to !current).
+ * integer/number use a native number input, step 1/any, and integer minimum
+ * is rounded upward. Submitted values must be JSON booleans/numbers, never
+ * the textual raw state from the native input.
+ *
+ * This conservative formElicitation subset intentionally excludes choices,
+ * format variants, arrays, files, custom OpenAI extensions and confirmations.
  */
+export type SourceFormScalarType="string"|"boolean"|"integer"|"number";
+export type SourceFormDraftValue=string|boolean;
+export type SourceFormAnswerValue=string|boolean|number;
+export type SourceFormDraftValues=Readonly<Record<string,SourceFormDraftValue>>;
+export type SourceFormAnswerContent=Record<string,SourceFormAnswerValue>;
+
 export interface SourceTextFormField {
- name:string; title:string; description:string;
- required:boolean; minLength?:number; maxLength?:number;
+ name:string;title:string;description:string;required:boolean;
+ type:SourceFormScalarType;
+ minLength?:number;maxLength?:number;
+ minimum?:number;maximum?:number;
 }
-export interface SourceTextFormRequest{
+export interface SourceTextFormRequest {
  hostId:string;conversationId:string;requestId:string;
  kind:"formElicitation";serverName:string;message:string;
  fields:readonly SourceTextFormField[];
 }
-export interface SourceTextFormReply{
+export interface SourceTextFormReply {
  hostId:string;conversationId:string;requestId:string;
  action:"accept"|"decline"|"cancel";
- content:Record<string,string>|null;
+ content:SourceFormAnswerContent|null;
 }
 export type SourceTextFormReplyTransport=(value:SourceTextFormReply)=>Promise<void>;
 const object=(v:unknown):Record<string,unknown>|null=>
  v!==null&&typeof v==="object"&&!Array.isArray(v)
-   ?v as Record<string,unknown>:null;
+ ?v as Record<string,unknown>:null;
 const string=(v:unknown,max:number):v is string=>
  typeof v==="string"&&v.length<=max&&
  !/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/u.test(v);
 const id=(v:unknown)=>typeof v==="string"&&v.length>0&&v.length<=256&&
  v.trim()===v&&!/[\u0000-\u001f\u007f]/u.test(v);
 const lengthBound=(v:unknown)=>v===undefined||
- Number.isInteger(v)&&typeof v==="number"&&v>=0&&v<=16384;
-const ALLOWED_FIELD_KEYS=new Set([
- "type","title","description","minLength","maxLength",
-]);
+ typeof v==="number"&&Number.isInteger(v)&&v>=0&&v<=16384;
+const numericBound=(v:unknown)=>v===undefined||
+ typeof v==="number"&&Number.isFinite(v)&&Math.abs(v)<=1e12;
+const ALLOWED_TEXT=new Set(["type","title","description","minLength","maxLength"]);
+const ALLOWED_BOOLEAN=new Set(["type","title","description"]);
+const ALLOWED_NUMBER=new Set(["type","title","description","minimum","maximum"]);
 const ALLOWED_SCHEMA_KEYS=new Set([
  "type","properties","required","additionalProperties","title","description",
 ]);
-/** A conservative source-supported subset: never convert unknown fields
- * into text boxes or silently drop a required field. */
+/**
+ * Reject an entire form when even one field has an unsupported schema.
+ * A partial form must never be submitted while silently omitting unknown
+ * required or optional fields.
+ */
 export function projectSourceTextFormElicitation(
  elicitation:unknown,context:{hostId:string;conversationId:string;requestId:string},
 ):SourceTextFormRequest|null{
@@ -47,8 +64,7 @@ export function projectSourceTextFormElicitation(
    !id(context.hostId)||!id(context.conversationId)||!id(context.requestId)||
    !string(e.serverName,256)||!e.serverName.trim()||
    !string(e.message,4096)||!e.message.trim()||
-   e.confirmation!==undefined||
-   !object(e.schema))return null;
+   e.confirmation!==undefined||!object(e.schema))return null;
  const schema=object(e.schema)!;
  if(schema.type!=="object"||
    Object.keys(schema).some(k=>!ALLOWED_SCHEMA_KEYS.has(k))||
@@ -68,21 +84,40 @@ export function projectSourceTextFormElicitation(
  const fields:SourceTextFormField[]=[];
  for(const [name,value] of entries){
    if(!id(name)||["__proto__","constructor","prototype"].includes(name))return null;
-   const field=object(value);
-   if(!field||field.type!=="string"||
-     Object.keys(field).some(k=>!ALLOWED_FIELD_KEYS.has(k))||
-     field.title!==undefined&&!string(field.title,256)||
-     field.description!==undefined&&!string(field.description,4096)||
-     !lengthBound(field.minLength)||!lengthBound(field.maxLength))return null;
-   const min=field.minLength as number|undefined;
-   const max=field.maxLength as number|undefined;
-   if(min!==undefined&&max!==undefined&&min>max)return null;
-   fields.push({name,title:typeof field.title==="string"&&field.title.trim()
-      ?field.title:name,
-      description:typeof field.description==="string"?field.description:"",
-      required:required.has(name),
-      ...(min===undefined?{}:{minLength:min}),
-      ...(max===undefined?{}:{maxLength:max})});
+   const f=object(value);
+   const type=f?.type;
+   if(f==null||!["string","boolean","integer","number"].includes(String(type))||
+     f.title!==undefined&&!string(f.title,256)||
+     f.description!==undefined&&!string(f.description,4096))return null;
+   const allowed=type==="string"?ALLOWED_TEXT:
+     type==="boolean"?ALLOWED_BOOLEAN:ALLOWED_NUMBER;
+   if(Object.keys(f).some(k=>!allowed.has(k)))return null;
+   const field:SourceTextFormField={
+     name,type:type as SourceFormScalarType,
+     title:typeof f.title==="string"&&f.title.trim()?f.title:name,
+     description:typeof f.description==="string"?f.description:"",
+     required:required.has(name),
+   };
+   if(type==="string"){
+     if(!lengthBound(f.minLength)||!lengthBound(f.maxLength)||
+       f.minLength!==undefined&&f.maxLength!==undefined&&
+       (f.minLength as number)>(f.maxLength as number))return null;
+     if(f.minLength!==undefined)field.minLength=f.minLength as number;
+     if(f.maxLength!==undefined)field.maxLength=f.maxLength as number;
+   }
+   if(type==="number"||type==="integer"){
+     if(!numericBound(f.minimum)||!numericBound(f.maximum))return null;
+     // Original ur rounds a displayed integer minimum upward; a maximum
+     // must be rounded down for validation, not optimistically accepted.
+     const min=f.minimum===undefined?undefined:
+       type==="integer"?Math.ceil(f.minimum as number):f.minimum as number;
+     const max=f.maximum===undefined?undefined:
+       type==="integer"?Math.floor(f.maximum as number):f.maximum as number;
+     if(min!==undefined&&max!==undefined&&min>max)return null;
+     if(min!==undefined)field.minimum=min;
+     if(max!==undefined)field.maximum=max;
+   }
+   fields.push(field);
  }
  return {...context,kind:"formElicitation",serverName:e.serverName,
    message:e.message,fields};
@@ -92,41 +127,67 @@ export function sourceTextFormKey(
 ):string{
  return JSON.stringify([key.hostId,key.conversationId,key.requestId]);
 }
+/** Native number inputs emit strings. Only canonical finite values are
+ * converted, rejecting empty input, NaN, infinities and non-integral ints. */
+export function sourceFormNumber(raw:string):number|null{
+ if(raw.length>128||!/^[-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?$/u.test(raw))
+   return null;
+ const n=Number(raw);
+ return Number.isFinite(n)&&Math.abs(n)<=1e12?n:null;
+}
+export function sourceFormFieldAnswer(
+ field:SourceTextFormField,value:SourceFormDraftValue|undefined,
+):{valid:boolean;answered:boolean;value?:SourceFormAnswerValue}{
+ if(value===undefined||value===""){
+   return {valid:!field.required,answered:false};
+ }
+ if(field.type==="boolean"){
+   return typeof value==="boolean"
+     ?{valid:true,answered:true,value}:{valid:false,answered:true};
+ }
+ if(typeof value!=="string")return {valid:false,answered:true};
+ if(field.type==="string"){
+   if(!string(value,16384)||
+     field.minLength!==undefined&&value.length<field.minLength||
+     field.maxLength!==undefined&&value.length>field.maxLength)
+     return {valid:false,answered:true};
+   return {valid:true,answered:true,value};
+ }
+ if(!string(value,128))return {valid:false,answered:true};
+ const n=sourceFormNumber(value);
+ if(n===null||field.type==="integer"&&!Number.isSafeInteger(n)||
+   field.minimum!==undefined&&n<field.minimum||
+   field.maximum!==undefined&&n>field.maximum)
+   return {valid:false,answered:true};
+ return {valid:true,answered:true,value:n};
+}
 export function sourceTextFormValidate(
- request:SourceTextFormRequest,values:Readonly<Record<string,string>>,
-):{content:Record<string,string>|null;invalidFieldNames:string[]}{
- const content:Record<string,string>=Object.create(null);
+ request:SourceTextFormRequest,values:SourceFormDraftValues,
+):{content:SourceFormAnswerContent|null;invalidFieldNames:string[]}{
+ const content:SourceFormAnswerContent=Object.create(null);
  const invalidFieldNames:string[]=[];
  for(const field of request.fields){
-   const v=values[field.name];
-   // Omitted optional answers are excluded from the source accept content.
-   if(v===undefined||v===""){
-     if(field.required||field.minLength!==undefined&&field.minLength>0&&
-       v!==undefined&&v!=="")invalidFieldNames.push(field.name);
-     continue;
+   const result=sourceFormFieldAnswer(field,values[field.name]);
+   if(!result.valid){invalidFieldNames.push(field.name);continue;}
+   if(result.answered){
+     Object.defineProperty(content,field.name,{
+       value:result.value,enumerable:true,writable:true,configurable:true,
+     });
    }
-   if(!string(v,16384)||
-     field.minLength!==undefined&&v.length<field.minLength||
-     field.maxLength!==undefined&&v.length>field.maxLength){
-       invalidFieldNames.push(field.name);continue;
-   }
-   Object.defineProperty(content,field.name,{
-     value:v,enumerable:true,writable:true,configurable:true,
-   });
  }
  return {content:invalidFieldNames.length===0?content:null,invalidFieldNames};
 }
 export function sourceTextFormReply(
  request:Pick<SourceTextFormRequest,"hostId"|"conversationId"|"requestId">,
  action:"accept"|"decline"|"cancel",
- content:Record<string,string>|null=null,
+ content:SourceFormAnswerContent|null=null,
 ):SourceTextFormReply{
  return {hostId:request.hostId,conversationId:request.conversationId,
    requestId:request.requestId,action,content:action==="accept"?content:null};
 }
 export function sourceTextFormWireResponse(
  reply:SourceTextFormReply,
-):{action:"accept"|"decline"|"cancel";content:Record<string,string>|null;_meta:null}{
+):{action:"accept"|"decline"|"cancel";content:SourceFormAnswerContent|null;_meta:null}{
  return {action:reply.action,content:reply.action==="accept"?reply.content:null,
    _meta:null};
 }

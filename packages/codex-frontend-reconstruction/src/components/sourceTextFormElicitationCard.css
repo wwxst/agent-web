@@ -37,3 +37,23 @@
 .codex-source-text-form__primary{background:var(--demo-text,#242424)!important;color:var(--demo-panel,#fff)!important}
 .codex-source-text-form__error{color:var(--demo-danger,#b42318);font-size:12px;margin:0}
 .codex-source-text-form__readonly{color:var(--demo-muted,#666);font-size:12px;margin:0}
+
+/* Original ur boolean Ft checkbox and Ze native numeric input. */
+.codex-source-text-form__content input[type="number"]{
+ min-height:38px;border:1px solid var(--demo-border,#ccc);
+ border-radius:9px;padding:7px 12px;background:transparent;color:inherit;
+ font:inherit;width:100%;box-sizing:border-box;
+}
+.codex-source-text-form__content input[type="number"][aria-invalid="true"]{
+ border-color:var(--demo-danger,#b42318);
+}
+.codex-source-text-form__checkbox-row{
+ display:flex;align-items:center;gap:9px;font-size:14px;line-height:20px;
+ min-height:32px;cursor:pointer;overflow-wrap:anywhere;
+}
+.codex-source-text-form__checkbox-row input[type="checkbox"]{
+ width:18px;height:18px;margin:0;accent-color:var(--demo-text,#242424);
+}
+.codex-source-text-form__content input:focus-visible{
+ outline:2px solid var(--demo-link,#3265bd);outline-offset:2px;
+}

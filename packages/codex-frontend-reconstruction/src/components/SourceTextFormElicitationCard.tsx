@@ -1,7 +1,8 @@
 import * as React from "react";
 import {
- sourceTextFormKey,sourceTextFormReply,sourceTextFormValidate,
+ sourceTextFormKey,sourceTextFormReply,sourceTextFormValidate,sourceFormFieldAnswer,
  type SourceTextFormRequest,type SourceTextFormReplyTransport,
+ type SourceFormDraftValue,type SourceFormAnswerContent,
 } from "../conversation/SourceTextFormElicitationModel.js";
 import type {SourceTextFormDraft} from "../conversation/SourceTextFormDraftStore.js";
 import "./sourceTextFormElicitationCard.css";
@@ -23,7 +24,7 @@ export function SourceTextFormElicitationCard({
 }:SourceTextFormElicitationCardProps){
  const key=sourceTextFormKey(request);
  const schemaKey=JSON.stringify(request.fields);
- const [values,setValues]=React.useState<Record<string,string>>(
+ const [values,setValues]=React.useState<Record<string,SourceFormDraftValue>>(
    ()=>({...initialDraft?.values}));
  const [fieldIndex,setFieldIndex]=React.useState(
    ()=>initialDraft?.fieldIndex??0);
@@ -45,10 +46,10 @@ export function SourceTextFormElicitationCard({
  const busy=phase==="submitting"||phase==="submitted";
  const disabled=busy;
  const replyDisabled=busy||onReply==null;
- const currentValue=values[active.name]??"";
+ const currentValue=values[active.name];
  const hasError=invalid.includes(active.name);
  const validation=sourceTextFormValidate(request,values);
- async function send(action:"accept"|"decline"|"cancel",content:Record<string,string>|null=null){
+ async function send(action:"accept"|"decline"|"cancel",content:SourceFormAnswerContent|null=null){
    if(replyDisabled||pending.current||onReply==null)return;
    pending.current=true;setPhase("submitting");setError(null);
    const version=generation.current;
@@ -71,13 +72,10 @@ export function SourceTextFormElicitationCard({
  function handleNext(){
    if(disabled)return;
    if(!last){
-     const result=sourceTextFormValidate(request,{
-       // Validate only active question for Next; previous required questions
-       // are verified at final Continue, matching source ei/xe.
-       ...Object.fromEntries(request.fields.filter(f=>f.name!==active.name)
-         .map(f=>[f.name, f.required?"placeholder":""])),...values,
-     });
-     if(result.invalidFieldNames.includes(active.name)){
+     // Source ei validates the current question independently on Next.
+     // Do not inject placeholder answers into other field types.
+     const result=sourceFormFieldAnswer(active,values[active.name]);
+     if(!result.valid){
        setInvalid([active.name]);return;
      }
      setInvalid([]);changeQuestion(fieldIndex+1);
@@ -91,7 +89,7 @@ export function SourceTextFormElicitationCard({
    }
    setInvalid([]);void send("accept",validation.content);
  }
- function setCurrent(value:string){
+ function setCurrent(value:SourceFormDraftValue){
    if(disabled)return;
    const next={...values,[active.name]:value};
    setValues(next);
@@ -139,18 +137,44 @@ export function SourceTextFormElicitationCard({
        {active.description?<div className="codex-source-text-form__description">
          {active.description}
        </div>:null}
-       <textarea id={"source-form-field-"+key}
-         aria-invalid={hasError} aria-label={active.title} name={active.name}
-         data-source-text-form-field={active.name}
-         maxLength={active.maxLength} value={currentValue}
-         disabled={disabled} rows={3}
-         onChange={e=>setCurrent(e.currentTarget.value)}/>
+       {active.type==="boolean"
+         ?<label className="codex-source-text-form__checkbox-row">
+           <input type="checkbox" id={"source-form-field-"+key}
+             name={active.name} aria-label={active.title}
+             aria-invalid={hasError} disabled={disabled}
+             data-source-text-form-field={active.name}
+             checked={currentValue===true}
+             onChange={e=>setCurrent(e.currentTarget.checked)}/>
+           <span>{active.title}</span>
+         </label>
+         :active.type==="integer"||active.type==="number"
+           ?<input type="number" id={"source-form-field-"+key}
+             aria-invalid={hasError} aria-label={active.title}
+             name={active.name} data-source-text-form-field={active.name}
+             min={active.minimum} max={active.maximum}
+             step={active.type==="integer"?1:"any"}
+             value={typeof currentValue==="string"?currentValue:""}
+             disabled={disabled}
+             onChange={e=>setCurrent(e.currentTarget.value)}/>
+           :<textarea id={"source-form-field-"+key}
+             aria-invalid={hasError} aria-label={active.title}
+             name={active.name} data-source-text-form-field={active.name}
+             maxLength={active.maxLength}
+             value={typeof currentValue==="string"?currentValue:""}
+             disabled={disabled} rows={3}
+             onChange={e=>setCurrent(e.currentTarget.value)}/>}
        {hasError?<p role="alert" className="codex-source-text-form__error">
-         {active.required&&currentValue.length===0?"This question is required.":
-          active.minLength!==undefined&&currentValue.length<active.minLength
+         {active.required&&(currentValue===undefined||currentValue==="")
+           ?"This question is required.":
+          active.type==="string"&&typeof currentValue==="string"&&
+            active.minLength!==undefined&&currentValue.length<active.minLength
             ?"Use at least "+active.minLength+" characters.":
-          active.maxLength!==undefined&&currentValue.length>active.maxLength
-            ?"Use at most "+active.maxLength+" characters.":"Invalid response."}
+          active.type==="string"&&typeof currentValue==="string"&&
+            active.maxLength!==undefined&&currentValue.length>active.maxLength
+            ?"Use at most "+active.maxLength+" characters.":
+          active.type==="integer"?"Enter a whole number within the allowed range.":
+          active.type==="number"?"Enter a number within the allowed range.":
+          "Invalid response."}
        </p>:null}
        {phase==="submitting"?<p role="status">Submitting form response to host…</p>:null}
        {phase==="submitted"?<p role="status">

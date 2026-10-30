@@ -10,12 +10,17 @@ test("source q2t text form IPC validates exact action/content shape, rejects una
   payload,{...ids,action:"accept",content:{}},
   {...ids,action:"decline",content:null},
   {...ids,action:"cancel",content:null},
+  {...payload,content:{approved:true,quantity:3,ratio:1.25}},
+  {...payload,content:{approved:false}},
  ])assert.equal(validFormTextReply(value),true);
  for(const value of [
   null,{}, {...payload,action:"grant"},
   {...payload,action:"decline"},
   {...payload,action:"accept",content:null},
-  {...payload,content:{name:42}},
+  {...payload,content:{name:NaN}},
+  {...payload,content:{name:Infinity}},
+  {...payload,content:{name:-Infinity}},
+  {...payload,content:{name:1e20}},
   {...payload,content:{name:"bad\n\u0000text"}},
   {...payload,content:{name:"x".repeat(16385)}},
   {...payload,content:Object.assign(Object.create(null),{"constructor":"unsafe"})},
@@ -42,5 +47,19 @@ test("authenticated sender required; no Agent transport -> never confirms form a
  assert.equal(delivered,"sent");
  assert.deepEqual(sends,[{...ids,response:{
   action:"accept",content:{name:"My Project",message:"Important"},_meta:null,
+ }}]);
+});
+
+test("native form forwarding preserves boolean and numeric JSON types, without treating false as absent",async()=>{
+ const forwarded=[];
+ const payload={...ids,action:"accept",
+  content:{approved:false,quantity:3,ratio:1.25}};
+ const result=await handleFormTextReply({
+  isTrustedRenderer:()=>true,
+  agentFormReplyTransport:async value=>{forwarded.push(value);return true;},
+ },{},payload);
+ assert.equal(result,true);
+ assert.deepEqual(forwarded,[{...ids,response:{
+  action:"accept",content:{approved:false,quantity:3,ratio:1.25},_meta:null,
  }}]);
 });
