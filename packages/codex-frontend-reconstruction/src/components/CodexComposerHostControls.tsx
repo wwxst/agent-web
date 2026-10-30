@@ -1,5 +1,4 @@
 import * as React from "react";
-import {Icon} from "../../demo/Icon.js";
 import {
   parseSourceComposerControlsMutationResult,
   parseSourceComposerControlsSnapshot,
@@ -16,6 +15,8 @@ export interface CodexComposerControlsController {
   readonly snapshot:SourceComposerControlsSnapshot|null;
   readonly errorMessage:string|null;
   readonly pending:boolean;
+  readonly canChangeModel:boolean;
+  readonly canChangePermission:boolean;
   readonly pendingPermissionConfirmation:SourceComposerPermissionOption|null;
   requestModelChange:(modelId:string,reasoningEffortId?:string)=>Promise<void>;
   requestPermissionChange:(permissionModeId:string)=>void;
@@ -69,9 +70,9 @@ export function useCodexComposerControls(
     return ()=>{requestEpoch.current+=1;};
   },[refresh]);
 
-  const applyMutation=React.useCallback(async(
-    operation:(request:never)=>Promise<unknown>,
-    request:never,
+  const applyMutation=React.useCallback(async<T,>(
+    operation:(request:T)=>Promise<unknown>,
+    request:T,
   ):Promise<boolean>=>{
     const epoch=requestEpoch.current;
     setPending(true);setErrorMessage(null);
@@ -86,6 +87,7 @@ export function useCodexComposerControls(
       if(result.snapshot!=null){
         setSnapshot(result.snapshot);setStatus("ready");
       }else{
+        setPending(false);
         await refresh();
       }
       return true;
@@ -99,24 +101,31 @@ export function useCodexComposerControls(
   },[conversationId,refresh]);
 
   const requestModelChange=React.useCallback(async(modelId:string,reasoningEffortId?:string)=>{
-    if(snapshot==null||typeof host?.setComposerModelAndReasoningEffort!=="function")return;
+    if(snapshot==null)return;
+    if(typeof host?.setComposerModelAndReasoningEffort!=="function"){
+      setErrorMessage("The host does not expose model selection.");
+      return;
+    }
     const request=sourceComposerModelChangeRequest(snapshot,modelId,reasoningEffortId);
     if(request==null){
       setErrorMessage("This model or reasoning effort is not available from the host.");
       return;
     }
     await applyMutation(
-      host.setComposerModelAndReasoningEffort as (request:never)=>Promise<unknown>,
-      request as never,
+      host.setComposerModelAndReasoningEffort,
+      request,
     );
   },[applyMutation,host,snapshot]);
 
   const applyPermission=React.useCallback(async(option:SourceComposerPermissionOption,userConfirmed:boolean)=>{
-    if(typeof host?.setComposerPermissionMode!=="function")return false;
+    if(typeof host?.setComposerPermissionMode!=="function"){
+      setErrorMessage("The host does not expose permission-mode changes.");
+      return false;
+    }
     const request={conversationId,permissionModeId:option.id,userConfirmed};
     return applyMutation(
-      host.setComposerPermissionMode as (request:never)=>Promise<unknown>,
-      request as never,
+      host.setComposerPermissionMode,
+      request,
     );
   },[applyMutation,conversationId,host]);
 
@@ -143,7 +152,10 @@ export function useCodexComposerControls(
     if(!pending)setPendingPermissionConfirmation(null);
   },[pending]);
 
-  return {status,snapshot,errorMessage,pending,pendingPermissionConfirmation,
+  return {status,snapshot,errorMessage,pending,
+    canChangeModel:typeof host?.setComposerModelAndReasoningEffort==="function",
+    canChangePermission:typeof host?.setComposerPermissionMode==="function",
+    pendingPermissionConfirmation,
     requestModelChange,requestPermissionChange,confirmPermissionChange,
     cancelPermissionChange};
 }
@@ -172,7 +184,7 @@ function ModelMenuOption(props:{
       <span>{props.option.label}</span>
       {props.option.description!=null?<small>{props.option.description}</small>:null}
     </span>
-    {props.selected?<Icon name="check" size={14}/>:null}
+    {props.selected?<span aria-hidden="true">✓</span>:null}
   </button>;
 }
 
@@ -186,7 +198,7 @@ export function CodexComposerModelReasoningControl(props:{
   const selected=snapshot?.model.selected??null;
   const selectedOption=snapshot?.model.options.find(option=>option.id===selected?.id)??null;
   const disabled=controls.status!=="ready"||snapshot==null||
-    snapshot.model.options.length===0||controls.pending;
+    snapshot.model.options.length===0||controls.pending||!controls.canChangeModel;
   const label=selected==null
     ?controls.status==="loading"?"读取模型…":"模型未连接"
     :selected.label;
@@ -212,7 +224,7 @@ export function CodexComposerModelReasoningControl(props:{
       {effort!=null?<span className="demo-composer-control-trigger__effort">{effort}</span>:null}
       {selected?.serviceTierLabel!=null
         ?<span className="demo-composer-control-trigger__tier">{selected.serviceTierLabel}</span>:null}
-      <Icon name="chevron-down" size={12}/>
+      <span aria-hidden="true">⌄</span>
     </button>
     {open&&snapshot!=null?<div className="demo-composer-control-menu demo-composer-control-menu--model"
       role="menu" aria-label="模型与推理强度"
@@ -260,7 +272,7 @@ export function CodexComposerPermissionModeControl(props:{
   const snapshot=controls.snapshot;
   const selected=snapshot?.permissions.selected??null;
   const disabled=controls.status!=="ready"||snapshot==null||
-    snapshot.permissions.options.length===0||controls.pending;
+    snapshot.permissions.options.length===0||controls.pending||!controls.canChangePermission;
   const label=selected?.label??(controls.status==="loading"?"读取权限…":"权限未连接");
   const title=controlUnavailableTitle(controls,snapshot?.permissions.unavailableReason);
   const close=()=>{setOpen(false);triggerRef.current?.focus();};
@@ -278,9 +290,9 @@ export function CodexComposerPermissionModeControl(props:{
       title={disabled?title:"更改权限模式"}
       disabled={disabled}
       onClick={()=>setOpen(value=>!value)}>
-      <Icon name="shield-check" size={13}/>
+      <span className="demo-composer-control-trigger__shield" aria-hidden="true">◇</span>
       <span>{label}</span>
-      <Icon name="chevron-down" size={11}/>
+      <span aria-hidden="true">⌄</span>
     </button>
     {open&&snapshot!=null?<div className="demo-composer-control-menu demo-composer-control-menu--permissions"
       role="menu" aria-label="权限模式"
@@ -290,7 +302,7 @@ export function CodexComposerPermissionModeControl(props:{
         type="button" role="menuitemradio"
         aria-checked={option.id===selected?.id}
         className="demo-composer-control-menu__item"
-        disabled={controls.pending||option.disabledReason!=null||
+        disabled={controls.pending||!controls.canChangePermission||option.disabledReason!=null||
           (option.requiresConfirmation===true&&option.confirmation==null)}
         title={option.disabledReason}
         onClick={()=>{
