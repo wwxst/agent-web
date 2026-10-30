@@ -117,8 +117,21 @@ function createWindow(){
   win.webContents.on("will-navigate",(event,url)=>{
     if(!isAllowedNavigation(url))event.preventDefault();
   });
-  if(devMode)void win.loadURL(devUrl);
-  else void win.loadFile(indexPath);
+  // The packaged/native app starts on the real blank home, never a mock
+  // transcript. Existing Electron smoke tests explicitly opt in via the
+  // test process environment; this is NOT read from untrusted renderer IPC.
+  const demoFixture=process.env.AGENT_WEB_DESKTOP_FIXTURE;
+  const demoQuery=demoFixture==="frontend"||demoFixture==="review"
+    ?{demoScenario:demoFixture}:null;
+  if(devMode){
+    if(demoQuery==null)void win.loadURL(devUrl);
+    else{
+      const url=new URL(devUrl);
+      url.searchParams.set("demoScenario",demoFixture);
+      void win.loadURL(url.toString());
+    }
+  }else if(demoQuery==null)void win.loadFile(indexPath);
+  else void win.loadFile(indexPath,{query:demoQuery});
   win.on("closed",()=>{if(mainWindow===win)mainWindow=null;});
   return win;
 }

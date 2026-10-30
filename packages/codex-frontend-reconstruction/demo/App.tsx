@@ -199,11 +199,22 @@ function ConversationSidebar(props: {
 }
 
 export function App() {
-  const visualScenario=typeof window==="undefined"?null:
-    new URLSearchParams(window.location.search).get("visualScenario");
-  const isVisualShellScenario=visualScenario==="shell-empty";
+  // Explicit fixture routing is limited to a test URL or a Playwright-only
+  // Vite dev server. Normal browser and packaged Electron starts are empty.
+  // The original standalone demo records are never a production default.
+  const launchParams=typeof window==="undefined"?new URLSearchParams():
+    new URLSearchParams(window.location.search);
+  const isVisualShellScenario=launchParams.get("visualScenario")==="shell-empty";
+  const explicitDemoScenario=launchParams.get("demoScenario");
+  const devTestFixtures=import.meta.env.DEV&&
+    import.meta.env.VITE_AGENT_WEB_DEMO_FIXTURES==="1";
+  const demoFixtureEnabled=devTestFixtures||
+    explicitDemoScenario==="frontend"||explicitDemoScenario==="review";
+  const initialDemoConversation:DemoConversationId=
+    explicitDemoScenario==="review"?"review":"frontend";
   const [active, setActive] = React.useState<DemoConversationId>(()=>
-    isVisualShellScenario?"visual-empty":"frontend");
+    isVisualShellScenario?"visual-empty":
+      demoFixtureEnabled?initialDemoConversation:"visual-empty");
   const isNewChat = active === "visual-empty";
   const composerControlsHost=typeof window==="undefined"
     ?undefined:window.agentWebDesktopHost;
@@ -1395,7 +1406,7 @@ export function App() {
   // The direct/more identity projection is sourced from original GZc/QZc;
   // routing/feature flags are supplied explicitly by this mock host.
   const availableRailDestinations: CodexRailDestination[] = [
-    { id: "builtin:home", label: "Home", icon: <Icon name="home" size={18}/>, isCurrentDestination: true, onSelect: () => switchConversation("frontend") },
+    { id: "builtin:home", label: "Home", icon: <Icon name="home" size={18}/>, isCurrentDestination: true, onSelect: () => demoFixtureEnabled ? switchConversation("frontend") : startNewChat() },
     { id: "builtin:activity", label: "Activity", icon: <Icon name="branch" size={18}/> },
     { id: "builtin:automations", label: "Scheduled", icon: <Icon name="clock" size={18}/> },
     { id: "builtin:library", label: "Library", icon: <Icon name="library" size={18}/> },

@@ -30,3 +30,22 @@ The supplied Windows build resources for Codex 26.1013.40934 were inspected dire
 ## Remaining scope
 
 This stage is only the initial new-chat shell/home Composer. It does not claim completion of the ordinary conversation timeline, tool activity, approvals, full Composer feature parity, or agent-cil integration. No backend changes were made.
+
+## Normal launch versus fixture-only preview (2026-10-30)
+
+- **Normal** standalone browser dev server and Electron file/desktop dev launch now
+  start on `visual-empty` with the source-backed Hero and idle Composer.
+- Browser E2E uses a Playwright-only `VITE_AGENT_WEB_DEMO_FIXTURES=1` Vite dev
+  environment so the existing test suite still exercises the canonical demo
+  timeline, tools, approval and preview fixtures. Normal production builds
+  cannot inherit that dev-only default.
+- Native Electron smoke uses `desktop/enableSmokeFixture.mjs` to opt into the
+  `demoScenario=frontend` query on the initial file URL. The application does
+  **not** enable fixtures unless the test runner explicitly sets
+  `AGENT_WEB_DESKTOP_FIXTURE=frontend` (or `review`).
+- Added a separate *normal packaged launch* Electron smoke that removes that
+  opt-in and confirms the initial screen, host status, Home navigation, no mock
+  history and disabled send. It also captures `electron-default-new-chat.png`.
+- The original `?visualScenario=shell-empty` remains available for strict
+  saved-pin-isolated screenshot baselines and takes precedence over any
+  fixture flag. No agent-cil changes were made.
