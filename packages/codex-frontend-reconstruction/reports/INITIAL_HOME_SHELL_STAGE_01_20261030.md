@@ -12,7 +12,7 @@ The supplied Windows build resources for Codex 26.1013.40934 were inspected dire
 ## Implemented in this stage
 
 - The sidebar **New chat** action now opens the blank home surface rather than resetting the current demo conversation.
-- The left **Home** rail destination opens that same blank home surface.
+- The left **Home** rail keeps its existing host/demo destination; it is deliberately not conflated with New chat.
 - The blank home does not display the synthetic `agent web` project, demo recent threads, project-folder breadcrumb, demo-tools button, or synthetic subagent action.
 - The home Composer has an explicit `data-composer-placement="home"`, source-derived 42svh positioning, source-derived inline inset, and the source home placeholder/accessibility label.
 - Existing conversation threads retain their thread placement and `Work with Codex` placeholder.
@@ -20,7 +20,7 @@ The supplied Windows build resources for Codex 26.1013.40934 were inspected dire
 ## Verification
 
 - Playwright visual-shell test checks the home placement, geometry at 1352×760, empty transcript/sidebar fixture, and the home/new-chat navigation path.
-- Navigation-rail regression checks that Home routes to the empty home.
+- Navigation-rail regression checks that the existing Home destination remains unchanged while New chat opens the blank home.
 - The real Electron smoke now captures `electron-home-new-chat.png` after navigating the actual file renderer to the empty-home scenario. It checks the same placement and geometry in a native BrowserWindow.
 - CI results are tracked by PR #86. Visual acceptance still requires comparing the new Electron screenshot with the matching original Codex screenshot at the same window size, theme, DPI and crop.
 

@@ -1384,7 +1384,7 @@ export function App() {
   // The direct/more identity projection is sourced from original GZc/QZc;
   // routing/feature flags are supplied explicitly by this mock host.
   const availableRailDestinations: CodexRailDestination[] = [
-    { id: "builtin:home", label: "Home", icon: <Icon name="home" size={18}/>, isCurrentDestination: true, onSelect: () => switchConversation("visual-empty") },
+    { id: "builtin:home", label: "Home", icon: <Icon name="home" size={18}/>, isCurrentDestination: true, onSelect: () => switchConversation("frontend") },
     { id: "builtin:activity", label: "Activity", icon: <Icon name="branch" size={18}/> },
     { id: "builtin:automations", label: "Scheduled", icon: <Icon name="clock" size={18}/> },
     { id: "builtin:library", label: "Library", icon: <Icon name="library" size={18}/> },

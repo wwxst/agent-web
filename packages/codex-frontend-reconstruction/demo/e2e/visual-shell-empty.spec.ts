@@ -55,7 +55,7 @@ test("shell-empty visual route mounts the real desktop shell and idle Composer w
 });
 
 
-test("New chat and the Home rail open the empty Codex home instead of resetting a demo thread",async({page})=>{
+test("New chat opens the empty Codex home while the Home rail retains its existing route",async({page})=>{
   await page.goto("/");
   await expect(page.locator(".demo-header-location strong")).toHaveText("恢复 Codex 会话界面");
   await expect(page.locator(".demo-row").first()).toBeVisible();
@@ -65,6 +65,7 @@ test("New chat and the Home rail open the empty Codex home instead of resetting 
   await expect(page.locator(".demo-composer")).toHaveAttribute("data-composer-placement","home");
   await expect(page.getByRole("textbox",{name:"Do anything"})).toBeVisible();
   await page.getByRole("button",{name:"Home"}).click();
-  await expect(page.locator(".demo-header-location strong")).toHaveText("New chat");
-  await expect(page.locator(".demo-row")).toHaveCount(0);
+  await expect(page.locator(".demo-header-location strong")).toHaveText("恢复 Codex 会话界面");
+  await expect(page.locator(".demo-row").first()).toBeVisible();
+  await expect(page.locator(".demo-composer")).toHaveAttribute("data-composer-placement","thread");
 });
