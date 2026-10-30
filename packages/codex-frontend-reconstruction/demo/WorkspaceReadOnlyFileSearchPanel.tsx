@@ -83,14 +83,20 @@ class SourceReadOnlyFileSearchPanel implements Panel{
   readonly dom:HTMLDivElement;
   readonly top=true;
   private readonly root:Root;
+  private query:SearchQuery;
   constructor(private readonly view:EditorView){
+    this.query=getSearchQuery(view.state);
     this.dom=view.dom.ownerDocument.createElement("div");
     this.dom.className="cm-text-file-search-panel";
     this.root=createRoot(this.dom);
     this.draw();
   }
-  update(_update:ViewUpdate):void{
-    this.draw();
+  update(update:ViewUpdate):void{
+    const query=getSearchQuery(update.state);
+    if(update.docChanged||update.selectionSet||!query.eq(this.query)){
+      this.query=query;
+      this.draw();
+    }
   }
   destroy():void{
     queueMicrotask(()=>this.root.unmount());
@@ -98,7 +104,7 @@ class SourceReadOnlyFileSearchPanel implements Panel{
   private draw():void{
     this.root.render(<SearchPanelContents
       view={this.view}
-      snapshot={searchPanelSnapshot(this.view,getSearchQuery(this.view.state))}
+      snapshot={searchPanelSnapshot(this.view,this.query)}
     />);
   }
 }
