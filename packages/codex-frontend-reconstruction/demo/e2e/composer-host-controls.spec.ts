@@ -1,8 +1,17 @@
 import {test,expect} from "@playwright/test";
+import type {
+  SourceComposerControlsSnapshot,
+  SourceComposerModelChangeRequest,
+  SourceComposerPermissionChangeRequest,
+} from "../../src/conversation/SourceComposerControlsModel.js";
+
+type ComposerHostCall =
+  |{kind:"model";conversationId:string;modelId:string;reasoningEffortId?:string}
+  |{kind:"permission";conversationId:string;permissionModeId:string;userConfirmed:boolean};
 
 test("Composer model and reasoning choices come from the host and apply only after acknowledgement",async({page})=>{
   await page.addInitScript(()=>{
-    let current={
+    let current:SourceComposerControlsSnapshot={
       schemaVersion:1,
       conversationId:"frontend",
       model:{
@@ -30,17 +39,21 @@ test("Composer model and reasoning choices come from the host and apply only aft
         ],
       },
     };
-    const calls=[];
+    const calls:ComposerHostCall[]=[];
     const host={
       subscribeHostEvents:()=>()=>{},
       getHostInfo:async()=>({windowType:"electron",platform:"test",theme:"light",backendConnected:true}),
       getComposerDrafts:async()=>({}),
       setComposerDraft:async()=>true,
-      getComposerControls:async request=>({...current,conversationId:request.conversationId}),
-      setComposerModelAndReasoningEffort:async request=>{
+      getComposerControls:async (request:{conversationId:string})=>({...current,conversationId:request.conversationId}),
+      setComposerModelAndReasoningEffort:async (request:SourceComposerModelChangeRequest)=>{
         calls.push({kind:"model",...request});
         const model=current.model.options.find(item=>item.id===request.modelId);
-        const effort=model?.reasoningEfforts.find(item=>item.id===request.reasoningEffortId);
+        if(model==null)throw new Error("Requested model is not in the host snapshot.");
+        const effort=request.reasoningEffortId==null?undefined:
+          model.reasoningEfforts.find(item=>item.id===request.reasoningEffortId);
+        if(request.reasoningEffortId!=null&&effort==null)
+          throw new Error("Requested reasoning effort is not in the host snapshot.");
         current={...current,conversationId:request.conversationId,model:{
           ...current.model,
           selected:{id:model.id,label:model.label,reasoningEffortId:effort?.id,
@@ -48,11 +61,12 @@ test("Composer model and reasoning choices come from the host and apply only aft
         }};
         return {ok:true,snapshot:current};
       },
-      setComposerPermissionMode:async request=>{
+      setComposerPermissionMode:async (request:SourceComposerPermissionChangeRequest)=>{
         calls.push({kind:"permission",...request});
         if(request.permissionModeId==="full"&&!request.userConfirmed)
           return {ok:false,errorMessage:"Confirmation required"};
         const option=current.permissions.options.find(item=>item.id===request.permissionModeId);
+        if(option==null)throw new Error("Requested permission mode is not in the host snapshot.");
         current={...current,conversationId:request.conversationId,permissions:{
           ...current.permissions,
           selected:{id:option.id,kind:option.kind,label:option.label},
@@ -117,7 +131,7 @@ test("host-rejected permission changes leave the previously selected mode unchan
       subscribeHostEvents:()=>()=>{},
       getHostInfo:async()=>({windowType:"electron",platform:"test",theme:"light",backendConnected:true}),
       getComposerDrafts:async()=>({}),setComposerDraft:async()=>true,
-      getComposerControls:async request=>({...snapshot,conversationId:request.conversationId}),
+      getComposerControls:async (request:{conversationId:string})=>({...snapshot,conversationId:request.conversationId}),
       setComposerPermissionMode:async()=>({ok:false,errorMessage:"Policy rejected the change."}),
     };
     Object.defineProperty(window,"agentWebDesktopHost",{configurable:true,value:host});
@@ -145,7 +159,7 @@ test("missing host controls render disabled source-positioned placeholders rathe
 
 test("late model snapshots from a previous conversation cannot overwrite the active thread controls",async({page})=>{
   await page.addInitScript(()=>{
-    const makeSnapshot=(conversationId,label)=>({
+    const makeSnapshot=(conversationId:string,label:string):SourceComposerControlsSnapshot=>({
       schemaVersion:1,conversationId,
       model:{selected:{id:label,label,reasoningEffortId:"high",reasoningEffortLabel:"High"},
         options:[{id:label,label,defaultReasoningEffortId:"high",
@@ -157,7 +171,7 @@ test("late model snapshots from a previous conversation cannot overwrite the act
       subscribeHostEvents:()=>()=>{},
       getHostInfo:async()=>({windowType:"electron",platform:"test",theme:"light",backendConnected:true}),
       getComposerDrafts:async()=>({}),setComposerDraft:async()=>true,
-      getComposerControls:request=>{
+      getComposerControls:(request:{conversationId:string})=>{
         if(request.conversationId==="frontend"){
           return new Promise(resolve=>{
             (window as Window & {__resolveOldControls?:(value:unknown)=>void})
