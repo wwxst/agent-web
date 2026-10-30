@@ -129,8 +129,7 @@ test("source attachment menu exposes photo/file/folder pickers and preserves loc
   await expect(tile).toHaveAttribute("data-composer-attachment-upload-state","local-only");
 
   await trigger.click();
-  await page.getByRole("heading",{name:/What should we build|恢复 Codex/}).first()
-    .click({force:true}).catch(()=>page.locator(".demo-header").click());
+  await page.locator(".demo-header").click();
   await expect(menu).toHaveCount(0);
 });
 
