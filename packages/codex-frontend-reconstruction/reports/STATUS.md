@@ -340,3 +340,34 @@ Follow `reports/NEXT_BATCH.md`: add the typed controller paste-event contract an
 - Fidelity boundary: this independent renderer currently restores same-window live-tab references only.
 - Draft PR #81 is open and intentionally stacked on PR #80's recovery branch (`recovery/source-readonly-file-search-20261030`); neither PR has been merged. `main` remains at `6a744a4`.
  The original main-process cross-window `contentTabs` owner/reveal service and `PinnedContentTabPreloadBridge` durable-route preload are not yet ported; original file thumbnails, drag reorder, private localized messages and pixel comparison also remain outstanding. No Agent IPC or backend code changed.
+
+
+## 2026-10-30 — priority reset and screenshot comparison foundation
+
+- User-approved priority reset: (1) source-backed original Codex screenshot comparison and UI correction loop; (2) integrate the complete conversation/Composer/tool/approval workflow; (3) finish the real Electron host/runtime chain before connecting the existing Agent backend.
+- Created stacked branch `recovery/codex-visual-regression-20261030` from PR #81's branch head. It does not modify `main`, PR #80/#81, or the Agent backend.
+- Added `scripts/compare-ui-screenshots.mjs` and `npm run visual:compare`. It records PNG dimensions and SHA-256, refuses mismatched dimensions without resizing/cropping, and generates same-size overlay, difference heatmap, side-by-side image and JSON metrics using local Playwright Chromium.
+- Added `tests/ui-screenshot-compare.test.mjs` covering PNG metadata, CLI arguments, deterministic hashes, and fail-closed dimension mismatch. `npm run test:core` already discovers this test through `tests/*.test.mjs`.
+- Added `reports/VISUAL_REGRESSION_WORKFLOW_20261030.md` with capture protocol, four fixed acceptance scenarios, correction loop, first-pair metadata and limits.
+- First screenshot pair: original Codex 1211×759 (SHA-256 `74c1384f14d566ee918a3cdee5caed5de5cb16722f92b6c3172f526f428af1a8`); reconstructed frontend 1352×760 (SHA-256 `7c58d24e4a9386c0884d604cc37f4ee550287b96f2d1d6677eca05d9ad75865f`). The scenario content and runtime state also differ, so these are structural references only and are not pixel-compared.
+- Updated `reports/NEXT_BATCH.md`: screenshot loop first, then integrated timeline/Composer/tools/approvals, then typed Electron runtime and Agent adapter. Cross-window pinned-tab owner/reveal work remains documented but is deferred behind product-wide priorities.
+- Validation pending: execute new core test and screenshot comparator under CI. No pixel-parity claim; next required evidence is same-state, same-size original Codex and actual Electron captures, starting with empty shell + idle Composer.
+
+- Final validation on code head `7bf55572e5e6cbe1c7988be9b5c5a0b3d1a96469`: Actions run 40991238894 passed — core 542/542, demo models 5/5, comparator integration 1/1, Chromium 77/77, Linux Electron 82/82, Windows Electron 81 passed / 1 skipped / 0 failed, and both renderer builds passed. The later documentation-only CI-record commit is pending a documentation-only rerun; no runtime code changed after the green code head.
+
+- Added a deterministic `?visualScenario=shell-empty` test route that mounts the existing shell and ProseMirror Composer with an empty transcript, is hidden from the sidebar, and deliberately does not read or overwrite pinned-tab storage. `AGENT_WEB_VISUAL_SCENARIO=shell-empty npm run desktop:dev` opens this scenario in the real Electron development host. Playwright records the viewport/rail/sidebar/header/Composer geometry and a screenshot.
+- Latest code-head validation: Actions run 40992465671 passed on `d32002d3d8f19b0950c22cdd067ae80bedc5f910`: core 542/542, demo models 5/5, comparator integration 1/1, Chromium 78/78 (including empty-shell route), Linux Electron 82/82, Windows Electron 81 passed / 1 skipped / 0 failed, and both renderer builds passed. PR #82 checks also passed.
+- PR #82 remains Draft and stacked on PR #81; the original screenshots are not committed. The first valid original-vs-reconstruction pixel baseline is still pending a same-size, same-state, same-capture-boundary pair from the user's Windows desktop.
+
+
+## 2026-10-30 — Composer attachment intake stage 01
+
+- Re-checked the uploaded Codex 26.1013.40934 compiled assets. Source owners: `app-primary` `opt` -> `WLe/Mst` attachment preparation -> `p2e/G0e` tray; `app-initial` ProseMirror `rUu` emits separate `pasted-images` and `pasted-files` controller events.
+- Added `ComposerDraftAttachmentsModel.ts` with identity-safe staging, MIME-based image/file classification, immutable removal, size labels and label-only local-preview transcript references.
+- Added `CodexComposerDraftAttachmentTray.tsx`, source `data-composer-attachments` layout markers, a working multiple-file picker, the shared paste/drop intake path, per-conversation in-memory retention, remove/reset and attachment-only demo submission.
+- Extended `CodexSourceComposerHostForm` with source-shaped file drag/drop handling. Normal text transfers remain unblocked; only actual file drops are intercepted.
+- The staged File objects are not read, uploaded, sent over IPC or mapped to invented paths/upload IDs. The demo transcript renders label-only non-openable attachment references; response copy explicitly says no upload or Agent request occurred.
+- Added 5 core tests and 3 Playwright scenarios for picker/image preview/remove/send, clipboard paste, outer form drop/drag state, conversation retention and reset. CI is running for the current branch head; results will be appended after completion.
+- Next Composer owner slice is the original `i9e` / `f9e` model+reasoning controls and `fG` permission-mode selector. Choices must come from host state; no static mock model inventory or fake permission mutation.
+
+- CI completed green on code head `0ec1b00942c7ddd04e8abeed46c5dace30b72468`: Actions push run 40994743866 and PR run 40994749349 passed. Core 547/547; demo models 5/5; comparator 1/1; browser 81/81 (including 3 attachment scenarios); Linux Electron 82/82; Windows Electron 81 passed / 1 skipped / 0 failed; React/Vite and Electron renderer builds passed. CI uploaded updated Linux Electron and browser preview screenshots. The follow-up commit records this evidence only.

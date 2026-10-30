@@ -1,6 +1,12 @@
 import * as React from "react";
 import { createPortal } from "react-dom";
 import { CodexComposerLayout } from "../src/components/CodexComposerLayout.js";
+import {CodexComposerDraftAttachmentTray} from "../src/components/CodexComposerDraftAttachmentTray.js";
+import {
+  appendComposerDraftAttachments,removeComposerDraftAttachment,
+  toLocalPreviewOnlyMessageAttachments,
+  type ComposerDraftAttachment,
+} from "../src/conversation/ComposerDraftAttachmentsModel.js";
 import {SourceLocalSubagentsPanel} from "../src/components/SourceLocalSubagentsPanel.js";
 import type {SourceLocalSubagent} from "../src/conversation/SourceLocalSubagentsPanelModel.js";
 import {makeSyntheticSubagentsFixture} from "./demoSubagentsFixture.js";
@@ -169,7 +175,7 @@ function ConversationSidebar(props: {
       <div className="demo-section-heading">Projects</div>
       <nav className="demo-chat-list" aria-label="会话">
         <div className="demo-project-heading"><Icon name="folder" size={16}/> agent web</div>
-        {DEMO_CONVERSATIONS.map((item) => <button type="button" key={item.id} className={`demo-chat-link ${item.id === active ? "is-active" : ""}`} onClick={() => onSelect(item.id)} aria-current={item.id === active ? "page" : undefined}>
+        {DEMO_CONVERSATIONS.filter(item=>item.sidebarVisible!==false).map((item) => <button type="button" key={item.id} className={`demo-chat-link ${item.id === active ? "is-active" : ""}`} onClick={() => onSelect(item.id)} aria-current={item.id === active ? "page" : undefined}>
           <span className="demo-chat-link-title">{item.title}</span>
         </button>)}
       </nav>
@@ -182,7 +188,11 @@ function ConversationSidebar(props: {
 }
 
 export function App() {
-  const [active, setActive] = React.useState<DemoConversationId>("frontend");
+  const visualScenario=typeof window==="undefined"?null:
+    new URLSearchParams(window.location.search).get("visualScenario");
+  const isVisualShellScenario=visualScenario==="shell-empty";
+  const [active, setActive] = React.useState<DemoConversationId>(()=>
+    isVisualShellScenario?"visual-empty":"frontend");
   const [generation, setGeneration] = React.useState(0);
   // The host owns this feature flag. The preview chooses rail-enabled mode
   // to exercise the independently reconstructed original navigation layout.
@@ -210,6 +220,14 @@ export function App() {
   },[sidebarWidth]);
   const [measuredRailWidth, setMeasuredRailWidth] = React.useState(52);
   const [draft, setDraft] = React.useState("");
+  const [composerAttachments,setComposerAttachments]=React.useState<
+    readonly ComposerDraftAttachment[]
+  >([]);
+  const composerAttachmentsRef=React.useRef<readonly ComposerDraftAttachment[]>([]);
+  const composerAttachmentsByConversationRef=React.useRef(
+    new Map<DemoConversationId,readonly ComposerDraftAttachment[]>(),
+  );
+  const composerFileInputRef=React.useRef<HTMLInputElement|null>(null);
   const [draftHydrated,setDraftHydrated]=React.useState(()=>
     typeof window==="undefined" || window.agentWebDesktopHost==null);
   const activeConversationRef=React.useRef(active);
@@ -220,9 +238,11 @@ export function App() {
     if(pending!=null)clearTimeout(pending);
     pendingDraftSaves.current.delete(id);
     const host=window.agentWebDesktopHost;
-    if(host!=null)void host.setComposerDraft(id,text).catch(()=>{});
+    if(id!=="visual-empty"&&host!=null)
+      void host.setComposerDraft(id,text).catch(()=>{});
   },[]);
   const scheduleDraftSave=React.useCallback((id:DemoConversationId,text:string)=>{
+    if(id==="visual-empty")return;
     const host=window.agentWebDesktopHost;
     if(host==null)return;
     const old=pendingDraftSaves.current.get(id);
@@ -250,7 +270,8 @@ export function App() {
     for(const [id,timeout] of pendingDraftSaves.current){
       clearTimeout(timeout);
       const value=draftByConversationRef.current.get(id)??"";
-      void window.agentWebDesktopHost?.setComposerDraft(id,value).catch(()=>{});
+      if(id!=="visual-empty")
+        void window.agentWebDesktopHost?.setComposerDraft(id,value).catch(()=>{});
     }
     pendingDraftSaves.current.clear();
   },[]);
@@ -280,7 +301,8 @@ export function App() {
   const [pinnedContentTabs,setPinnedContentTabs]=React.useState<
     SourcePinnedContentTabsState
   >(()=>{
-    if(typeof window==="undefined")return sourceEmptyPinnedContentTabsState();
+    if(typeof window==="undefined"||isVisualShellScenario)
+      return sourceEmptyPinnedContentTabsState();
     try{return sourceParsePinnedContentTabs(
       window.localStorage.getItem(SOURCE_PINNED_CONTENT_TABS_STORAGE_KEY),
       window.localStorage.getItem(SOURCE_PINNED_CONTENT_TAB_PRESENTATION_STORAGE_KEY),
@@ -366,6 +388,8 @@ export function App() {
       toastTimerRef.current = setTimeout(() => setToast(null), 3600);
     }, []);
   React.useEffect(()=>{
+    // A visual-baseline route must not read or overwrite the user's saved pins.
+    if(isVisualShellScenario)return;
     const serialized=sourceSerializePinnedContentTabs(pinnedContentTabs);
     try{
       window.localStorage.setItem(
@@ -379,7 +403,7 @@ export function App() {
         SOURCE_UNIFIED_SIDEBAR_PINNED_ORDER_STORAGE_KEY,serialized.orderJson,
       );
     }catch{/* Storage can be unavailable in private/restricted browser contexts. */}
-  },[pinnedContentTabs]);
+  },[pinnedContentTabs,isVisualShellScenario]);
   // Original gqi only presents a pin as available while its exact owner is
   // mounted in the same client-thread context. A saved presentation is not
   // proof that the tab survived a reload or workspace-grant revocation.
@@ -942,6 +966,29 @@ export function App() {
   }, []);
 
   function nextId(prefix: string) { return `${prefix}-${++nextIdRef.current}`; }
+  function setActiveComposerAttachments(next:readonly ComposerDraftAttachment[]){
+    composerAttachmentsRef.current=next;
+    composerAttachmentsByConversationRef.current.set(active,next);
+    setComposerAttachments(next);
+  }
+  function addComposerFiles(files:readonly File[]){
+    const current=composerAttachmentsRef.current;
+    const next=appendComposerDraftAttachments(current,files,
+      ()=>nextId("composer-attachment"));
+    if(next===current)return;
+    setActiveComposerAttachments(next);
+    const added=next.length-current.length;
+    notify(`已暂存 ${added} 个文件（本地预览，尚未上传）`);
+  }
+  function removeComposerFile(id:string){
+    const next=removeComposerDraftAttachment(composerAttachmentsRef.current,id);
+    if(next!==composerAttachmentsRef.current)setActiveComposerAttachments(next);
+  }
+  function handleComposerFileInputChange(event:React.ChangeEvent<HTMLInputElement>){
+    addComposerFiles(Array.from(event.currentTarget.files??[]));
+    // Selecting the same path again must produce a new change event.
+    event.currentTarget.value="";
+  }
   function scheduleAppend(entry: ReturnType<typeof demoMessageEntry>, delay = 0) {
     timerRef.current = setTimeout(() => {
       appendDemoEntries(source, [entry]);
@@ -965,14 +1012,15 @@ export function App() {
     canQueueNativeAnswerSubmission: false,
     hasUploadPolicy: false,
     hasText: draft.trim().length > 0,
-    hasAttachments: false,
-    hostSendDisabled: draft.trim().length === 0,
+    hasAttachments: composerAttachments.length>0,
+    hostSendDisabled: draft.trim().length === 0&&composerAttachments.length===0,
     submitLoading: false,
   });
 
   function sendMessage() {
     const message = draft.trim();
-    if (!message) return;
+    const stagedAttachments=composerAttachmentsRef.current;
+    if (!message&&stagedAttachments.length===0) return;
     // Demo host mapping only: "playing" means a mock action is pending. The
     // original controller/voice/conversation state remains host-owned.
     const submitDecision = resolveComposerSubmitDecision({
@@ -989,11 +1037,18 @@ export function App() {
     });
     if (submitDecision.kind !== "submit") return;
     markFollow();
-    appendDemoEntries(source, [demoMessageEntry("user", nextId("user"), message)]);
+    const messageAttachments=toLocalPreviewOnlyMessageAttachments(stagedAttachments);
+    appendDemoEntries(source, [demoMessageEntry("user", nextId("user"), message,
+      messageAttachments.length>0?{attachments:messageAttachments}:undefined)]);
     updateDraft("");
+    setActiveComposerAttachments([]);
     setPlaying(true);
-    scheduleAppend(demoMessageEntry("assistant", nextId("reply"),
-      `**模拟回复**：已收到你的消息。\n\n> ${message.slice(0, 180).replace(/\n/g, "\n> ")}\n\n当前只是在浏览器中验证恢复后的 React 消息渲染链路，**不会请求模型或调用真实 Agent 后端**。`), 700);
+    const attachmentNote=stagedAttachments.length>0
+      ?`\n\n本地预览附件：${stagedAttachments.length} 个（尚未上传）。`:"";
+    const reply=message.length>0
+      ?`**模拟回复**：已收到你的消息。\n\n> ${message.slice(0, 180).replace(/\n/g, "\n> ")}\n\n当前只是在浏览器中验证恢复后的 React 消息渲染链路，**不会请求模型或调用真实 Agent 后端**。${attachmentNote}`
+      :`已在演示会话中暂存 ${stagedAttachments.length} 个本地附件。它们尚未上传，也没有发送到真实 Agent 后端。`;
+    scheduleAppend(demoMessageEntry("assistant", nextId("reply"),reply),700);
   }
 
   function playSample() {
@@ -1211,6 +1266,9 @@ export function App() {
     setPlaying(false);
     setHistoryAdded(false);
     setDraft("");
+    composerAttachmentsByConversationRef.current.delete(active);
+    composerAttachmentsRef.current=[];
+    setComposerAttachments([]);
     setGeneration((value) => value + 1);
   }
   function switchConversation(id: DemoConversationId) {
@@ -1228,6 +1286,10 @@ export function App() {
     setShowScrollToBottom(incoming>24);
     // Preserve the current editor value before ProseMirror is replaced.
     saveDraftNow(active,draftByConversationRef.current.get(active)??"");
+    composerAttachmentsByConversationRef.current.set(active,composerAttachmentsRef.current);
+    const incomingAttachments=composerAttachmentsByConversationRef.current.get(id)??[];
+    composerAttachmentsRef.current=incomingAttachments;
+    setComposerAttachments(incomingAttachments);
     if (timerRef.current != null) clearTimeout(timerRef.current);
     timerRef.current = null;
     setPlaying(false);
@@ -1495,6 +1557,7 @@ export function App() {
           visible={showScrollToBottom} onClick={scrollToLatest}/>
         <CodexSourceComposerHostForm className="demo-composer-wrap"
           integratedVoiceModeActive={false} hasUploadPolicy={false}
+          onFilesDropped={files=>addComposerFiles(files)}
           onSubmit={() => { if (composerAction.kind === "send") sendMessage(); }}>
           <CodexComposerLayout
             className="demo-composer"
@@ -1502,16 +1565,28 @@ export function App() {
             density="comfortable"
             radiusVariant="default"
             surfaceVariant="default"
+            attachments={composerAttachments.length>0
+              ?<CodexComposerDraftAttachmentTray
+                attachments={composerAttachments} onRemove={removeComposerFile}/>
+              :null}
             input={draftHydrated ? <DemoProseMirrorComposerEditor key={active}
               value={draft}
               onChange={updateDraft}
               onSubmit={sendMessage}
-              onPastedImages={() => notify("演示模式：图片上传尚未接入。")}
-              onPastedFiles={() => notify("演示模式：文件上传尚未接入。")}
+              onPastedImages={addComposerFiles}
+              onPastedFiles={addComposerFiles}
               onPastedText={() => false}
             /> : <div data-composer-draft-hydrating="true" aria-live="polite">恢复输入内容中…</div>}
             leadingControls={<div className="demo-composer-options">
-              <button type="button" className="demo-composer-plus" title="附件尚未恢复" disabled aria-label="附件尚未恢复"><Icon name="plus" size={20}/></button>
+              <input ref={composerFileInputRef} type="file" multiple
+                className="demo-composer-file-input" data-testid="composer-file-input"
+                aria-label="选择要添加的文件" onChange={handleComposerFileInputChange}/>
+              <button type="button" className="demo-composer-plus"
+                title="添加文件（本地预览，尚未上传）" aria-label="添加文件"
+                disabled={!draftHydrated}
+                onClick={()=>composerFileInputRef.current?.click()}>
+                <Icon name="plus" size={20}/>
+              </button>
               <span className="demo-composer-permission" title="演示模式，无真实权限授予">♧ Full access <span>· mock</span></span>
             </div>}
             trailingControls={<div className="demo-composer-right">

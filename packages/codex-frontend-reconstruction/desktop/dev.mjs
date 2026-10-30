@@ -5,6 +5,10 @@ const cwd=resolve(fileURLToPath(new URL("..",import.meta.url)));
 const npm=process.platform==="win32"?"npm.cmd":"npm";
 const electron=resolve(cwd,"node_modules",".bin",process.platform==="win32"?"electron.cmd":"electron");
 const url="http://127.0.0.1:5173/";
+const visualScenario=process.env.AGENT_WEB_VISUAL_SCENARIO;
+const appUrl=typeof visualScenario==="string"&&visualScenario.length>0
+ ? url+"?visualScenario="+encodeURIComponent(visualScenario)
+ : url;
 const children=[];
 let quitting=false;
 function stop(code=0){
@@ -34,7 +38,7 @@ try{
   const ui=spawn(electron,["."],{
    cwd,stdio:"inherit",
    shell:process.platform==="win32",
-   env:{...process.env,AGENT_WEB_DEV_URL:url},
+   env:{...process.env,AGENT_WEB_DEV_URL:appUrl},
   });
   children.push(ui);
   ui.on("exit",code=>stop(code??1));
