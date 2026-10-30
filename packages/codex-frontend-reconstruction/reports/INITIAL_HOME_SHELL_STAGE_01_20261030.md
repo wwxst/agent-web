@@ -100,3 +100,27 @@ remains unchanged apart from the Projects affordance.
 **Limit:** this is not an agent-cil workspace binding or durable Agent project.
 The granted folder is available only for existing read-only preview/search IPC;
 the send action remains unavailable without an Agent host.
+
+
+## App-shell sidebar overflow and visual geometry (2026-10-30)
+
+Source `app-initial-e7c27dd40beb.css` declares a column-flex
+`_Navigation_1uxfp_2` with `flex:1;min-height:0`. The reconstructed
+`ConversationSidebar` previously placed Pinned, Projects and Recents directly
+inside a non-scrolling column, allowing a long persisted pin registry to
+displace the remaining navigation sections out of the window.
+
+The sidebar now has a separate height-bounded, scrollable navigation child.
+Pinned rows also receive a bounded inner scroll so that Projects/Recents are
+discoverable even with many saved references. The 300px / 40svh pin-list
+cap is a local usability guard, **not** asserted to be an original Codex
+measurement. No pinned-record state, tab-owner semantics or workspace grant
+logic were changed.
+
+Added a 30-pin browser regression exercising the original persistent registry
+structure, checking both scroll hosts, Projects/Recents visibility, and the
+existing unavailable-pin semantics. The fixed empty-home screenshot baseline
+now also verifies the original compiled spacing constants at 1352x760:
+36px menu bar, 52px rail, 275px sidebar, 46px toolbar, 768px composer.
+These are layout invariants, not a claimed pixel-diff against a missing
+same-condition original screenshot. No agent-cil changes.

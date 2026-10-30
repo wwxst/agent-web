@@ -1035,3 +1035,29 @@ button:focus-visible, textarea:focus-visible { outline: 2px solid #578cda; outli
 .demo-main[data-codex-home="true"] .demo-home-hero:has(.demo-home-hero__project-select){
   pointer-events:auto;
 }
+
+
+/*
+ * Source app-initial-e7c27dd40beb.css _Navigation_1uxfp_2 has a
+ * column flex child with min-height:0; do not let a long pin registry grow
+ * the entire application surface or cover Projects/Recents. The independent
+ * pinned content tab list is capped to keep section headings usable; that
+ * cap is an implementation guard, not a claimed original pixel measurement.
+ */
+.demo-sidebar{min-height:0;overflow:hidden;}
+.demo-sidebar-head,.demo-sidebar-actions{flex-shrink:0;}
+.demo-sidebar-scroll{
+  display:flex;flex:1 1 auto;flex-direction:column;min-height:0;
+  overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;
+  scrollbar-width:thin;scrollbar-color:#cfcfcf transparent;
+}
+.demo-sidebar-scroll::-webkit-scrollbar{width:5px;}
+.demo-sidebar-scroll::-webkit-scrollbar-thumb{background:#cfcfcf;border-radius:99px;}
+.demo-pinned-section{min-height:0;flex-shrink:0;}
+.demo-pinned-list{
+  max-height:min(40svh,300px);overflow-y:auto;overflow-x:hidden;
+  overscroll-behavior:contain;scrollbar-width:thin;
+  scrollbar-color:#cfcfcf transparent;
+}
+.demo-pinned-list::-webkit-scrollbar{width:5px;}
+.demo-pinned-list::-webkit-scrollbar-thumb{background:#cfcfcf;border-radius:99px;}

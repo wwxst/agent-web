@@ -38,8 +38,11 @@ test("shell-empty visual route mounts the real desktop shell and idle Composer w
 
   const capture=await page.evaluate(()=>({
     viewport:{width:innerWidth,height:innerHeight,devicePixelRatio},
+    windowMenu:document.querySelector(".demo-window-menu")?.getBoundingClientRect().height??null,
     rail:document.querySelector("[data-app-navigation-rail]")?.getBoundingClientRect().width??null,
     sidebar:document.querySelector(".demo-sidebar")?.getBoundingClientRect().width??null,
+    mainLeft:document.querySelector(".demo-main")?.getBoundingClientRect().left??null,
+    sidebarScroll:document.querySelector("[data-sidebar-navigation-scroll]")?.getBoundingClientRect().height??null,
     header:document.querySelector(".demo-header")?.getBoundingClientRect().height??null,
     composer:document.querySelector(".demo-composer")?.getBoundingClientRect().toJSON()??null,
     hero:document.querySelector(".demo-home-hero")?.getBoundingClientRect().toJSON()??null,
@@ -49,9 +52,15 @@ test("shell-empty visual route mounts the real desktop shell and idle Composer w
     savedPin:localStorage.getItem("pinned-content-tabs-v1"),
   }));
   expect(capture.viewport).toEqual({width:1352,height:760,devicePixelRatio:1});
-  expect(capture.rail).toBeGreaterThan(0);
-  expect(capture.sidebar).toBeGreaterThan(200);
-  expect(capture.header).toBeGreaterThan(0);
+  // Original compiled source tokens: menu 36px, rail 13 spacing units,
+  // sidebar preferred 275px, main toolbar 46px and 48rem Composer width.
+  expect(capture.windowMenu).toBe(36);
+  expect(capture.rail).toBe(52);
+  expect(capture.sidebar).toBe(275);
+  expect(capture.mainLeft).toBe(327);
+  expect(capture.header).toBe(46);
+  expect(capture.sidebarScroll).toBeGreaterThan(100);
+  expect(capture.composer?.width).toBe(768);
   expect(capture.composerPlacement).toBe("home");
   expect(capture.composer).not.toBeNull();
   expect(capture.hero).not.toBeNull();

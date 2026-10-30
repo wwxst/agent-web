@@ -155,6 +155,7 @@ function ConversationSidebar(props: {
         <div className="demo-nav-action demo-nav-disabled" aria-label="Plugins 尚未接入"><Icon name="plugin" size={15}/> Plugins</div>
       </>}
     </div>
+    <div className="demo-sidebar-scroll" data-sidebar-navigation-scroll="true">
     {!collapsed && <>
       {pinnedItems.length>0?<section className="demo-pinned-section"
         aria-label="Pinned">
@@ -224,6 +225,7 @@ function ConversationSidebar(props: {
       </>}
       {!navigationRailEnabled && <div className="demo-sidebar-foot"><Icon name="settings" size={15}/> 预览环境 · 本地模拟数据</div>}
     </>}
+    </div>
     {!collapsed && resizeHandle}
   </aside>;
 }
