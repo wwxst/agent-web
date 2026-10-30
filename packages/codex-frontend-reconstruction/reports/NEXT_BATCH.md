@@ -2,19 +2,27 @@
 
 ## Completed: source-backed read-only file Find panel
 
-- Original source evidence, implementation scope and validation are recorded in `SOURCE_READONLY_FILE_SEARCH_20261030.md`.
-- Existing per-tab CodeMirror preview now has the original top Find panel, search highlights/counts and source key bindings.
-- Exact-head CI run 40983135835 passed: core 529, demo models 5, browser 74, desktop Node 82, Linux Electron smoke and Windows Electron smoke.
-- Remaining fidelity gap: Codex's private localized search-message provider and exact design-system control styling; no pixel-parity claim.
+- Evidence and scope: `SOURCE_READONLY_FILE_SEARCH_20261030.md`.
+- Existing per-tab CodeMirror preview has the original top Find panel, search highlights/counts and Mod-F / F3 / Shift-F3 / Mod-G key bindings.
+- Final PR-head CI run 40983666515 passed: core 529/529, demo models 5/5, Chromium 74/74, desktop Node 82/82, Linux Electron smoke, Windows Electron smoke and TypeScript/Vite builds.
 
-## Next concrete batch: original pinned content tabs
+## Completed: source-backed pinned content tab references
 
-- Source audit of the supplied `app-initial-5851df3f6cb1.js` identified the original tab-strip actions `Pin to sidebar` / `Unpin from sidebar`. The source descriptions explicitly distinguish a sidebar reference from the source content tab: unpinning must not close the source tab.
-- The original state uses the storage keys `pinned-content-tabs-v1` and `pinned-content-tab-presentation-v1`. The persisted record includes pin identity, account/host/thread/client-thread identity, exact `tabId`, `tabKind`, title, route path/search and order; presentation metadata separately carries source token, title, kind, chrome and availability.
-- No existing pinned-content-tab model or pin-to-sidebar action was found in the current reconstructed frontend. Do not implement this as a local boolean or a decorative sidebar row.
-- Next source work: trace the complete pin/unpin registry lifecycle, exact content-tab owner registration, route/reveal state, unavailable-owner handling, ordering/reorder semantics, and persistence migration before wiring actions into the existing preview tab strip and sidebar.
-- Acceptance must verify that pin creates a reference to the exact tab, selecting the pin reveals that same tab, unpin removes only the sidebar reference, closing the source tab updates availability correctly, and persisted order/identity survive restart. Keep the existing file preview, language navigation and Find tests green.
-- Continue on an independent recovery branch and draft PR. Do not merge into `main` or change the Agent backend without confirmation.
+- Evidence and scope: `SOURCE_PINNED_CONTENT_TABS_20261030.md`.
+- Restored source identity, the three original persistence keys, Pin/Unpin tab menu actions, sidebar Pinned section, exact live-tab selection, unavailable state and persistence across reload.
+- Unpin removes only the sidebar reference. Closing/revoking the source tab preserves the pin as unavailable; selecting it does not issue an unauthorized file read.
+- CI run 40986143431 passed on code head `bc9ff949ca639d71d2722e4ddb293dbe2adaceeb`: core 537/537, demo models 5/5, Chromium 77/77, desktop Node 82/82, Linux Electron smoke, Windows Electron smoke and TypeScript/Vite builds.
+- This remains a same-renderer fallback, not the complete original cross-window implementation.
+
+## Next concrete batch: cross-window content-tab owner/reveal bridge and durable preload
+
+- Port the source-confirmed main-process owner lifecycle from original `Zge`: typed `contentTabs.registerOwner`, `subscribeOwners` and `reveal` boundaries; exact owner identity; duplicate/disposed registration; owner availability; reveal statuses; and focusing the owning Electron BrowserWindow.
+- Register the existing React file-tab owner with the host using the exact tab identity. A pin clicked from another window must reveal the same source tab, not clone the editor or issue another file read.
+- Audit and, only for eligible source descriptors, restore `PinnedContentTabPreloadBridge` / `durableRoute.preload` with the original `pinned-tab-preload` reason. Do not invent a durable route for a local file whose native workspace grant is absent.
+- Acceptance: two real Electron windows; owner register/dispose; same owner re-registration; owner missing/unavailable/cancelled/revealed statuses; reveal exact tab and focus correct window; unpin never closes source tab; stale pins remain safely unavailable; no file-content persistence, root-path disclosure, extra file reads or write IPC.
+- After the owner bridge, continue with source-backed pinned-file thumbnails and the original sidebar reorder contract. Keep the existing read-only preview, language navigation, Find, and all Electron/browser tests green.
+- Continue on an independent stacked recovery branch/PR. Do not merge into `main` or change the Agent backend without confirmation.
+
 
 ---
 
