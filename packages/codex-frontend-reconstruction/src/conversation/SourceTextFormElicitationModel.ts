@@ -28,6 +28,7 @@ export interface SourceTextFormField {
  choices?:readonly SourceFormOption[];
  allowCustomChoice?:boolean;
  minItems?:number;maxItems?:number;
+ itemMinLength?:number;itemMaxLength?:number;
 }
 export interface SourceTextFormRequest {
  hostId:string;conversationId:string;requestId:string;
@@ -59,6 +60,9 @@ const ALLOWED_MULTI_CHOICE=new Set([
 ]);
 const ALLOWED_OPTION=new Set(["const","title","description"]);
 const ALLOWED_CHOICE_ITEMS=new Set(["type","oneOf"]);
+const ALLOWED_SUGGESTION_ITEMS=new Set([
+ "type","x-openai-suggestions","minLength","maxLength",
+]);
 function projectChoices(value:unknown,minimum=2):SourceFormOption[]|null{
  if(!Array.isArray(value)||value.length<minimum||value.length>12)return null;
  const used=new Set<string>(),result:SourceFormOption[]=[];
@@ -137,15 +141,28 @@ export function projectSourceTextFormElicitation(
    if(type==="array"){
      const items=object(f.items);
      if(!items||items.type!=="string"||
-       Object.keys(items).some(k=>!ALLOWED_CHOICE_ITEMS.has(k))||
        f.uniqueItems!==undefined&&f.uniqueItems!==true||
        !lengthBound(f.minItems)||!lengthBound(f.maxItems))return null;
-     const choices=projectChoices(items.oneOf);
+     const suggestions=Object.hasOwn(items,"x-openai-suggestions");
+     const allowed=suggestions?ALLOWED_SUGGESTION_ITEMS:ALLOWED_CHOICE_ITEMS;
+     if(Object.keys(items).some(k=>!allowed.has(k)))return null;
+     const choices=projectChoices(suggestions?items["x-openai-suggestions"]:items.oneOf,
+       suggestions?0:2);
      if(choices==null)return null;
      const min=f.minItems as number|undefined,max=f.maxItems as number|undefined;
-     if(min!==undefined&&min>choices.length||
-       max!==undefined&&(max<1||max>choices.length)||
+     if(min!==undefined&&(min>12||!suggestions&&min>choices.length)||
+       max!==undefined&&(max<1||max>12||!suggestions&&max>choices.length)||
        min!==undefined&&max!==undefined&&min>max)return null;
+     if(suggestions){
+       if(!lengthBound(items.minLength)||!lengthBound(items.maxLength)||
+         items.minLength!==undefined&&(items.minLength as number)>256||
+         items.maxLength!==undefined&&(items.maxLength as number)>256||
+         items.minLength!==undefined&&items.maxLength!==undefined&&
+           (items.minLength as number)>(items.maxLength as number))return null;
+       field.allowCustomChoice=true;
+       if(items.minLength!==undefined)field.itemMinLength=items.minLength as number;
+       field.itemMaxLength=items.maxLength===undefined?256:items.maxLength as number;
+     }
      field.choices=choices;
      if(min!==undefined)field.minItems=min;
      if(max!==undefined)field.maxItems=max;
@@ -193,19 +210,37 @@ export function sourceFormNumber(raw:string):number|null{
  const n=Number(raw);
  return Number.isFinite(n)&&Math.abs(n)<=1e12?n:null;
 }
+export interface SourceFormCustomSelection{
+ text:string;
+ selected:boolean;
+}
+export function sourceFormCustomValueIsValid(
+ field:SourceTextFormField,text:string,
+):boolean{
+ return field.allowCustomChoice===true&&field.type==="array"&&
+   string(text,field.itemMaxLength??256)&&text.length>0&&
+   (field.itemMinLength===undefined||text.length>=field.itemMinLength);
+}
 export function sourceFormFieldAnswer(
  field:SourceTextFormField,value:SourceFormDraftValue|undefined,
+ custom?:SourceFormCustomSelection,
 ):{valid:boolean;answered:boolean;value?:SourceFormAnswerValue}{
  if(field.type==="array"){
-   if(value===undefined)return {valid:!field.required,answered:false};
-   if(!Array.isArray(value))return {valid:false,answered:true};
+   if(value!==undefined&&!Array.isArray(value))return {valid:false,answered:true};
+   const committed=value===undefined?[]:value as string[];
    const allowed=new Set(field.choices?.map(c=>c.value)??[]);
-   if(value.length>12||value.some(item=>typeof item!=="string"||!allowed.has(item))||
-      new Set(value).size!==value.length||
-      field.minItems!==undefined&&value.length<field.minItems||
-      field.maxItems!==undefined&&value.length>field.maxItems||
-      field.required&&value.length===0)return {valid:false,answered:true};
-   return value.length>0?{valid:true,answered:true,value:[...value]}:
+   // Original vn appends a selected, nonempty customDraft only at validation.
+   const pending=field.allowCustomChoice&&custom?.selected&&custom.text.length>0
+     ?custom.text:null;
+   const selections=pending==null?committed:[...committed,pending];
+   if(selections.length>12||
+     selections.some(item=>typeof item!=="string"||
+       (!allowed.has(item)&&!sourceFormCustomValueIsValid(field,item)))||
+     new Set(selections).size!==selections.length||
+     field.minItems!==undefined&&selections.length<field.minItems||
+     field.maxItems!==undefined&&selections.length>field.maxItems||
+     field.required&&selections.length===0)return {valid:false,answered:selections.length>0};
+   return selections.length>0?{valid:true,answered:true,value:[...selections]}:
      {valid:true,answered:false};
  }
  if(value===undefined||value===""){
@@ -238,11 +273,12 @@ export function sourceFormFieldAnswer(
 }
 export function sourceTextFormValidate(
  request:SourceTextFormRequest,values:SourceFormDraftValues,
+ customDrafts?:Readonly<Record<string,SourceFormCustomSelection>>,
 ):{content:SourceFormAnswerContent|null;invalidFieldNames:string[]}{
  const content:SourceFormAnswerContent=Object.create(null);
  const invalidFieldNames:string[]=[];
  for(const field of request.fields){
-   const result=sourceFormFieldAnswer(field,values[field.name]);
+   const result=sourceFormFieldAnswer(field,values[field.name],customDrafts?.[field.name]);
    if(!result.valid){invalidFieldNames.push(field.name);continue;}
    if(result.answered){
      Object.defineProperty(content,field.name,{

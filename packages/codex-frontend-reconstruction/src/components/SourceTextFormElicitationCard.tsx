@@ -60,7 +60,7 @@ export function SourceTextFormElicitationCard({
       !active.choices?.some(option=>option.value===currentValue),
  };
  const hasError=invalid.includes(active.name);
- const validation=sourceTextFormValidate(request,values);
+ const validation=sourceTextFormValidate(request,values,customDrafts);
  async function send(action:"accept"|"decline"|"cancel",content:SourceFormAnswerContent|null=null){
    if(replyDisabled||pending.current||onReply==null)return;
    pending.current=true;setPhase("submitting");setError(null);
@@ -86,7 +86,7 @@ export function SourceTextFormElicitationCard({
    if(!last){
      // Source ei validates the current question independently on Next.
      // Do not inject placeholder answers into other field types.
-     const result=sourceFormFieldAnswer(active,values[active.name]);
+     const result=sourceFormFieldAnswer(active,values[active.name],customDrafts[active.name]);
      if(!result.valid){
        setInvalid([active.name]);return;
      }
@@ -111,7 +111,7 @@ export function SourceTextFormElicitationCard({
  function setCurrent(value:SourceFormDraftValue){
    if(disabled)return;
    const next={...values,[active.name]:value};
-   const nextCustom=active.allowCustomChoice===true
+   const nextCustom=active.allowCustomChoice===true&&active.type!=="array"
      ?{...customDrafts,[active.name]:{...customChoice,selected:false}}
      :customDrafts;
    saveAnswers(next,nextCustom);
@@ -119,8 +119,24 @@ export function SourceTextFormElicitationCard({
  function selectCustom(text:string,selected:boolean){
    if(disabled||active.allowCustomChoice!==true)return;
    const nextCustom={...customDrafts,[active.name]:{text,selected}};
-   const next={...values,[active.name]:selected?text:""};
+   const next=active.type==="array"?values:{
+     ...values,[active.name]:selected?text:"",
+   };
    saveAnswers(next,nextCustom);
+ }
+ function commitCustomArray(){
+   if(disabled||active.type!=="array"||active.allowCustomChoice!==true||
+     !customChoice.selected||!customChoice.text.trim())return;
+   const selected=Array.isArray(currentValue)?currentValue:[];
+   if(selected.length>=12||
+     active.maxItems!==undefined&&selected.length>=active.maxItems||
+     selected.includes(customChoice.text)||
+     active.itemMinLength!==undefined&&customChoice.text.length<active.itemMinLength||
+     active.itemMaxLength!==undefined&&customChoice.text.length>active.itemMaxLength){
+       setInvalid([active.name]);return;
+   }
+   saveAnswers({...values,[active.name]:[...selected,customChoice.text]},
+      {...customDrafts,[active.name]:{text:"",selected:false}});
  }
  return <section className="codex-source-text-form" data-source-text-form-request-id={key}
    data-source-text-form-phase={phase} aria-label="MCP form elicitation request"
@@ -212,20 +228,38 @@ export function SourceTextFormElicitationCard({
                </span>
              </label>;
            })}
+           {active.type==="array"&&active.allowCustomChoice===true&&
+             Array.isArray(currentValue)?
+               currentValue.filter(value=>!active.choices?.some(o=>o.value===value))
+                 .map(value=><label key={value}
+                   className="codex-source-text-form__choice codex-source-text-form__custom-tag">
+                   <input type="checkbox" checked aria-label={"Remove custom option "+value}
+                     disabled={disabled} onChange={()=>setCurrent(currentValue.filter(v=>v!==value))}/>
+                   <span className="codex-source-text-form__choice-title">{value}</span>
+                 </label>):null}
            {active.allowCustomChoice===true?
              <label className="codex-source-text-form__choice codex-source-text-form__custom-choice">
-               <input type="radio" name={active.name}
+               <input type={active.type==="array"?"checkbox":"radio"} name={active.name}
                  aria-label="Something else" checked={customChoice.selected}
                  disabled={disabled}
-                 onChange={()=>selectCustom(customChoice.text,true)}/>
+                 onChange={event=>selectCustom(customChoice.text,
+                    active.type==="array"?event.currentTarget.checked:true)}/>
                <textarea aria-label="Something else text"
                  placeholder="Something else"
                  className="codex-source-text-form__custom-editor"
                  value={customChoice.text}
-                 maxLength={active.maxLength??16384} rows={1}
+                 maxLength={active.type==="array"?(active.itemMaxLength??256):
+                   (active.maxLength??16384)} rows={1}
                  disabled={disabled}
                  onFocus={()=>{if(!customChoice.selected)selectCustom(customChoice.text,true);}}
-                 onChange={event=>selectCustom(event.currentTarget.value,true)}/>
+                 onChange={event=>selectCustom(event.currentTarget.value,true)}
+                 onKeyDown={event=>{
+                   if(active.type!=="array"||event.nativeEvent.isComposing||
+                     event.key!=="Enter"||event.shiftKey||
+                     event.ctrlKey||event.metaKey||event.altKey)return;
+                   event.preventDefault();event.stopPropagation();
+                   commitCustomArray();
+                 }}/>
              </label>
            :null}
          </fieldset>
