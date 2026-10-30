@@ -11,6 +11,34 @@ type ComposerHostCall =
 
 test("Composer model and reasoning choices come from the host and apply only after acknowledgement",async({page})=>{
   await page.addInitScript(()=>{
+    const makeBaseHost=()=>({
+      subscribeUiCommands:(_listener:(command:string)=>void)=>()=>{},
+      openMenu:async(_id:string,_anchor:{x:number;y:number})=>false,
+      selectWorkspaceDirectory:async()=>({selected:false}),
+      revokeWorkspaceDirectory:async()=>false,
+      copyWorkspaceFilePath:async(_path:string)=>false,
+      copyWorkspaceFileContents:async(_request:{path:string;line?:number;endLine?:number})=>false,
+      readWorkspaceTextFile:async(_request:{path:string;line?:number;endLine?:number})=>{
+        throw new Error("Workspace preview is not available in this Composer test.");
+      },
+      openExternalUrl:async(_url:string)=>false,
+      cancelUserVerification:async(_envelope:unknown)=>{
+        throw new Error("User verification backend unavailable.");
+      },
+      replyToUnsupportedForm:async(_envelope:unknown)=>{
+        throw new Error("Unsupported form backend unavailable.");
+      },
+      replyToTextForm:async(_envelope:unknown)=>{
+        throw new Error("Text form backend unavailable.");
+      },
+      replyToMcpApproval:async(_envelope:unknown)=>{
+        throw new Error("MCP approval backend unavailable.");
+      },
+      getHostInfo:async()=>({windowType:"electron" as const,platform:"test",theme:"light",backendConnected:false as const}),
+      getComposerDrafts:async()=>({}),
+      setComposerDraft:async(_threadId:"frontend"|"review",_text:string)=>true,
+      subscribeHostEvents:(_listener:(event:unknown)=>void)=>()=>{},
+    });
     let current:SourceComposerControlsSnapshot={
       schemaVersion:1,
       conversationId:"frontend",
@@ -40,7 +68,7 @@ test("Composer model and reasoning choices come from the host and apply only aft
       },
     };
     const calls:ComposerHostCall[]=[];
-    const host={
+    const host={...makeBaseHost(),
       subscribeHostEvents:()=>()=>{},
       getHostInfo:async()=>({windowType:"electron",platform:"test",theme:"light",backendConnected:true}),
       getComposerDrafts:async()=>({}),
@@ -116,6 +144,34 @@ test("Composer model and reasoning choices come from the host and apply only aft
 
 test("host-rejected permission changes leave the previously selected mode unchanged",async({page})=>{
   await page.addInitScript(()=>{
+    const makeBaseHost=()=>({
+      subscribeUiCommands:(_listener:(command:string)=>void)=>()=>{},
+      openMenu:async(_id:string,_anchor:{x:number;y:number})=>false,
+      selectWorkspaceDirectory:async()=>({selected:false}),
+      revokeWorkspaceDirectory:async()=>false,
+      copyWorkspaceFilePath:async(_path:string)=>false,
+      copyWorkspaceFileContents:async(_request:{path:string;line?:number;endLine?:number})=>false,
+      readWorkspaceTextFile:async(_request:{path:string;line?:number;endLine?:number})=>{
+        throw new Error("Workspace preview is not available in this Composer test.");
+      },
+      openExternalUrl:async(_url:string)=>false,
+      cancelUserVerification:async(_envelope:unknown)=>{
+        throw new Error("User verification backend unavailable.");
+      },
+      replyToUnsupportedForm:async(_envelope:unknown)=>{
+        throw new Error("Unsupported form backend unavailable.");
+      },
+      replyToTextForm:async(_envelope:unknown)=>{
+        throw new Error("Text form backend unavailable.");
+      },
+      replyToMcpApproval:async(_envelope:unknown)=>{
+        throw new Error("MCP approval backend unavailable.");
+      },
+      getHostInfo:async()=>({windowType:"electron" as const,platform:"test",theme:"light",backendConnected:false as const}),
+      getComposerDrafts:async()=>({}),
+      setComposerDraft:async(_threadId:"frontend"|"review",_text:string)=>true,
+      subscribeHostEvents:(_listener:(event:unknown)=>void)=>()=>{},
+    });
     const snapshot={
       schemaVersion:1,conversationId:"frontend",
       model:{selected:{id:"m",label:"Model"},options:[
@@ -127,7 +183,7 @@ test("host-rejected permission changes leave the previously selected mode unchan
           {id:"restricted",kind:"agent-mode",label:"Restricted"},
         ]},
     };
-    const host={
+    const host={...makeBaseHost(),
       subscribeHostEvents:()=>()=>{},
       getHostInfo:async()=>({windowType:"electron",platform:"test",theme:"light",backendConnected:true}),
       getComposerDrafts:async()=>({}),setComposerDraft:async()=>true,
@@ -159,6 +215,34 @@ test("missing host controls render disabled source-positioned placeholders rathe
 
 test("late model snapshots from a previous conversation cannot overwrite the active thread controls",async({page})=>{
   await page.addInitScript(()=>{
+    const makeBaseHost=()=>({
+      subscribeUiCommands:(_listener:(command:string)=>void)=>()=>{},
+      openMenu:async(_id:string,_anchor:{x:number;y:number})=>false,
+      selectWorkspaceDirectory:async()=>({selected:false}),
+      revokeWorkspaceDirectory:async()=>false,
+      copyWorkspaceFilePath:async(_path:string)=>false,
+      copyWorkspaceFileContents:async(_request:{path:string;line?:number;endLine?:number})=>false,
+      readWorkspaceTextFile:async(_request:{path:string;line?:number;endLine?:number})=>{
+        throw new Error("Workspace preview is not available in this Composer test.");
+      },
+      openExternalUrl:async(_url:string)=>false,
+      cancelUserVerification:async(_envelope:unknown)=>{
+        throw new Error("User verification backend unavailable.");
+      },
+      replyToUnsupportedForm:async(_envelope:unknown)=>{
+        throw new Error("Unsupported form backend unavailable.");
+      },
+      replyToTextForm:async(_envelope:unknown)=>{
+        throw new Error("Text form backend unavailable.");
+      },
+      replyToMcpApproval:async(_envelope:unknown)=>{
+        throw new Error("MCP approval backend unavailable.");
+      },
+      getHostInfo:async()=>({windowType:"electron" as const,platform:"test",theme:"light",backendConnected:false as const}),
+      getComposerDrafts:async()=>({}),
+      setComposerDraft:async(_threadId:"frontend"|"review",_text:string)=>true,
+      subscribeHostEvents:(_listener:(event:unknown)=>void)=>()=>{},
+    });
     const makeSnapshot=(conversationId:string,label:string):SourceComposerControlsSnapshot=>({
       schemaVersion:1,conversationId,
       model:{selected:{id:label,label,reasoningEffortId:"high",reasoningEffortLabel:"High"},
@@ -167,7 +251,7 @@ test("late model snapshots from a previous conversation cannot overwrite the act
       permissions:{selected:{id:"approval",kind:"agent-mode",label:"Ask for approval"},
         options:[{id:"approval",kind:"agent-mode",label:"Ask for approval"}]},
     });
-    const host={
+    const host={...makeBaseHost(),
       subscribeHostEvents:()=>()=>{},
       getHostInfo:async()=>({windowType:"electron",platform:"test",theme:"light",backendConnected:true}),
       getComposerDrafts:async()=>({}),setComposerDraft:async()=>true,
