@@ -1,3 +1,23 @@
+# Next reconstruction batch — current checkpoint 2026-10-30
+
+## Completed: source-backed read-only file Find panel
+
+- Original source evidence, implementation scope and validation are recorded in `SOURCE_READONLY_FILE_SEARCH_20261030.md`.
+- Existing per-tab CodeMirror preview now has the original top Find panel, search highlights/counts and source key bindings.
+- Exact-head CI run 40983135835 passed: core 529, demo models 5, browser 74, desktop Node 82, Linux Electron smoke and Windows Electron smoke.
+- Remaining fidelity gap: Codex's private localized search-message provider and exact design-system control styling; no pixel-parity claim.
+
+## Next concrete batch: original pinned content tabs
+
+- Source audit of the supplied `app-initial-5851df3f6cb1.js` identified the original tab-strip actions `Pin to sidebar` / `Unpin from sidebar`. The source descriptions explicitly distinguish a sidebar reference from the source content tab: unpinning must not close the source tab.
+- The original state uses the storage keys `pinned-content-tabs-v1` and `pinned-content-tab-presentation-v1`. The persisted record includes pin identity, account/host/thread/client-thread identity, exact `tabId`, `tabKind`, title, route path/search and order; presentation metadata separately carries source token, title, kind, chrome and availability.
+- No existing pinned-content-tab model or pin-to-sidebar action was found in the current reconstructed frontend. Do not implement this as a local boolean or a decorative sidebar row.
+- Next source work: trace the complete pin/unpin registry lifecycle, exact content-tab owner registration, route/reveal state, unavailable-owner handling, ordering/reorder semantics, and persistence migration before wiring actions into the existing preview tab strip and sidebar.
+- Acceptance must verify that pin creates a reference to the exact tab, selecting the pin reveals that same tab, unpin removes only the sidebar reference, closing the source tab updates availability correctly, and persisted order/identity survive restart. Keep the existing file preview, language navigation and Find tests green.
+- Continue on an independent recovery branch and draft PR. Do not merge into `main` or change the Agent backend without confirmation.
+
+---
+
 # Next reconstruction batch — ProseMirror rich extensions
 
 ## Verified base (2026-10-23)
