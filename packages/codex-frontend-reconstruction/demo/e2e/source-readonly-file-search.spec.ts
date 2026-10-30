@@ -59,6 +59,11 @@ test("read-only local CodeMirror restores the original file Find panel and navig
     return line?.textContent?.trim()??null;
   })).toBe("source line 20");
 
+  await content.press("Shift+F3");
+  await expect(searchPanel.getByRole("status")).toHaveText("1 / 11 results");
+  await content.press("Control+g");
+  await expect(searchPanel.getByRole("status")).toHaveText("2 / 11 results");
+
   await searchPanel.getByRole("button",{name:"Previous match"}).click();
   await expect(searchPanel.getByRole("status")).toHaveText("1 / 11 results");
   await expect.poll(async()=>content.evaluate(element=>{
