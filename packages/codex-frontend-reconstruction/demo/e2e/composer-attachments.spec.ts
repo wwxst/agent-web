@@ -99,3 +99,52 @@ test("Composer attachment drafts stay with their conversation and reset with tha
   await page.getByRole("button",{name:"New chat"}).click();
   await expect(page.locator("[data-composer-attachment-id]")).toHaveCount(0);
 });
+
+
+test("source attachment menu exposes photo/file/folder pickers and preserves local-only intake",async({page})=>{
+  await page.goto("/");
+  const trigger=page.getByRole("button",{name:"添加文件"});
+  await trigger.click();
+  const menu=page.getByRole("menu",{name:"添加附件"});
+  await expect(menu).toBeVisible();
+  await expect(trigger).toHaveAttribute("aria-expanded","true");
+  await expect(menu.getByRole("menuitem",{name:"Add photos"})).toBeVisible();
+  await expect(menu.getByRole("menuitem",{name:"Add files"})).toBeVisible();
+  await expect(menu.getByRole("menuitem",{name:"Add folder"})).toBeVisible();
+  await expect(menu).toContainText("Local preview only");
+  await expect(page.getByTestId("composer-photo-input")).toHaveAttribute("accept","image/*");
+  await expect(page.getByTestId("composer-folder-input")).toHaveAttribute("webkitdirectory","");
+  await page.keyboard.press("Escape");
+  await expect(menu).toHaveCount(0);
+  await expect(trigger).toBeFocused();
+
+  await trigger.click();
+  await menu.getByRole("menuitem",{name:"Add files"}).click();
+  await expect(menu).toHaveCount(0);
+  await page.getByTestId("composer-file-input").setInputFiles([
+    {name:"source-menu.txt",mimeType:"text/plain",buffer:Buffer.from("local-only")},
+  ]);
+  const tile=page.locator('[data-composer-attachment-id]').first();
+  await expect(tile).toContainText("source-menu.txt");
+  await expect(tile).toHaveAttribute("data-composer-attachment-upload-state","local-only");
+
+  await trigger.click();
+  await page.locator(".demo-header").click();
+  await expect(menu).toHaveCount(0);
+});
+
+test("normal New chat can stage local images without attempting an Agent upload",async({page})=>{
+  await page.goto("/?visualScenario=shell-empty");
+  const trigger=page.getByRole("button",{name:"添加文件"});
+  await trigger.click();
+  await expect(page.getByRole("menu",{name:"添加附件"})).toBeVisible();
+  await page.getByRole("menuitem",{name:"Add photos"}).click();
+  await page.getByTestId("composer-photo-input").setInputFiles([
+    {name:"draft-photo.png",mimeType:"image/png",buffer:Buffer.from(TWO_PIXEL_PNG,"base64")},
+  ]);
+  await expect(page.locator("[data-composer-attachment-id]")).toHaveCount(1);
+  await expect(page.locator('[data-composer-attachment-kind="image"]')).toHaveCount(1);
+  await expect(page.locator('[data-composer-attachment-upload-state="local-only"]')).toHaveCount(1);
+  await expect(page.getByTestId("send-button")).toBeDisabled();
+  await expect(page.locator(".demo-row")).toHaveCount(0);
+});

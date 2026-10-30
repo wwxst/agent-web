@@ -125,7 +125,12 @@ function ConversationSidebar(props: {
   collapsed: boolean;
   onToggle: () => void;
   onSelect: (id: DemoConversationId) => void;
-  onReset: () => void;
+  onNewChat: () => void;
+  workspaceProjectName:string|null;
+  workspaceProjectBusy:boolean;
+  workspaceProjectAvailable:boolean;
+  onOpenWorkspaceProject:()=>void;
+  onClearWorkspaceProject:()=>void;
   navigationRailEnabled: boolean;
   pinnedItems:readonly PinnedSidebarItem[];
   onSelectPinned:(pinId:string)=>void;
@@ -133,7 +138,9 @@ function ConversationSidebar(props: {
   resizeHandle?:React.ReactNode;
 }) {
   const {
-    active,collapsed,onToggle,onSelect,onReset,navigationRailEnabled,
+    active,collapsed,onToggle,onSelect,onNewChat,navigationRailEnabled,
+    workspaceProjectName,workspaceProjectBusy,workspaceProjectAvailable,
+    onOpenWorkspaceProject,onClearWorkspaceProject,
     pinnedItems,onSelectPinned,onUnpinPinned,resizeHandle,
   } = props;
   return <aside className={`demo-sidebar ${collapsed ? "demo-sidebar--collapsed" : ""}`} aria-label="演示会话导航">
@@ -142,12 +149,13 @@ function ConversationSidebar(props: {
       <button className="demo-icon-button" type="button" title="搜索尚未恢复" aria-label="搜索尚未恢复" disabled><Icon name="search" size={17}/></button>
     </div>
     <div className="demo-sidebar-actions">
-      <button type="button" className="demo-nav-action" title="新建演示会话" onClick={onReset}><Icon name="plus" size={16}/>{!collapsed && <span>New chat</span>}</button>
+      <button type="button" className={`demo-nav-action ${active === "visual-empty" ? "is-active" : ""}`} title="New chat" aria-current={active === "visual-empty" ? "page" : undefined} onClick={onNewChat}><Icon name="plus" size={16}/>{!collapsed && <span>New chat</span>}</button>
       {!collapsed && !navigationRailEnabled && <>
         <div className="demo-nav-action demo-nav-disabled" aria-label="Scheduled 尚未接入"><Icon name="clock" size={15}/> Scheduled</div>
         <div className="demo-nav-action demo-nav-disabled" aria-label="Plugins 尚未接入"><Icon name="plugin" size={15}/> Plugins</div>
       </>}
     </div>
+    <div className="demo-sidebar-scroll" data-sidebar-navigation-scroll="true">
     {!collapsed && <>
       {pinnedItems.length>0?<section className="demo-pinned-section"
         aria-label="Pinned">
@@ -176,6 +184,35 @@ function ConversationSidebar(props: {
           </div>)}
         </nav>
       </section>:null}
+      {active === "visual-empty" ? <>
+      <div className="demo-sidebar-projects-header">
+        <div className="demo-section-heading">Projects</div>
+        <button type="button" className="demo-sidebar-project-add"
+          aria-label="Open local folder" title={workspaceProjectAvailable
+            ? "Choose a local folder (read-only preview)"
+            : "Local folder selection requires the Electron desktop host"}
+          disabled={!workspaceProjectAvailable||workspaceProjectBusy}
+          onClick={onOpenWorkspaceProject}>
+          <Icon name="plus" size={15}/>
+        </button>
+      </div>
+      {workspaceProjectName==null
+        ?<div className="demo-sidebar-empty">No projects</div>
+        :<div className="demo-sidebar-local-project" data-local-workspace-project="">
+          <button type="button" className="demo-sidebar-local-project__name"
+            aria-label="Change local folder" title="Change read-only local folder"
+            onClick={onOpenWorkspaceProject} disabled={workspaceProjectBusy}>
+            <Icon name="folder" size={15}/>
+            <span>{workspaceProjectName}</span>
+            <small>Read-only</small>
+          </button>
+          <button type="button" className="demo-sidebar-local-project__clear"
+            aria-label="Clear local folder" title="Revoke folder access"
+            onClick={onClearWorkspaceProject} disabled={workspaceProjectBusy}>×</button>
+        </div>}
+      <div className="demo-section-heading demo-recent-heading">Recents</div>
+      <div className="demo-sidebar-empty">No chats</div>
+      </> : <>
       <div className="demo-section-heading">Projects</div>
       <nav className="demo-chat-list" aria-label="会话">
         <div className="demo-project-heading"><Icon name="folder" size={16}/> agent web</div>
@@ -185,18 +222,32 @@ function ConversationSidebar(props: {
       </nav>
       <div className="demo-sidebar-spacer"/>
       <div className="demo-section-heading demo-recent-heading">Recents</div>
+      </>}
       {!navigationRailEnabled && <div className="demo-sidebar-foot"><Icon name="settings" size={15}/> 预览环境 · 本地模拟数据</div>}
     </>}
+    </div>
     {!collapsed && resizeHandle}
   </aside>;
 }
 
 export function App() {
-  const visualScenario=typeof window==="undefined"?null:
-    new URLSearchParams(window.location.search).get("visualScenario");
-  const isVisualShellScenario=visualScenario==="shell-empty";
+  // Explicit fixture routing is limited to a test URL or a Playwright-only
+  // Vite dev server. Normal browser and packaged Electron starts are empty.
+  // The original standalone demo records are never a production default.
+  const launchParams=typeof window==="undefined"?new URLSearchParams():
+    new URLSearchParams(window.location.search);
+  const isVisualShellScenario=launchParams.get("visualScenario")==="shell-empty";
+  const explicitDemoScenario=launchParams.get("demoScenario");
+  const devTestFixtures=import.meta.env.DEV&&
+    import.meta.env.VITE_AGENT_WEB_DEMO_FIXTURES==="1";
+  const demoFixtureEnabled=devTestFixtures||
+    explicitDemoScenario==="frontend"||explicitDemoScenario==="review";
+  const initialDemoConversation:DemoConversationId=
+    explicitDemoScenario==="review"?"review":"frontend";
   const [active, setActive] = React.useState<DemoConversationId>(()=>
-    isVisualShellScenario?"visual-empty":"frontend");
+    isVisualShellScenario?"visual-empty":
+      demoFixtureEnabled?initialDemoConversation:"visual-empty");
+  const isNewChat = active === "visual-empty";
   const composerControlsHost=typeof window==="undefined"
     ?undefined:window.agentWebDesktopHost;
   const composerControls=useCodexComposerControls(composerControlsHost,active);
@@ -235,6 +286,33 @@ export function App() {
     new Map<DemoConversationId,readonly ComposerDraftAttachment[]>(),
   );
   const composerFileInputRef=React.useRef<HTMLInputElement|null>(null);
+  const composerPhotoInputRef=React.useRef<HTMLInputElement|null>(null);
+  const composerFolderInputRef=React.useRef<HTMLInputElement|null>(null);
+  const composerAttachmentTriggerRef=React.useRef<HTMLButtonElement|null>(null);
+  const composerAttachmentMenuRef=React.useRef<HTMLDivElement|null>(null);
+  const [composerAttachmentMenuOpen,setComposerAttachmentMenuOpen]=React.useState(false);
+  React.useEffect(()=>setComposerAttachmentMenuOpen(false),[active]);
+  React.useEffect(()=>{
+    if(!composerAttachmentMenuOpen)return;
+    const onOutside=(event:PointerEvent)=>{
+      const node=event.target as Node|null;
+      if(node!=null&&!composerAttachmentMenuRef.current?.contains(node)&&
+        !composerAttachmentTriggerRef.current?.contains(node))
+        setComposerAttachmentMenuOpen(false);
+    };
+    const onEscape=(event:KeyboardEvent)=>{
+      if(event.key!=="Escape")return;
+      event.preventDefault();
+      setComposerAttachmentMenuOpen(false);
+      composerAttachmentTriggerRef.current?.focus();
+    };
+    document.addEventListener("pointerdown",onOutside);
+    document.addEventListener("keydown",onEscape);
+    return ()=>{
+      document.removeEventListener("pointerdown",onOutside);
+      document.removeEventListener("keydown",onEscape);
+    };
+  },[composerAttachmentMenuOpen]);
   const [draftHydrated,setDraftHydrated]=React.useState(()=>
     typeof window==="undefined" || window.agentWebDesktopHost==null);
   const activeConversationRef=React.useRef(active);
@@ -318,6 +396,10 @@ export function App() {
   });
   const pinnedOwnerTokensRef=React.useRef(new Map<string,string>());
   const workspaceGrantRef=React.useRef(false);
+  // This is a read-only grant display, not a persistent Agent project or a
+  // claim that the selected folder is bound to an execution backend.
+  const [workspaceProjectName,setWorkspaceProjectName]=React.useState<string|null>(null);
+  const [workspaceProjectBusy,setWorkspaceProjectBusy]=React.useState(false);
   // A file read/dialog is bound to the visible thread lifetime; an old
   // request cannot install a preview after switching/resetting conversations.
   const workspaceRequestEpochRef=React.useRef(0);
@@ -453,12 +535,46 @@ export function App() {
     workspacePendingPreviewTabIdsRef.current.clear();
     workspaceLatestReadByTabRef.current.clear();
     workspaceGrantRef.current=false;
+    setWorkspaceProjectName(null);
+    setWorkspaceProjectBusy(false);
     setWorkspaceTabs(sourceEmptyLocalReadOnlyTabState());
     // An outstanding native folder picker may resolve after this revoke;
     // its call-site checks the epoch again and revokes that late grant.
     const host=window.agentWebDesktopHost;
     if(host!=null)void host.revokeWorkspaceDirectory().catch(()=>{});
   },[]);
+  const openWorkspaceProject=React.useCallback(async()=>{
+    const host=window.agentWebDesktopHost;
+    if(host?.selectWorkspaceDirectory==null||workspacePickerInFlightRef.current)return;
+    const epoch=workspaceRequestEpochRef.current;
+    workspacePickerInFlightRef.current=true;
+    setWorkspaceProjectBusy(true);
+    try{
+      const grant=await host.selectWorkspaceDirectory();
+      if(epoch!==workspaceRequestEpochRef.current){
+        // Revocation/route change while the OS picker is open wins.
+        if(grant.selected)await host.revokeWorkspaceDirectory().catch(()=>{});
+        return;
+      }
+      if(!grant.selected)return;
+      // This grant replaces the previous workspace, so invalidate every
+      // outstanding relative file read before showing the new folder.
+      workspaceRequestEpochRef.current++;
+      workspaceSelectionIntentRef.current++;
+      workspaceLatestPreviewIntentRef.current++;
+      workspaceLatestReadByTabRef.current.clear();
+      workspacePendingPreviewTabIdsRef.current.clear();
+      setWorkspaceTabs(sourceEmptyLocalReadOnlyTabState());
+      workspaceGrantRef.current=true;
+      setWorkspaceProjectName(grant.name??null);
+    }catch{
+      notify("无法打开本地文件夹，请检查文件系统权限。");
+    }finally{
+      workspacePickerInFlightRef.current=false;
+      setWorkspaceProjectBusy(false);
+    }
+  },[notify]);
+
   const openWorkspaceAttachment=React.useCallback(async(
     request:{path:string;line?:number;endLine?:number;column?:number;resetTabState?:boolean},
     mode:"preview"|"copy"="preview",
@@ -484,6 +600,7 @@ export function App() {
         }
         if(!grant.selected)return;
         workspaceGrantRef.current=true;
+        setWorkspaceProjectName(grant.name??null);
       }
       // A click dropped while the exclusive native directory chooser is
       // running must not invalidate its first request's result.
@@ -1020,11 +1137,17 @@ export function App() {
     hasUploadPolicy: false,
     hasText: draft.trim().length > 0,
     hasAttachments: composerAttachments.length>0,
-    hostSendDisabled: draft.trim().length === 0&&composerAttachments.length===0,
+    // The blank home has no Agent send host. Do not route it into the
+    // synthetic demo responder or claim a submission succeeded.
+    hostSendDisabled: isNewChat || (draft.trim().length === 0&&composerAttachments.length===0),
     submitLoading: false,
   });
 
   function sendMessage() {
+    // The empty Codex home is a visual/interaction shell, not a fake Agent.
+    // Once the native host exposes real thread creation, route that action
+    // here; until then preserve its draft and refuse synthetic submission.
+    if (isNewChat) return;
     const message = draft.trim();
     const stagedAttachments=composerAttachmentsRef.current;
     if (!message&&stagedAttachments.length===0) return;
@@ -1340,8 +1463,17 @@ export function App() {
     setSubagentFixture(null);
     setSelectedSubagent(null);
     setRequestedSubagentName(null);
+    // Keep explicitly opened inspector panels mounted across thread navigation;
+    // their existing host-scoped state is intentionally independent of thread selection.
     // Never retain result offsets from an unrelated demo conversation.
     setFindOrdinal(0);
+  }
+  function startNewChat() {
+    if (active === "visual-empty") {
+      reset();
+      return;
+    }
+    switchConversation("visual-empty");
   }
 
   // Original D0e routes native Toggle Sidebar / previousThread / nextThread
@@ -1359,6 +1491,9 @@ export function App() {
       if(command==="find-in-thread"){openFind();return;}
       if(command==="find-next-in-thread"){navigateFind("next");return;}
       if(command==="find-previous-in-thread"){navigateFind("previous");return;}
+      // Native previous/next thread shortcuts must never reveal the isolated
+      // synthetic fixture records in the normal, unconnected desktop app.
+      if(!demoFixtureEnabled)return;
       const index=DEMO_CONVERSATIONS.findIndex(entry=>entry.id===active);
       if(index<0)return;
       const destination=command==="previous-thread"?index-1:index+1;
@@ -1372,7 +1507,7 @@ export function App() {
   // The direct/more identity projection is sourced from original GZc/QZc;
   // routing/feature flags are supplied explicitly by this mock host.
   const availableRailDestinations: CodexRailDestination[] = [
-    { id: "builtin:home", label: "Home", icon: <Icon name="home" size={18}/>, isCurrentDestination: true, onSelect: () => switchConversation("frontend") },
+    { id: "builtin:home", label: "Home", icon: <Icon name="home" size={18}/>, isCurrentDestination: true, onSelect: () => demoFixtureEnabled ? switchConversation("frontend") : startNewChat() },
     { id: "builtin:activity", label: "Activity", icon: <Icon name="branch" size={18}/> },
     { id: "builtin:automations", label: "Scheduled", icon: <Icon name="clock" size={18}/> },
     { id: "builtin:library", label: "Library", icon: <Icon name="library" size={18}/> },
@@ -1413,31 +1548,56 @@ export function App() {
         <button type="button" disabled aria-label="Settings（尚未接入）" title="设置尚未接入"><Icon name="settings" size={18}/></button>
       </>}
     />}
-    <ConversationSidebar active={active} collapsed={collapsed} navigationRailEnabled={navigationRailEnabled} onToggle={() => setCollapsed((v) => !v)} onSelect={switchConversation} onReset={reset}
+    <ConversationSidebar active={active} collapsed={collapsed} navigationRailEnabled={navigationRailEnabled} onToggle={() => setCollapsed((v) => !v)} onSelect={switchConversation} onNewChat={startNewChat}
+      workspaceProjectName={workspaceProjectName} workspaceProjectBusy={workspaceProjectBusy}
+      workspaceProjectAvailable={window.agentWebDesktopHost?.selectWorkspaceDirectory!=null}
+      onOpenWorkspaceProject={()=>void openWorkspaceProject()}
+      onClearWorkspaceProject={revokeWorkspacePreview}
       pinnedItems={pinnedSidebarItems}
       onSelectPinned={selectPinnedContentTab}
       onUnpinPinned={unpinPinnedContentTab}
       resizeHandle={<CodexSourceSidebarResizeHandle
         width={sidebarWidth} availableWidth={availableWidth}
         onWidthChange={setSidebarWidth}/>}/>
-    <div className="demo-main" data-app-shell-main-surface="default"
+    <div className="demo-main" data-codex-home={isNewChat ? "true" : undefined} data-app-shell-main-surface="default"
       data-thread-scroll-layout="default">
       <header className="demo-header" data-app-shell-main-titlebar="true">
         <div className="demo-titlebar-toolbar" role="toolbar" aria-label="聊天工具栏"
           data-app-shell-focus-area="main">
         <div className="demo-header-location" data-app-shell-titlebar-content="true">
-          <span className="demo-header-folder"><Icon name="folder" size={17}/></span><strong>{DEMO_CONVERSATIONS.find((c) => c.id === active)?.title}</strong></div>
+          {!isNewChat && <span className="demo-header-folder"><Icon name="folder" size={17}/></span>}<strong>{DEMO_CONVERSATIONS.find((c) => c.id === active)?.title}</strong></div>
         <div className="demo-header-actions">
           <span className="demo-header-static" title="原版桌面按钮布局参考，暂未接通功能"><Icon name="dots" size={17}/></span>
-          {subagentFixture!==null?<button type="button" className="demo-icon-button"
+          {!isNewChat && subagentFixture!==null?<button type="button" className="demo-icon-button"
             title="Subagents · synthetic fixture" aria-label="Open Subagents"
             aria-expanded={showSubagentsPanel}
             onClick={()=>setShowSubagentsPanel(true)}><Icon name="branch" size={17}/></button>:null}
-          <button type="button" className="demo-icon-button" title={showDemoTools ? "收起演示工具" : "打开演示工具"} aria-label={showDemoTools ? "收起演示工具" : "打开演示工具"} aria-expanded={showDemoTools} onClick={() => setShowDemoTools((value) => !value)}><Icon name="sliders" size={17}/></button>
+          {!isNewChat && <button type="button" className="demo-icon-button" title={showDemoTools ? "收起演示工具" : "打开演示工具"} aria-label={showDemoTools ? "收起演示工具" : "打开演示工具"} aria-expanded={showDemoTools} onClick={() => setShowDemoTools((value) => !value)}><Icon name="sliders" size={17}/></button>}
           <button type="button" className="demo-icon-button demo-collapse-toggle" aria-label={collapsed ? "展开侧边栏" : "收起侧边栏"} onClick={() => setCollapsed((value) => !value)}><Icon name="panel" size={17}/></button>
         </div>
         </div>
       </header>
+      {isNewChat && <section className="demo-home-hero" aria-label="Codex welcome" data-codex-home-hero="">
+        <div className="demo-home-hero__content">
+          <svg className="demo-home-hero__icon" aria-hidden="true" focusable="false"
+            width="56" height="56" viewBox="149 149 418 418" fill="none"
+            xmlns="http://www.w3.org/2000/svg">
+            <path d="M247.429 247.43C257.73 208.911 292.871 180.543 334.638 180.543C359.555 180.543 382.115 190.64 398.449 206.964C405.906 204.97 413.743 203.905 421.829 203.905C471.681 203.906 512.096 244.32 512.096 294.173C512.096 302.259 511.031 310.096 509.037 317.553C525.361 333.887 535.458 356.446 535.458 381.364C535.458 423.131 507.09 458.271 468.571 468.572C458.271 507.091 423.131 535.459 381.364 535.459C356.446 535.459 333.886 525.362 317.552 509.037C310.095 511.031 302.258 512.097 294.172 512.097C244.319 512.097 203.906 471.682 203.906 421.829C203.906 413.743 204.969 405.905 206.963 398.448C190.639 382.115 180.543 359.555 180.543 334.638C180.543 292.871 208.91 257.73 247.429 247.43Z"
+              stroke="currentColor" strokeWidth="20.581"/>
+            <path d="M436.706 408.738H370.021" stroke="currentColor" strokeWidth="24" strokeLinecap="round"/>
+            <path d="M276.533 309.154L303.468 357.831C304.433 359.575 304.412 361.698 303.414 363.423L276.533 409.854"
+              stroke="currentColor" strokeWidth="24" strokeLinecap="round"/>
+          </svg>
+          <h1 className="demo-home-hero__heading">
+            {workspaceProjectName==null?"What should we build?":<>
+              What should we work on in{" "}
+              <button type="button" className="demo-home-hero__project-select"
+                onClick={()=>void openWorkspaceProject()} disabled={workspaceProjectBusy}
+                title="Change read-only local folder">{workspaceProjectName}</button>?
+            </>}
+          </h1>
+        </div>
+      </section>}
       {findOpen && createPortal(<div className="demo-thread-find-portal" data-source-thread-find-portal="true">
         <div className="demo-thread-find-bar" data-content-search-bar="true"
         role="search" aria-label="会话内查找（当前演示仅搜索已加载会话文本）">
@@ -1561,7 +1721,7 @@ export function App() {
         </div>
       </div>}
       <div className="demo-scroll-region" ref={scrollElementRef}
-        role="region" tabIndex={0} aria-label="对话"
+        role="region" tabIndex={0} aria-label={isNewChat ? "New conversation" : "对话"}
         data-thread-scroll-viewport=""
         // Original scrollToDistanceFromBottomPx(source:"user"|"programmatic")
         // distinguishes user intent from the automatic route hold. Never
@@ -1606,7 +1766,9 @@ export function App() {
         </div>
       </div>
       <div className="demo-composer-zone" ref={composerFooterRef}
-        data-thread-scroll-footer="true" data-thread-footer-placement="bottom">
+        data-composer-placement={isNewChat ? "home" : "thread"}
+        data-thread-scroll-footer={isNewChat ? undefined : "true"}
+        data-thread-footer-placement={isNewChat ? undefined : "bottom"}>
         <div className="demo-thread-footer-surface" data-thread-footer-background-part="surface" aria-hidden="true"/>
         <CodexSourceScrollToBottomButton
           visible={showScrollToBottom} onClick={scrollToLatest}/>
@@ -1616,6 +1778,7 @@ export function App() {
           onSubmit={() => { if (composerAction.kind === "send") sendMessage(); }}>
           <CodexComposerLayout
             className="demo-composer"
+            placement={isNewChat ? "home" : "thread"}
             layout="multiline"
             density="comfortable"
             radiusVariant="default"
@@ -1631,22 +1794,65 @@ export function App() {
               onPastedImages={addComposerFiles}
               onPastedFiles={addComposerFiles}
               onPastedText={() => false}
+              placeholder={isNewChat ? "Do anything" : "Work with Codex"}
+              ariaLabel={isNewChat ? "Do anything" : "演示消息输入"}
             /> : <div data-composer-draft-hydrating="true" aria-live="polite">恢复输入内容中…</div>}
             leadingControls={<div className="demo-composer-options">
               <input ref={composerFileInputRef} type="file" multiple
                 className="demo-composer-file-input" data-testid="composer-file-input"
                 aria-label="选择要添加的文件" onChange={handleComposerFileInputChange}/>
-              <button type="button" className="demo-composer-plus"
-                title="添加文件（本地预览，尚未上传）" aria-label="添加文件"
-                disabled={!draftHydrated}
-                onClick={()=>composerFileInputRef.current?.click()}>
-                <Icon name="plus" size={20}/>
-              </button>
+              <input ref={composerPhotoInputRef} type="file" multiple accept="image/*"
+                className="demo-composer-file-input" data-testid="composer-photo-input"
+                aria-label="选择要添加的照片" onChange={handleComposerFileInputChange}/>
+              <input ref={node=>{
+                  composerFolderInputRef.current=node;
+                  if(node!=null)node.setAttribute("webkitdirectory","");
+                }} type="file" multiple
+                className="demo-composer-file-input" data-testid="composer-folder-input"
+                aria-label="选择要添加的文件夹" onChange={handleComposerFileInputChange}/>
+              <div className="demo-composer-attachment-picker" data-composer-attachment-picker="">
+                <button ref={composerAttachmentTriggerRef} type="button" className="demo-composer-plus"
+                  title="添加附件（本地暂存，尚未上传）" aria-label="添加文件"
+                  aria-haspopup="menu" aria-expanded={composerAttachmentMenuOpen}
+                  disabled={!draftHydrated}
+                  onClick={()=>setComposerAttachmentMenuOpen(open=>!open)}>
+                  <Icon name="plus" size={20}/>
+                </button>
+                {composerAttachmentMenuOpen&&<div ref={composerAttachmentMenuRef}
+                  className="demo-composer-attachment-menu" role="menu" aria-label="添加附件"
+                  data-composer-attachment-menu="">
+                  <button type="button" role="menuitem"
+                    onClick={()=>{
+                      setComposerAttachmentMenuOpen(false);
+                      composerPhotoInputRef.current?.click();
+                    }}>
+                    <Icon name="file" size={16}/><span>Add photos</span>
+                  </button>
+                  <div className="demo-composer-attachment-menu__heading">Files and folders</div>
+                  <button type="button" role="menuitem"
+                    onClick={()=>{
+                      setComposerAttachmentMenuOpen(false);
+                      composerFileInputRef.current?.click();
+                    }}>
+                    <Icon name="file" size={16}/><span>Add files</span>
+                  </button>
+                  <button type="button" role="menuitem"
+                    onClick={()=>{
+                      setComposerAttachmentMenuOpen(false);
+                      composerFolderInputRef.current?.click();
+                    }}>
+                    <Icon name="folder" size={16}/><span>Add folder</span>
+                  </button>
+                  <p className="demo-composer-attachment-menu__note">
+                    Local preview only. Files are not uploaded to an Agent.
+                  </p>
+                </div>}
+              </div>
               <CodexComposerPermissionModeControl key={active} controls={composerControls}/>
             </div>}
             trailingControls={<div className="demo-composer-right">
               <CodexComposerModelReasoningControl key={active} controls={composerControls}/>
-              <button type={composerAction.type} data-testid="send-button" data-composer-action={composerAction.kind} aria-busy={composerAction.loading} aria-label={composerAction.kind === "stop" ? "停止模拟" : "发送模拟消息"} title={composerAction.kind === "stop" ? "停止模拟" : "发送模拟消息"} className="demo-send-button" disabled={composerAction.disabled} onClick={composerAction.kind === "stop" ? stopSample : undefined}><Icon name={composerAction.kind === "stop" ? "stop" : "up"} size={16}/></button>
+              <button type={composerAction.type} data-testid="send-button" data-composer-action={composerAction.kind} aria-busy={composerAction.loading} aria-label={isNewChat ? "发送消息（Agent 未连接）" : composerAction.kind === "stop" ? "停止模拟" : "发送模拟消息"} title={isNewChat ? "Agent 未连接，暂不可发送" : composerAction.kind === "stop" ? "停止模拟" : "发送模拟消息"} className="demo-send-button" disabled={composerAction.disabled} onClick={composerAction.kind === "stop" ? stopSample : undefined}><Icon name={composerAction.kind === "stop" ? "stop" : "up"} size={16}/></button>
             </div>}
           />
         </CodexSourceComposerHostForm>

@@ -145,3 +145,61 @@ test("pinned identity persists across reload but a missing local owner is not fa
   await pinRow.getByRole("button",{name:"Unpin tab"}).click();
   await expect(restored.locator('[data-pinned-content-tab-id]')).toHaveCount(0);
 });
+
+
+test("a large pinned registry scrolls in a bounded sidebar list without pushing Projects and Recents out of the window",async({page})=>{
+  await page.addInitScript(()=>{
+    const pins:Record<string,unknown>={};
+    const presentations:Record<string,unknown>={};
+    const order:string[]=[];
+    for(let index=0;index<30;index++){
+      const tabId=`workspace-tree:src/fixture-${index}.ts`;
+      const id=JSON.stringify([null,"local","frontend",tabId]);
+      pins[id]={
+        id,accountId:null,hostId:"local",threadId:"frontend",
+        clientThreadId:"frontend",tabId,tabKind:"file",
+        title:`fixture-${index}.ts`,routePath:"",routeSearch:"",order:index,
+      };
+      presentations[id]={
+        sourceToken:`reloaded-fixture-${index}`,
+        title:`fixture-${index}.ts`,kind:"file",chrome:null,available:false,
+      };
+      order.push(`content-tab:${id}`);
+    }
+    localStorage.setItem("pinned-content-tabs-v1",JSON.stringify(pins));
+    localStorage.setItem("pinned-content-tab-presentation-v1",JSON.stringify(presentations));
+    localStorage.setItem("unified-sidebar-pinned-order-v1",JSON.stringify(order));
+  });
+  await page.goto("/");
+  const sidebar=page.getByRole("complementary",{name:"演示会话导航"});
+  const pins=sidebar.getByRole("navigation",{name:"Pinned content tabs"});
+  await expect(pins.locator("[data-pinned-content-tab-id]")).toHaveCount(30);
+  const geometry=await page.evaluate(()=>{
+    const nav=document.querySelector<HTMLElement>("[data-sidebar-navigation-scroll]")!;
+    const list=document.querySelector<HTMLElement>(".demo-pinned-list")!;
+    const sidebar=document.querySelector<HTMLElement>(".demo-sidebar")!;
+    const projects=Array.from(document.querySelectorAll(".demo-section-heading"))
+      .find(node=>node.textContent==="Projects")!.getBoundingClientRect();
+    const recents=Array.from(document.querySelectorAll(".demo-section-heading"))
+      .find(node=>node.textContent==="Recents")!.getBoundingClientRect();
+    return {
+      navOverflow:getComputedStyle(nav).overflowY,
+      navHeight:nav.clientHeight,sidebarHeight:sidebar.clientHeight,
+      listOverflow:getComputedStyle(list).overflowY,
+      listHeight:list.clientHeight,listScrollHeight:list.scrollHeight,
+      projectsBottom:projects.bottom,recentsBottom:recents.bottom,
+      viewportHeight:innerHeight,
+    };
+  });
+  expect(geometry.navOverflow).toBe("auto");
+  expect(geometry.navHeight).toBeLessThan(geometry.sidebarHeight);
+  expect(geometry.listOverflow).toBe("auto");
+  expect(geometry.listScrollHeight).toBeGreaterThan(geometry.listHeight);
+  expect(geometry.listHeight).toBeLessThanOrEqual(300);
+  expect(geometry.projectsBottom).toBeLessThan(geometry.viewportHeight);
+  expect(geometry.recentsBottom).toBeLessThan(geometry.viewportHeight);
+  // The last persisted reference stays navigable (unavailable, not faked live).
+  await pins.locator("[data-pinned-content-tab-id]").last().scrollIntoViewIfNeeded();
+  await expect(pins.locator("[data-pinned-content-tab-id]").last())
+    .toHaveAttribute("data-pinned-content-tab-unavailable","true");
+});

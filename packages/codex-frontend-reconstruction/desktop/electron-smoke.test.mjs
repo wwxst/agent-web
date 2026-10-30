@@ -545,5 +545,45 @@ test("independent Electron file renderer starts, isolates preload and routes Fc 
   // relayout unstable for Playwright pointer actionability checks.
   await mkdir(resolve(root,"desktop/test-results"),{recursive:true});
   await page.screenshot({path:screenshot,fullPage:false});
+
+  // Capture the actual Electron new-chat home as a separate visual baseline.
+  // The file path stays identical; only the scenario query changes, which the
+  // main-process navigation policy explicitly permits for the loaded file.
+  const homeUrl=new URL(page.url());
+  homeUrl.searchParams.set("visualScenario","shell-empty");
+  await page.goto(homeUrl.toString());
+  await page.locator('[data-codex-shell-preview="light"]').waitFor({timeout:20000});
+  await page.locator('.demo-composer[data-composer-placement="home"]').waitFor({timeout:15000});
+  assert.equal(await page.locator(".demo-header-location strong").textContent(),"New chat");
+  assert.equal(await page.locator(".demo-row").count(),0);
+  assert.equal(await page.locator(".demo-project-heading").count(),0);
+  assert.equal(await page.locator(".demo-chat-link").count(),0);
+  assert.equal(await page.getByText("No projects",{exact:true}).count(),1);
+  assert.equal(await page.getByText("No chats",{exact:true}).count(),1);
+  assert.equal(await page.locator(".demo-header-folder").count(),0);
+  assert.equal(await page.getByRole("heading",{name:"What should we build?"}).count(),1);
+  assert.equal(await page.locator(".demo-home-hero__icon").getAttribute("width"),"56");
+  assert.equal(await page.locator('.demo-composer [contenteditable="true"][aria-label="Do anything"]').count(),1);
+  const homeGeometry=await page.evaluate(()=>{
+    const main=document.querySelector(".demo-main")?.getBoundingClientRect();
+    const composer=document.querySelector(".demo-composer")?.getBoundingClientRect();
+    const heroHeading=document.querySelector(".demo-home-hero__heading")?.getBoundingClientRect();
+    return {mainTop:main?.top??null,composerTop:composer?.top??null,
+      expectedTop:main==null?null:main.top+innerHeight*.42,
+      placement:document.querySelector(".demo-composer")?.getAttribute("data-composer-placement"),
+      heroHeadingBottom:heroHeading?.bottom??null};
+  });
+  assert.equal(homeGeometry.placement,"home");
+  assert.ok(homeGeometry.heroHeadingBottom!=null&&homeGeometry.composerTop!=null&&
+    homeGeometry.composerTop-homeGeometry.heroHeadingBottom>15&&
+    homeGeometry.composerTop-homeGeometry.heroHeadingBottom<30,
+    JSON.stringify(homeGeometry));
+  assert.ok(homeGeometry.composerTop!=null&&homeGeometry.expectedTop!=null&&
+    Math.abs(homeGeometry.composerTop-homeGeometry.expectedTop)<4,
+    JSON.stringify(homeGeometry));
+  await page.screenshot({
+    path:resolve(root,"desktop/test-results/electron-home-new-chat.png"),
+    fullPage:false,animations:"disabled",
+  });
  }finally{await app.close();}
 });

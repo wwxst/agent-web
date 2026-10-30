@@ -54,6 +54,7 @@ test("rail only navigates where mock host provides a handler", async ({ page }) 
   await expect(page.locator(".demo-header-location strong")).toHaveText("工具调用与审批交互");
   await page.getByRole("button", {name: "Home"}).click();
   await expect(page.locator(".demo-header-location strong")).toHaveText("恢复 Codex 会话界面");
+  await expect(page.locator(".demo-composer")).toHaveAttribute("data-composer-placement","thread");
   await expect(page.getByRole("button", {name: "Library"})).toBeDisabled();
 });
 

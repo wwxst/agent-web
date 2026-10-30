@@ -8,6 +8,8 @@ export interface DemoProseMirrorComposerEditorProps {
   value: string;
   onChange: (value: string) => void;
   onSubmit: (timestamp?: number) => void;
+  placeholder?: string;
+  ariaLabel?: string;
   onPastedImages?: (files: readonly File[]) => void;
   onPastedFiles?: (files: readonly File[], dataTransfer?: DataTransfer | null) => void;
   onPastedText?: (payload: ComposerPastedTextPayload) => boolean | void;
@@ -51,8 +53,8 @@ export function DemoProseMirrorComposerEditor(props: DemoProseMirrorComposerEdit
       />
       <CodexSourceComposerEditorMount
         controller={controller}
-        ariaLabel="演示消息输入"
-        placeholder="Work with Codex"
+        ariaLabel={props.ariaLabel ?? "演示消息输入"}
+        placeholder={props.placeholder ?? "Work with Codex"}
         layout="multiline"
         submitReady={true}
         disableAutoFocus={true}

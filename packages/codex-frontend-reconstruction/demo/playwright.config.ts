@@ -15,6 +15,9 @@ export default defineConfig({
   },
   webServer: {
     command: "npm run demo:dev",
+    // Only the automated browser suite opts into synthetic transcript fixtures.
+    // A normal Vite dev start opens the same blank new-chat home as Electron.
+    env: { VITE_AGENT_WEB_DEMO_FIXTURES: "1" },
     url: "http://127.0.0.1:5173",
     reuseExistingServer: !process.env.CI,
     timeout: 60_000,
