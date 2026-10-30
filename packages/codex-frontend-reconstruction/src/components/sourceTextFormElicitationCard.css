@@ -57,3 +57,13 @@
 .codex-source-text-form__content input:focus-visible{
  outline:2px solid var(--demo-link,#3265bd);outline-offset:2px;
 }
+
+/* Original request-panel Hn: vertically stacked option controls. */
+.codex-source-text-form__choices{display:flex;flex-direction:column;gap:4px;border:0;padding:0;margin:0;min-width:0}
+.codex-source-text-form__choice{display:flex;align-items:flex-start;gap:10px;min-height:36px;padding:8px 10px;border:1px solid var(--demo-border,#dedede);border-radius:9px;cursor:pointer}
+.codex-source-text-form__choice input{width:17px;height:17px;flex-shrink:0;margin-top:2px;accent-color:var(--demo-text,#242424)}
+.codex-source-text-form__choice-content{display:flex;flex-direction:column;gap:2px;min-width:0;overflow-wrap:anywhere}
+.codex-source-text-form__choice-title{font-size:13px;line-height:20px;font-weight:500}
+.codex-source-text-form__choice-description{font-size:12px;line-height:18px;color:var(--demo-muted,#656565)}
+.codex-source-text-form__choice:has(input:checked){border-color:var(--demo-text,#444);background:var(--demo-subtle,#f6f6f6)}
+.codex-source-text-form__choice:focus-within{outline:2px solid var(--demo-link,#3265bd);outline-offset:1px}

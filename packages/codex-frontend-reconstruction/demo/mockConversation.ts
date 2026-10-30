@@ -118,6 +118,14 @@ export function demoMcpApprovalEntry(turnId:string,disabled=false):ConversationR
 /** Source unsupported OpenAI form, explicitly a synthetic visual fixture. */
 /** Original simple source formElicitation: synthetic fixture only. */
 /** Original ur boolean/number/integer, synthetic visual fixture only. */
+/** Original Hn oneOf radio/array checkbox; synthetic visual fixture. */
+export function demoChoiceFormElicitationEntry(turnId:string):ConversationRenderEntry{
+ return demoActivityEntry(turnId,[
+   demoItem(turnId+"-request","demo-choice-form-elicitation",undefined,{
+     heading:"MCP 选项表单（模拟）",state:"Needs input",
+   }),
+ ]);
+}
 export function demoMixedFormElicitationEntry(turnId:string):ConversationRenderEntry{
  return demoActivityEntry(turnId,[
    demoItem(turnId+"-request","demo-mixed-form-elicitation",undefined,{

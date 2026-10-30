@@ -99,7 +99,11 @@ contextBridge.exposeInMainWorld("agentWebDesktopHost",Object.freeze({
       Object.keys(envelope.content).length<=12&&
       Object.entries(envelope.content).every(([name,value])=>
         id(name)&&!["__proto__","constructor","prototype"].includes(name)&&
-        (typeof value==="boolean"||
+        (Array.isArray(value)&&value.length<=12&&
+          value.every(item=>typeof item==="string"&&item.length>0&&
+            item.length<=256&&!/[\u0000-\u001f\u007f]/.test(item))&&
+          new Set(value).size===value.length||
+         typeof value==="boolean"||
          typeof value==="number"&&Number.isFinite(value)&&Math.abs(value)<=1e12||
          typeof value==="string"&&value.length<=16384&&
           !/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/.test(value)));

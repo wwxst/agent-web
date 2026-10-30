@@ -5,6 +5,7 @@ import {tmpdir} from "node:os";
 import {join,resolve} from "node:path";
 import {fileURLToPath} from "node:url";
 import {_electron as electron} from "playwright";
+import {expect} from "@playwright/test";
 
 const root=resolve(fileURLToPath(new URL("..",import.meta.url)));
 const executablePath=resolve(root,"node_modules","electron","dist",
@@ -475,7 +476,7 @@ test("native Find maps Markdown link labels but never highlights the hidden iden
   await page.waitForFunction((needle)=>
     Array.from(CSS.highlights?.get("demo-thread-find-active")??[])
       .some(range=>range.toString()===needle),token);
-  assert.deepEqual(await currentHighlight(),[{text:token,inLink:false,unitKey}]);
+  await expect.poll(currentHighlight,{timeout:10000}).toEqual([{text:token,inLink:false,unitKey}]);
 
   await page.getByRole("button",{name:"Next result"}).click();
   await page.waitForFunction(()=>
@@ -484,7 +485,7 @@ test("native Find maps Markdown link labels but never highlights the hidden iden
     Array.from(CSS.highlights?.get("demo-thread-find-active")??[])
       .some(range=>range.toString()===needle&&
         range.startContainer.parentElement?.closest("a")!=null),token);
-  assert.deepEqual(await currentHighlight(),[{text:token,inLink:true,unitKey}]);
+  await expect.poll(currentHighlight,{timeout:10000}).toEqual([{text:token,inLink:true,unitKey}]);
   await mkdir(resolve(root,"desktop/test-results"),{recursive:true});
   await page.screenshot({path:resolve(root,
     "desktop/test-results/conversation-find-visible-markdown-link.png"),
@@ -497,7 +498,7 @@ test("native Find maps Markdown link labels but never highlights the hidden iden
   await page.waitForFunction(()=>
     document.querySelector(".demo-find-results")?.textContent==="3 / 4 results");
   await page.waitForFunction(()=>!CSS.highlights?.has("demo-thread-find-active"));
-  assert.deepEqual(await currentHighlight(),[]);
+  await expect.poll(currentHighlight,{timeout:10000}).toEqual([]);
 
   await page.getByRole("button",{name:"Next result"}).click();
   await page.waitForFunction(()=>
@@ -505,7 +506,7 @@ test("native Find maps Markdown link labels but never highlights the hidden iden
   await page.waitForFunction((needle)=>
     Array.from(CSS.highlights?.get("demo-thread-find-active")??[])
       .some(range=>range.toString()===needle),token);
-  assert.deepEqual(await currentHighlight(),[{text:token,inLink:false,unitKey}]);
+  await expect.poll(currentHighlight,{timeout:10000}).toEqual([{text:token,inLink:false,unitKey}]);
   assert.equal(await findStatus.textContent(),"4 / 4 results");
  }finally{
   await app.close();

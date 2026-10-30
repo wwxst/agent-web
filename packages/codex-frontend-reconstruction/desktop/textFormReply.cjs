@@ -11,7 +11,11 @@ const record=v=>v!==null&&typeof v==="object"&&!Array.isArray(v);
 const id=v=>typeof v==="string"&&v.length>0&&v.length<=256&&
  v.trim()===v&&!/[\u0000-\u001f\u007f]/.test(v);
 const SAFE_KEY=k=>id(k)&&!["__proto__","constructor","prototype"].includes(k);
+const choiceArray=v=>Array.isArray(v)&&v.length<=12&&
+ v.every(item=>typeof item==="string"&&item.length>0&&item.length<=256&&
+  !/[\u0000-\u001f\u007f]/.test(item))&&new Set(v).size===v.length;
 const answerValue=v=>
+ choiceArray(v)||
  typeof v==="boolean"||
  typeof v==="number"&&Number.isFinite(v)&&Math.abs(v)<=1e12||
  typeof v==="string"&&v.length<=16384&&
@@ -38,9 +42,11 @@ function handleFormTextReply({isTrustedRenderer,agentFormReplyTransport=null},ev
   throw new TypeError("TEXT_FORM_INVALID_REPLY");
  if(typeof agentFormReplyTransport!=="function")
   throw new Error("TEXT_FORM_BACKEND_UNAVAILABLE");
- // A host transport must verify the schema for the same pending request.
+ // The real authenticated Agent must check choices against the authoritative
+ // pending schema. Never accept a new value based on renderer shape alone.
  const content=envelope.action==="accept"
-   ?Object.fromEntries(Object.entries(envelope.content)):null;
+   ?Object.fromEntries(Object.entries(envelope.content).map(([k,v])=>
+      [k,Array.isArray(v)?[...v]:v])):null;
  return agentFormReplyTransport({
   hostId:envelope.hostId,conversationId:envelope.conversationId,
   requestId:envelope.requestId,

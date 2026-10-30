@@ -634,6 +634,24 @@ export function makeDemoRow(
       if(live!=null)return projectSourceTextFormElicitation(live.elicitation,{
         hostId:live.hostId,conversationId:live.threadId,requestId:live.requestId,
       });
+      if(item.type==="demo-choice-form-elicitation"&&typeof item.id==="string")
+        return projectSourceTextFormElicitation({
+          kind:"formElicitation",serverName:"Sample Tasks MCP (synthetic)",
+          message:"Choose activity options (synthetic)",
+          schema:{type:"object",properties:{
+            mode:{type:"string",title:"Primary mode",oneOf:[
+              {const:"research",title:"Research",description:"Investigate original source"},
+              {const:"develop",title:"Development",description:"Implement React UI"},
+              {const:"review",title:"Review",description:"Check code"},
+            ]},
+            tasks:{type:"array",title:"Tasks to run",
+              items:{type:"string",oneOf:[
+                {const:"tests",title:"Run tests",description:"Automated checks"},
+                {const:"build",title:"Build UI",description:"Compile and bundle"},
+                {const:"visual",title:"Visual comparison",description:"Compare original"},
+              ]},minItems:1,maxItems:2,uniqueItems:true},
+          },required:["mode","tasks"],additionalProperties:false},
+        },{hostId:"demo-host",conversationId:"frontend",requestId:item.id});
       if(item.type==="demo-mixed-form-elicitation"&&typeof item.id==="string")
         return projectSourceTextFormElicitation({
           kind:"formElicitation",serverName:"Sample MCP settings (synthetic)",
