@@ -63,9 +63,11 @@ function SearchPanelContents({view,snapshot}:{
       }}/>
     <button type="button" aria-label="Previous match" title="Previous match"
       disabled={!query.valid||snapshot.matches===0}
+      onMouseDown={event=>event.preventDefault()}
       onClick={()=>findPrevious(view)}>↑</button>
     <button type="button" aria-label="Next match" title="Next match"
       disabled={!query.valid||snapshot.matches===0}
+      onMouseDown={event=>event.preventDefault()}
       onClick={()=>findNext(view)}>↓</button>
     <span role="status" aria-live="polite"
       className="demo-workspace-preview__search-results">
