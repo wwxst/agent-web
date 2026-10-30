@@ -11,7 +11,10 @@ const record=v=>v!==null&&typeof v==="object"&&!Array.isArray(v);
 const id=v=>typeof v==="string"&&v.length>0&&v.length<=256&&
  v.trim()===v&&!/[\u0000-\u001f\u007f]/.test(v);
 const SAFE_KEY=k=>id(k)&&!["__proto__","constructor","prototype"].includes(k);
-const text=v=>typeof v==="string"&&v.length<=16384&&
+const answerValue=v=>
+ typeof v==="boolean"||
+ typeof v==="number"&&Number.isFinite(v)&&Math.abs(v)<=1e12||
+ typeof v==="string"&&v.length<=16384&&
  !/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/.test(v);
 function validFormTextReply(value){
  if(!record(value)||Object.keys(value).length!==5||
@@ -24,7 +27,7 @@ function validFormTextReply(value){
  if(!record(content))return false;
  const keys=Object.keys(content);
  if(keys.length>12)return false;
- if(keys.some(k=>!SAFE_KEY(k)||!text(content[k])))return false;
+ if(keys.some(k=>!SAFE_KEY(k)||!answerValue(content[k])))return false;
  try{return JSON.stringify(value).length<=32768;}
  catch{return false;}
 }

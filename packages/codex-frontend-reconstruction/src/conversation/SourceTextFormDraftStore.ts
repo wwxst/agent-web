@@ -8,11 +8,11 @@
  * and thread-clear, and never sent to Agent except on user submit.
  */
 import {
- sourceTextFormKey,type SourceTextFormRequest,
+ sourceTextFormKey,type SourceTextFormRequest,type SourceFormDraftValue,
 } from "./SourceTextFormElicitationModel.js";
 export interface SourceTextFormDraft {
  fieldIndex:number;
- values:Readonly<Record<string,string>>;
+ values:Readonly<Record<string,SourceFormDraftValue>>;
 }
 export interface SourceTextFormDraftStore {
  get(request:SourceTextFormRequest):SourceTextFormDraft|null;
@@ -39,13 +39,18 @@ export function createSourceTextFormDraftStore():SourceTextFormDraftStore {
   if(!Number.isInteger(draft.fieldIndex)||draft.fieldIndex<0||
     draft.fieldIndex>=request.fields.length)throw new TypeError("invalid field index");
   const allowed=new Map(request.fields.map(f=>[f.name,f]));
-  const values=Object.create(null) as Record<string,string>;
+  const values=Object.create(null) as Record<string,SourceFormDraftValue>;
   let total=0;
   for(const [name,value] of Object.entries(draft.values)){
-   if(!allowed.has(name)||typeof value!=="string"||value.length>16384||
-      /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/u.test(value))
-     throw new TypeError("invalid text form draft field");
-   total+=value.length;
+   const field=allowed.get(name);
+   if(field==null)throw new TypeError("unknown form draft field");
+   const valid=field.type==="boolean"
+     ?typeof value==="boolean"
+     :typeof value==="string"&&
+       value.length<=(field.type==="string"?16384:128)&&
+       !/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/u.test(value);
+   if(!valid)throw new TypeError("invalid form draft field");
+   total+=typeof value==="string"?value.length:1;
    if(total>32768)throw new TypeError("text form draft too large");
    Object.defineProperty(values,name,{value,enumerable:true});
   }

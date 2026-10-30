@@ -42,7 +42,7 @@ test("native source formElicitation fields, q2t reject, host update and real set
     exposed:typeof host.replyToTextForm,
     node:typeof window.require,
     badAction:await host.replyToTextForm({...ids,action:"grant",content:{}}).then(()=>false,e=>String(e)),
-    badContent:await host.replyToTextForm({...ids,action:"accept",content:{name:8}}).then(()=>false,e=>String(e)),
+    badContent:await host.replyToTextForm({...ids,action:"accept",content:{name:Infinity}}).then(()=>false,e=>String(e)),
     extra:await host.replyToTextForm({...ids,action:"accept",content:{},extra:1}).then(()=>false,e=>String(e)),
    };
   });
@@ -85,5 +85,48 @@ test("native source formElicitation fields, q2t reject, host update and real set
   assert.equal(await card.count(),1);
   await send({type:"elicitation-settled",query:scope});
   await card.waitFor({state:"detached",timeout:10000});
+
+  // The SAME native bridge now accepts all three ur primitive source types.
+  const mixedScope={...scope,requestId:"host-mixed-form-1"};
+  await send({type:"pending-elicitation",request:{...mixedScope,
+   elicitation:{kind:"formElicitation",serverName:"Project Settings",
+    message:"Configure primitive settings",
+    schema:{type:"object",properties:{
+     consent:{type:"boolean",title:"Allow processing"},
+     attempts:{type:"integer",title:"Retry count",minimum:1,maximum:5},
+     scale:{type:"number",title:"Scale ratio",minimum:0.5,maximum:3.5},
+    },required:["consent","attempts","scale"]},
+   },
+  }});
+  const mixed=page.locator("[data-source-text-form-request-id]");
+  await mixed.waitFor({timeout:10000});
+  assert.equal(await mixed.count(),1);
+  const check=mixed.getByRole("checkbox",{name:"Allow processing"});
+  assert.equal(await check.isChecked(),false);
+  await check.check();await check.uncheck();
+  await mixed.getByRole("button",{name:"Next",exact:true}).last().click();
+  const integer=mixed.getByRole("spinbutton",{name:"Retry count"});
+  await integer.fill("2.5");
+  await mixed.getByRole("button",{name:"Next",exact:true}).last().click();
+  await mixed.getByRole("alert").filter({hasText:"whole number"}).waitFor({timeout:10000});
+  await integer.fill("3");
+  await mixed.getByRole("button",{name:"Next",exact:true}).last().click();
+  const ratio=mixed.getByRole("spinbutton",{name:"Scale ratio"});
+  await ratio.fill("1.75");
+  await mkdir(resolve(root,"desktop/test-results"),{recursive:true});
+  await page.screenshot({
+   path:resolve(root,"desktop/test-results/host-mixed-form.png"),fullPage:false,
+  });
+  await mixed.getByRole("button",{name:"Continue"}).click();
+  await mixed.getByRole("alert").filter({hasText:"backend unavailable"})
+   .waitFor({timeout:12000});
+  assert.equal(await mixed.count(),1);
+  assert.equal(await ratio.inputValue(),"1.75");
+  await mixed.getByRole("button",{name:"Previous question"}).click();
+  assert.equal(await mixed.getByRole("spinbutton",{name:"Retry count"}).inputValue(),"3");
+  await mixed.getByRole("button",{name:"Previous question"}).click();
+  assert.equal(await mixed.getByRole("checkbox",{name:"Allow processing"}).isChecked(),false);
+  await send({type:"elicitation-settled",query:mixedScope});
+  await mixed.waitFor({state:"detached",timeout:10000});
  }finally{await app.close();await rm(profile,{recursive:true,force:true});}
 });

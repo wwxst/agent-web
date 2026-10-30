@@ -52,7 +52,7 @@ test("source unsupported field type/format/private extension is not silently con
   {...elicitation,confirmation:{field:"consent"}},
   {...elicitation,schema:{...elicitation.schema,required:["absent"]}},
   {...elicitation,schema:{...elicitation.schema,
-   properties:{...elicitation.schema.properties,consent:{type:"boolean",title:"Consent"}}}},
+   properties:{...elicitation.schema.properties,consent:{type:"array",items:{type:"boolean"},title:"Consent"}}}},
   {...elicitation,schema:{...elicitation.schema,
    properties:{title:{type:"string",enum:["yes","no"]}}}},
   {...elicitation,schema:{...elicitation.schema,
@@ -76,4 +76,70 @@ test("field special keys and host request identity are bounded, preserving reado
  },ctx),null);
  assert.equal(projectSourceTextFormElicitation(elicitation,{...ctx,hostId:" bad "}),null);
  assert.equal(projectSourceTextFormElicitation(elicitation,{...ctx,requestId:"a\nb"}),null);
+});
+
+
+test("source ur boolean/integer/number projection preserves native types and numeric bounds",()=>{
+ const schema={type:"object",properties:{
+  enabled:{type:"boolean",title:"Enable tool"},
+  count:{type:"integer",title:"Retry count",minimum:1.3,maximum:5.9},
+  ratio:{type:"number",title:"Ratio",minimum:-1.5,maximum:2.25},
+  comment:{type:"string",title:"Comment"},
+ },required:["enabled","count","ratio"]};
+ const form=projectSourceTextFormElicitation({
+  kind:"formElicitation",serverName:"MCP",message:"Settings",schema,
+ },ctx);
+ assert.ok(form);
+ assert.deepEqual(form.fields.map(f=>f.type),["boolean","integer","number","string"]);
+ assert.equal(form.fields[1].minimum,2);
+ assert.equal(form.fields[1].maximum,5);
+ assert.equal(form.fields[2].minimum,-1.5);
+ assert.equal(form.fields[2].maximum,2.25);
+ assert.deepEqual(sourceTextFormValidate(form,{enabled:false,count:"2",ratio:"1.75"})
+  .invalidFieldNames,[]);
+ const out=sourceTextFormValidate(form,{
+   enabled:false,count:"3",ratio:"1.25",comment:"ready",
+ });
+ assert.deepEqual(Object.entries(out.content),[
+  ["enabled",false],["count",3],["ratio",1.25],["comment","ready"],
+ ]);
+ assert.deepEqual(sourceTextFormWireResponse(sourceTextFormReply(form,"accept",out.content)),
+  {action:"accept",content:out.content,_meta:null});
+ assert.deepEqual(sourceTextFormValidate(form,{
+  enabled:true,count:"2.5",ratio:"1",
+ }).invalidFieldNames,["count"]);
+ assert.deepEqual(sourceTextFormValidate(form,{
+  enabled:true,count:"0",ratio:"-1.501",
+ }).invalidFieldNames,["count","ratio"]);
+ assert.deepEqual(sourceTextFormValidate(form,{
+  enabled:true,count:"4",ratio:"Infinity",
+ }).invalidFieldNames,["ratio"]);
+ assert.deepEqual(sourceTextFormValidate(form,{
+  enabled:true,count:"4",ratio:"1e999",
+ }).invalidFieldNames,["ratio"]);
+ assert.deepEqual(sourceTextFormValidate(form,{
+  enabled:"true",count:"4",ratio:"1",
+ }).invalidFieldNames,["enabled"]);
+ assert.deepEqual(sourceTextFormValidate(form,{
+  enabled:true,count:4,ratio:"1",
+ }).invalidFieldNames,["count"]);
+});
+test("unknown number rules cannot silently lose constraints when rendering fields",()=>{
+ const base={kind:"formElicitation",serverName:"MCP",message:"Read",
+   schema:{type:"object",properties:{
+    count:{type:"integer",minimum:0,maximum:12},
+   }}};
+ for(const input of [
+  {type:"number",multipleOf:5},
+  {type:"integer",minimum:null},
+  {type:"integer",minimum:14,maximum:3},
+  {type:"number",minimum:Infinity},
+  {type:"number",maximum:1e20},
+  {type:"boolean",enum:[true]},
+  {type:"boolean",default:true},
+ ]){
+   assert.equal(projectSourceTextFormElicitation({
+    ...base,schema:{...base.schema,properties:{count:input}},
+   },ctx),null);
+ }
 });
