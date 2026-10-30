@@ -67,7 +67,8 @@ export function SourceMcpApprovalRequestCard({
   const firstMenuItemRef=React.useRef<HTMLButtonElement|null>(null);
   const lastMenuItemRef=React.useRef<HTMLButtonElement|null>(null);
   const focusPositionedMenu=React.useCallback(()=>{
-    (pendingMenuFocusRef.current===1?lastMenuItemRef:firstMenuItemRef).current?.focus();
+    (pendingMenuFocusRef.current===1?lastMenuItemRef:firstMenuItemRef)
+      .current?.focus({preventScroll:true});
   },[]);
   const pendingMenuFocusRef=React.useRef<0|1>(0);
   // Original we keeps "name:index" expansion state above lazy/paged rows.
@@ -181,7 +182,7 @@ export function SourceMcpApprovalRequestCard({
   </>;
   const closeMenu=(restoreFocus=true)=>{
     setScopeMenuOpen(false);
-    if(restoreFocus)scopeTriggerRef.current?.focus();
+    if(restoreFocus)scopeTriggerRef.current?.focus({preventScroll:true});
   };
   const openMenu=(last=false)=>{
     pendingMenuFocusRef.current=last?1:0;

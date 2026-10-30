@@ -67,7 +67,7 @@ import {
   demoActivityEntry, demoItem, demoMessageEntry, makeLongHistory,
   demoStreamingCodeEntry, updateDemoStreamingCodeEntry,
   demoAutomaticReviewEntry, updateDemoAutomaticReviewEntry,
-  demoMcpApprovalEntry, demoComputerUseApprovalEntry, demoBrowserWebsiteApprovalEntry, demoUrlActionEntry, demoToolSuggestionEntry, demoUserVerificationEntry, demoUnsupportedOpenAIFormEntry, demoTextFormElicitationEntry, demoMixedFormElicitationEntry, demoChoiceFormElicitationEntry,
+  demoMcpApprovalEntry, demoComputerUseApprovalEntry, demoBrowserWebsiteApprovalEntry, demoUrlActionEntry, demoToolSuggestionEntry, demoUserVerificationEntry, demoUnsupportedOpenAIFormEntry, demoTextFormElicitationEntry, demoMixedFormElicitationEntry, demoChoiceFormElicitationEntry, demoCustomSuggestionFormEntry,
   type DemoConversationId,
 } from "./mockConversation.js";
 
@@ -1136,6 +1136,14 @@ export function App() {
     ]);
   }
 
+  function playCustomSuggestionFixture() {
+    if(playing)return;
+    markFollow();
+    appendDemoEntries(source,[
+      demoCustomSuggestionFormEntry(nextId("custom-suggestion-form")),
+    ]);
+  }
+
   function playChoiceFormFixture() {
     if(playing)return;
     markFollow();
@@ -1464,6 +1472,10 @@ export function App() {
           <button type="button" onClick={playBrowserWebsiteApprovalFixture}
             data-testid="demo-browser-website-approval-request">
             <Icon name="panel" size={15}/> 演示 Browser 网站授权请求（模拟）
+          </button>
+          <button type="button" onClick={playCustomSuggestionFixture}
+            data-testid="demo-custom-suggestion-form-request">
+            <Icon name="panel" size={15}/> 演示 MCP 自定义建议选项（模拟）
           </button>
           <button type="button" onClick={playChoiceFormFixture}
             data-testid="demo-choice-form-elicitation-request">

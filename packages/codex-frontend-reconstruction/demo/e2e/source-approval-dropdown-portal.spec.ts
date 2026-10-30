@@ -4,8 +4,16 @@ test("source KZu clips its content while portaled Mae approval options stay visi
  await page.goto("/");
  await page.getByRole("button",{name:"打开演示工具"}).click();
  await page.getByTestId("demo-mcp-approval-request").click();
+ // Selecting a fixture already dismisses its demo-only drawer; do not
+ // reopen it above the actual portaled approval card.
+ await expect(page.getByTestId("demo-tools")).toHaveCount(0);
  const row=page.locator('[data-demo-turn-id^="mcp-approval-"]').last();
+ // The expanding demo toolbar has additional source test fixtures now.
+ // Keep the virtualized approval row mounted before opening its portal;
+ // scrolling the row while a document-level menu is open may dismiss it.
+ await row.scrollIntoViewIfNeeded();
  const card=row.locator("[data-codex-approval-surface]");
+ await expect(card).toBeVisible();
  const options=card.getByRole("button",{name:"Approval options"});
  await options.click();
  const menu=page.getByRole("menu",{name:"Approval options"});
@@ -50,7 +58,6 @@ test("source KZu clips its content while portaled Mae approval options stay visi
  const menuId=await menu.getAttribute("id");
  expect(menuId).not.toBeNull();
  await expect(options).toHaveAttribute("aria-controls",menuId!);
- await row.scrollIntoViewIfNeeded();
  await page.screenshot({path:testInfo.outputPath("source-clipped-card-portaled-menu.png"),animations:"disabled"});
  await page.keyboard.press("Escape");
  await expect(menu).toHaveCount(0);

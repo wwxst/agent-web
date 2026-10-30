@@ -4,7 +4,9 @@ import {
  type SourceTextFormRequest,type SourceTextFormReplyTransport,
  type SourceFormDraftValue,type SourceFormAnswerContent,
 } from "../conversation/SourceTextFormElicitationModel.js";
-import type {SourceTextFormDraft} from "../conversation/SourceTextFormDraftStore.js";
+import type {
+ SourceTextFormDraft,SourceFormCustomDraft,
+} from "../conversation/SourceTextFormDraftStore.js";
 import "./sourceTextFormElicitationCard.css";
 
 export interface SourceTextFormElicitationCardProps{
@@ -26,6 +28,8 @@ export function SourceTextFormElicitationCard({
  const schemaKey=JSON.stringify(request.fields);
  const [values,setValues]=React.useState<Record<string,SourceFormDraftValue>>(
    ()=>({...initialDraft?.values}));
+ const [customDrafts,setCustomDrafts]=React.useState<Record<string,SourceFormCustomDraft>>(
+   ()=>({...initialDraft?.customDrafts}));
  const [fieldIndex,setFieldIndex]=React.useState(
    ()=>initialDraft?.fieldIndex??0);
  const [invalid,setInvalid]=React.useState<readonly string[]>([]);
@@ -39,6 +43,7 @@ export function SourceTextFormElicitationCard({
  React.useEffect(()=>{
    generation.current++;pending.current=false;
    setValues({...initialDraft?.values});
+   setCustomDrafts({...initialDraft?.customDrafts});
    setFieldIndex(initialDraft?.fieldIndex??0);setInvalid([]);
    setPhase("idle");setError(null);
    return ()=>{generation.current++;};
@@ -47,6 +52,13 @@ export function SourceTextFormElicitationCard({
  const disabled=busy;
  const replyDisabled=busy||onReply==null;
  const currentValue=values[active.name];
+ const customChoice=customDrafts[active.name]??{
+   text:typeof currentValue==="string"&&active.allowCustomChoice===true&&
+      !active.choices?.some(option=>option.value===currentValue)?currentValue:"",
+   selected:typeof currentValue==="string"&&currentValue.length>0&&
+      active.allowCustomChoice===true&&
+      !active.choices?.some(option=>option.value===currentValue),
+ };
  const hasError=invalid.includes(active.name);
  const validation=sourceTextFormValidate(request,values);
  async function send(action:"accept"|"decline"|"cancel",content:SourceFormAnswerContent|null=null){
@@ -67,7 +79,7 @@ export function SourceTextFormElicitationCard({
  function changeQuestion(next:number){
    const bounded=Math.max(0,Math.min(next,request.fields.length-1));
    setFieldIndex(bounded);
-   onDraftChange?.({fieldIndex:bounded,values});
+   onDraftChange?.({fieldIndex:bounded,values,customDrafts});
  }
  function handleNext(){
    if(disabled)return;
@@ -89,12 +101,26 @@ export function SourceTextFormElicitationCard({
    }
    setInvalid([]);void send("accept",validation.content);
  }
+ function saveAnswers(next:Record<string,SourceFormDraftValue>,
+                      custom:Record<string,SourceFormCustomDraft>){
+   setValues(next);
+   setCustomDrafts(custom);
+   onDraftChange?.({fieldIndex,values:next,customDrafts:custom});
+   if(hasError)setInvalid(current=>current.filter(name=>name!==active.name));
+ }
  function setCurrent(value:SourceFormDraftValue){
    if(disabled)return;
    const next={...values,[active.name]:value};
-   setValues(next);
-   onDraftChange?.({fieldIndex,values:next});
-   if(hasError)setInvalid(current=>current.filter(name=>name!==active.name));
+   const nextCustom=active.allowCustomChoice===true
+     ?{...customDrafts,[active.name]:{...customChoice,selected:false}}
+     :customDrafts;
+   saveAnswers(next,nextCustom);
+ }
+ function selectCustom(text:string,selected:boolean){
+   if(disabled||active.allowCustomChoice!==true)return;
+   const nextCustom={...customDrafts,[active.name]:{text,selected}};
+   const next={...values,[active.name]:selected?text:""};
+   saveAnswers(next,nextCustom);
  }
  return <section className="codex-source-text-form" data-source-text-form-request-id={key}
    data-source-text-form-phase={phase} aria-label="MCP form elicitation request"
@@ -140,7 +166,23 @@ export function SourceTextFormElicitationCard({
        {active.choices!=null
          ?<fieldset className="codex-source-text-form__choices"
            aria-label={active.title} data-mcp-form-choices="true"
-           aria-invalid={hasError}>
+           aria-invalid={hasError}
+           onKeyDownCapture={event=>{
+             const target=event.target;
+             if(disabled||event.nativeEvent.isComposing||
+               event.altKey||event.ctrlKey||event.metaKey||event.shiftKey||
+               (event.key!=="ArrowDown"&&event.key!=="ArrowUp")||
+               !(target instanceof HTMLInputElement)||target.type!=="radio")return;
+             const options=Array.from(event.currentTarget.querySelectorAll<HTMLInputElement>(
+               'input[type="radio"]:not(:disabled)'));
+             const index=options.indexOf(target);
+             if(index<0||options.length<2)return;
+             const next=options[(index+(event.key==="ArrowDown"?1:-1)+options.length)%options.length];
+             if(next==null)return;
+             event.preventDefault();
+             next.focus();
+             next.click();
+           }}>
            {active.choices.map(choice=>{
              const multiple=active.type==="array";
              const selected=multiple
@@ -170,6 +212,22 @@ export function SourceTextFormElicitationCard({
                </span>
              </label>;
            })}
+           {active.allowCustomChoice===true?
+             <label className="codex-source-text-form__choice codex-source-text-form__custom-choice">
+               <input type="radio" name={active.name}
+                 aria-label="Something else" checked={customChoice.selected}
+                 disabled={disabled}
+                 onChange={()=>selectCustom(customChoice.text,true)}/>
+               <textarea aria-label="Something else text"
+                 placeholder="Something else"
+                 className="codex-source-text-form__custom-editor"
+                 value={customChoice.text}
+                 maxLength={active.maxLength??16384} rows={1}
+                 disabled={disabled}
+                 onFocus={()=>{if(!customChoice.selected)selectCustom(customChoice.text,true);}}
+                 onChange={event=>selectCustom(event.currentTarget.value,true)}/>
+             </label>
+           :null}
          </fieldset>
          :active.type==="boolean"
          ?<label className="codex-source-text-form__checkbox-row">

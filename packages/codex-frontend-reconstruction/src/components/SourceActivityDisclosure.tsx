@@ -48,6 +48,25 @@ export function SourceActivityDisclosure({
     return () => cancelAnimationFrame(frame);
   }, [phase]);
 
+  React.useEffect(()=>{
+    if(phase!=="closing")return;
+    // The original A_ owns a Framer Motion onAnimationComplete callback.
+    // This independent CSS-grid equivalent cannot assume transitionend:
+    // reduced motion, virtualized layout and skipped frames can omit it.
+    const node=bodyRef.current;
+    const style=node==null?null:window.getComputedStyle(node);
+    const duration=(style?.transitionDuration??"0s").split(",").map(v=>
+      v.trim().endsWith("ms")?Number.parseFloat(v):Number.parseFloat(v)*1000);
+    const delay=(style?.transitionDelay??"0s").split(",").map(v=>
+      v.trim().endsWith("ms")?Number.parseFloat(v):Number.parseFloat(v)*1000);
+    const expected=Math.max(0,...duration.map((d,i)=>
+      Number.isFinite(d)?d+(Number.isFinite(delay[i]??0)?delay[i]??0:0):0));
+    const timeout=window.setTimeout(()=>
+      setPhase(current=>finishSourceDisclosurePhase(current)),
+      Math.min(2200,Math.max(60,expected+80)));
+    return ()=>window.clearTimeout(timeout);
+  },[phase]);
+
   const toggle = () => {
     // The original disclosure keeps exit-motion children mounted briefly.
     // Move focus to the persistent summary before making the exiting body

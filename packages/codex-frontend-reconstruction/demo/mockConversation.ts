@@ -119,6 +119,14 @@ export function demoMcpApprovalEntry(turnId:string,disabled=false):ConversationR
 /** Original simple source formElicitation: synthetic fixture only. */
 /** Original ur boolean/number/integer, synthetic visual fixture only. */
 /** Original Hn oneOf radio/array checkbox; synthetic visual fixture. */
+/** Original or + Hn custom suggestion, synthetic visual fixture only. */
+export function demoCustomSuggestionFormEntry(turnId:string):ConversationRenderEntry{
+ return demoActivityEntry(turnId,[
+   demoItem(turnId+"-request","demo-custom-suggestion-form",undefined,{
+     heading:"MCP 自定义建议选项（模拟）",state:"Needs input",
+   }),
+ ]);
+}
 export function demoChoiceFormElicitationEntry(turnId:string):ConversationRenderEntry{
  return demoActivityEntry(turnId,[
    demoItem(turnId+"-request","demo-choice-form-elicitation",undefined,{

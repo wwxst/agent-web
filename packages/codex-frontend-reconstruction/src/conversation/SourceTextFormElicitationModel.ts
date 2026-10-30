@@ -8,7 +8,8 @@
  * the textual raw state from the native input.
  *
  * OneOf choices project only strict source const/title/description options.
- * Files, custom answers, formats and private OpenAI extensions stay excluded.
+ * Only x-openai-suggestions permits a free-text Something else choice.
+ * Files, custom OpenAI inputs and unsupported formats stay excluded.
  */
 export type SourceFormScalarType="string"|"boolean"|"integer"|"number"|"array";
 export type SourceFormDraftValue=string|boolean|string[];
@@ -25,6 +26,7 @@ export interface SourceTextFormField {
  minLength?:number;maxLength?:number;
  minimum?:number;maximum?:number;
  choices?:readonly SourceFormOption[];
+ allowCustomChoice?:boolean;
  minItems?:number;maxItems?:number;
 }
 export interface SourceTextFormRequest {
@@ -50,15 +52,15 @@ const lengthBound=(v:unknown)=>v===undefined||
  typeof v==="number"&&Number.isInteger(v)&&v>=0&&v<=16384;
 const numericBound=(v:unknown)=>v===undefined||
  typeof v==="number"&&Number.isFinite(v)&&Math.abs(v)<=1e12;
-const ALLOWED_TEXT=new Set(["type","title","description","minLength","maxLength"]);
+const ALLOWED_TEXT=new Set(["type","title","description","minLength","maxLength","x-openai-suggestions"]);
 const ALLOWED_SINGLE_CHOICE=new Set(["type","title","description","oneOf"]);
 const ALLOWED_MULTI_CHOICE=new Set([
  "type","title","description","items","minItems","maxItems","uniqueItems",
 ]);
 const ALLOWED_OPTION=new Set(["const","title","description"]);
 const ALLOWED_CHOICE_ITEMS=new Set(["type","oneOf"]);
-function projectChoices(value:unknown):SourceFormOption[]|null{
- if(!Array.isArray(value)||value.length<2||value.length>12)return null;
+function projectChoices(value:unknown,minimum=2):SourceFormOption[]|null{
+ if(!Array.isArray(value)||value.length<minimum||value.length>12)return null;
  const used=new Set<string>(),result:SourceFormOption[]=[];
  for(const raw of value){
    const opt=object(raw);
@@ -149,6 +151,12 @@ export function projectSourceTextFormElicitation(
      if(max!==undefined)field.maxItems=max;
    }
    if(type==="string"&&!Object.hasOwn(f,"oneOf")){
+     if(Object.hasOwn(f,"x-openai-suggestions")){
+       const suggestions=projectChoices(f["x-openai-suggestions"],0);
+       if(suggestions==null)return null;
+       field.choices=suggestions;
+       field.allowCustomChoice=true;
+     }
      if(!lengthBound(f.minLength)||!lengthBound(f.maxLength)||
        f.minLength!==undefined&&f.maxLength!==undefined&&
        (f.minLength as number)>(f.maxLength as number))return null;
@@ -208,7 +216,7 @@ export function sourceFormFieldAnswer(
      ?{valid:true,answered:true,value}:{valid:false,answered:true};
  }
  if(typeof value!=="string")return {valid:false,answered:true};
- if(field.choices!=null){
+ if(field.choices!=null&&!field.allowCustomChoice){
    const option=field.choices.find(o=>o.value===value);
    return option!=null?{valid:true,answered:true,value}:
      {valid:false,answered:true};
