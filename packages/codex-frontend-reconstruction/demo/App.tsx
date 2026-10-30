@@ -564,7 +564,7 @@ export function App() {
       workspacePendingPreviewTabIdsRef.current.clear();
       setWorkspaceTabs(sourceEmptyLocalReadOnlyTabState());
       workspaceGrantRef.current=true;
-      setWorkspaceProjectName(grant.name);
+      setWorkspaceProjectName(grant.name??null);
     }catch{
       notify("无法打开本地文件夹，请检查文件系统权限。");
     }finally{
@@ -598,7 +598,7 @@ export function App() {
         }
         if(!grant.selected)return;
         workspaceGrantRef.current=true;
-        setWorkspaceProjectName(grant.name);
+        setWorkspaceProjectName(grant.name??null);
       }
       // A click dropped while the exclusive native directory chooser is
       // running must not invalidate its first request's result.
