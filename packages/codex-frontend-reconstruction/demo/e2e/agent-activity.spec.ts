@@ -57,6 +57,7 @@ test("activity collapse state is isolated and restored by stable Turn identity",
   // New chat is now a genuinely empty home surface, so use a full reload to
   // test host-lifetime reset without looking for the old thread in that home.
   await page.reload();
+  await page.getByRole("button",{name:/工具调用与审批交互/}).click();
   await showBeginning();
   const freshReview=page.locator('[data-demo-turn-id="review-exec"] [data-recovered-agent-activity]');
   await expect(freshReview).toBeVisible();
