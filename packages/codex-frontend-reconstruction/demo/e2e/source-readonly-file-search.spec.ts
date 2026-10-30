@@ -60,7 +60,9 @@ test("read-only local CodeMirror restores the original file Find panel and navig
   await content.press("Control+g");
   await expect(searchPanel.getByRole("status")).toHaveText("2 / 11 results");
 
+  await input.focus();
   await searchPanel.getByRole("button",{name:"Previous match"}).click();
+  await expect(input).toBeFocused();
   await expect(searchPanel.getByRole("status")).toHaveText("1 / 11 results");
   await expect.poll(async()=>editor.locator(".cm-searchMatch-selected")
     .evaluate(element=>element.closest(".cm-line")?.textContent?.trim()??null))
