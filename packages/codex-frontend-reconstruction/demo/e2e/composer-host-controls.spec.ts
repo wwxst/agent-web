@@ -198,7 +198,9 @@ test("host-rejected permission changes leave the previously selected mode unchan
   await permission.click();
   await page.getByRole("menuitemradio",{name:"Restricted"}).click();
   await expect(permission).toContainText("Ask for approval");
-  await expect(page.getByRole("status").filter({hasText:"Policy rejected the change."})).toBeVisible();
+  const rejection=page.getByRole("status").filter({hasText:"Policy rejected the change."});
+  await expect(rejection).toHaveCount(1);
+  await expect(rejection).toBeVisible();
 });
 
 test("missing host controls render disabled source-positioned placeholders rather than fake defaults",async({page})=>{
