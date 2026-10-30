@@ -304,6 +304,64 @@ button:focus-visible, textarea:focus-visible { outline: 2px solid #578cda; outli
 .demo-composer-right{display:flex;align-items:center;gap:15px;}
 .demo-composer-model{display:flex;gap:4px;align-items:center;color:#353535;font-size:11.5px;}
 .demo-composer-model span{color:#919191;margin:0;}
+.demo-composer-host-control{position:relative;display:flex;align-items:center;min-width:0;}
+.demo-composer-control-trigger{
+  display:inline-flex;align-items:center;gap:5px;min-width:0;max-width:250px;
+  padding:5px 7px;border:0;border-radius:8px;background:transparent;color:#414141;
+  font-size:11.5px;line-height:1.35;white-space:nowrap;cursor:pointer;
+}
+.demo-composer-control-trigger:hover:not(:disabled),
+.demo-composer-control-trigger[aria-expanded="true"]{background:#f1f1f1;}
+.demo-composer-control-trigger:focus-visible{outline:2px solid #6b9ce0;outline-offset:1px;}
+.demo-composer-control-trigger:disabled{opacity:.62;cursor:not-allowed;}
+.demo-composer-control-trigger--permissions{color:#df6732;}
+.demo-composer-control-trigger--model{color:#363636;}
+.demo-composer-control-trigger__effort,
+.demo-composer-control-trigger__tier{color:#929292;}
+.demo-composer-control-trigger__shield{font-size:13px;line-height:1;}
+.demo-composer-control-menu{
+  position:absolute;bottom:calc(100% + 9px);z-index:90;display:flex;flex-direction:column;
+  width:max-content;min-width:248px;max-width:min(360px,calc(100vw - 32px));
+  max-height:min(390px,calc(100vh - 120px));overflow:auto;padding:7px;
+  border:1px solid #e7e7e7;border-radius:12px;background:#fff;color:#333;
+  box-shadow:0 12px 36px #0002;
+}
+.demo-composer-control-menu--permissions{left:0;}
+.demo-composer-control-menu--model{right:0;}
+.demo-composer-control-menu__heading{padding:7px 9px 5px;color:#8a8a8a;font-size:10px;font-weight:600;}
+.demo-composer-control-menu__item{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;
+  min-height:34px;padding:7px 9px;border:0;border-radius:7px;background:transparent;
+  color:#333;text-align:left;font-size:12px;cursor:pointer;
+}
+.demo-composer-control-menu__item:hover:not(:disabled),
+.demo-composer-control-menu__item[aria-checked="true"]{background:#f3f3f3;}
+.demo-composer-control-menu__item:disabled{opacity:.42;cursor:not-allowed;}
+.demo-composer-control-menu__item-copy{display:flex;min-width:0;flex-direction:column;gap:2px;}
+.demo-composer-control-menu__item-copy small{color:#888;font-size:10px;line-height:1.35;white-space:normal;}
+.demo-composer-control-menu__divider{height:1px;margin:5px 2px;background:#ededed;}
+.demo-composer-control-menu__error{padding:7px 9px;color:#b5472d;font-size:11px;white-space:normal;}
+.demo-composer-permission-confirmation-backdrop{
+  position:fixed;inset:0;z-index:120;display:grid;place-items:center;padding:20px;
+  background:#0005;
+}
+.demo-composer-permission-confirmation{
+  width:min(440px,100%);padding:20px;border:1px solid #e3e3e3;border-radius:14px;
+  background:#fff;color:#333;box-shadow:0 18px 60px #0003;
+}
+.demo-composer-permission-confirmation h3{margin:0 0 10px;font-size:15px;font-weight:600;}
+.demo-composer-permission-confirmation p{margin:8px 0;color:#555;font-size:12px;line-height:1.55;}
+.demo-composer-permission-confirmation__risk{color:#a94d2e!important;}
+.demo-composer-permission-confirmation ul{display:grid;gap:5px;margin:12px 0;padding-left:19px;color:#555;font-size:11px;}
+.demo-composer-permission-confirmation__actions{display:flex;justify-content:flex-end;gap:8px;margin-top:18px;}
+.demo-composer-permission-confirmation__actions button{
+  min-height:32px;padding:0 12px;border:1px solid #e0e0e0;border-radius:8px;
+  background:#fff;color:#444;font-size:11px;cursor:pointer;
+}
+.demo-composer-permission-confirmation__actions button:last-child{
+  border-color:#b9532c;background:#d96836;color:#fff;
+}
+.demo-composer-permission-confirmation__actions button:disabled{opacity:.5;cursor:not-allowed;}
 .demo-send-button{width:29px;height:29px;border-radius:50%;background:#909090;color:#fff;}
 .demo-send-button:hover:not(:disabled){background:#595959;}
 .demo-send-button:disabled {background:#bebebe;color:#fff;}
