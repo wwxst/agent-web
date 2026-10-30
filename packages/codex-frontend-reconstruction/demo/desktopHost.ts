@@ -18,6 +18,7 @@ import type {
   SourceLanguageLocationKind,
   SourceLanguagePosition,
 } from "../src/conversation/SourceLanguageNavigationModel.js";
+import type {SourceComposerControlsHost} from "../src/conversation/SourceComposerControlsModel.js";
 
 /**
  * The original private preload exposes electronBridge (documented in
@@ -26,7 +27,7 @@ import type {
  */
 declare global {
   interface Window {
-    agentWebDesktopHost?: {
+    agentWebDesktopHost?: SourceComposerControlsHost & {
       subscribeUiCommands(listener:(command:"toggle-sidebar"|"previous-thread"|"next-thread"|"find-in-thread"|"find-next-in-thread"|"find-previous-in-thread")=>void):()=>void;
       openMenu(id:"file"|"edit"|"view"|"help",anchor:{x:number;y:number}):Promise<boolean>;
       /** User consent grants a single native folder, scoped to this renderer.
