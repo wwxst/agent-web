@@ -10,9 +10,14 @@
 import {
  sourceTextFormKey,type SourceTextFormRequest,type SourceFormDraftValue,
 } from "./SourceTextFormElicitationModel.js";
+export interface SourceFormCustomDraft{
+ text:string;
+ selected:boolean;
+}
 export interface SourceTextFormDraft {
  fieldIndex:number;
  values:Readonly<Record<string,SourceFormDraftValue>>;
+ customDrafts?:Readonly<Record<string,SourceFormCustomDraft>>;
 }
 export interface SourceTextFormDraftStore {
  get(request:SourceTextFormRequest):SourceTextFormDraft|null;
@@ -62,13 +67,32 @@ export function createSourceTextFormDraftStore():SourceTextFormDraftStore {
      value:Array.isArray(value)?Object.freeze([...value]):value,enumerable:true,
    });
   }
+  const customDrafts=Object.create(null) as Record<string,SourceFormCustomDraft>;
+  for(const [name,custom] of Object.entries(draft.customDrafts??{})){
+    const field=allowed.get(name);
+    if(field?.allowCustomChoice!==true||
+      custom==null||typeof custom!=="object"||
+      Object.keys(custom).length!==2||
+      typeof custom.text!=="string"||
+      custom.text.length>Math.min(16384,field.maxLength??16384)||
+      /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/u.test(custom.text)||
+      typeof custom.selected!=="boolean")
+      throw new TypeError("invalid custom form draft");
+    total+=custom.text.length;
+    if(total>32768)throw new TypeError("form draft too large");
+    Object.defineProperty(customDrafts,name,{
+      value:Object.freeze({text:custom.text,selected:custom.selected}),
+      enumerable:true,
+    });
+  }
   const key=sourceTextFormKey(request);
   drafts.delete(key);
   drafts.set(key,{
    request:{hostId:request.hostId,conversationId:request.conversationId,
      requestId:request.requestId},
    signature:JSON.stringify(request.fields),
-   draft:{fieldIndex:draft.fieldIndex,values:Object.freeze(values)},
+   draft:{fieldIndex:draft.fieldIndex,values:Object.freeze(values),
+     customDrafts:Object.freeze(customDrafts)},
   });
   while(drafts.size>MAX_DRAFT_COUNT){
    const first=drafts.keys().next().value;
