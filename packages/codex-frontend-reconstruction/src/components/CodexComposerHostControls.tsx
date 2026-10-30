@@ -260,6 +260,8 @@ export function CodexComposerModelReasoningControl(props:{
       {controls.errorMessage!=null
         ?<div className="demo-composer-control-menu__error" role="status">{controls.errorMessage}</div>:null}
     </div>:null}
+    {controls.errorMessage!=null&&!open
+      ?<span role="status" className="demo-composer-control-error">{controls.errorMessage}</span>:null}
   </div>;
 }
 
@@ -318,6 +320,8 @@ export function CodexComposerPermissionModeControl(props:{
       {controls.errorMessage!=null
         ?<div className="demo-composer-control-menu__error" role="status">{controls.errorMessage}</div>:null}
     </div>:null}
+    {controls.errorMessage!=null&&!open&&confirmation==null
+      ?<span role="status" className="demo-composer-control-error">{controls.errorMessage}</span>:null}
     {confirmation?.confirmation!=null?<div className="demo-composer-permission-confirmation-backdrop"
       data-composer-permission-confirmation="">
       <section className="demo-composer-permission-confirmation" role="alertdialog"
