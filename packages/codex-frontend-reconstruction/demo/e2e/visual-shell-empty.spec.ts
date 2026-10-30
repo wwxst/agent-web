@@ -16,6 +16,14 @@ test("shell-empty visual route mounts the real desktop shell and idle Composer w
   await expect(page.locator(".demo-row")).toHaveCount(0);
   await expect(page.locator(".demo-composer")).toBeVisible();
   await expect(page.locator('.demo-composer [contenteditable="true"]')).toBeVisible();
+  const modelControl=page.getByTestId("composer-model-control");
+  const permissionControl=page.getByTestId("composer-permission-control");
+  await expect(modelControl).toBeDisabled();
+  await expect(modelControl).toContainText("模型未连接");
+  await expect(permissionControl).toBeDisabled();
+  await expect(permissionControl).toContainText("权限未连接");
+  await expect(page.getByText("Demo Agent")).toHaveCount(0);
+  await expect(page.getByText(/Full access.*mock/)).toHaveCount(0);
   await expect(page.getByTestId("demo-tools")).toHaveCount(0);
 
   const capture=await page.evaluate(()=>({
