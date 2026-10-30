@@ -1393,6 +1393,9 @@ export function App() {
       if(command==="find-in-thread"){openFind();return;}
       if(command==="find-next-in-thread"){navigateFind("next");return;}
       if(command==="find-previous-in-thread"){navigateFind("previous");return;}
+      // Native previous/next thread shortcuts must never reveal the isolated
+      // synthetic fixture records in the normal, unconnected desktop app.
+      if(!demoFixtureEnabled)return;
       const index=DEMO_CONVERSATIONS.findIndex(entry=>entry.id===active);
       if(index<0)return;
       const destination=command==="previous-thread"?index-1:index+1;

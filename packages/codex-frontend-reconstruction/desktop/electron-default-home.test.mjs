@@ -49,6 +49,13 @@ test("normal packaged Electron launch opens the empty Codex home, never a synthe
     await page.getByRole("button",{name:"Home"}).click();
     assert.equal(await page.locator(".demo-header-location strong").textContent(),"New chat");
     assert.equal(await page.locator(".demo-row").count(),0);
+    // The actual native View menu shortcut cannot jump to a hidden
+    // synthetic review fixture in the normal application.
+    await app.evaluate(({Menu})=>{
+      Menu.getApplicationMenu().getMenuItemById("previousThread").click();
+    });
+    assert.equal(await page.locator(".demo-header-location strong").textContent(),"New chat");
+    assert.equal(await page.locator(".demo-row").count(),0);
     const editor=page.getByRole("textbox",{name:"Do anything"});
     await editor.fill("draft stays here until a real Agent host exists");
     assert.equal(await page.getByTestId("send-button").isDisabled(),true);
