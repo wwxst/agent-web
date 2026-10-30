@@ -142,7 +142,7 @@ function ConversationSidebar(props: {
       <button className="demo-icon-button" type="button" title="搜索尚未恢复" aria-label="搜索尚未恢复" disabled><Icon name="search" size={17}/></button>
     </div>
     <div className="demo-sidebar-actions">
-      <button type="button" className={`demo-nav-action ${active === "visual-empty" ? "is-active" : ""}`} title="新建演示会话" aria-current={active === "visual-empty" ? "page" : undefined} onClick={onNewChat}><Icon name="plus" size={16}/>{!collapsed && <span>New chat</span>}</button>
+      <button type="button" className={`demo-nav-action ${active === "visual-empty" ? "is-active" : ""}`} title="New chat" aria-current={active === "visual-empty" ? "page" : undefined} onClick={onNewChat}><Icon name="plus" size={16}/>{!collapsed && <span>New chat</span>}</button>
       {!collapsed && !navigationRailEnabled && <>
         <div className="demo-nav-action demo-nav-disabled" aria-label="Scheduled 尚未接入"><Icon name="clock" size={15}/> Scheduled</div>
         <div className="demo-nav-action demo-nav-disabled" aria-label="Plugins 尚未接入"><Icon name="plugin" size={15}/> Plugins</div>

@@ -54,7 +54,7 @@ test("activity collapse state is isolated and restored by stable Turn identity",
   await expect(review).toHaveAttribute("data-agent-activity-collapsed","false");
 
   // A new preview host lifetime does not reuse the old explicit choice.
-  await page.locator('button[title="新建演示会话"]').click();
+  await page.getByRole("button",{name:"New chat"}).click();
   await showBeginning();
   await expect(review).toHaveAttribute("data-agent-activity-collapsed","true");
 });
