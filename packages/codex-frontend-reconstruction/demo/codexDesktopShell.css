@@ -896,3 +896,14 @@ button:focus-visible, textarea:focus-visible { outline: 2px solid #578cda; outli
   width: min(100%, var(--thread-content-max-width, 48rem));
   margin-inline: auto;
 }
+
+
+/* Source sidebar empty states: sidebarElectron.tasksSection.emptyState
+ * ("No chats") and sidebarElectron.flatProjectSidebar.noProjects ("No projects"). */
+.demo-sidebar-empty {
+  margin: 0 8px 10px;
+  padding: 0 8px;
+  color: #969696;
+  font-size: 12px;
+  line-height: 18px;
+}

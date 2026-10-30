@@ -21,6 +21,8 @@ test("shell-empty visual route mounts the real desktop shell and idle Composer w
   await expect(page.locator(".demo-header-folder")).toHaveCount(0);
   await expect(page.locator(".demo-project-heading")).toHaveCount(0);
   await expect(page.locator(".demo-chat-link")).toHaveCount(0);
+  await expect(page.getByText("No projects",{exact:true})).toBeVisible();
+  await expect(page.getByText("No chats",{exact:true})).toBeVisible();
   await expect(page.getByRole("button",{name:"New chat"})).toHaveAttribute("aria-current","page");
   const modelControl=page.getByTestId("composer-model-control");
   const permissionControl=page.getByTestId("composer-permission-control");

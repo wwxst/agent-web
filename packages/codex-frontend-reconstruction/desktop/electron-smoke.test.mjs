@@ -558,6 +558,8 @@ test("independent Electron file renderer starts, isolates preload and routes Fc 
   assert.equal(await page.locator(".demo-row").count(),0);
   assert.equal(await page.locator(".demo-project-heading").count(),0);
   assert.equal(await page.locator(".demo-chat-link").count(),0);
+  assert.equal(await page.getByText("No projects",{exact:true}).count(),1);
+  assert.equal(await page.getByText("No chats",{exact:true}).count(),1);
   assert.equal(await page.locator(".demo-header-folder").count(),0);
   assert.equal(await page.locator('.demo-composer [contenteditable="true"][aria-label="Do anything"]').count(),1);
   const homeGeometry=await page.evaluate(()=>{

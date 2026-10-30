@@ -176,7 +176,12 @@ function ConversationSidebar(props: {
           </div>)}
         </nav>
       </section>:null}
-      {active !== "visual-empty" && <>
+      {active === "visual-empty" ? <>
+      <div className="demo-section-heading">Projects</div>
+      <div className="demo-sidebar-empty">No projects</div>
+      <div className="demo-section-heading demo-recent-heading">Recents</div>
+      <div className="demo-sidebar-empty">No chats</div>
+      </> : <>
       <div className="demo-section-heading">Projects</div>
       <nav className="demo-chat-list" aria-label="会话">
         <div className="demo-project-heading"><Icon name="folder" size={16}/> agent web</div>
