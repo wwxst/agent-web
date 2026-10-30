@@ -232,3 +232,12 @@ Continue on this stacked recovery branch/PR. Do not merge PR #80/#81, retarget t
 - Verified head `c71cb40a5212ee32a38849fe24e2641121e20c96`: core 516/516, demo model 5/5, Chromium 66/66, Linux Electron 80/80, Windows Electron 79 passed / 1 skipped / 0 failed. TypeScript/Vite, browser smoke, and both actual Electron smoke jobs passed.
 - PR #74 is Draft and stacked on PR #73's `recovery/native-preview-pinned-tab-lifecycle-20261029` branch. No Agent backend or `main` changes.
 - **Next:** wire the source-confirmed related-file `onOpenLocation` action to this existing tab route (including `resetTabState`) rather than stopping at attachment-click navigation; then test cross-tab editor-state preservation and compare the actual mounted panel against the matching original Codex build. Do not claim the private `contentInstance` or sidebar pinned-content registry is restored.
+
+
+## 2026-10-30 — merged visual/Composer milestones and next controls slice
+
+- PR #80 (source read-only file Find), PR #81 (source-pinned content tabs) and PR #82 (screenshot comparison workflow + Composer attachment intake) are merged into `main`. Current main head: `518020894efb446aefdaea377d8f7df3d6c1de7d`.
+- Main validation run 40997373538 completed successfully after rerunning its one failed browser job: core 547/547, demo models 5/5, comparator 1/1, Chromium 81/81, Linux Electron 82/82 and Windows Electron 82/82. The initial browser failure was a transient activity-collapse assertion; the rerun passed without a code change.
+- Current next slice: source-backed Composer model/reasoning and permission-mode controls. See `reports/COMPOSER_MODEL_PERMISSION_STAGE_01_20261030.md`.
+- Renderer controls must use host-provided model catalogs, reasoning capabilities, current permission state and confirmation copy. Until the independent Electron host has real model/policy endpoints, controls remain disabled with explicit unavailable labels; no model list or permission grant is mocked.
+- After the control surface is merged, inspect `agent-cil`'s existing model, reasoning, permission, send/stop and event contracts, then add only the narrow typed Electron adapter required to connect them. Do not rewrite the Agent backend.
