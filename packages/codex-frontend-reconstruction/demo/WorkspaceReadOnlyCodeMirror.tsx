@@ -9,6 +9,7 @@ import {python} from "@codemirror/lang-python";
 import {css} from "@codemirror/lang-css";
 import {html} from "@codemirror/lang-html";
 import type {WorkspaceReadOnlyPreview} from "./WorkspaceReadOnlyPreviewPanel.js";
+import {sourceReadOnlyFileSearch} from "./WorkspaceReadOnlyFileSearchPanel.js";
 import {
   SOURCE_LANGUAGE_LOCATION_KINDS,
   sourceLanguageCapabilities,
@@ -288,6 +289,7 @@ export function WorkspaceReadOnlyCodeMirror({
         lineNumbers(),
         sourceLocalPreviewLanguage(preview.name),
         selectedLines,
+        sourceReadOnlyFileSearch(),
         EditorView.domEventHandlers({
           mousedown:(event,view)=>{
             if(!activeRef.current||!(event.metaKey||event.ctrlKey)||event.button!==0)
