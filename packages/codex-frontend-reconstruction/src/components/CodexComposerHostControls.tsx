@@ -254,7 +254,7 @@ export function CodexComposerModelReasoningControl(props:{
               setOpen(false);
             }}>
             <span>{option.label}</span>
-            {option.id===selected?.reasoningEffortId?<Icon name="check" size={14}/>:null}
+            {option.id===selected?.reasoningEffortId?<span aria-hidden="true">✓</span>:null}
           </button>)}
         </>:null}
       {controls.errorMessage!=null
@@ -313,7 +313,7 @@ export function CodexComposerPermissionModeControl(props:{
           <span>{option.label}</span>
           {option.description!=null?<small>{option.description}</small>:null}
         </span>
-        {option.id===selected?.id?<Icon name="check" size={14}/>:null}
+        {option.id===selected?.id?<span aria-hidden="true">✓</span>:null}
       </button>)}
       {controls.errorMessage!=null
         ?<div className="demo-composer-control-menu__error" role="status">{controls.errorMessage}</div>:null}
