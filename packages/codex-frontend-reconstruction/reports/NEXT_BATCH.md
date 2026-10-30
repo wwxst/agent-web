@@ -1,27 +1,52 @@
-# Next reconstruction batch — current checkpoint 2026-10-30
+# Next reconstruction batch — 2026-10-30 priority reset
 
-## Completed: source-backed read-only file Find panel
+The project has a working React/TypeScript and Electron foundation plus substantial recovered UI. The next milestone is **a complete Codex work experience**, not a larger count of isolated feature leaves.
 
-- Evidence and scope: `SOURCE_READONLY_FILE_SEARCH_20261030.md`.
-- Existing per-tab CodeMirror preview has the original top Find panel, search highlights/counts and Mod-F / F3 / Shift-F3 / Mod-G key bindings.
-- Final PR-head CI run 40983666515 passed: core 529/529, demo models 5/5, Chromium 74/74, desktop Node 82/82, Linux Electron smoke, Windows Electron smoke and TypeScript/Vite builds.
+## Priority 1 — original Codex screenshot comparison and UI correction loop
 
-## Completed: source-backed pinned content tab references
+- Workflow and evidence: `reports/VISUAL_REGRESSION_WORKFLOW_20261030.md`.
+- Added `scripts/compare-ui-screenshots.mjs` and `npm run visual:compare`. The tool records image hashes/dimensions, refuses to rescale mismatched screenshots, and for valid same-size pairs produces overlay, pixel-difference heatmap, side-by-side image, and JSON metrics.
+- Added unit coverage for PNG metadata, CLI argument validation, hashes, and dimension-mismatch fail-closed behavior.
+- Added the test-only `?visualScenario=shell-empty` route and `AGENT_WEB_VISUAL_SCENARIO=shell-empty` Electron dev startup. It mounts the real shell and Composer with an empty transcript, stays hidden from the sidebar, and does not read or overwrite saved pins. A mounted Playwright test records its geometry and screenshot.
+- First uploaded pair was inspected: original Codex 1211×759, reconstructed frontend 1352×760. Their content/state also differs, so they are a qualitative structural reference only; no misleading pixel-diff or parity claim is accepted.
+- Next: capture the original Codex and the **actual Electron reconstruction** at identical bounds/scale/DPR and identical scenario content. Start with scenario A (empty shell + idle Composer), then B/C/D (Markdown transcript, running tool, pending approval). Review each diff and fix the owning component/token/host boundary.
 
-- Evidence and scope: `SOURCE_PINNED_CONTENT_TABS_20261030.md`.
-- Restored source identity, the three original persistence keys, Pin/Unpin tab menu actions, sidebar Pinned section, exact live-tab selection, unavailable state and persistence across reload.
-- Unpin removes only the sidebar reference. Closing/revoking the source tab preserves the pin as unavailable; selecting it does not issue an unauthorized file read.
-- CI run 40986143431 passed on code head `bc9ff949ca639d71d2722e4ddb293dbe2adaceeb`: core 537/537, demo models 5/5, Chromium 77/77, desktop Node 82/82, Linux Electron smoke, Windows Electron smoke and TypeScript/Vite builds.
-- This remains a same-renderer fallback, not the complete original cross-window implementation.
+## Priority 2 — integrate the complete core conversation workflow
 
-## Next concrete batch: cross-window content-tab owner/reveal bridge and durable preload
+Do not create new isolated demo widgets. Integrate the existing modules into one coherent mounted conversation:
 
-- Port the source-confirmed main-process owner lifecycle from original `Zge`: typed `contentTabs.registerOwner`, `subscribeOwners` and `reveal` boundaries; exact owner identity; duplicate/disposed registration; owner availability; reveal statuses; and focusing the owning Electron BrowserWindow.
-- Register the existing React file-tab owner with the host using the exact tab identity. A pin clicked from another window must reveal the same source tab, not clone the editor or issue another file read.
-- Audit and, only for eligible source descriptors, restore `PinnedContentTabPreloadBridge` / `durableRoute.preload` with the original `pinned-tab-preload` reason. Do not invent a durable route for a local file whose native workspace grant is absent.
-- Acceptance: two real Electron windows; owner register/dispose; same owner re-registration; owner missing/unavailable/cancelled/revealed statuses; reveal exact tab and focus correct window; unpin never closes source tab; stale pins remain safely unavailable; no file-content persistence, root-path disclosure, extra file reads or write IPC.
-- After the owner bridge, continue with source-backed pinned-file thumbnails and the original sidebar reorder contract. Keep the existing read-only preview, language navigation, Find, and all Electron/browser tests green.
-- Continue on an independent stacked recovery branch/PR. Do not merge into `main` or change the Agent backend without confirmation.
+- Source-backed message timeline with user/assistant/reasoning/commentary/final rows, streaming and finalization, history hydration, scroll/follow behavior.
+- Complete Composer built around the existing mounted ProseMirror controller: editor schema/plugins, IME, paste/drop, attachment intake, file mentions and slash suggestions where confirmed by source, model/reasoning/permission controls, send/stop/queue/steer, drafts, disabled/loading states.
+- **Completed first attachment-intake slice:** `reports/COMPOSER_ATTACHMENT_INTAKE_STAGE_01_20261030.md`. The source-shaped tray is mounted in the real Composer; the plus control opens a multiple-file picker; ProseMirror image/file paste channels and the outer-form file-drop path share one per-thread draft model; remove, preview, switch-thread retention and reset are wired. The preview never reads bytes, grants a path, creates an upload ID or calls the Agent backend. Demo submission uses label-only non-openable transcript references and explicitly says files were not uploaded.
+- Next Composer slice: recover and mount the original model picker / reasoning-effort and permission-mode controls from `app-primary` owners `i9e`, `f9e`, and `fG`. Keep model and permission choices host-provided; do not add invented static model inventories or pretend a local selection changed backend permissions.
+- Tool activity in the same timeline: command execution, file changes/diffs, MCP, browser/computer use, subagents, status and result transitions.
+- Approval lifecycle: request, scope/risk explanation, approve/decline/cancel, pending/settled/failed/retry states, keyboard and focus behavior.
+
+For each workflow, trace the exact compiled Codex owner module first, reuse the existing recovered component/model, define its real host contract, then validate mounted Electron behavior and screenshot state.
+
+## Priority 3 — finish the real host/runtime chain
+
+- Type-safe React ↔ Preload ↔ Electron Main event/request contracts.
+- Explicit lifecycle for streaming, cancellation, approval replies, errors, reconnect, and window teardown.
+- Session persistence and restoration with stable conversation identity.
+- Validate host functionality independently before connecting the existing Agent backend.
+- Only after the host contract is stable, add the adapter to the user's Agent backend. Do not re-architect the backend or fabricate success events.
+
+## Deferred, retained work
+
+Cross-window pinned-tab owner/reveal RPC, durable-route preload, pinned-file thumbnails, and original reorder behavior remain source-confirmed tasks. Keep the existing same-window pin implementation, read-only preview, Find, and all passing regressions intact, but do not let this narrow feature chain outrank the three product-wide priorities above.
+
+## Acceptance rule
+
+A component is not complete because it renders. A scenario is complete only when:
+1. its source behavior is understood and documented;
+2. it is mounted in the real Electron app;
+3. its controls/events reach the correct host contract;
+4. its screenshot is compared to the same original Codex state;
+5. relevant browser, Electron, and regression tests pass;
+6. remaining differences and limitations are explicit.
+
+Continue on this stacked recovery branch/PR. Do not merge PR #80/#81, retarget to `main`, or modify the Agent backend without explicit approval.
 
 
 ---

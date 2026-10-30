@@ -79,7 +79,11 @@ export function CodexComposerLayout({
           <div className="codex-composer-layout__reply-context">{replyContext}</div>
         )}
         {attachments != null && (
-          <div className="codex-composer-layout__attachments" data-visible-attachments="">
+          <div
+            className="codex-composer-layout__attachments"
+            data-composer-attachments=""
+            data-visible-attachments=""
+          >
             {attachments}
           </div>
         )}

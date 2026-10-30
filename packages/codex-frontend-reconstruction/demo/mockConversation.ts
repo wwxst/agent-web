@@ -14,11 +14,16 @@ import {
 import type { TurnItem, Dependencies } from "../src/conversation/TurnItemRenderGroups.js";
 
 export type DemoSource = ReturnType<typeof createLiveConversationSource>;
-export type DemoConversationId = "frontend" | "review";
+export type DemoConversationId = "frontend" | "review" | "visual-empty";
 
-export const DEMO_CONVERSATIONS: ReadonlyArray<{ id: DemoConversationId; title: string; subtitle: string }> = [
+export const DEMO_CONVERSATIONS: ReadonlyArray<{
+  id: DemoConversationId; title: string; subtitle: string; sidebarVisible?: boolean;
+}> = [
   { id: "frontend", title: "恢复 Codex 会话界面", subtitle: "正在重构 · 今天" },
   { id: "review", title: "工具调用与审批交互", subtitle: "界面审阅 · 昨天" },
+  // Test-only route: mounts the same shell and Composer around a genuinely
+  // empty transcript; it is not a third demo conversation in the sidebar.
+  { id: "visual-empty", title: "New chat", subtitle: "Visual baseline", sidebarVisible: false },
 ];
 
 export function demoItem(id: string, type: string, content?: string, extra: Record<string, unknown> = {}): ConversationMessageItem {
@@ -557,6 +562,7 @@ function reviewScenario(): ConversationRenderEntry[] {
 }
 
 export function initialDemoEntries(id: DemoConversationId): ConversationRenderEntry[] {
+  if(id==="visual-empty")return [];
   const source = id === "frontend" ? frontendScenario() : reviewScenario();
   return source.map((entry, index) => ({
     ...entry,

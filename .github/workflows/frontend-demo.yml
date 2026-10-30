@@ -38,6 +38,8 @@ jobs:
         run: npm run demo:build
       - name: Install Chromium for browser smoke
         run: npx playwright install --with-deps chromium
+      - name: Screenshot comparator pixel-diff smoke
+        run: npm run visual:test
       - name: Browser smoke tests
         run: npm run demo:test:e2e
       - name: Ensure Electron executable was downloaded

@@ -6,3 +6,5 @@ demo-dist/
 demo-model-build/
 test-results/
 playwright-report/
+visual-baselines/
+visual-comparison-output/
