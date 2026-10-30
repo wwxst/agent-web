@@ -17,6 +17,22 @@ import {
   type SourceLocalReadOnlyTabState,
 } from "../src/conversation/SourceReviewFileTabModel.js";
 import {sourceOpenLocationRequest} from "../src/conversation/SourceOpenLocationModel.js";
+import {
+  SOURCE_PINNED_CONTENT_TABS_STORAGE_KEY,
+  SOURCE_PINNED_CONTENT_TAB_PRESENTATION_STORAGE_KEY,
+  SOURCE_UNIFIED_SIDEBAR_PINNED_ORDER_STORAGE_KEY,
+  sourceEmptyPinnedContentTabsState,
+  sourceParsePinnedContentTabs,
+  sourceSerializePinnedContentTabs,
+  sourcePinnedContentTabId,
+  sourcePinContentTab,
+  sourceUnpinContentTab,
+  sourceSetPinnedContentTabPresentation,
+  sourceMarkPinnedContentTabUnavailable,
+  sourcePinnedContentTabsInDisplayOrder,
+  sourcePinnedContentTabDisplayRow,
+  type SourcePinnedContentTabsState,
+} from "../src/conversation/SourcePinnedContentTabsModel.js";
 import { CodexSourceComposerHostForm } from "../src/components/CodexSourceComposerHostForm.js";
 import { CodexSourceScrollToBottomButton } from "../src/components/CodexSourceScrollToBottomButton.js";
 import { DemoProseMirrorComposerEditor } from "./DemoProseMirrorComposerEditor.js";
@@ -49,7 +65,7 @@ import {
   type DemoConversationId,
 } from "./mockConversation.js";
 
-function Icon({ name, size = 18 }: { name: "panel" | "search" | "plus" | "branch" | "dots" | "up" | "stop" | "bottom" | "top" | "play" | "refresh" | "terminal" | "check" | "menu" | "copy" | "folder" | "chevron" | "clock" | "plugin" | "settings" | "sliders" | "window" | "square" | "home" | "library" | "tiles"; size?: number }) {
+function Icon({ name, size = 18 }: { name: "panel" | "search" | "plus" | "branch" | "dots" | "up" | "stop" | "bottom" | "top" | "play" | "refresh" | "terminal" | "check" | "menu" | "copy" | "folder" | "file" | "chevron" | "clock" | "plugin" | "settings" | "sliders" | "window" | "square" | "home" | "library" | "tiles"; size?: number }) {
   const children: Record<typeof name, React.ReactNode> = {
     home: <><path d="m3 11 9-8 9 8v9H3z"/><path d="M9 20v-6h6v6"/></>,
     library: <><path d="M4 5h5v15H4zM10 3h5v17h-5zM16 7h4v13h-4z"/></>,
@@ -70,6 +86,7 @@ function Icon({ name, size = 18 }: { name: "panel" | "search" | "plus" | "branch
     menu: <><path d="M4 7h16M4 12h16M4 17h16"/></>,
     copy: <><rect x="8" y="8" width="11" height="11" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/></>,
     folder: <><path d="M3 7.5a2 2 0 0 1 2-2h5l2.2 2.5H19a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></>,
+    file: <><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v5h5M9 13h6M9 17h6"/></>,
     chevron: <path d="m7 10 5 5 5-5"/>,
     clock: <><circle cx="12" cy="12" r="9"/><path d="M12 6v6l4 2"/></>,
     plugin: <><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="3"/><path d="M12 3.5v5.5M12 15v5.5"/></>,
@@ -86,6 +103,13 @@ function Icon({ name, size = 18 }: { name: "panel" | "search" | "plus" | "branch
  * desktop sidebar; it does not claim to restore Codex's private navigation.
  * Real buttons are wired; undiscovered product actions are plain text.
  */
+interface PinnedSidebarItem{
+  id:string;
+  title:string;
+  subtitle:string;
+  unavailable:boolean;
+  isActive:boolean;
+}
 function ConversationSidebar(props: {
   active: DemoConversationId;
   collapsed: boolean;
@@ -93,9 +117,15 @@ function ConversationSidebar(props: {
   onSelect: (id: DemoConversationId) => void;
   onReset: () => void;
   navigationRailEnabled: boolean;
+  pinnedItems:readonly PinnedSidebarItem[];
+  onSelectPinned:(pinId:string)=>void;
+  onUnpinPinned:(pinId:string)=>void;
   resizeHandle?:React.ReactNode;
 }) {
-  const { active, collapsed, onToggle, onSelect, onReset, navigationRailEnabled, resizeHandle } = props;
+  const {
+    active,collapsed,onToggle,onSelect,onReset,navigationRailEnabled,
+    pinnedItems,onSelectPinned,onUnpinPinned,resizeHandle,
+  } = props;
   return <aside className={`demo-sidebar ${collapsed ? "demo-sidebar--collapsed" : ""}`} aria-label="演示会话导航">
     <div className="demo-sidebar-head">
       <div className="demo-logo">{collapsed ? <Icon name="folder" size={18}/> : <><strong>Codex</strong><Icon name="chevron" size={12}/></>}</div>
@@ -109,6 +139,33 @@ function ConversationSidebar(props: {
       </>}
     </div>
     {!collapsed && <>
+      {pinnedItems.length>0?<section className="demo-pinned-section"
+        aria-label="Pinned">
+        <div className="demo-section-heading">Pinned</div>
+        <nav className="demo-pinned-list" aria-label="Pinned content tabs">
+          {pinnedItems.map(item=><div key={item.id}
+            className="demo-pinned-item"
+            data-pinned-content-tab-id={item.id}
+            data-pinned-content-tab-unavailable={item.unavailable?"true":"false"}
+            data-pinned-content-tab-active={item.isActive?"true":"false"}>
+            <button type="button" className="demo-pinned-item__reveal"
+              title={item.unavailable
+                ?`${item.title} · Preview unavailable`
+                :item.subtitle}
+              aria-current={item.isActive?"page":undefined}
+              onClick={()=>onSelectPinned(item.id)}>
+              <Icon name="file" size={14}/>
+              <span className="demo-pinned-item__labels">
+                <span className="demo-pinned-item__title">{item.title}</span>
+                <small>{item.unavailable?"Preview unavailable":item.subtitle}</small>
+              </span>
+            </button>
+            <button type="button" className="demo-pinned-item__unpin"
+              aria-label="Unpin tab" title="Unpin tab"
+              onClick={()=>onUnpinPinned(item.id)}>×</button>
+          </div>)}
+        </nav>
+      </section>:null}
       <div className="demo-section-heading">Projects</div>
       <nav className="demo-chat-list" aria-label="会话">
         <div className="demo-project-heading"><Icon name="folder" size={16}/> agent web</div>
@@ -220,6 +277,17 @@ export function App() {
   const [workspaceTabs,setWorkspaceTabs]=React.useState<
     SourceLocalReadOnlyTabState<WorkspaceReadOnlyPreview>
   >(sourceEmptyLocalReadOnlyTabState);
+  const [pinnedContentTabs,setPinnedContentTabs]=React.useState<
+    SourcePinnedContentTabsState
+  >(()=>{
+    if(typeof window==="undefined")return sourceEmptyPinnedContentTabsState();
+    try{return sourceParsePinnedContentTabs(
+      window.localStorage.getItem(SOURCE_PINNED_CONTENT_TABS_STORAGE_KEY),
+      window.localStorage.getItem(SOURCE_PINNED_CONTENT_TAB_PRESENTATION_STORAGE_KEY),
+      window.localStorage.getItem(SOURCE_UNIFIED_SIDEBAR_PINNED_ORDER_STORAGE_KEY),
+    );}catch{return sourceEmptyPinnedContentTabsState();}
+  });
+  const pinnedOwnerTokensRef=React.useRef(new Map<string,string>());
   const workspaceGrantRef=React.useRef(false);
   // A file read/dialog is bound to the visible thread lifetime; an old
   // request cannot install a preview after switching/resetting conversations.
@@ -297,6 +365,56 @@ export function App() {
       if (toastTimerRef.current != null) clearTimeout(toastTimerRef.current);
       toastTimerRef.current = setTimeout(() => setToast(null), 3600);
     }, []);
+  React.useEffect(()=>{
+    const serialized=sourceSerializePinnedContentTabs(pinnedContentTabs);
+    try{
+      window.localStorage.setItem(
+        SOURCE_PINNED_CONTENT_TABS_STORAGE_KEY,serialized.pinsJson,
+      );
+      window.localStorage.setItem(
+        SOURCE_PINNED_CONTENT_TAB_PRESENTATION_STORAGE_KEY,
+        serialized.presentationJson,
+      );
+      window.localStorage.setItem(
+        SOURCE_UNIFIED_SIDEBAR_PINNED_ORDER_STORAGE_KEY,serialized.orderJson,
+      );
+    }catch{/* Storage can be unavailable in private/restricted browser contexts. */}
+  },[pinnedContentTabs]);
+  // Original gqi only presents a pin as available while its exact owner is
+  // mounted in the same client-thread context. A saved presentation is not
+  // proof that the tab survived a reload or workspace-grant revocation.
+  React.useEffect(()=>{
+    setPinnedContentTabs(current=>{
+      let next=current;
+      const pinIds=new Set(current.pins.map(pin=>pin.id));
+      for(const id of pinnedOwnerTokensRef.current.keys())
+        if(!pinIds.has(id))pinnedOwnerTokensRef.current.delete(id);
+      for(const pin of current.pins){
+        const tab=pin.hostId==="local"&&pin.clientThreadId===active
+          ?workspaceTabs.tabs.find(item=>item.id===pin.tabId):undefined;
+        const previous=next.presentationById[pin.id];
+        if(tab!=null){
+          let sourceToken=pinnedOwnerTokensRef.current.get(pin.id);
+          if(sourceToken==null){
+            sourceToken=crypto.randomUUID();
+            pinnedOwnerTokensRef.current.set(pin.id,sourceToken);
+          }
+          if(previous==null||!previous.available||
+            previous.title!==tab.content.name||previous.kind!==pin.tabKind||
+            previous.sourceToken!==sourceToken){
+            next=sourceSetPinnedContentTabPresentation(next,pin.id,{
+              sourceToken,title:tab.content.name,kind:pin.tabKind,
+              chrome:null,available:true,
+            });
+          }
+        }else{
+          pinnedOwnerTokensRef.current.delete(pin.id);
+          next=sourceMarkPinnedContentTabUnavailable(next,pin.id);
+        }
+      }
+      return next;
+    });
+  },[workspaceTabs.tabs,active]);
   const revokeWorkspacePreview=React.useCallback(()=>{
     workspaceRequestEpochRef.current++;
     workspaceSelectionIntentRef.current++;
@@ -505,6 +623,75 @@ export function App() {
       notify("无法读取所选工作区文件：请确认权限及格式。");
     }
   },[workspaceTabs.tabs,notify,cancelPendingWorkspacePreviews]);
+  const pinWorkspaceTab=React.useCallback((tabId:string)=>{
+    const tab=workspaceTabs.tabs.find(item=>item.id===tabId);
+    if(tab==null)return;
+    const pinId=sourcePinnedContentTabId(null,"local",active,tabId);
+    if(pinnedContentTabs.pins.some(pin=>pin.id===pinId))return;
+    const sourceToken=crypto.randomUUID();
+    pinnedOwnerTokensRef.current.set(pinId,sourceToken);
+    const input={
+      accountId:null,hostId:"local",threadId:active,clientThreadId:active,
+      tabId,tabKind:"workspace-file",title:tab.content.name,
+      routePath:window.location.pathname,routeSearch:window.location.search,
+      sourceToken,
+    } as const;
+    setPinnedContentTabs(current=>sourcePinContentTab(current,input).state);
+    // Original uqi calls the tab controller's pinTab before creating the
+    // sidebar reference. In this fallback that keeps a disposable preview.
+    workspaceSelectionIntentRef.current++;
+    setWorkspaceTabs(current=>sourceKeepLocalReadOnlyFileTab(current,tabId));
+  },[workspaceTabs.tabs,pinnedContentTabs.pins,active]);
+  const unpinWorkspaceTab=React.useCallback((tabId:string)=>{
+    const pinId=sourcePinnedContentTabId(null,"local",active,tabId);
+    pinnedOwnerTokensRef.current.delete(pinId);
+    setPinnedContentTabs(current=>sourceUnpinContentTab(current,pinId));
+  },[active]);
+  const unpinPinnedContentTab=React.useCallback((pinId:string)=>{
+    pinnedOwnerTokensRef.current.delete(pinId);
+    setPinnedContentTabs(current=>sourceUnpinContentTab(current,pinId));
+  },[]);
+  const selectPinnedContentTab=React.useCallback((pinId:string)=>{
+    const pin=pinnedContentTabs.pins.find(item=>item.id===pinId);
+    if(pin==null)return;
+    const tab=pin.hostId==="local"&&pin.clientThreadId===active
+      ?workspaceTabs.tabs.find(item=>item.id===pin.tabId):undefined;
+    if(tab==null){
+      notify("This source tab is unavailable. You can keep the pin or unpin it.");
+      return;
+    }
+    workspaceSelectionIntentRef.current++;
+    if(tab.isPreview===true){
+      workspaceLatestPreviewIntentRef.current++;
+      cancelPendingWorkspacePreviews();
+    }
+    setWorkspaceTabs(current=>sourceSelectLocalReadOnlyFileTab(
+      sourceKeepLocalReadOnlyFileTab(current,tab.id),tab.id,
+    ));
+  },[pinnedContentTabs.pins,workspaceTabs.tabs,active,notify,cancelPendingWorkspacePreviews]);
+  const pinnedTabIds=React.useMemo(()=>new Set(
+    pinnedContentTabs.pins.filter(pin=>
+      pin.hostId==="local"&&pin.clientThreadId===active,
+    ).map(pin=>pin.tabId),
+  ),[pinnedContentTabs.pins,active]);
+  const pinnedSidebarItems=React.useMemo(()=>sourcePinnedContentTabsInDisplayOrder(
+    pinnedContentTabs,
+  ).map(pin=>{
+    const tab=pin.hostId==="local"&&pin.clientThreadId===active
+      ?workspaceTabs.tabs.find(item=>item.id===pin.tabId):undefined;
+    const row=sourcePinnedContentTabDisplayRow(
+      pinnedContentTabs,pin.id,tab==null?null:{
+        tabId:tab.id,clientThreadId:active,title:tab.content.name,
+      },workspaceTabs.activeTabId,
+    );
+    return row==null?null:{
+      id:pin.id,title:row.title,
+      subtitle:tab?.content.relativePath??"",
+      unavailable:row.unavailable,isActive:row.isActive,
+    };
+  }).filter((item):item is PinnedSidebarItem=>item!=null),[
+    pinnedContentTabs,workspaceTabs.tabs,workspaceTabs.activeTabId,active,
+  ]);
   React.useEffect(()=>()=>revokeWorkspacePreview(),[revokeWorkspacePreview]);
   // Reset creates a new demo host lifetime. Switching conversations only
     // remounts virtual rows, so historical Rk choices remain host-owned.
@@ -1126,6 +1313,9 @@ export function App() {
       </>}
     />}
     <ConversationSidebar active={active} collapsed={collapsed} navigationRailEnabled={navigationRailEnabled} onToggle={() => setCollapsed((v) => !v)} onSelect={switchConversation} onReset={reset}
+      pinnedItems={pinnedSidebarItems}
+      onSelectPinned={selectPinnedContentTab}
+      onUnpinPinned={unpinPinnedContentTab}
       resizeHandle={<CodexSourceSidebarResizeHandle
         width={sidebarWidth} availableWidth={availableWidth}
         onWidthChange={setSidebarWidth}/>}/>
@@ -1369,6 +1559,9 @@ export function App() {
         }}
         onOpenTreeFile={openWorkspaceTreeFile}
         onOpenLocation={openWorkspaceLocation}
+        pinnedTabIds={pinnedTabIds}
+        onPinTab={pinWorkspaceTab}
+        onUnpinTab={unpinWorkspaceTab}
         onCloseToRight={id=>{
           workspaceSelectionIntentRef.current++;
           const index=workspaceTabs.tabs.findIndex(tab=>tab.id===id);

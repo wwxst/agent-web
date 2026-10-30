@@ -8,6 +8,12 @@ import {
   type SourceLocalFileTabContextAction,
 } from "../src/conversation/SourceReviewFileTabModel.js";
 import type {SourceLanguageLocation} from "../src/conversation/SourceLanguageNavigationModel.js";
+
+type WorkspaceTabMenuAction=
+  SourceLocalFileTabContextAction|"pin-to-sidebar"|"unpin-from-sidebar";
+type WorkspaceTabMenuEntry=
+  |{id:WorkspaceTabMenuAction;message:string;enabled:boolean}
+  |{id:"pin-content-tab-separator";type:"separator"};
 import "./workspaceReadOnlyPreview.css";
 
 export interface WorkspaceReadOnlyPreview{
@@ -53,7 +59,8 @@ export function sourceWorkspacePreviewRange(
 }
 export function WorkspaceReadOnlyPreviewPanel({
   preview,tabs,activeTabId,onSelectTab,onKeepTab,onCloseTab,onCloseOthers,
-  onCloseToRight,onClose,onOpenTreeFile,onOpenLocation,
+  onCloseToRight,onClose,onOpenTreeFile,onOpenLocation,pinnedTabIds,
+  onPinTab,onUnpinTab,
 }:{
   preview:WorkspaceReadOnlyPreview;
   /** Source IX opens a tab keyed by k3o, not a separate preview window.
@@ -71,6 +78,10 @@ export function WorkspaceReadOnlyPreviewPanel({
   onClose:()=>void;
   onOpenTreeFile:(relativePath:string,isPreview?:boolean)=>void;
   onOpenLocation:(location:SourceLanguageLocation)=>void;
+  /** Pin references are separate from the source tab and never close it. */
+  pinnedTabIds:ReadonlySet<string>;
+  onPinTab:(id:string)=>void;
+  onUnpinTab:(id:string)=>void;
 }){
   // IX preserves a tab contentInstance in the original private XL host.
   // Keep one independent CodeMirror EditorView mounted per stable tab ID:
@@ -85,8 +96,19 @@ export function WorkspaceReadOnlyPreviewPanel({
     tabId:string;trigger:HTMLButtonElement;left:number;top:number;
   }|null>(null);
   const focusAfterClose=React.useRef<HTMLButtonElement|null>(null);
-  const menuItems=tabMenu==null?[]:
+  const baseMenuItems=tabMenu==null?[]:
     sourceLocalFileTabContextMenu({tabs,activeTabId},tabMenu.tabId);
+  const menuItems:WorkspaceTabMenuEntry[]=tabMenu==null?[]:[
+    {
+      id:pinnedTabIds.has(tabMenu.tabId)?"unpin-from-sidebar":"pin-to-sidebar",
+      message:pinnedTabIds.has(tabMenu.tabId)
+        ?"Unpin from sidebar":"Pin to sidebar",
+      enabled:true,
+    },
+    ...(baseMenuItems.length>0
+      ?[{id:"pin-content-tab-separator" as const,type:"separator" as const}]:[]),
+    ...baseMenuItems,
+  ];
   // Original Eqi guards its actions by the tab's live identity; this
   // fallback avoids presenting a menu for a tab already closed elsewhere.
   React.useEffect(()=>{
@@ -137,7 +159,7 @@ export function WorkspaceReadOnlyPreviewPanel({
   function openTabMenu(
     trigger:HTMLButtonElement,tabId:string,left:number,top:number,
   ){
-    if(sourceLocalFileTabContextMenu({tabs,activeTabId},tabId).length===0)return;
+    if(!tabs.some(tab=>tab.id===tabId))return;
     setTabMenu({tabId,trigger,
       left:Math.max(4,Math.min(left,window.innerWidth-230)),
       top:Math.max(4,Math.min(top,window.innerHeight-150))});
@@ -155,14 +177,19 @@ export function WorkspaceReadOnlyPreviewPanel({
       current<0?last:(current+last)%buttons.length;
     buttons[next]?.focus({preventScroll:true});
   }
-  function runTabAction(action:SourceLocalFileTabContextAction){
+  function runTabAction(action:WorkspaceTabMenuAction){
     const current=tabMenu;
-    if(current==null||!sourceLocalFileTabContextMenu(
-      {tabs,activeTabId},current.tabId).some(item=>
+    if(current==null)return;
+    if(action==="pin-to-sidebar"&&pinnedTabIds.has(current.tabId))return;
+    if(action==="unpin-from-sidebar"&&!pinnedTabIds.has(current.tabId))return;
+    if(action!=="pin-to-sidebar"&&action!=="unpin-from-sidebar"&&
+      !sourceLocalFileTabContextMenu({tabs,activeTabId},current.tabId).some(item=>
         item.id===action&&item.enabled))return;
     focusAfterClose.current=current.trigger;
     setTabMenu(null);
-    if(action==="keep-tab")onKeepTab(current.tabId);
+    if(action==="pin-to-sidebar")onPinTab(current.tabId);
+    else if(action==="unpin-from-sidebar")onUnpinTab(current.tabId);
+    else if(action==="keep-tab")onKeepTab(current.tabId);
     else if(action==="close-tab")onCloseTab(current.tabId);
     else if(action==="close-other-tabs")onCloseOthers(current.tabId);
     else onCloseToRight(current.tabId);
@@ -264,11 +291,16 @@ export function WorkspaceReadOnlyPreviewPanel({
         style={{left:tabMenu.left,top:tabMenu.top}}
         onKeyDown={handleMenuKeys}
         onPointerDown={event=>event.stopPropagation()}>
-        {menuItems.map(item=><button key={item.id} type="button"
-          role="menuitem" disabled={!item.enabled}
-          aria-disabled={!item.enabled}
-          data-source-file-tab-menu-action={item.id}
-          onClick={()=>runTabAction(item.id)}>{item.message}</button>)}
+        {menuItems.map(item=>{
+          if(item.id==="pin-content-tab-separator")
+            return <div key={item.id} role="separator"
+              className="demo-workspace-preview__menu-separator"/>;
+          return <button key={item.id} type="button"
+            role="menuitem" disabled={!item.enabled}
+            aria-disabled={!item.enabled}
+            data-source-file-tab-menu-action={item.id}
+            onClick={()=>runTabAction(item.id)}>{item.message}</button>;
+        })}
       </div>,document.body):null}
   </aside>;
 }

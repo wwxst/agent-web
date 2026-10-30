@@ -329,3 +329,14 @@ Follow `reports/NEXT_BATCH.md`: add the typed controller paste-event contract an
 - Added a mounted Playwright regression for open/focus, match count/highlights, keyboard and button navigation, Escape/reopen, query retention and read-only boundaries.
 - GitHub Actions run 40983135835 passed on the exact branch head: core 529/529, demo models 5/5, Chromium 74/74, desktop Node 82/82, Linux Electron smoke and Windows Electron smoke all passed. TypeScript/Vite build passed.
 - Remaining: original localized search-message provider and private design-system control parity; same-build/same-theme visual comparison against a running original Codex Electron window is still outstanding.
+
+## 2026-10-30 — source-backed pinned content tab references
+
+- Continued from the source-readonly-file-search recovery branch on `recovery/source-pinned-content-tabs-20261030`; this is a stacked frontend recovery branch. No `main` or Agent backend changes.
+- Audited the original `app-initial-5851df3f6cb1.js`, Electron main `main-C4DYk222.js` and `preload-bridge-a3f4732ecb5a.js`. Confirmed exact pin identity, three storage keys, pin/unpin semantics, presentation availability, cross-window owner reveal and durable-route preload. Evidence and hashes: `reports/SOURCE_PINNED_CONTENT_TABS_20261030.md`.
+- Added `SourcePinnedContentTabsModel.ts`, source-keyed persistence, live/unavailable presentation state, Pin/Unpin context actions and the sidebar Pinned section. Selecting a live pin reveals the existing EditorView; unpin removes only the sidebar reference; closing or revoking a source tab preserves an unavailable pin.
+- Added 8 core model tests and 3 mounted Playwright lifecycle tests; updated the existing source tab-menu keyboard/focus regression for the newly restored first menu action.
+- GitHub Actions run 40986143431 passed on code head `bc9ff949ca639d71d2722e4ddb293dbe2adaceeb`: core 537/537, demo models 5/5, Chromium 77/77, desktop Node 82/82, Linux Electron smoke and Windows Electron smoke all passed. TypeScript/Vite React and Electron renderer builds passed.
+- Fidelity boundary: this independent renderer currently restores same-window live-tab references only.
+- Draft PR #81 is open and intentionally stacked on PR #80's recovery branch (`recovery/source-readonly-file-search-20261030`); neither PR has been merged. `main` remains at `6a744a4`.
+ The original main-process cross-window `contentTabs` owner/reveal service and `PinnedContentTabPreloadBridge` durable-route preload are not yet ported; original file thumbnails, drag reorder, private localized messages and pixel comparison also remain outstanding. No Agent IPC or backend code changed.
