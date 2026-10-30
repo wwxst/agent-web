@@ -142,3 +142,51 @@ test("missing host controls render disabled source-positioned placeholders rathe
   await expect(page.getByText("Demo Agent")).toHaveCount(0);
   await expect(page.getByText(/Full access.*mock/)).toHaveCount(0);
 });
+
+test("late model snapshots from a previous conversation cannot overwrite the active thread controls",async({page})=>{
+  await page.addInitScript(()=>{
+    const makeSnapshot=(conversationId,label)=>({
+      schemaVersion:1,conversationId,
+      model:{selected:{id:label,label,reasoningEffortId:"high",reasoningEffortLabel:"High"},
+        options:[{id:label,label,defaultReasoningEffortId:"high",
+          reasoningEfforts:[{id:"high",label:"High"}]}]},
+      permissions:{selected:{id:"approval",kind:"agent-mode",label:"Ask for approval"},
+        options:[{id:"approval",kind:"agent-mode",label:"Ask for approval"}]},
+    });
+    const host={
+      subscribeHostEvents:()=>()=>{},
+      getHostInfo:async()=>({windowType:"electron",platform:"test",theme:"light",backendConnected:true}),
+      getComposerDrafts:async()=>({}),setComposerDraft:async()=>true,
+      getComposerControls:request=>{
+        if(request.conversationId==="frontend"){
+          return new Promise(resolve=>{
+            (window as Window & {__resolveOldControls?:(value:unknown)=>void})
+              .__resolveOldControls=resolve;
+          });
+        }
+        return Promise.resolve(makeSnapshot(request.conversationId,"Review model"));
+      },
+    };
+    Object.defineProperty(window,"agentWebDesktopHost",{configurable:true,value:host});
+  });
+  await page.goto("/");
+  await page.waitForFunction(()=>
+    typeof (window as Window & {__resolveOldControls?:unknown}).__resolveOldControls==="function");
+  await page.getByRole("button",{name:/工具调用与审批交互/}).click();
+  const model=page.getByTestId("composer-model-control");
+  await expect(model).toContainText("Review model");
+  await page.evaluate(()=>{
+    (window as Window & {__resolveOldControls?:(value:unknown)=>void})
+      .__resolveOldControls?.({
+        schemaVersion:1,conversationId:"frontend",
+        model:{selected:{id:"old",label:"Stale frontend model",reasoningEffortId:"high",
+          reasoningEffortLabel:"High"},
+          options:[{id:"old",label:"Stale frontend model",defaultReasoningEffortId:"high",
+            reasoningEfforts:[{id:"high",label:"High"}]}]},
+        permissions:{selected:{id:"approval",kind:"agent-mode",label:"Ask for approval"},
+          options:[{id:"approval",kind:"agent-mode",label:"Ask for approval"}]},
+      });
+  });
+  await expect(model).toContainText("Review model");
+  await expect(model).not.toContainText("Stale frontend model");
+});
