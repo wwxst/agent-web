@@ -81,6 +81,28 @@ export interface SourceComposerModelChangeRequest {
   readonly reasoningEffortId?:string;
 }
 
+export interface SourceComposerControlsMutationResult {
+  readonly ok:boolean;
+  readonly snapshot:SourceComposerControlsSnapshot|null;
+  readonly errorMessage?:string;
+}
+
+/** Parse an acknowledged host mutation; never accept an optimistic renderer value. */
+export function parseSourceComposerControlsMutationResult(
+  value:unknown,
+  expectedConversationId:string,
+):SourceComposerControlsMutationResult|null{
+  if(!isRecord(value)||typeof value.ok!=="boolean")return null;
+  const errorMessage=value.errorMessage==null?undefined:
+    safeText(value.errorMessage,500)??undefined;
+  if(value.ok!==true)return {ok:false,snapshot:null,
+    ...(errorMessage==null?{}:{errorMessage})};
+  const snapshot=value.snapshot==null?null:
+    parseSourceComposerControlsSnapshot(value.snapshot,expectedConversationId);
+  if(value.snapshot!=null&&snapshot==null)return null;
+  return {ok:true,snapshot};
+}
+
 export interface SourceComposerPermissionChangeRequest {
   readonly conversationId:string;
   readonly permissionModeId:string;
