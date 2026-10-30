@@ -199,8 +199,9 @@ export function CodexComposerModelReasoningControl(props:{
   const snapshot=controls.snapshot;
   const selected=snapshot?.model.selected??null;
   const selectedOption=snapshot?.model.options.find(option=>option.id===selected?.id)??null;
+  const hasSelectableModel=snapshot?.model.options.some(option=>option.disabledReason==null)===true;
   const disabled=controls.status!=="ready"||snapshot==null||
-    snapshot.model.options.length===0||controls.pending||!controls.canChangeModel;
+    !hasSelectableModel||controls.pending||!controls.canChangeModel;
   const label=selected==null
     ?controls.status==="loading"?"读取模型…":"模型未连接"
     :selected.label;
@@ -275,8 +276,11 @@ export function CodexComposerPermissionModeControl(props:{
   const triggerRef=React.useRef<HTMLButtonElement|null>(null);
   const snapshot=controls.snapshot;
   const selected=snapshot?.permissions.selected??null;
+  const hasSelectablePermission=snapshot?.permissions.options.some(option=>
+    option.disabledReason==null&&
+    (option.requiresConfirmation!==true||option.confirmation!=null))===true;
   const disabled=controls.status!=="ready"||snapshot==null||
-    snapshot.permissions.options.length===0||controls.pending||!controls.canChangePermission;
+    !hasSelectablePermission||controls.pending||!controls.canChangePermission;
   const label=selected?.label??(controls.status==="loading"?"读取权限…":"权限未连接");
   const title=controlUnavailableTitle(controls,snapshot?.permissions.unavailableReason);
   const close=()=>{setOpen(false);triggerRef.current?.focus();};
