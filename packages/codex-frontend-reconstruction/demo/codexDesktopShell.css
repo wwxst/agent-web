@@ -857,3 +857,42 @@ button:focus-visible, textarea:focus-visible { outline: 2px solid #578cda; outli
     -webkit-text-fill-color:currentColor;
   }
 }
+
+
+/*
+ * Codex home composer placement recovered from the supplied 26.1013.40934
+ * app-primary bundle: home-composer-anchor uses 42svh minus the main toolbar
+ * offset; --home-composer-inline-inset is 3.25 source spacing units.
+ * The app home has no synthetic project/history rows or thread-footer fade.
+ */
+.demo-main[data-codex-home="true"] {
+  --home-composer-inline-inset: calc(var(--spacing, 4px) * 3.25);
+  --home-composer-top: max(0px, calc(42svh - var(--height-toolbar, 46px)));
+}
+.demo-nav-action.is-active {
+  background: #e7e7e7;
+  color: #292929;
+  font-weight: 550;
+}
+.demo-main[data-codex-home="true"] .demo-scroll-region {
+  overflow: hidden;
+  scrollbar-width: none;
+}
+.demo-main[data-codex-home="true"] .demo-transcript-column,
+.demo-main[data-codex-home="true"] .demo-thread-footer-clearance,
+.demo-main[data-codex-home="true"] .demo-thread-footer-surface,
+.demo-main[data-codex-home="true"] .codex-source-scroll-to-bottom-anchor {
+  display: none;
+}
+.demo-main[data-codex-home="true"] .demo-composer-zone {
+  top: calc(var(--home-composer-top) + var(--height-toolbar, 46px));
+  bottom: auto;
+  padding: 0 var(--home-composer-inline-inset);
+  background: transparent;
+  display: flex;
+  justify-content: center;
+}
+.demo-main[data-codex-home="true"] .demo-composer-zone > .demo-composer-wrap {
+  width: min(100%, var(--thread-content-max-width, 48rem));
+  margin-inline: auto;
+}

@@ -22,6 +22,7 @@ export type ComposerRadiusVariant = "default" | "large";
 export type ComposerSurfaceVariant = "default" | "opaque";
 export type ComposerFooterRows = "stacked" | "inline" | "responsive";
 export type ComposerUtilityBarVariant = "home"; // other values unverified
+export type ComposerPlacement = "thread" | "home";
 
 export interface CodexComposerLayoutProps {
   input: ReactNode;
@@ -37,6 +38,7 @@ export interface CodexComposerLayoutProps {
   /** Explicit when the host knows actual dictation/responsive conditions. */
   footerRows?: ComposerFooterRows;
   className?: string;
+  placement?: ComposerPlacement;
 }
 
 /** Pcr in app-initial selects 'stacked' for multiline and 'inline' otherwise. */
@@ -60,6 +62,7 @@ export function CodexComposerLayout({
   utilityBarVariant,
   footerRows,
   className,
+  placement = "thread",
 }: CodexComposerLayoutProps) {
   const rows = getComposerFooterRows(layout, footerRows);
 
@@ -68,6 +71,7 @@ export function CodexComposerLayout({
       className={["codex-composer-layout", className].filter(Boolean).join(" ")}
       role="presentation"
       data-composer-layout={layout}
+      data-composer-placement={placement}
       data-composer-density={density}
       data-composer-radius-variant={radiusVariant}
       data-composer-surface-variant={surfaceVariant}

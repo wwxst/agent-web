@@ -125,7 +125,7 @@ function ConversationSidebar(props: {
   collapsed: boolean;
   onToggle: () => void;
   onSelect: (id: DemoConversationId) => void;
-  onReset: () => void;
+  onNewChat: () => void;
   navigationRailEnabled: boolean;
   pinnedItems:readonly PinnedSidebarItem[];
   onSelectPinned:(pinId:string)=>void;
@@ -133,7 +133,7 @@ function ConversationSidebar(props: {
   resizeHandle?:React.ReactNode;
 }) {
   const {
-    active,collapsed,onToggle,onSelect,onReset,navigationRailEnabled,
+    active,collapsed,onToggle,onSelect,onNewChat,navigationRailEnabled,
     pinnedItems,onSelectPinned,onUnpinPinned,resizeHandle,
   } = props;
   return <aside className={`demo-sidebar ${collapsed ? "demo-sidebar--collapsed" : ""}`} aria-label="演示会话导航">
@@ -142,7 +142,7 @@ function ConversationSidebar(props: {
       <button className="demo-icon-button" type="button" title="搜索尚未恢复" aria-label="搜索尚未恢复" disabled><Icon name="search" size={17}/></button>
     </div>
     <div className="demo-sidebar-actions">
-      <button type="button" className="demo-nav-action" title="新建演示会话" onClick={onReset}><Icon name="plus" size={16}/>{!collapsed && <span>New chat</span>}</button>
+      <button type="button" className={`demo-nav-action ${active === "visual-empty" ? "is-active" : ""}`} title="New chat" aria-current={active === "visual-empty" ? "page" : undefined} onClick={onNewChat}><Icon name="plus" size={16}/>{!collapsed && <span>New chat</span>}</button>
       {!collapsed && !navigationRailEnabled && <>
         <div className="demo-nav-action demo-nav-disabled" aria-label="Scheduled 尚未接入"><Icon name="clock" size={15}/> Scheduled</div>
         <div className="demo-nav-action demo-nav-disabled" aria-label="Plugins 尚未接入"><Icon name="plugin" size={15}/> Plugins</div>
@@ -176,6 +176,7 @@ function ConversationSidebar(props: {
           </div>)}
         </nav>
       </section>:null}
+      {active !== "visual-empty" && <>
       <div className="demo-section-heading">Projects</div>
       <nav className="demo-chat-list" aria-label="会话">
         <div className="demo-project-heading"><Icon name="folder" size={16}/> agent web</div>
@@ -185,6 +186,7 @@ function ConversationSidebar(props: {
       </nav>
       <div className="demo-sidebar-spacer"/>
       <div className="demo-section-heading demo-recent-heading">Recents</div>
+      </>}
       {!navigationRailEnabled && <div className="demo-sidebar-foot"><Icon name="settings" size={15}/> 预览环境 · 本地模拟数据</div>}
     </>}
     {!collapsed && resizeHandle}
@@ -197,6 +199,7 @@ export function App() {
   const isVisualShellScenario=visualScenario==="shell-empty";
   const [active, setActive] = React.useState<DemoConversationId>(()=>
     isVisualShellScenario?"visual-empty":"frontend");
+  const isNewChat = active === "visual-empty";
   const composerControlsHost=typeof window==="undefined"
     ?undefined:window.agentWebDesktopHost;
   const composerControls=useCodexComposerControls(composerControlsHost,active);
@@ -1340,8 +1343,17 @@ export function App() {
     setSubagentFixture(null);
     setSelectedSubagent(null);
     setRequestedSubagentName(null);
+    setShowDemoTools(false);
+    setShowSubagentsPanel(false);
     // Never retain result offsets from an unrelated demo conversation.
     setFindOrdinal(0);
+  }
+  function startNewChat() {
+    if (active === "visual-empty") {
+      reset();
+      return;
+    }
+    switchConversation("visual-empty");
   }
 
   // Original D0e routes native Toggle Sidebar / previousThread / nextThread
@@ -1372,7 +1384,7 @@ export function App() {
   // The direct/more identity projection is sourced from original GZc/QZc;
   // routing/feature flags are supplied explicitly by this mock host.
   const availableRailDestinations: CodexRailDestination[] = [
-    { id: "builtin:home", label: "Home", icon: <Icon name="home" size={18}/>, isCurrentDestination: true, onSelect: () => switchConversation("frontend") },
+    { id: "builtin:home", label: "Home", icon: <Icon name="home" size={18}/>, isCurrentDestination: true, onSelect: () => switchConversation("visual-empty") },
     { id: "builtin:activity", label: "Activity", icon: <Icon name="branch" size={18}/> },
     { id: "builtin:automations", label: "Scheduled", icon: <Icon name="clock" size={18}/> },
     { id: "builtin:library", label: "Library", icon: <Icon name="library" size={18}/> },
@@ -1413,27 +1425,27 @@ export function App() {
         <button type="button" disabled aria-label="Settings（尚未接入）" title="设置尚未接入"><Icon name="settings" size={18}/></button>
       </>}
     />}
-    <ConversationSidebar active={active} collapsed={collapsed} navigationRailEnabled={navigationRailEnabled} onToggle={() => setCollapsed((v) => !v)} onSelect={switchConversation} onReset={reset}
+    <ConversationSidebar active={active} collapsed={collapsed} navigationRailEnabled={navigationRailEnabled} onToggle={() => setCollapsed((v) => !v)} onSelect={switchConversation} onNewChat={startNewChat}
       pinnedItems={pinnedSidebarItems}
       onSelectPinned={selectPinnedContentTab}
       onUnpinPinned={unpinPinnedContentTab}
       resizeHandle={<CodexSourceSidebarResizeHandle
         width={sidebarWidth} availableWidth={availableWidth}
         onWidthChange={setSidebarWidth}/>}/>
-    <div className="demo-main" data-app-shell-main-surface="default"
+    <div className="demo-main" data-codex-home={isNewChat ? "true" : undefined} data-app-shell-main-surface="default"
       data-thread-scroll-layout="default">
       <header className="demo-header" data-app-shell-main-titlebar="true">
         <div className="demo-titlebar-toolbar" role="toolbar" aria-label="聊天工具栏"
           data-app-shell-focus-area="main">
         <div className="demo-header-location" data-app-shell-titlebar-content="true">
-          <span className="demo-header-folder"><Icon name="folder" size={17}/></span><strong>{DEMO_CONVERSATIONS.find((c) => c.id === active)?.title}</strong></div>
+          {!isNewChat && <span className="demo-header-folder"><Icon name="folder" size={17}/></span>}<strong>{DEMO_CONVERSATIONS.find((c) => c.id === active)?.title}</strong></div>
         <div className="demo-header-actions">
           <span className="demo-header-static" title="原版桌面按钮布局参考，暂未接通功能"><Icon name="dots" size={17}/></span>
-          {subagentFixture!==null?<button type="button" className="demo-icon-button"
+          {!isNewChat && subagentFixture!==null?<button type="button" className="demo-icon-button"
             title="Subagents · synthetic fixture" aria-label="Open Subagents"
             aria-expanded={showSubagentsPanel}
             onClick={()=>setShowSubagentsPanel(true)}><Icon name="branch" size={17}/></button>:null}
-          <button type="button" className="demo-icon-button" title={showDemoTools ? "收起演示工具" : "打开演示工具"} aria-label={showDemoTools ? "收起演示工具" : "打开演示工具"} aria-expanded={showDemoTools} onClick={() => setShowDemoTools((value) => !value)}><Icon name="sliders" size={17}/></button>
+          {!isNewChat && <button type="button" className="demo-icon-button" title={showDemoTools ? "收起演示工具" : "打开演示工具"} aria-label={showDemoTools ? "收起演示工具" : "打开演示工具"} aria-expanded={showDemoTools} onClick={() => setShowDemoTools((value) => !value)}><Icon name="sliders" size={17}/></button>}
           <button type="button" className="demo-icon-button demo-collapse-toggle" aria-label={collapsed ? "展开侧边栏" : "收起侧边栏"} onClick={() => setCollapsed((value) => !value)}><Icon name="panel" size={17}/></button>
         </div>
         </div>
@@ -1561,7 +1573,7 @@ export function App() {
         </div>
       </div>}
       <div className="demo-scroll-region" ref={scrollElementRef}
-        role="region" tabIndex={0} aria-label="对话"
+        role="region" tabIndex={0} aria-label={isNewChat ? "New conversation" : "对话"}
         data-thread-scroll-viewport=""
         // Original scrollToDistanceFromBottomPx(source:"user"|"programmatic")
         // distinguishes user intent from the automatic route hold. Never
@@ -1606,7 +1618,9 @@ export function App() {
         </div>
       </div>
       <div className="demo-composer-zone" ref={composerFooterRef}
-        data-thread-scroll-footer="true" data-thread-footer-placement="bottom">
+        data-composer-placement={isNewChat ? "home" : "thread"}
+        data-thread-scroll-footer={isNewChat ? undefined : "true"}
+        data-thread-footer-placement={isNewChat ? undefined : "bottom"}>
         <div className="demo-thread-footer-surface" data-thread-footer-background-part="surface" aria-hidden="true"/>
         <CodexSourceScrollToBottomButton
           visible={showScrollToBottom} onClick={scrollToLatest}/>
@@ -1616,6 +1630,7 @@ export function App() {
           onSubmit={() => { if (composerAction.kind === "send") sendMessage(); }}>
           <CodexComposerLayout
             className="demo-composer"
+            placement={isNewChat ? "home" : "thread"}
             layout="multiline"
             density="comfortable"
             radiusVariant="default"
@@ -1631,6 +1646,8 @@ export function App() {
               onPastedImages={addComposerFiles}
               onPastedFiles={addComposerFiles}
               onPastedText={() => false}
+              placeholder={isNewChat ? "Do anything" : "Work with Codex"}
+              ariaLabel={isNewChat ? "Do anything" : "演示消息输入"}
             /> : <div data-composer-draft-hydrating="true" aria-live="polite">恢复输入内容中…</div>}
             leadingControls={<div className="demo-composer-options">
               <input ref={composerFileInputRef} type="file" multiple
