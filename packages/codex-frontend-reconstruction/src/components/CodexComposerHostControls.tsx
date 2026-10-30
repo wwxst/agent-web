@@ -43,9 +43,11 @@ export function useCodexComposerControls(
 
   const refresh=React.useCallback(async()=>{
     const epoch=++requestEpoch.current;
+    setPending(false);
     setPendingPermissionConfirmation(null);
+    setSnapshot(null);
     if(typeof host?.getComposerControls!=="function"){
-      setSnapshot(null);setStatus("unavailable");setErrorMessage(null);return;
+      setStatus("unavailable");setErrorMessage(null);return;
     }
     setStatus("loading");setErrorMessage(null);
     try{
