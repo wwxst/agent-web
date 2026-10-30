@@ -320,3 +320,12 @@ Follow `reports/NEXT_BATCH.md`: add the typed controller paste-event contract an
 - Added `SourceOpenLocationModel.ts` and routed a source-shaped zero-based LSP range through the existing read-only local file-tab flow. The handler requires an already-granted local workspace; native IPC still receives only path + line, with column/reset metadata kept renderer-side.
 - Added model tests, a clearly synthetic demo event, and a mounted browser regression for related-file tab creation at one-based line 3 / column 3, repeated-location stale-scroll replacement, and native-reader argument boundaries. Corrected the earlier source report: this specific callback does not forward `range.end` as `endLine`.
 - CI for the new branch is pending. Full language-service capability query, definition/reference results, and the original context-menu/Ctrl-click UI are **not** restored; the fixture does not simulate an LSP provider. See `reports/SOURCE_OPEN_LOCATION_ROUTE_20261029.md`.
+
+## 2026-10-30 — source-backed read-only file Find panel
+
+- Continued from the merged #78/#79 main checkpoint on `recovery/source-readonly-file-search-20261030`; no `main` or Agent backend changes.
+- Audited the original `text-file-editor-search-panel`, `text-file-editor-extensions` and `text-file-editor-tab-content` assets by SHA-256. The original uses a top CodeMirror Panel with React Find controls, query-aware result counting (999 cap), match decorations, and Mod-F / F3 / Shift-F3 / Mod-G navigation. Evidence and limits: `reports/SOURCE_READONLY_FILE_SEARCH_20261030.md`.
+- Added `@codemirror/search` and mounted a source-shaped read-only Find panel inside the existing per-tab `WorkspaceReadOnlyCodeMirror` EditorView. Search state remains per tab; read-only state and the native grant-checked file-read boundary are unchanged. No Replace, save or file-write path was introduced.
+- Added a mounted Playwright regression for open/focus, match count/highlights, keyboard and button navigation, Escape/reopen, query retention and read-only boundaries.
+- GitHub Actions run 40983135835 passed on the exact branch head: core 529/529, demo models 5/5, Chromium 74/74, desktop Node 82/82, Linux Electron smoke and Windows Electron smoke all passed. TypeScript/Vite build passed.
+- Remaining: original localized search-message provider and private design-system control parity; same-build/same-theme visual comparison against a running original Codex Electron window is still outstanding.
