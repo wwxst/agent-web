@@ -65,7 +65,6 @@ export function WorkspaceReadOnlyPreviewPanel({
   preview:WorkspaceReadOnlyPreview;
   /** Hides the right panel without unmounting its tabs or CodeMirror views. */
   visible?:boolean;
-  preview:WorkspaceReadOnlyPreview;
   /** Source IX opens a tab keyed by k3o, not a separate preview window.
    * Contents remain explicitly independent local read-only fallbacks. */
   tabs:readonly {
