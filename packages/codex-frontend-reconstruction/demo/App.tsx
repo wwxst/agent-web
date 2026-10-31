@@ -75,9 +75,10 @@ import {
   type DemoConversationId,
 } from "./mockConversation.js";
 
-function Icon({ name, size = 18 }: { name: "panel" | "search" | "bell" | "edit" | "plus" | "branch" | "dots" | "up" | "stop" | "bottom" | "top" | "play" | "refresh" | "terminal" | "check" | "menu" | "copy" | "folder" | "file" | "chevron" | "clock" | "plugin" | "settings" | "sliders" | "window" | "square" | "home" | "library" | "tiles" | "square-plus" | "computer"; size?: number }) {
+function Icon({ name, size = 18 }: { name: "panel" | "search" | "bell" | "edit" | "plus" | "branch" | "dots" | "up" | "stop" | "bottom" | "top" | "play" | "refresh" | "terminal" | "check" | "menu" | "copy" | "folder" | "file" | "chevron" | "clock" | "plugin" | "settings" | "sliders" | "window" | "square" | "home" | "images" | "library" | "tiles" | "square-plus" | "computer"; size?: number }) {
   const children: Record<typeof name, React.ReactNode> = {
     home: <><path d="m3 11 9-8 9 8v9H3z"/><path d="M9 20v-6h6v6"/></>,
+    images: <><rect x="4" y="5" width="14" height="13" rx="2"/><path d="M8 18v2h12a2 2 0 0 0 2-2V9h-4"/><circle cx="9" cy="10" r="1.4"/><path d="m6 16 4-4 3 3 2-2 3 3"/></>,
     library: <><path d="M4 5h5v15H4zM10 3h5v17h-5zM16 7h4v13h-4z"/></>,
     tiles: <><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></>,
     panel: <><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/></>,
@@ -1649,18 +1650,22 @@ export function App() {
     });
   },[active,findOpen,findMatches.length]);
 
-  // The direct/more identity projection is sourced from original GZc/QZc;
-  // routing/feature flags are supplied explicitly by this mock host.
+  // dWc separates Home and primary destinations from the Explore divider
+  // and the direct/pinned destination stack. Only Home has a real host route.
   const availableRailDestinations: CodexRailDestination[] = [
     { id: "builtin:home", label: "Home", icon: <Icon name="home" size={18}/>, isCurrentDestination: true, onSelect: () => demoFixtureEnabled ? switchConversation("frontend") : startNewChat() },
-    { id: "builtin:activity", label: "Activity", icon: <Icon name="branch" size={18}/> },
+    { id: "builtin:images", label: "Images", icon: <Icon name="images" size={18}/> },
     { id: "builtin:automations", label: "Scheduled", icon: <Icon name="clock" size={18}/> },
     { id: "builtin:library", label: "Library", icon: <Icon name="library" size={18}/> },
+    { id: "builtin:activity", label: "Activity", icon: <Icon name="branch" size={18}/> },
     { id: "builtin:skills", label: "Skills", icon: <Icon name="tiles" size={18}/> },
   ];
+  const homeRailDestination=availableRailDestinations.find(item=>item.id==="builtin:home")!;
+  const primaryRailDestinations=["builtin:images","builtin:automations","builtin:library"]
+    .map(id=>availableRailDestinations.find(item=>item.id===id)!);
   const destinationProjection = projectNavigationDestinations(availableRailDestinations, {
     navigationRailEnabled,
-    directDestinationIds: ["builtin:home", "builtin:activity", "builtin:automations", "builtin:library", "builtin:skills"],
+    directDestinationIds: ["builtin:activity", "builtin:skills"],
   });
   const railDestinations = destinationProjection.railDestinations.map((item) =>
     availableRailDestinations.find((candidate) => candidate.id === item.id)!,
@@ -1688,12 +1693,20 @@ export function App() {
     </div>
     <div className="demo-app" data-codex-shell-preview="light">
     {navigationRailEnabled && <CodexNavigationRail
+      home={homeRailDestination}
+      primaryDestinations={primaryRailDestinations}
       destinations={railDestinations}
       onMeasuredWidthChange={setMeasuredRailWidth}
-      footer={<>
-        <button type="button" disabled aria-label="More（尚未接入）" title="更多导航尚未接入"><Icon name="dots" size={18}/></button>
-        <button type="button" disabled aria-label="Settings（尚未接入）" title="设置尚未接入"><Icon name="settings" size={18}/></button>
-      </>}
+      customize={<button type="button" className="codex-navigation-rail__destination"
+        data-testid="navigation-rail-plugins" data-navigation-rail-kind="customize" aria-label="Plugins（尚未接入）"
+        title="Plugins 尚未接入" disabled><Icon name="plugin" size={18}/></button>}
+      explore={<button type="button" className="codex-navigation-rail__destination"
+        data-testid="navigation-rail-explore" data-navigation-rail-kind="explore" aria-label="Explore（尚未接入）"
+        title="Explore 尚未接入" disabled><Icon name="dots" size={18}/></button>}
+      footer={<button type="button" data-testid="navigation-rail-settings"
+        disabled aria-label="Settings（尚未接入）" title="设置尚未接入">
+        <Icon name="settings" size={18}/>
+      </button>}
     />}
     <ConversationSidebar active={active} collapsed={collapsed} navigationRailEnabled={navigationRailEnabled}
       referenceFixture={showSidebarReferenceFixture}

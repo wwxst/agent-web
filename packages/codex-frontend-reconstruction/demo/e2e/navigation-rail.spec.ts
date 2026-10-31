@@ -48,6 +48,75 @@ test("source-derived rail stays mounted when content sidebar is collapsed", asyn
   await expect(errors).toEqual([]);
 });
 
+test("rail Explore stays in the scroll stack while Settings remains in the footer",async({page})=>{
+  await page.goto("/");
+  const rail=page.getByRole("navigation",{name:"App navigation"});
+  const stack=rail.locator("[data-navigation-rail-scroll]");
+  const explore=page.getByTestId("navigation-rail-explore");
+  const settings=page.getByTestId("navigation-rail-settings");
+  await expect(explore).toBeVisible();
+  await expect(explore).toBeDisabled();
+  await expect(settings).toBeVisible();
+  await expect(settings).toBeDisabled();
+  const layout=await page.evaluate(()=>{
+    const rail=document.querySelector("[data-app-navigation-rail]")!;
+    const stack=rail.querySelector("[data-navigation-rail-scroll]")!;
+    const home=rail.querySelector('[data-sidebar-destination="builtin:home"]')!;
+    const explore=rail.querySelector('[data-testid="navigation-rail-explore"]')!;
+    const plugins=rail.querySelector('[data-testid="navigation-rail-plugins"]')!;
+    const divider=rail.querySelector('[data-navigation-rail-section-divider]')!;
+    const settings=rail.querySelector('[data-testid="navigation-rail-settings"]')!;
+    const rr=rail.getBoundingClientRect(),sr=stack.getBoundingClientRect();
+    const hr=home.getBoundingClientRect(),er=explore.getBoundingClientRect(),fr=settings.getBoundingClientRect();
+    const buttonOrder=Array.from(stack.querySelectorAll("button")).map(button=>({
+      id:button.getAttribute("data-sidebar-destination")??button.getAttribute("data-testid"),
+      kind:button.getAttribute("data-navigation-rail-kind"),
+    }));
+    return {
+      stackOffset:sr.top-rr.top,
+      stackGap:getComputedStyle(stack).rowGap,
+      stackAlignItems:getComputedStyle(stack).alignItems,
+      stackPaddingBottom:getComputedStyle(stack).paddingBottom,
+      homeWidth:hr.width,
+      homeLeft:hr.left-rr.left,
+      homeToImagesGap:stack.querySelector('[data-sidebar-destination="builtin:images"]')!.getBoundingClientRect().top-hr.bottom,
+      exploreInsideStack:stack.contains(explore),
+      settingsOutsideStack:!stack.contains(settings),
+      pluginsBeforeExplore:plugins.compareDocumentPosition(explore)===Node.DOCUMENT_POSITION_FOLLOWING,
+      dividerBetweenExploreAndDirect:explore.compareDocumentPosition(divider)===Node.DOCUMENT_POSITION_FOLLOWING&&
+        divider.compareDocumentPosition(rail.querySelector('[data-sidebar-destination="builtin:activity"]')!)===Node.DOCUMENT_POSITION_FOLLOWING,
+      buttonOrder,
+      exploreBottom:er.bottom,
+      settingsTop:fr.top,
+      settingsBottomInset:rr.bottom-fr.bottom,
+    };
+  });
+  expect(layout.stackOffset).toBe(8);
+  expect(layout.stackGap).toBe("1px");
+  expect(layout.stackAlignItems).toBe("stretch");
+  expect(layout.stackPaddingBottom).toBe("8px");
+  expect(layout.homeWidth).toBe(36);
+  expect(layout.homeLeft).toBe(8);
+  expect(layout.homeToImagesGap).toBe(1);
+  expect(layout.exploreInsideStack).toBe(true);
+  expect(layout.settingsOutsideStack).toBe(true);
+  expect(layout.pluginsBeforeExplore).toBe(true);
+  expect(layout.dividerBetweenExploreAndDirect).toBe(true);
+  expect(layout.buttonOrder).toEqual([
+    {id:"builtin:home",kind:"home"},
+    {id:"builtin:images",kind:"primary"},
+    {id:"builtin:automations",kind:"primary"},
+    {id:"builtin:library",kind:"primary"},
+    {id:"navigation-rail-plugins",kind:"customize"},
+    {id:"navigation-rail-explore",kind:"explore"},
+    {id:"builtin:activity",kind:"direct"},
+    {id:"builtin:skills",kind:"direct"},
+  ]);
+  expect(layout.exploreBottom).toBeLessThan(layout.settingsTop);
+  expect(layout.settingsBottomInset).toBe(8);
+  await expect(stack.locator("button")).toHaveCount(8);
+});
+
 test("rail only navigates where mock host provides a handler", async ({ page }) => {
   await page.goto("/");
   await page.getByRole("button", {name: /工具调用与审批交互/}).click();
