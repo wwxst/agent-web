@@ -39,7 +39,9 @@
   flex-direction: column;
   align-items: center;
   gap: 8px;
-  padding: 2px 4px;
+  /* Source full-window capture: menu 36px + rail 2px + destination inset 14px
+   * locates the first tile at y=52. Apply this to the actual Electron rail too. */
+  padding: 14px 4px 2px;
 }
 .codex-navigation-rail__destinations::-webkit-scrollbar { display: none; }
 .codex-navigation-rail__footer { flex-shrink: 0; width: 100%; display: flex; flex-direction: column; align-items: center; gap: 4px; }
@@ -84,12 +86,8 @@
 .codex-navigation-rail__destination:disabled { opacity: .56; cursor: default; }
 .codex-navigation-rail__destination:focus-visible { outline: 2px solid #578cda; outline-offset: 1px; }
 
-/* The 1352x760 Windows Codex reference locates the first 36px rail tile at
- * x=8, y=52. The menu bar remains source-defined at 36px; the source rail's
- * top slot creates the remaining 12px inset. Keep the normal host unchanged. */
-.demo-desktop:has([data-sidebar-reference-fixture="true"]) .codex-navigation-rail__destinations {
-  padding-top: 14px;
-}
+/* Reference-only footer differs from the normal disconnected Account/Settings
+ * controls; destination positions above are shared with the actual host. */
 .demo-desktop:has([data-sidebar-reference-fixture="true"]) .codex-navigation-rail {
   padding-bottom: 14px;
 }
