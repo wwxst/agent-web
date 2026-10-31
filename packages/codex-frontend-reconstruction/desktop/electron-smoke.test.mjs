@@ -554,7 +554,10 @@ test("independent Electron file renderer starts, isolates preload and routes Fc 
   await page.goto(homeUrl.toString());
   await page.locator('[data-codex-shell-preview="light"]').waitFor({timeout:20000});
   await page.locator('.demo-composer[data-composer-placement="home"]').waitFor({timeout:15000});
-  assert.equal(await page.locator(".demo-header-location strong").textContent(),"New chat");
+  assert.equal(await page.locator(".demo-header-location").count(),0);
+  assert.equal(await page.getByTestId("home-new-tab-unavailable").isDisabled(),true);
+  assert.equal(await page.getByTestId("home-composer-context").count(),1);
+  assert.equal(await page.getByTestId("home-computer-context").textContent(),"此计算机");
   assert.equal(await page.locator(".demo-row").count(),0);
   assert.equal(await page.locator(".demo-project-heading").count(),0);
   assert.equal(await page.locator(".demo-chat-link").count(),0);
@@ -566,20 +569,39 @@ test("independent Electron file renderer starts, isolates preload and routes Fc 
   assert.equal(await page.locator('.demo-composer [contenteditable="true"][aria-label="Do anything"]').count(),1);
   const homeGeometry=await page.evaluate(()=>{
     const main=document.querySelector(".demo-main")?.getBoundingClientRect();
+    const header=document.querySelector(".demo-header")?.getBoundingClientRect();
     const composer=document.querySelector(".demo-composer")?.getBoundingClientRect();
+    const context=document.querySelector(".demo-home-composer-context")?.getBoundingClientRect();
+    const heroIcon=document.querySelector(".demo-home-hero__icon")?.getBoundingClientRect();
     const heroHeading=document.querySelector(".demo-home-hero__heading")?.getBoundingClientRect();
-    return {mainTop:main?.top??null,composerTop:composer?.top??null,
-      expectedTop:main==null?null:main.top+innerHeight*.42,
+    return {
+      mainTop:main?.top??null,mainBottom:main?.bottom??null,
+      headerHeight:header?.height??null,
+      headerBorderBottom:getComputedStyle(document.querySelector(".demo-header")!).borderBottomWidth,
+      composerTop:composer?.top??null,composerBottom:composer?.bottom??null,
+      composerWidth:composer?.width??null,
+      contextHeight:context?.height??null,contextBottom:context?.bottom??null,
+      heroIconCenterY:heroIcon==null?null:heroIcon.top+heroIcon.height/2,
+      expectedHeroIconCenterY:main==null?null:main.top+innerHeight*.42-28,
+      heroHeadingTop:heroHeading?.top??null,
+      expectedHeroHeadingTop:main==null?null:main.top+innerHeight*.42+24,
       placement:document.querySelector(".demo-composer")?.getAttribute("data-composer-placement"),
-      heroHeadingBottom:heroHeading?.bottom??null};
+    };
   });
   assert.equal(homeGeometry.placement,"home");
-  assert.ok(homeGeometry.heroHeadingBottom!=null&&homeGeometry.composerTop!=null&&
-    homeGeometry.composerTop-homeGeometry.heroHeadingBottom>15&&
-    homeGeometry.composerTop-homeGeometry.heroHeadingBottom<30,
+  assert.equal(homeGeometry.headerHeight,46);
+  assert.equal(homeGeometry.headerBorderBottom,"0px");
+  assert.equal(homeGeometry.composerWidth,738);
+  assert.equal(homeGeometry.contextHeight,38);
+  assert.equal(homeGeometry.contextBottom,homeGeometry.composerTop);
+  assert.ok(homeGeometry.mainBottom!=null&&homeGeometry.composerBottom!=null&&
+    Math.abs(homeGeometry.mainBottom-homeGeometry.composerBottom-19)<1,
     JSON.stringify(homeGeometry));
-  assert.ok(homeGeometry.composerTop!=null&&homeGeometry.expectedTop!=null&&
-    Math.abs(homeGeometry.composerTop-homeGeometry.expectedTop)<4,
+  assert.ok(homeGeometry.heroIconCenterY!=null&&homeGeometry.expectedHeroIconCenterY!=null&&
+    Math.abs(homeGeometry.heroIconCenterY-homeGeometry.expectedHeroIconCenterY)<2,
+    JSON.stringify(homeGeometry));
+  assert.ok(homeGeometry.heroHeadingTop!=null&&homeGeometry.expectedHeroHeadingTop!=null&&
+    Math.abs(homeGeometry.heroHeadingTop-homeGeometry.expectedHeroHeadingTop)<2,
     JSON.stringify(homeGeometry));
   await page.screenshot({
     path:resolve(root,"desktop/test-results/electron-home-new-chat.png"),
