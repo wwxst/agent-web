@@ -1715,10 +1715,13 @@ export function App() {
       explore={<button type="button" className="codex-navigation-rail__destination"
         data-testid="navigation-rail-explore" data-navigation-rail-kind="explore" aria-label="Explore（尚未接入）"
         title="Explore 尚未接入" disabled><Icon name="dots" size={18}/></button>}
-      footer={<button type="button" data-testid="navigation-rail-settings"
-        disabled aria-label="Settings（尚未接入）" title="设置尚未接入">
-        <Icon name="settings" size={18}/>
-      </button>}
+      footer={showSidebarReferenceFixture
+        ? <span className="codex-navigation-rail__reference-avatar"
+            data-visual-reference-only="account-avatar" aria-hidden="true"/>
+        : <button type="button" data-testid="navigation-rail-settings"
+            disabled aria-label="Settings（尚未接入）" title="设置尚未接入">
+            <Icon name="settings" size={18}/>
+          </button>}
     />}
     <ConversationSidebar active={active} collapsed={collapsed} navigationRailEnabled={navigationRailEnabled}
       referenceFixture={showSidebarReferenceFixture}
