@@ -179,7 +179,7 @@ function installNativeMenu(){
     },
     documentation:()=>void shell.openExternal("https://developers.openai.com/codex/app"),
   };
-  const template=buildSourceNativeMenus({platform:process.platform,actions});
+  const template=buildSourceNativeMenus({platform:process.platform,actions,locale:app.getLocale()});
   Menu.setApplicationMenu(Menu.buildFromTemplate(template));
   return template;
 }
