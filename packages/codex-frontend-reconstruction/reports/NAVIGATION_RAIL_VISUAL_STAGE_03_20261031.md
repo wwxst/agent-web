@@ -28,12 +28,12 @@ rounded white panel corners in the screenshot appear to begin lower.
 ## Implementation
 
 - Keep the actual application menu at its source 36px and the navigation rail 52px.
-- For the visual-only `?visualScenario=shell-empty` route, shift the first navigation tile down by 12px to its screenshot-measured y≈52 position.
+- Shift the **shared browser and Electron** navigation destination stack down by 12px to its screenshot-measured first-tile y≈52 position. The normal host benefits from the same source-backed geometry; this is not merely a screenshot fixture.
 - Retain the verified 36px tile size, 8px gap, destination ordering, More tile, divider and pinned area. Keep all unavailable destinations disabled.
 - Improve authored Home (filled) and Orbit icon outlines based on the visible captured glyphs. These are still independent SVG approximations, **not** copied proprietary icon assets.
 - Replace the visual fixture's normal disconnected Account/Settings pair with a 24px static red avatar circle at the bottom of the rail. The fixture avatar is `aria-hidden` and contains **no account initials, identity or login state**.
-- Outside the screenshot fixture, preserve the existing disabled Account and Settings controls and the current rail spacing.
-- Add browser assertions for home/more/divider/pinned destination placement and fixture-avatar coordinates, plus a regression that normal Electron/browser surfaces still show only their disconnected host footer controls.
+- Outside the screenshot fixture, preserve the existing disabled Account and Settings controls. The new navigation destination spacing applies in both host and visual routes.
+- Add browser assertions for home/more/divider/pinned destination placement and fixture-avatar coordinates; also assert the normal host's first tile y≈52 and its disconnected Account/Settings controls.
 
 ## Limitations
 
