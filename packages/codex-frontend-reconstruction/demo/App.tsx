@@ -114,6 +114,24 @@ function Icon({ name, size = 18 }: { name: "panel" | "search" | "bell" | "edit" 
 }
 
 /**
+ * The original back-forward-navigation-buttons uses a 16px directional icon,
+ * mirrored for Forward; typography glyphs shift with Segoe UI baselines.
+ * This independently-authored path follows the source icon's optical bounds,
+ * without shipping its proprietary vector asset. These are still intentionally
+ * inert until the host supplies a real history navigation capability.
+ */
+function DesktopHistoryArrow({forward=false}:{forward?:boolean}){
+  return <svg className="demo-menubar-back__svg" width="16" height="16"
+    viewBox="0 0 16 16" fill="none" stroke="currentColor"
+    strokeWidth="1.1" strokeLinecap="round" strokeLinejoin="round"
+    aria-hidden="true" focusable="false"
+    data-menubar-history-direction={forward?"forward":"back"}
+    style={forward?{transform:"scaleX(-1)"}:undefined}>
+    <path d="M7.05 3.35 2.65 8l4.4 4.65M2.8 8h10.55"/>
+  </svg>;
+}
+
+/**
  * Reconstructed shell adapter shared by browser preview and Electron.
  * Section structure and disclosure geometry follow the supplied source
  * component contracts; host-backed actions are enabled only when the
@@ -1673,7 +1691,7 @@ export function App() {
 
   return <div className="demo-desktop" data-app-shell-frame="true" data-independent-electron={window.agentWebDesktopHost != null} data-app-shell-feature-navigation={navigationRailEnabled} data-app-shell-sidebar-open={!collapsed} data-app-shell-application-menu-bar="true" style={{ "--app-shell-navigation-rail-width": navigationRailEnabled ? `${measuredRailWidth}px` : "0px" } as React.CSSProperties}>
     <div className="demo-window-menu" aria-label={window.agentWebDesktopHost != null ? "Electron 原生标题栏拖拽区域" : "桌面窗口示意（浏览器内，不是原生 Electron）"}>
-      <span className="demo-menubar-back" aria-hidden="true">‹</span><span className="demo-menubar-back" aria-hidden="true">›</span>
+      <span className="demo-menubar-back" aria-hidden="true"><DesktopHistoryArrow/></span><span className="demo-menubar-back" aria-hidden="true"><DesktopHistoryArrow forward/></span>
       <span className="demo-menubar-panel" aria-hidden="true"><Icon name="panel" size={15}/></span>
       {window.agentWebDesktopHost != null ? (
         <div className="demo-native-application-menus" aria-label="Electron 原生应用菜单">
