@@ -69,6 +69,15 @@
   background: transparent;
   color: var(--demo-dim, #888);
 }
+
+.codex-navigation-rail__footer > .codex-navigation-rail__account {
+  width: 28px;
+  height: 28px;
+  flex-basis: 28px;
+  border-radius: 50%;
+  background: var(--demo-border, #e8e8e8);
+  color: var(--demo-dim, #777);
+}
 .codex-navigation-rail__destination[aria-current="page"] { background: var(--demo-border, #e8e8e8); color: var(--demo-text, #242424); }
 .codex-navigation-rail__destination:hover:not(:disabled),
 .codex-navigation-rail__footer > button:hover:not(:disabled) { background: var(--demo-border, #e8e8e8); color: var(--demo-text, #242424); }
