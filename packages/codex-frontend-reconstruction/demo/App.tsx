@@ -111,9 +111,10 @@ function Icon({ name, size = 18 }: { name: "panel" | "search" | "plus" | "branch
 }
 
 /**
- * Browser-only shell adapter. This renders the documented layout of the
- * desktop sidebar; it does not claim to restore Codex's private navigation.
- * Real buttons are wired; undiscovered product actions are plain text.
+ * Reconstructed shell adapter shared by browser preview and Electron.
+ * Section structure and disclosure geometry follow the supplied source
+ * component contracts; host-backed actions are enabled only when the
+ * independent desktop host exposes the corresponding capability.
  */
 interface PinnedSidebarItem{
   id:string;
