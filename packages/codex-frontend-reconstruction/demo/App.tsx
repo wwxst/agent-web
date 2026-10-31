@@ -75,7 +75,7 @@ import {
   type DemoConversationId,
 } from "./mockConversation.js";
 
-function Icon({ name, size = 18 }: { name: "panel" | "search" | "plus" | "branch" | "dots" | "up" | "stop" | "bottom" | "top" | "play" | "refresh" | "terminal" | "check" | "menu" | "copy" | "folder" | "file" | "chevron" | "clock" | "plugin" | "settings" | "sliders" | "window" | "square" | "home" | "library" | "tiles"; size?: number }) {
+function Icon({ name, size = 18 }: { name: "panel" | "search" | "plus" | "branch" | "dots" | "up" | "stop" | "bottom" | "top" | "play" | "refresh" | "terminal" | "check" | "menu" | "copy" | "folder" | "file" | "chevron" | "clock" | "plugin" | "settings" | "sliders" | "window" | "square" | "home" | "library" | "tiles" | "square-plus" | "computer"; size?: number }) {
   const children: Record<typeof name, React.ReactNode> = {
     home: <><path d="m3 11 9-8 9 8v9H3z"/><path d="M9 20v-6h6v6"/></>,
     library: <><path d="M4 5h5v15H4zM10 3h5v17h-5zM16 7h4v13h-4z"/></>,
@@ -104,6 +104,8 @@ function Icon({ name, size = 18 }: { name: "panel" | "search" | "plus" | "branch
     sliders: <><path d="M8 4h12M4 4h0M4 12h12m4 0h0M4 20h4m4 0h8"/><circle cx="6" cy="4" r="2"/><circle cx="18" cy="12" r="2"/><circle cx="10" cy="20" r="2"/></>,
     window: <><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18"/></>,
     square: <rect x="4" y="4" width="16" height="16" rx="3"/>,
+    "square-plus": <><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M12 8v8M8 12h8"/></>,
+    computer: <><rect x="3" y="4" width="18" height="13" rx="1.5"/><path d="M8 21h8M12 17v4"/></>,
   };
   return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{children[name]}</svg>;
 }
@@ -256,7 +258,9 @@ export function App() {
   // to exercise the independently reconstructed original navigation layout.
   const navigationRailEnabled = true;
   const [collapsed, setCollapsed] = React.useState(false);
-  const [sidebarWidth,setSidebarWidth]=React.useState(275);
+  // The real A-shell-empty reference was captured with the original sidebar
+  // at its 240px minimum. Keep the normal app default (275px) unchanged.
+  const [sidebarWidth,setSidebarWidth]=React.useState(isVisualShellScenario?240:275);
   const [availableWidth,setAvailableWidth]=React.useState(()=>
     typeof window==="undefined"?1352:window.innerWidth);
   React.useEffect(()=>{
@@ -1561,21 +1565,30 @@ export function App() {
         onWidthChange={setSidebarWidth}/>}/>
     <div className="demo-main" data-codex-home={isNewChat ? "true" : undefined} data-app-shell-main-surface="default"
       data-thread-scroll-layout="default">
-      <header className="demo-header" data-app-shell-main-titlebar="true">
-        <div className="demo-titlebar-toolbar" role="toolbar" aria-label="聊天工具栏"
-          data-app-shell-focus-area="main">
-        <div className="demo-header-location" data-app-shell-titlebar-content="true">
-          {!isNewChat && <span className="demo-header-folder"><Icon name="folder" size={17}/></span>}<strong>{DEMO_CONVERSATIONS.find((c) => c.id === active)?.title}</strong></div>
-        <div className="demo-header-actions">
-          <span className="demo-header-static" title="原版桌面按钮布局参考，暂未接通功能"><Icon name="dots" size={17}/></span>
-          {!isNewChat && subagentFixture!==null?<button type="button" className="demo-icon-button"
-            title="Subagents · synthetic fixture" aria-label="Open Subagents"
-            aria-expanded={showSubagentsPanel}
-            onClick={()=>setShowSubagentsPanel(true)}><Icon name="branch" size={17}/></button>:null}
-          {!isNewChat && <button type="button" className="demo-icon-button" title={showDemoTools ? "收起演示工具" : "打开演示工具"} aria-label={showDemoTools ? "收起演示工具" : "打开演示工具"} aria-expanded={showDemoTools} onClick={() => setShowDemoTools((value) => !value)}><Icon name="sliders" size={17}/></button>}
-          <button type="button" className="demo-icon-button demo-collapse-toggle" aria-label={collapsed ? "展开侧边栏" : "收起侧边栏"} onClick={() => setCollapsed((value) => !value)}><Icon name="panel" size={17}/></button>
-        </div>
-        </div>
+      <header className={`demo-header ${isNewChat?"demo-header--home":""}`} data-app-shell-main-titlebar="true">
+        {isNewChat
+          ? <div className="demo-home-header-actions">
+              <button type="button" className="demo-home-tab-action"
+                data-testid="home-new-tab-unavailable"
+                aria-label="New tab（尚未接入）" title="New tab（尚未接入）"
+                disabled><Icon name="square-plus" size={14}/></button>
+            </div>
+          : <div className="demo-titlebar-toolbar" role="toolbar" aria-label="聊天工具栏"
+              data-app-shell-focus-area="main">
+              <div className="demo-header-location" data-app-shell-titlebar-content="true">
+                <span className="demo-header-folder"><Icon name="folder" size={17}/></span>
+                <strong>{DEMO_CONVERSATIONS.find((c) => c.id === active)?.title}</strong>
+              </div>
+              <div className="demo-header-actions">
+                <span className="demo-header-static" title="原版桌面按钮布局参考，暂未接通功能"><Icon name="dots" size={17}/></span>
+                {subagentFixture!==null?<button type="button" className="demo-icon-button"
+                  title="Subagents · synthetic fixture" aria-label="Open Subagents"
+                  aria-expanded={showSubagentsPanel}
+                  onClick={()=>setShowSubagentsPanel(true)}><Icon name="branch" size={17}/></button>:null}
+                <button type="button" className="demo-icon-button" title={showDemoTools ? "收起演示工具" : "打开演示工具"} aria-label={showDemoTools ? "收起演示工具" : "打开演示工具"} aria-expanded={showDemoTools} onClick={() => setShowDemoTools((value) => !value)}><Icon name="sliders" size={17}/></button>
+                <button type="button" className="demo-icon-button demo-collapse-toggle" aria-label={collapsed ? "展开侧边栏" : "收起侧边栏"} onClick={() => setCollapsed((value) => !value)}><Icon name="panel" size={17}/></button>
+              </div>
+            </div>}
       </header>
       {isNewChat && <section className="demo-home-hero" aria-label="Codex welcome" data-codex-home-hero="">
         <div className="demo-home-hero__content">
@@ -1776,6 +1789,24 @@ export function App() {
           integratedVoiceModeActive={false} hasUploadPolicy={false}
           onFilesDropped={files=>addComposerFiles(files)}
           onSubmit={() => { if (composerAction.kind === "send") sendMessage(); }}>
+          {isNewChat&&<div className="demo-home-composer-context"
+            data-testid="home-composer-context">
+            <button type="button" className="demo-home-composer-context__project"
+              aria-label={workspaceProjectName==null?"选择项目":"更改项目"}
+              title={composerControlsHost?.selectWorkspaceDirectory==null
+                ?"需要 Electron 桌面宿主才能选择本地文件夹"
+                :"选择本地文件夹（只读预览）"}
+              disabled={composerControlsHost?.selectWorkspaceDirectory==null||workspaceProjectBusy}
+              onClick={()=>void openWorkspaceProject()}>
+              <Icon name="folder" size={14}/>
+              <span>{workspaceProjectName??"选择项目"}</span>
+            </button>
+            <span className="demo-home-composer-context__computer"
+              data-testid="home-computer-context">
+              <Icon name="computer" size={15}/>
+              <span>此计算机</span>
+            </span>
+          </div>}
           <CodexComposerLayout
             className="demo-composer"
             placement={isNewChat ? "home" : "thread"}
