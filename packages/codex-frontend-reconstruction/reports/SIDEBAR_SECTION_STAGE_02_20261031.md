@@ -62,3 +62,19 @@ A fresh review of the actual Windows reference screenshot showed that the screen
 - Added the disabled Notifications affordance beside Search to match the visible source sidebar header. Search and Notifications remain unavailable until real host commands are implemented.
 
 The screenshot route is a deterministic **layout fixture**, not a claim that the actual account-backed Pinned/Projects/Recents services are integrated. Real data loading, sorting, drag/drop, unread status, pin actions and route navigation remain separate work.
+
+
+## Chinese-locale screenshot parity
+
+The supplied archive also contains `zh-CN-7ba80cbb133d.js`. Its message IDs confirm the visible Chinese labels used by the reference capture:
+
+- `sidebarElectron.pinnedThreads` → `置顶`
+- `sidebarElectron.projectsNavLink` → `项目`
+- `sidebarElectron.chatGptWork.recents` → `最近`
+- `sidebarElectron.newThread` → `新聊天`
+- `sidebarElectron.search` → `搜索`
+- `sidebarElectron.addGenericWorkspaceRoot` → `添加新项目`
+- `home.hero.noProjectWhatShouldWeBuild` → `我们要构建什么？`
+- `homePage.composer.placeholder.askAnything.v2` → `随心输入`
+
+The Vite screenshot-reference route now uses these locale values for the visible sidebar, browser menu bar, home hero and Composer placeholder. Stable section keys remain independent from translated labels so tests do not depend on the active locale. The regular demo and host-backed paths retain their existing language and behavior.
