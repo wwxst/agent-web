@@ -29,12 +29,17 @@ test("normal packaged Electron launch opens the empty Codex home, never a synthe
     await page.locator('.demo-composer[data-composer-placement="home"]')
       .waitFor({timeout:15000});
     const nativeRail=await page.evaluate(()=>{
-      const rail=document.querySelector("[data-app-navigation-rail]")!;
-      const stack=rail.querySelector("[data-navigation-rail-scroll]")!;
-      const home=rail.querySelector('[data-sidebar-destination="builtin:home"]')!;
-      const images=rail.querySelector('[data-sidebar-destination="builtin:images"]')!;
-      const settings=rail.querySelector('[data-testid="navigation-rail-settings"]')!;
-      const divider=rail.querySelector("[data-navigation-rail-section-divider]")!;
+      const required=(selector)=>{
+        const element=document.querySelector(selector);
+        if(!element)throw new Error(`Missing native rail geometry element: ${selector}`);
+        return element;
+      };
+      const rail=required("[data-app-navigation-rail]");
+      const stack=required("[data-navigation-rail-scroll]");
+      const home=required('[data-sidebar-destination="builtin:home"]');
+      const images=required('[data-sidebar-destination="builtin:images"]');
+      const settings=required('[data-testid="navigation-rail-settings"]');
+      const divider=required("[data-navigation-rail-section-divider]");
       const rr=rail.getBoundingClientRect(),sr=stack.getBoundingClientRect();
       const hr=home.getBoundingClientRect(),ir=images.getBoundingClientRect();
       const fr=settings.getBoundingClientRect();
