@@ -51,7 +51,7 @@ button:focus-visible, textarea:focus-visible { outline: 2px solid #578cda; outli
 .demo-window-buttons {margin-left:auto;font-family:Arial,sans-serif;color:#303030;font-size:16px;letter-spacing:1px;}
 .demo-app {flex:1; height:auto; min-height:0; background:#fff; color:#242424;}
 .demo-sidebar {
-  width:var(--spacing-token-sidebar); min-width:var(--spacing-token-sidebar); padding:9px 8px 8px;
+  width:var(--spacing-token-sidebar); min-width:var(--spacing-token-sidebar); padding:15px 8px 8px;
   background:#f5f5f5; border-right:1px solid #eaeaea;
   color:#383838;
 }
@@ -1122,6 +1122,7 @@ button:focus-visible, textarea:focus-visible { outline: 2px solid #578cda; outli
 .demo-sidebar-head,.demo-sidebar-actions{flex-shrink:0;}
 .demo-sidebar-scroll{
   display:flex;flex:1 1 auto;flex-direction:column;gap:1px;min-height:0;
+  padding-top:10px;
   overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;
   scrollbar-width:thin;scrollbar-color:#cfcfcf transparent;
 }
