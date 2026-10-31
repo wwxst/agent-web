@@ -200,7 +200,7 @@ function ConversationSidebar(props: {
   const isHome=active==="visual-empty";
 
   return <aside className={`demo-sidebar ${collapsed ? "demo-sidebar--collapsed" : ""}`}
-    aria-label="Conversation sidebar">
+    aria-label="演示会话导航">
     <div className="demo-sidebar-head">
       <div className="demo-logo" aria-label="Codex">
         {collapsed ? <Icon name="folder" size={18}/> : <><strong>Codex</strong><Icon name="chevron" size={12}/></>}
