@@ -1656,7 +1656,7 @@ export function App() {
   // account-pinned Code review and Space destinations follow Explore/More.
   // Only Home has a real local route today. Other icons remain visibly inert.
   const availableRailDestinations: CodexRailDestination[] = [
-    { id: "builtin:home", label: "首页", icon: <Icon name="home" size={18}/>, isCurrentDestination: true, onSelect: () => demoFixtureEnabled ? switchConversation("frontend") : startNewChat() },
+    { id: "builtin:home", label: "首页", icon: <Icon name="home" size={18}/>, isCurrentDestination: isNewChat, onSelect: () => demoFixtureEnabled ? switchConversation("frontend") : startNewChat() },
     { id: "builtin:images", label: "图像", icon: <Icon name="images" size={18}/>, visualReferenceOnly: true },
     { id: "builtin:automations", label: "定时任务", icon: <Icon name="clock" size={18}/>, visualReferenceOnly: true },
     { id: "builtin:library", label: "资料库", icon: <Icon name="library" size={18}/>, visualReferenceOnly: true },
