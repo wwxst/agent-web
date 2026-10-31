@@ -38,3 +38,28 @@ Do not commit either private compiled file to the public repository.
 - `npm run test:core` → 144/144 local core tests pass (baseline 140 + 4 rail projection tests).
 - `npm run demo:check-model` → 4/4 local synthetic host tests pass.
 - Chromium / Vite / TypeScript type checks must pass in npm-enabled GitHub Actions before describing browser integration as verified.
+
+
+## Follow-up: source rail stack geometry and Explore placement — 2026-10-31
+
+A second pass inspected the complete `dWc` / `gV` / `fUc` call chain in the supplied `app-initial-5851df3f6cb1.js` and the spacing utilities in `app-shared-dc7535e633d7.css`.
+
+Verified source details:
+
+- `dWc` root rail uses `browser:w-13` (52px), `browser:gap-0`, `browser:px-0`, `browser:pt-0`, and `pb-2`.
+- Its scroll stack uses `browser:mt-2`, `browser:px-row-x`, `browser:pt-0`, and retains the base 2px bottom padding.
+- `gV(itemSpacing="rail")` resolves to `gap-2 browser:gap-px`; browser gap is exactly 1px.
+- The source destination control is the uniform `size="xl"` ghost button. The reconstruction retains its existing 36px control size, pending a separate icon-asset/size fingerprint.
+- `TUc` is the Explore menu action and is rendered in the scrolling destination stack, after destination/customization items. The default settings action is the rail footer.
+
+Implementation in this follow-up:
+
+- Remove the reconstruction's extra 2px top rail padding.
+- Move the scroll stack down by the source 8px margin.
+- Match the browser stack's 8px horizontal inset, 1px row gap and 2px bottom padding.
+- Move the disabled Explore affordance into the scroll stack; keep disabled Settings in the footer.
+- Add a Playwright geometry test for stack offset, row gap, 36px icon button, 8px rail inset, Explore/footer DOM ownership and bottom footer inset.
+
+The Explore and Settings controls remain disabled because this independent host does not yet implement the source destination-discovery menu or real settings navigation. This change restores placement only; it does not claim the source account-backed pinning, destination ordering, unread badges, drag/drop, popovers or icon assets.
+
+Verification is pending the new PR's browser and Windows Electron CI.
