@@ -28,6 +28,52 @@ test("normal packaged Electron launch opens the empty Codex home, never a synthe
     await page.locator('[data-app-shell-frame="true"]').waitFor({timeout:20000});
     await page.locator('.demo-composer[data-composer-placement="home"]')
       .waitFor({timeout:15000});
+    const nativeRail=await page.evaluate(()=>{
+      const rail=document.querySelector("[data-app-navigation-rail]")!;
+      const stack=rail.querySelector("[data-navigation-rail-scroll]")!;
+      const home=rail.querySelector('[data-sidebar-destination="builtin:home"]')!;
+      const images=rail.querySelector('[data-sidebar-destination="builtin:images"]')!;
+      const settings=rail.querySelector('[data-testid="navigation-rail-settings"]')!;
+      const divider=rail.querySelector("[data-navigation-rail-section-divider]")!;
+      const rr=rail.getBoundingClientRect(),sr=stack.getBoundingClientRect();
+      const hr=home.getBoundingClientRect(),ir=images.getBoundingClientRect();
+      const fr=settings.getBoundingClientRect();
+      const rs=getComputedStyle(rail),ss=getComputedStyle(stack),ds=getComputedStyle(divider);
+      return {
+        railWidth:rr.width,
+        railPaddingTop:rs.paddingTop,
+        railPaddingLeft:rs.paddingLeft,
+        railPaddingBottom:rs.paddingBottom,
+        railGap:rs.rowGap,
+        stackOffset:sr.top-rr.top,
+        stackMarginTop:ss.marginTop,
+        stackPaddingTop:ss.paddingTop,
+        stackPaddingBottom:ss.paddingBottom,
+        stackGap:ss.rowGap,
+        homeLeft:hr.left-rr.left,
+        homeToImagesGap:ir.top-hr.bottom,
+        dividerMarginTop:ds.marginTop,
+        dividerMarginBottom:ds.marginBottom,
+        settingsBottomInset:rr.bottom-fr.bottom,
+      };
+    });
+    assert.deepEqual(nativeRail,{
+      railWidth:52,
+      railPaddingTop:"8px",
+      railPaddingLeft:"8px",
+      railPaddingBottom:"8px",
+      railGap:"8px",
+      stackOffset:10,
+      stackMarginTop:"2px",
+      stackPaddingTop:"2px",
+      stackPaddingBottom:"8px",
+      stackGap:"8px",
+      homeLeft:8,
+      homeToImagesGap:8,
+      dividerMarginTop:"0px",
+      dividerMarginBottom:"0px",
+      settingsBottomInset:8,
+    });
     assert.equal(await page.locator(".demo-header-location").count(),0);
     assert.equal(await page.getByTestId("home-new-tab-unavailable").isDisabled(),true);
     assert.equal(await page.getByTestId("home-composer-context").count(),1);
