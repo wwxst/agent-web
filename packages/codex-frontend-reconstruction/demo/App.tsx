@@ -162,6 +162,7 @@ function SidebarSection(props:{
   return <section className="demo-sidebar-section"
     data-app-action-sidebar-section=""
     data-app-action-sidebar-section-collapsed={String(collapsed)}
+    data-app-action-sidebar-section-key={sectionId}
     data-app-action-sidebar-section-heading={title}>
     <div className="demo-sidebar-section__header">
       <button type="button"
@@ -213,11 +214,17 @@ function ConversationSidebar(props: {
   });
   const toggleSection=(section:SidebarSectionKey)=>
     setCollapsedSections(current=>({...current,[section]:!current[section]}));
+  const sidebarCopy=referenceFixture
+    ?{newChat:"新聊天",notifications:"通知",search:"搜索",pinned:"置顶",
+      projects:"项目",recents:"最近",addProject:"添加新项目"}
+    :{newChat:"New chat",notifications:"Notifications unavailable",search:"Search",
+      pinned:"Pinned",projects:"Projects",recents:"Recents",addProject:"Open local folder"};
   const projectAction=<button type="button" className="demo-sidebar-project-add"
     data-app-action-sidebar-project-create=""
-    aria-label="Open local folder" title={workspaceProjectAvailable
-      ?"Choose a local folder (read-only preview)"
-      :"Local folder selection requires the Electron desktop host"}
+    aria-label={sidebarCopy.addProject} title={referenceFixture?sidebarCopy.addProject:
+      workspaceProjectAvailable
+        ?"Choose a local folder (read-only preview)"
+        :"Local folder selection requires the Electron desktop host"}
     disabled={!workspaceProjectAvailable||workspaceProjectBusy}
     onClick={props.onOpenWorkspaceProject}>
     <Icon name="plus" size={15}/>
@@ -233,21 +240,23 @@ function ConversationSidebar(props: {
       </div>
       <div className="demo-sidebar-head__actions">
         <button className="demo-icon-button" type="button"
-          title="Notifications unavailable" aria-label="Notifications unavailable"
+          title={sidebarCopy.notifications} aria-label={sidebarCopy.notifications}
           data-testid="sidebar-notifications-unavailable" disabled>
           <Icon name="bell" size={16}/>
         </button>
         <button className="demo-icon-button" type="button"
-          title="Search" aria-label="Search" data-testid="sidebar-search-unavailable"
+          title={sidebarCopy.search} aria-label={sidebarCopy.search} data-testid="sidebar-search-unavailable"
           disabled><Icon name="search" size={17}/></button>
       </div>
     </div>
     <div className="demo-sidebar-actions">
       <button type="button"
         className="demo-nav-action"
-        title="New chat"
+        title={sidebarCopy.newChat}
+        aria-label={sidebarCopy.newChat}
+        data-testid="sidebar-new-chat"
         onClick={onNewChat}>
-        <Icon name="edit" size={15}/>{!collapsed && <span>New chat</span>}
+        <Icon name="edit" size={15}/>{!collapsed && <span>{sidebarCopy.newChat}</span>}
       </button>
       {!collapsed && !navigationRailEnabled && <>
         <div className="demo-nav-action demo-nav-disabled" aria-label="Scheduled unavailable"><Icon name="clock" size={15}/> Scheduled</div>
@@ -259,7 +268,7 @@ function ConversationSidebar(props: {
       data-sidebar-navigation-scroll="true">
       {!collapsed && <>
         {(referenceFixture||pinnedItems.length>0)&&<SidebarSection sectionId="pinned"
-          title="Pinned" collapsed={collapsedSections.pinned}
+          title={sidebarCopy.pinned} collapsed={collapsedSections.pinned}
           onToggle={()=>toggleSection("pinned")}>
           {referenceFixture&&<div className="demo-sidebar-reference-pinned" role="list" aria-label="Pinned reference threads">
             {SIDEBAR_REFERENCE_FIXTURE.pinned.map(title=>
@@ -291,7 +300,7 @@ function ConversationSidebar(props: {
             </div>)}
           </nav>}
         </SidebarSection>}
-        <SidebarSection sectionId="projects" title="Projects"
+        <SidebarSection sectionId="projects" title={sidebarCopy.projects}
           collapsed={collapsedSections.projects}
           onToggle={()=>toggleSection("projects")}
           actions={projectAction}>
@@ -331,7 +340,7 @@ function ConversationSidebar(props: {
                 <div className="demo-project-heading"><Icon name="folder" size={16}/> agent web</div>
               </nav>}
         </SidebarSection>
-        <SidebarSection sectionId="recents" title="Recents"
+        <SidebarSection sectionId="recents" title={sidebarCopy.recents}
           collapsed={collapsedSections.recents}
           onToggle={()=>toggleSection("recents")}>
           {isHome
@@ -1672,7 +1681,9 @@ export function App() {
               }}>{id[0]!.toUpperCase()}{id.slice(1)}</button>
           ))}
         </div>
-      ) : <><span>File</span><span>Edit</span><span>View</span><span>Help</span></>}
+      ) : showSidebarReferenceFixture
+        ? <><span>文件</span><span>编辑</span><span>视图</span><span>帮助</span></>
+        : <><span>File</span><span>Edit</span><span>View</span><span>Help</span></>}
       <span className="demo-window-buttons" aria-hidden="true">─　□　×</span>
     </div>
     <div className="demo-app" data-codex-shell-preview="light">
@@ -1736,7 +1747,9 @@ export function App() {
               stroke="currentColor" strokeWidth="24" strokeLinecap="round"/>
           </svg>
           <h1 className="demo-home-hero__heading">
-            {workspaceProjectName==null?"What should we build?":<>
+            {workspaceProjectName==null
+              ? showSidebarReferenceFixture?"我们要构建什么？":"What should we build?"
+              : <>
               What should we work on in{" "}
               <button type="button" className="demo-home-hero__project-select"
                 onClick={()=>void openWorkspaceProject()} disabled={workspaceProjectBusy}
@@ -1959,8 +1972,12 @@ export function App() {
               onPastedImages={addComposerFiles}
               onPastedFiles={addComposerFiles}
               onPastedText={() => false}
-              placeholder={isNewChat ? "Do anything" : "Work with Codex"}
-              ariaLabel={isNewChat ? "Do anything" : "演示消息输入"}
+              placeholder={isNewChat
+                ? showSidebarReferenceFixture?"随心输入":"Do anything"
+                : "Work with Codex"}
+              ariaLabel={isNewChat
+                ? showSidebarReferenceFixture?"随心输入":"Do anything"
+                : "演示消息输入"}
             /> : <div data-composer-draft-hydrating="true" aria-live="polite">恢复输入内容中…</div>}
             leadingControls={<div className="demo-composer-options">
               <input ref={composerFileInputRef} type="file" multiple
