@@ -11,19 +11,23 @@ export interface CodexRailDestination extends NavigationDestination {
 export interface CodexNavigationRailProps {
   destinations: readonly CodexRailDestination[];
   header?: React.ReactNode;
+  /** Source TUc Explore action; rendered after the destination stack. */
+  explore?: React.ReactNode;
   footer?: React.ReactNode;
   onMeasuredWidthChange?: (px: number) => void;
 }
 
 /**
  * Reconstructed DOM hierarchy from app-initial-5851df3f6cb1.js `dWc`:
- * nav[data-app-navigation-rail] -> header, scrolling destinations, footer.
+ * nav[data-app-navigation-rail] -> divider, header, scrollable destination
+ * stack (including the source TUc Explore action), and footer/settings.
  * The source's account/store, drag-and-drop and popover controls are host
  * dependencies, not emulated here. Icons must be provided by the host.
  */
 export function CodexNavigationRail({
   destinations,
   header,
+  explore,
   footer,
   onMeasuredWidthChange,
 }: CodexNavigationRailProps): React.ReactElement {
@@ -56,6 +60,7 @@ export function CodexNavigationRail({
         onClick={destination.onSelect}
         disabled={!destination.onSelect}
       ><span aria-hidden="true">{destination.icon}</span></button>)}
+      {explore}
     </div>
     {footer && <div className="codex-navigation-rail__footer">{footer}</div>}
   </nav>;
