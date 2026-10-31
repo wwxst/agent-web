@@ -35,7 +35,7 @@ The comparator:
 - Marks pixels whose maximum RGB-channel delta exceeds the configurable threshold (default 24).
 - Does not claim that one aggregate pixel percentage is a substitute for human visual acceptance.
 
-The reference and actual paths can be absolute Windows paths. Keep private/original Codex screenshots outside the public repository; only commit non-proprietary test code and written evidence.
+The reference and actual paths can be absolute Windows paths. Keep private/original Codex screenshots outside the public repository unless the owner has explicitly reviewed and authorized publication of a specific pair. Original compiled resources remain excluded. The owner-approved [2026-10-31 A-shell-empty baseline](visual-acceptance/20261031-A-shell-empty/README.md) is that specific exception; its images remain unchanged and its metadata paths are relative.
 
 For a deterministic empty-shell capture in the **actual Electron app**, use PowerShell from the package directory:
 

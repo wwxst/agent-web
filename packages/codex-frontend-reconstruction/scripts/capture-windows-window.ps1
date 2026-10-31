@@ -296,9 +296,9 @@ if ([CodexWindowCaptureNative]::GetForegroundWindow() -ne $handle) {
 # hover state from contaminating the screenshot.
 $cursorCandidates = @(
   @(5, 5),
-  @($screenWidth - 5, 5),
-  @(5, $screenHeight - 5),
-  @($screenWidth - 5, $screenHeight - 5)
+  @(($screenWidth - 5), 5),
+  @(5, ($screenHeight - 5)),
+  @(($screenWidth - 5), ($screenHeight - 5))
 )
 foreach ($point in $cursorCandidates) {
   $inside = $point[0] -ge $bounds.Visible.Left -and
