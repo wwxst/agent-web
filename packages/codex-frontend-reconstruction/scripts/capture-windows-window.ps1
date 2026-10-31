@@ -95,12 +95,47 @@ public static class CodexWindowCaptureNative
 }
 
 if ($SelfTest) {
+  try {
+    [void][CodexWindowCaptureNative]::SetProcessDpiAwarenessContext([IntPtr](-4))
+  } catch {
+    # An existing host DPI context is acceptable for the API smoke test.
+  }
   $screenWidth = [CodexWindowCaptureNative]::GetSystemMetrics(0)
   $screenHeight = [CodexWindowCaptureNative]::GetSystemMetrics(1)
   if ($screenWidth -lt 640 -or $screenHeight -lt 480) {
     throw "Windows returned invalid primary display metrics: $($screenWidth)x$($screenHeight)."
   }
-  Write-Output "Windows capture API ready; primary display $($screenWidth)x$($screenHeight)."
+
+  # Exercise the EnumWindows delegate and DWM bounds signature when an
+  # interactive desktop window is available on the runner.
+  $visibleHandles = [System.Collections.Generic.List[IntPtr]]::new()
+  $probe = [CodexWindowCaptureNative+EnumWindowsProc]{
+    param([IntPtr]$Handle, [IntPtr]$LParam)
+    if ([CodexWindowCaptureNative]::IsWindowVisible($Handle)) {
+      $visibleHandles.Add($Handle)
+    }
+    return $true
+  }
+  [void][CodexWindowCaptureNative]::EnumWindows($probe, [IntPtr]::Zero)
+  if ($visibleHandles.Count -gt 0) {
+    $probeRect = [CodexWindowCaptureNative+RECT]::new()
+    if (-not [CodexWindowCaptureNative]::GetWindowRect($visibleHandles[0], [ref]$probeRect)) {
+      throw "GetWindowRect API smoke test failed."
+    }
+    $dwmRect = [CodexWindowCaptureNative+RECT]::new()
+    $rectSize = [System.Runtime.InteropServices.Marshal]::SizeOf([type][CodexWindowCaptureNative+RECT])
+    $hresult = [CodexWindowCaptureNative]::DwmGetWindowAttribute(
+      $visibleHandles[0], 9, [ref]$dwmRect, $rectSize
+    )
+    if ($hresult -ne 0) {
+      throw "DWM extended-frame API smoke test failed with HRESULT $hresult."
+    }
+  }
+
+  Add-Type -AssemblyName System.Drawing -ErrorAction Stop
+  $probeBitmap = [System.Drawing.Bitmap]::new(1, 1)
+  $probeBitmap.Dispose()
+  Write-Output "Windows capture API ready; primary display $($screenWidth)x$($screenHeight); visible windows $($visibleHandles.Count)."
   return
 }
 
