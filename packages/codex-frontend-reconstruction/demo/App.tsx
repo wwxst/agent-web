@@ -283,7 +283,7 @@ function ConversationSidebar(props: {
             : <nav className="demo-chat-list" aria-label="Recent chats">
                 {DEMO_CONVERSATIONS.filter(item=>item.sidebarVisible!==false).map(item=>
                   <button type="button" key={item.id}
-                    className={`demo-chat-link ${item.id===active?"is-active":""}`}
+                    className={`demo-chat-link demo-recent-chat-link ${item.id===active?"is-active":""}`}
                     onClick={()=>onSelect(item.id)}
                     aria-current={item.id===active?"page":undefined}>
                     <span className="demo-chat-link-title">{item.title}</span>
