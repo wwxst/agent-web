@@ -92,7 +92,9 @@ test("New chat opens the empty Codex home while the Home rail retains its existi
   await expect(page.locator(".demo-row").first()).toBeVisible();
   await expect(page.locator(".demo-home-hero")).toHaveCount(0);
   await page.getByRole("button",{name:"New chat"}).click();
-  await expect(page.locator(".demo-header-location strong")).toHaveText("New chat");
+  await expect(page.locator(".demo-header-location")).toHaveCount(0);
+  await expect(page.getByTestId("home-new-tab-unavailable")).toBeDisabled();
+  await expect(page.getByTestId("home-composer-context")).toBeVisible();
   await expect(page.locator(".demo-row")).toHaveCount(0);
   await expect(page.locator(".demo-composer")).toHaveAttribute("data-composer-placement","home");
   await expect(page.getByRole("heading",{name:"What should we build?"})).toBeVisible();
