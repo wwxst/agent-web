@@ -81,7 +81,7 @@ test("rail Explore stays in the scroll stack while Settings remains in the foote
       settingsOutsideStack:!stack.contains(settings),
       pluginsBeforeExplore:plugins.compareDocumentPosition(explore)===Node.DOCUMENT_POSITION_FOLLOWING,
       dividerBetweenExploreAndDirect:explore.compareDocumentPosition(divider)===Node.DOCUMENT_POSITION_FOLLOWING&&
-        divider.compareDocumentPosition(rail.querySelector('[data-sidebar-destination="builtin:activity"]'))===Node.DOCUMENT_POSITION_FOLLOWING,
+        divider.compareDocumentPosition(rail.querySelector('[data-sidebar-destination="builtin:activity"]')!)===Node.DOCUMENT_POSITION_FOLLOWING,
       buttonOrder,
       exploreBottom:er.bottom,
       settingsTop:fr.top,
