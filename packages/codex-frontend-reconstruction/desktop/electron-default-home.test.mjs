@@ -35,6 +35,8 @@ test("normal packaged Electron launch opens the empty Codex home, never a synthe
     assert.equal(await page.getByRole("heading",{name:"What should we build?"}).count(),1);
     assert.equal(await page.getByText("No projects",{exact:true}).count(),1);
     assert.equal(await page.getByText("No chats",{exact:true}).count(),1);
+    assert.equal(await page.locator("[data-sidebar-reference-fixture]").count(),0);
+    assert.equal(await page.getByTestId("sidebar-notifications-unavailable").isDisabled(),true);
     assert.equal(await page.getByTestId("sidebar-search-unavailable").isDisabled(),true);
     const projectsToggle=page.getByTestId("sidebar-section-projects-toggle");
     const recentsToggle=page.getByTestId("sidebar-section-recents-toggle");
