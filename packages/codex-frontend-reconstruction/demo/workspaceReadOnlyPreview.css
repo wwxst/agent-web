@@ -6,6 +6,9 @@
   border-left:1px solid var(--demo-border,#e7e7e7);
   background:var(--demo-panel,#fff);color:var(--demo-text,#242424)
 }
+/* Keep the existing local tab/editor subtree mounted while the side panel is
+ * hidden, but remove its width, pointer target and accessibility surface. */
+.demo-workspace-preview[hidden]{display:none}
 .demo-workspace-preview__header{
   min-height:46px;display:flex;align-items:center;
   padding:8px 14px;gap:12px;border-bottom:1px solid var(--demo-border,#ddd)

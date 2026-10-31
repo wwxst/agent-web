@@ -60,9 +60,11 @@ export function sourceWorkspacePreviewRange(
 export function WorkspaceReadOnlyPreviewPanel({
   preview,tabs,activeTabId,onSelectTab,onKeepTab,onCloseTab,onCloseOthers,
   onCloseToRight,onClose,onOpenTreeFile,onOpenLocation,pinnedTabIds,
-  onPinTab,onUnpinTab,
+  onPinTab,onUnpinTab,visible=true,
 }:{
   preview:WorkspaceReadOnlyPreview;
+  /** Hides the right panel without unmounting its tabs or CodeMirror views. */
+  visible?:boolean;
   /** Source IX opens a tab keyed by k3o, not a separate preview window.
    * Contents remain explicitly independent local read-only fallbacks. */
   tabs:readonly {
@@ -204,7 +206,9 @@ export function WorkspaceReadOnlyPreviewPanel({
       ?` · Lines ${preview.line}-${preview.endLine}`
       :` · Line ${preview.line}`;
   return <aside ref={asideRef} className="demo-workspace-preview" role="complementary"
-    aria-label="Local file preview" data-independent-workspace-preview="">
+    aria-label="Local file preview" data-independent-workspace-preview=""
+    data-source-side-panel-visible={visible?"true":"false"}
+    hidden={!visible} aria-hidden={!visible} inert={!visible}>
     <div className="demo-workspace-preview__tabs" role="tablist"
       aria-label="Open local files">
       {tabs.map(tab=><div key={tab.id} className="demo-workspace-preview__tab"
