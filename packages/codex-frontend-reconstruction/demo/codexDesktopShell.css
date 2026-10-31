@@ -1177,8 +1177,8 @@ button:focus-visible, textarea:focus-visible { outline: 2px solid #578cda; outli
   transform:rotate(0deg);
   transition:opacity .12s ease,transform .12s ease;
 }
-.demo-sidebar-section__toggle:hover .demo-sidebar-section__chevron,
-.demo-sidebar-section__toggle:focus-visible .demo-sidebar-section__chevron,
+.demo-sidebar-section:hover .demo-sidebar-section__chevron,
+.demo-sidebar-section:focus-within .demo-sidebar-section__chevron,
 .demo-sidebar-section__chevron.is-collapsed {opacity:1;}
 .demo-sidebar-section__chevron.is-collapsed {transform:rotate(-90deg);}
 .demo-sidebar-section__actions {
@@ -1192,8 +1192,8 @@ button:focus-visible, textarea:focus-visible { outline: 2px solid #578cda; outli
   pointer-events:none;
   transition:width .12s ease,opacity .12s ease;
 }
-.demo-sidebar-section:hover .demo-sidebar-section__actions,
-.demo-sidebar-section:focus-within .demo-sidebar-section__actions {
+.demo-sidebar-section__header:hover .demo-sidebar-section__actions,
+.demo-sidebar-section__header:focus-within .demo-sidebar-section__actions {
   width:auto;
   overflow:visible;
   opacity:1;
