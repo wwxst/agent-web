@@ -14,7 +14,9 @@ test("unavailable model and permissions have source-sized, vertically aligned ch
     const chevron=control.locator("svg.demo-composer-control-trigger__chevron");
     await expect(chevron).toHaveCount(1);
     await expect(chevron).toHaveAttribute("aria-hidden","true");
-    await expect(chevron).toHaveAttribute("viewBox","0 0 16 16");
+    await expect(chevron).toHaveAttribute("viewBox","0 0 24 24")
+    await expect(chevron.locator("path")).toHaveAttribute("d","m6 9 6 6 6-6")
+    await expect(chevron).toHaveAttribute("stroke-width","2");
     // Compare box centers instead of font glyph baselines; this catches
     // accidental reintroduction of a text chevron, size drift or line-height drift.
     const geometry=await control.evaluate(button=>{
