@@ -369,7 +369,8 @@ export function App() {
   const launchParams=typeof window==="undefined"?new URLSearchParams():
     new URLSearchParams(window.location.search);
   const isVisualShellScenario=launchParams.get("visualScenario")==="shell-empty";
-  const showSidebarReferenceFixture=isVisualShellScenario&&import.meta.env.DEV;
+  const showSidebarReferenceFixture=isVisualShellScenario&&import.meta.env.DEV&&
+    (typeof window==="undefined"||window.agentWebDesktopHost==null);
   const explicitDemoScenario=launchParams.get("demoScenario");
   const devTestFixtures=import.meta.env.DEV&&
     import.meta.env.VITE_AGENT_WEB_DEMO_FIXTURES==="1";
