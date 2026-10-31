@@ -75,9 +75,12 @@ import {
   type DemoConversationId,
 } from "./mockConversation.js";
 
-function Icon({ name, size = 18 }: { name: "panel" | "search" | "bell" | "edit" | "plus" | "branch" | "dots" | "up" | "stop" | "bottom" | "top" | "play" | "refresh" | "terminal" | "check" | "menu" | "copy" | "folder" | "file" | "chevron" | "clock" | "plugin" | "settings" | "sliders" | "window" | "square" | "home" | "library" | "tiles" | "square-plus" | "computer"; size?: number }) {
+function Icon({ name, size = 18 }: { name: "panel" | "search" | "bell" | "edit" | "plus" | "branch" | "dots" | "up" | "stop" | "bottom" | "top" | "play" | "refresh" | "terminal" | "check" | "menu" | "copy" | "folder" | "file" | "chevron" | "clock" | "plugin" | "settings" | "sliders" | "window" | "square" | "home" | "images" | "orbit" | "user" | "library" | "tiles" | "square-plus" | "computer"; size?: number }) {
   const children: Record<typeof name, React.ReactNode> = {
     home: <><path d="m3 11 9-8 9 8v9H3z"/><path d="M9 20v-6h6v6"/></>,
+    images: <><rect x="2.5" y="7" width="15" height="14" rx="2"/><path d="M7 7V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-1"/><circle cx="7.5" cy="12" r="1.3"/><path d="m4 19 4.2-4 3.2 2.7"/></>,
+    orbit: <><circle cx="12" cy="12" r="2"/><ellipse cx="12" cy="12" rx="9" ry="4" transform="rotate(-45 12 12)"/><ellipse cx="12" cy="12" rx="9" ry="4" transform="rotate(45 12 12)"/></>,
+    user: <><circle cx="12" cy="8" r="3"/><path d="M5 20c.7-3.5 3-5.3 7-5.3s6.3 1.8 7 5.3"/><circle cx="12" cy="12" r="10"/></>,
     library: <><path d="M4 5h5v15H4zM10 3h5v17h-5zM16 7h4v13h-4z"/></>,
     tiles: <><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></>,
     panel: <><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/></>,
@@ -1652,15 +1655,17 @@ export function App() {
   // The direct/more identity projection is sourced from original GZc/QZc;
   // routing/feature flags are supplied explicitly by this mock host.
   const availableRailDestinations: CodexRailDestination[] = [
-    { id: "builtin:home", label: "Home", icon: <Icon name="home" size={18}/>, isCurrentDestination: true, onSelect: () => demoFixtureEnabled ? switchConversation("frontend") : startNewChat() },
-    { id: "builtin:activity", label: "Activity", icon: <Icon name="branch" size={18}/> },
-    { id: "builtin:automations", label: "Scheduled", icon: <Icon name="clock" size={18}/> },
-    { id: "builtin:library", label: "Library", icon: <Icon name="library" size={18}/> },
-    { id: "builtin:skills", label: "Skills", icon: <Icon name="tiles" size={18}/> },
+    { id: "builtin:home", label: "Home", icon: <Icon name="home" size={18}/>, group:"primary", isCurrentDestination: true, onSelect: () => demoFixtureEnabled ? switchConversation("frontend") : startNewChat() },
+    { id: "builtin:images", label: "Images", icon: <Icon name="images" size={18}/>, group:"primary" },
+    { id: "builtin:automations", label: "Scheduled", icon: <Icon name="clock" size={18}/>, group:"primary" },
+    { id: "builtin:library", label: "Library", icon: <Icon name="library" size={18}/>, group:"primary" },
+    { id: "builtin:orbit", label: "Orbit", icon: <Icon name="orbit" size={18}/>, group:"primary" },
+    { id: "builtin:activity", label: "Activity", icon: <Icon name="branch" size={18}/>, group:"pinned" },
+    { id: "builtin:skills", label: "Skills", icon: <Icon name="tiles" size={18}/>, group:"pinned" },
   ];
   const destinationProjection = projectNavigationDestinations(availableRailDestinations, {
     navigationRailEnabled,
-    directDestinationIds: ["builtin:home", "builtin:activity", "builtin:automations", "builtin:library", "builtin:skills"],
+    directDestinationIds: ["builtin:home", "builtin:images", "builtin:automations", "builtin:library", "builtin:orbit", "builtin:activity", "builtin:skills"],
   });
   const railDestinations = destinationProjection.railDestinations.map((item) =>
     availableRailDestinations.find((candidate) => candidate.id === item.id)!,
@@ -1690,9 +1695,13 @@ export function App() {
     {navigationRailEnabled && <CodexNavigationRail
       destinations={railDestinations}
       onMeasuredWidthChange={setMeasuredRailWidth}
+      moreAction={<button type="button" disabled aria-label="More（尚未接入）"
+        title="更多导航尚未接入"><Icon name="dots" size={18}/></button>}
       footer={<>
-        <button type="button" disabled aria-label="More（尚未接入）" title="更多导航尚未接入"><Icon name="dots" size={18}/></button>
-        <button type="button" disabled aria-label="Settings（尚未接入）" title="设置尚未接入"><Icon name="settings" size={18}/></button>
+        <button type="button" disabled className="codex-navigation-rail__account"
+          aria-label="Account（尚未连接）" title="账户尚未连接"><Icon name="user" size={16}/></button>
+        <button type="button" disabled aria-label="Settings（尚未接入）"
+          title="设置尚未接入"><Icon name="settings" size={18}/></button>
       </>}
     />}
     <ConversationSidebar active={active} collapsed={collapsed} navigationRailEnabled={navigationRailEnabled}
