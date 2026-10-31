@@ -77,9 +77,9 @@ import {
 
 function Icon({ name, size = 18 }: { name: "panel" | "search" | "bell" | "edit" | "plus" | "branch" | "dots" | "up" | "stop" | "bottom" | "top" | "play" | "refresh" | "terminal" | "check" | "menu" | "copy" | "folder" | "file" | "chevron" | "clock" | "plugin" | "settings" | "sliders" | "window" | "square" | "home" | "images" | "orbit" | "user" | "library" | "tiles" | "square-plus" | "computer"; size?: number }) {
   const children: Record<typeof name, React.ReactNode> = {
-    home: <><path d="m3 11 9-8 9 8v9H3z"/><path d="M9 20v-6h6v6"/></>,
+    home: <path d="m3 10 9-7 9 7v9a2 2 0 0 1-2 2h-4.5v-7h-5v7H5a2 2 0 0 1-2-2z" fill="currentColor" stroke="none"/>,
     images: <><rect x="2.5" y="7" width="15" height="14" rx="2"/><path d="M7 7V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-1"/><circle cx="7.5" cy="12" r="1.3"/><path d="m4 19 4.2-4 3.2 2.7"/></>,
-    orbit: <><circle cx="12" cy="12" r="2"/><ellipse cx="12" cy="12" rx="9" ry="4" transform="rotate(-45 12 12)"/><ellipse cx="12" cy="12" rx="9" ry="4" transform="rotate(45 12 12)"/></>,
+    orbit: <><circle cx="12" cy="12" r="8.5"/><path d="M7 15c-1.5-3.8 1.4-6.2 4.1-5.3 1.8.6 2.7 3.1 4.9 2.5 1.3-.4 1.9-1.6 1.8-2.6M7.5 17.5c1.8-1.2 3.8-1.6 5.5-.6 1.5.8 2.8.3 3.9-1.1"/></>,
     user: <><circle cx="12" cy="8" r="3"/><path d="M5 20c.7-3.5 3-5.3 7-5.3s6.3 1.8 7 5.3"/><circle cx="12" cy="12" r="10"/></>,
     library: <><path d="M4 5h5v15H4zM10 3h5v17h-5zM16 7h4v13h-4z"/></>,
     tiles: <><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></>,
@@ -1697,12 +1697,15 @@ export function App() {
       onMeasuredWidthChange={setMeasuredRailWidth}
       moreAction={<button type="button" disabled aria-label="More（尚未接入）"
         title="更多导航尚未接入"><Icon name="dots" size={18}/></button>}
-      footer={<>
-        <button type="button" disabled className="codex-navigation-rail__account"
-          aria-label="Account（尚未连接）" title="账户尚未连接"><Icon name="user" size={16}/></button>
-        <button type="button" disabled aria-label="Settings（尚未接入）"
-          title="设置尚未接入"><Icon name="settings" size={18}/></button>
-      </>}
+      footer={showSidebarReferenceFixture
+        ? <span className="codex-navigation-rail__reference-avatar"
+            data-visual-reference-only="account-avatar" aria-hidden="true"/>
+        : <>
+            <button type="button" disabled className="codex-navigation-rail__account"
+              aria-label="Account（尚未连接）" title="账户尚未连接"><Icon name="user" size={16}/></button>
+            <button type="button" disabled aria-label="Settings（尚未接入）"
+              title="设置尚未接入"><Icon name="settings" size={18}/></button>
+          </>}
     />}
     <ConversationSidebar active={active} collapsed={collapsed} navigationRailEnabled={navigationRailEnabled}
       referenceFixture={showSidebarReferenceFixture}
