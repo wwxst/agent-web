@@ -51,8 +51,15 @@ test("shell-empty visual route mounts the real desktop shell, idle Composer and 
   await expect(page.getByText(/Full access.*mock/)).toHaveCount(0);
   await expect(page.getByTestId("demo-tools")).toHaveCount(0);
 
+  await expect(page.locator(".demo-window-control")).toHaveCount(3);
+  await expect(page.locator(".demo-window-buttons")).toHaveAttribute("aria-hidden","true");
   const capture=await page.evaluate(()=>({
     viewport:{width:innerWidth,height:innerHeight,devicePixelRatio},
+    captionButtons:Array.from(document.querySelectorAll(".demo-window-control")).map(element=>{
+      const rect=element.getBoundingClientRect();
+      return {left:rect.left,right:rect.right,top:rect.top,width:rect.width,height:rect.height,
+        background:getComputedStyle(element).backgroundColor};
+    }),
     windowMenu:document.querySelector(".demo-window-menu")?.getBoundingClientRect().height??null,
     rail:document.querySelector("[data-app-navigation-rail]")?.getBoundingClientRect().width??null,
     sidebar:document.querySelector(".demo-sidebar")?.getBoundingClientRect().width??null,
@@ -73,6 +80,12 @@ test("shell-empty visual route mounts the real desktop shell, idle Composer and 
   // Match the captured Codex A-shell-empty state: 240px saved sidebar,
   // 46px top action row, bottom Composer + context strip, and Hero placement.
   expect(capture.windowMenu).toBe(36);
+  expect(capture.captionButtons).toHaveLength(3);
+  expect(capture.captionButtons.map(item=>item.width)).toEqual([46,46,46]);
+  expect(capture.captionButtons.map(item=>item.height)).toEqual([36,36,36]);
+  expect(capture.captionButtons[0]?.left).toBe(1214);
+  expect(capture.captionButtons[2]?.right).toBe(1352);
+  expect(capture.captionButtons[0]?.background).toBe("rgb(225, 225, 225)");
   expect(capture.rail).toBe(52);
   expect(capture.sidebar).toBe(240);
   expect(capture.mainLeft).toBe(292);
