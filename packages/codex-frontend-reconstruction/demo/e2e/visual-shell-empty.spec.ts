@@ -37,7 +37,7 @@ test("shell-empty visual route mounts the real desktop shell, idle Composer and 
   await expect(page.getByTestId("sidebar-notifications-unavailable")).toBeDisabled();
   await expect(page.getByText("No projects",{exact:true})).toHaveCount(0);
   await expect(page.getByText("No chats",{exact:true})).toHaveCount(0);
-  await expect(page.getByRole("button",{name:"New chat"})).toHaveAttribute("aria-current","page");
+  await expect(page.getByRole("button",{name:"New chat"})).not.toHaveAttribute("aria-current");
   const modelControl=page.getByTestId("composer-model-control");
   const permissionControl=page.getByTestId("composer-permission-control");
   await expect(modelControl).toBeDisabled();
