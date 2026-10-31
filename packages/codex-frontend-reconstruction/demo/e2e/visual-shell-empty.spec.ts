@@ -1,6 +1,6 @@
 import {test,expect} from "@playwright/test";
 
-test("shell-empty visual route mounts the real desktop shell and idle Composer without demo rows",async({page},testInfo)=>{
+test("shell-empty visual route mounts the real desktop shell, idle Composer and source-reference sidebar fixture",async({page},testInfo)=>{
   await page.addInitScript(()=>{
     // A visual capture must not hydrate from or overwrite the user's saved pins.
     localStorage.setItem("pinned-content-tabs-v1","visual-baseline-preserve-me");
@@ -26,10 +26,17 @@ test("shell-empty visual route mounts the real desktop shell and idle Composer w
   await expect(page.locator('.demo-composer [contenteditable="true"]')).toBeVisible();
   await expect(page.getByRole("textbox",{name:"Do anything"})).toBeVisible();
   await expect(page.locator(".demo-header-folder")).toHaveCount(0);
-  await expect(page.locator(".demo-project-heading")).toHaveCount(0);
-  await expect(page.locator(".demo-chat-link")).toHaveCount(0);
-  await expect(page.getByText("No projects",{exact:true})).toBeVisible();
-  await expect(page.getByText("No chats",{exact:true})).toBeVisible();
+  const referenceSidebar=page.locator('[data-sidebar-reference-fixture="true"]');
+  await expect(referenceSidebar).toBeVisible();
+  await expect(referenceSidebar.locator('[data-visual-reference-only="pinned"]')).toHaveCount(1);
+  await expect(referenceSidebar.locator('[data-visual-reference-only="project"]')).toHaveCount(7);
+  await expect(referenceSidebar.locator('[data-visual-reference-only="project-thread"]')).toHaveCount(5);
+  await expect(referenceSidebar.locator('[data-visual-reference-only="recent"]')).toHaveCount(2);
+  for(const project of ["agent","promotion-demo","agent-desktop","atlas","kasi-project","deepseek-harness","ai"])
+    await expect(referenceSidebar.getByText(project,{exact:true})).toBeVisible();
+  await expect(page.getByTestId("sidebar-notifications-unavailable")).toBeDisabled();
+  await expect(page.getByText("No projects",{exact:true})).toHaveCount(0);
+  await expect(page.getByText("No chats",{exact:true})).toHaveCount(0);
   await expect(page.getByRole("button",{name:"New chat"})).toHaveAttribute("aria-current","page");
   const modelControl=page.getByTestId("composer-model-control");
   const permissionControl=page.getByTestId("composer-permission-control");
@@ -90,6 +97,7 @@ test("Codex sidebar sections use source disclosure rows and hover-only project a
   await page.goto("/?visualScenario=shell-empty");
   const sidebar=page.getByRole("complementary",{name:"演示会话导航"});
   await expect(sidebar).toBeVisible();
+  await expect(sidebar).toHaveAttribute("data-sidebar-reference-fixture","true");
   await expect(sidebar.locator("[data-app-action-sidebar-scroll]")).toBeVisible();
   const search=page.getByTestId("sidebar-search-unavailable");
   await expect(search).toBeDisabled();
@@ -111,26 +119,25 @@ test("Codex sidebar sections use source disclosure rows and hover-only project a
   await expect(projectActions).toHaveCSS("opacity","0");
   await expect(projectsDisclosure).toHaveCSS("opacity","0");
 
-  const noProjects=page.getByText("No projects",{exact:true});
-  await expect(noProjects).toHaveCSS("font-size","14px");
-  await expect(noProjects).toHaveCSS("opacity","0.5");
-  await expect(noProjects).toHaveCSS("padding-top","8px");
+  const projectRows=projects.locator('[data-visual-reference-only="project"]');
+  await expect(projectRows).toHaveCount(7);
   await projectsToggle.click();
   await expect(projects).toHaveAttribute("data-app-action-sidebar-section-collapsed","true");
   await expect(projectsToggle).toHaveAttribute("aria-expanded","false");
-  await expect(noProjects).toBeHidden();
+  await expect(projects.locator(".demo-sidebar-section__content")).toBeHidden();
   await projectsToggle.click();
-  await expect(noProjects).toBeVisible();
+  await expect(projectRows).toHaveCount(7);
 
   const recents=page.locator('[data-app-action-sidebar-section-heading="Recents"]');
   const recentsToggle=page.getByTestId("sidebar-section-recents-toggle");
-  const noChats=page.getByText("No chats",{exact:true});
+  const recentRows=recents.locator('[data-visual-reference-only="recent"]');
   await expect(recents).toHaveAttribute("data-app-action-sidebar-section-collapsed","false");
+  await expect(recentRows).toHaveCount(2);
   await recentsToggle.click();
   await expect(recentsToggle).toHaveAttribute("aria-expanded","false");
-  await expect(noChats).toBeHidden();
+  await expect(recents.locator(".demo-sidebar-section__content")).toBeHidden();
   await recentsToggle.click();
-  await expect(noChats).toBeVisible();
+  await expect(recentRows).toHaveCount(2);
 });
 
 
