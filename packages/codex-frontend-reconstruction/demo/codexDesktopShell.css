@@ -64,7 +64,7 @@ button:focus-visible, textarea:focus-visible { outline: 2px solid #578cda; outli
 .demo-icon-button {width:28px;height:28px;color:#858585;border-radius:7px;}
 .demo-icon-button:hover:not(:disabled){background:#e9e9e9;color:#343434;}
 .demo-sidebar-actions{display:grid;gap:1px;margin:0;}
-.demo-nav-action {font-size:13px;color:#444; min-height:36px; padding:6px 10px;gap:12px;border-radius:7px;}
+.demo-nav-action {font-size:13px;color:#444; min-height:36px; padding:6px 10px;gap:8px;border-radius:7px;}
 .demo-nav-action:not(.demo-nav-disabled):hover{background:#e8e8e8;}
 .demo-nav-disabled{opacity:1;color:#484848;}
 .demo-section-heading{margin:29px 8px 9px;color:#969696;font-size:12.5px;font-weight:500;}
