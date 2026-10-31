@@ -11,6 +11,9 @@ test("source-derived rail stays mounted when content sidebar is collapsed", asyn
   await expect(rail.locator('[data-visual-reference-only="account-avatar"]')).toHaveCount(0);
   await expect(rail.getByRole("button",{name:"Account（尚未连接）"})).toBeDisabled();
   await expect(rail.getByRole("button",{name:"Settings（尚未接入）"})).toBeDisabled();
+  const actualHome=await rail.locator('[data-sidebar-destination="builtin:home"]').boundingBox();
+  expect(actualHome).not.toBeNull();
+  expect(actualHome!.y).toBeCloseTo(52,0);
   const toolbar=page.getByRole("toolbar",{name:"聊天工具栏"});
   await expect(toolbar).toHaveAttribute("data-app-shell-focus-area","main");
   await expect(toolbar.locator("[data-app-shell-titlebar-content]")).toHaveCount(1);
