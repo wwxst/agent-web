@@ -78,6 +78,9 @@ export function validateCaptureMetadata(reference,actual,referenceImage,actualIm
     if(typeof meta.captureBoundary!=="string"||meta.captureBoundary.trim()===""){
       errors.push(`${label} metadata is missing captureBoundary.`);
     }
+    if(meta.dpiAwareness!=="per-monitor-v2-thread"){
+      errors.push(`${label} metadata dpiAwareness must be per-monitor-v2-thread.`);
+    }
     if(!Number.isSafeInteger(meta.windowDpi)||meta.windowDpi<48||meta.windowDpi>768){
       errors.push(`${label} metadata windowDpi is invalid.`);
     }
@@ -106,7 +109,7 @@ export function validateCaptureMetadata(reference,actual,referenceImage,actualIm
   validateOne(reference,"Reference",referenceImage);
   validateOne(actual,"Actual",actualImage);
   if(errors.length===0){
-    for(const key of ["scenarioId","theme","captureBoundary","windowDpi","windowScaleFactor"]){
+    for(const key of ["scenarioId","theme","captureBoundary","dpiAwareness","windowDpi","windowScaleFactor"]){
       if(reference[key]!==actual[key]){
         errors.push(`Capture metadata differs for ${key}: reference=${reference[key]}, actual=${actual[key]}.`);
       }
