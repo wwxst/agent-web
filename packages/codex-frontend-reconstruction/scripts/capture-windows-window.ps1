@@ -86,6 +86,9 @@ public static class CodexWindowCaptureNative
     [DllImport("user32.dll")]
     public static extern bool SetProcessDpiAwarenessContext(IntPtr value);
 
+    [DllImport("user32.dll", SetLastError = true)]
+    public static extern IntPtr SetThreadDpiAwarenessContext(IntPtr value);
+
     [DllImport("dwmapi.dll", PreserveSig = true)]
     public static extern int DwmGetWindowAttribute(
         IntPtr hWnd, int attribute, out RECT value, int valueSize);
@@ -94,12 +97,18 @@ public static class CodexWindowCaptureNative
   Add-Type -TypeDefinition $nativeSource -ErrorAction Stop
 }
 
+try {
+  [void][CodexWindowCaptureNative]::SetProcessDpiAwarenessContext([IntPtr](-4))
+} catch {
+  # A process DPI context may already be fixed; the thread override below is required.
+}
+$previousThreadDpiContext = [CodexWindowCaptureNative]::SetThreadDpiAwarenessContext([IntPtr](-4))
+if ($previousThreadDpiContext -eq [IntPtr]::Zero) {
+  $code = [Runtime.InteropServices.Marshal]::GetLastWin32Error()
+  throw "Could not set per-monitor-v2 thread DPI awareness (Win32 error $code)."
+}
+
 if ($SelfTest) {
-  try {
-    [void][CodexWindowCaptureNative]::SetProcessDpiAwarenessContext([IntPtr](-4))
-  } catch {
-    # An existing host DPI context is acceptable for the API smoke test.
-  }
   $screenWidth = [CodexWindowCaptureNative]::GetSystemMetrics(0)
   $screenHeight = [CodexWindowCaptureNative]::GetSystemMetrics(1)
   if ($screenWidth -lt 640 -or $screenHeight -lt 480) {
@@ -162,14 +171,7 @@ if (-not [string]::IsNullOrWhiteSpace($WindowTitleRegex)) {
   }
 }
 
-# PROCESS_PER_MONITOR_DPI_AWARE_V2 = -4. This is best-effort because DPI
-# awareness can only be fixed once per process.
-try {
-  [void][CodexWindowCaptureNative]::SetProcessDpiAwarenessContext([IntPtr](-4))
-} catch {
-  # GetDpiForWindow below remains the authoritative recorded window DPI.
-}
-
+# The calling thread now uses per-monitor-v2 coordinates for every window API.
 $windows = [System.Collections.Generic.List[object]]::new()
 $callback = [CodexWindowCaptureNative+EnumWindowsProc]{
   param([IntPtr]$Handle, [IntPtr]$LParam)
@@ -349,6 +351,7 @@ $metadata = [ordered]@{
   height = $Height
   windowDpi = [int]$windowDpi
   windowScaleFactor = [math]::Round($windowDpi / 96, 4)
+  dpiAwareness = "per-monitor-v2-thread"
   processName = $selected.ProcessName
   processId = $selected.ProcessId
   windowTitle = $selected.Title
