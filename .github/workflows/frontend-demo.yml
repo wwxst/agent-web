@@ -93,6 +93,9 @@ jobs:
           if (!(Test-Path "node_modules/electron/dist/electron.exe")) {
             throw "Electron Windows binary is missing"
           }
+      - name: Validate Windows visual capture helper
+        shell: pwsh
+        run: npm run visual:capture:windows -- -SelfTest
       - name: Real Windows Electron window, preload, IPC and native menu smoke
         run: npm run desktop:test:smoke
       - name: Upload Windows Electron screenshot
