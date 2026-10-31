@@ -21,6 +21,7 @@ test("same-size screenshots produce overlay, heatmap, side-by-side and metrics",
     const captureMeta={
       schemaVersion:1,scenarioId:"A-shell-empty",theme:"light",
       captureBoundary:"dwm-extended-frame-bounds",
+      dpiAwareness:"per-monitor-v2-thread",
       width:2,height:2,windowDpi:96,windowScaleFactor:1,
       visibleBounds:{x:100,y:80,width:2,height:2},
     };
@@ -70,6 +71,7 @@ test("metadata mismatch fails closed before creating pixel comparison outputs",a
     const base={
       schemaVersion:1,scenarioId:"A-shell-empty",theme:"light",
       captureBoundary:"dwm-extended-frame-bounds",
+      dpiAwareness:"per-monitor-v2-thread",
       width:2,height:2,windowDpi:96,windowScaleFactor:1,
       visibleBounds:{x:100,y:80,width:2,height:2},
     };
