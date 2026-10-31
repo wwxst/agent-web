@@ -113,12 +113,16 @@ test("independent Electron file renderer starts, isolates preload and routes Fc 
       drag:titlebar==null?null:getComputedStyle(titlebar).getPropertyValue("-webkit-app-region"),
       titlebarHeight:titlebar?.getBoundingClientRect().height,
       duplicateCaptionDisplay:duplicate==null?null:getComputedStyle(duplicate).display,
+      decorativeCaptionCount:duplicate?.querySelectorAll(".demo-window-control").length??0,
+      fakeCaptionActionCount:duplicate?.querySelectorAll("button, [role=button]").length??0,
     };
   });
   assert.equal(windowChrome.electron,"true");
   assert.equal(windowChrome.title,"Electron 原生标题栏拖拽区域");
   assert.equal(windowChrome.titlebarHeight,36);
   assert.equal(windowChrome.duplicateCaptionDisplay,"none");
+  assert.equal(windowChrome.decorativeCaptionCount,3);
+  assert.equal(windowChrome.fakeCaptionActionCount,0);
   assert.equal(windowChrome.drag,"drag");
   // Source w0e/D0e menus are real Electron MenuItems. They use native
   // edit roles and View accelerators; private Codex commands are excluded.
