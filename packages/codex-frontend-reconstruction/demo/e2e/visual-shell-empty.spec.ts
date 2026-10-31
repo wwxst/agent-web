@@ -100,11 +100,16 @@ test("Codex sidebar sections use source disclosure rows and hover-only project a
   await expect(projects).toHaveAttribute("data-app-action-sidebar-section-collapsed","false");
   await expect(projectsToggle).toHaveAttribute("aria-expanded","true");
   const projectActions=projects.locator(".demo-sidebar-section__actions");
+  const projectsHeader=projects.locator(".demo-sidebar-section__header");
+  const projectsDisclosure=projects.locator(".demo-sidebar-section__chevron");
   await expect(projectActions).toHaveCSS("opacity","0");
-  await projects.hover();
+  await expect(projectsDisclosure).toHaveCSS("opacity","0");
+  await projectsHeader.hover();
   await expect(projectActions).toHaveCSS("opacity","1");
+  await expect(projectsDisclosure).toHaveCSS("opacity","1");
   await page.mouse.move(0,0);
   await expect(projectActions).toHaveCSS("opacity","0");
+  await expect(projectsDisclosure).toHaveCSS("opacity","0");
 
   const noProjects=page.getByText("No projects",{exact:true});
   await expect(noProjects).toHaveCSS("font-size","14px");
