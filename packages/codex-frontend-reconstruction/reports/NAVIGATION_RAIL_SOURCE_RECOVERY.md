@@ -40,26 +40,28 @@ Do not commit either private compiled file to the public repository.
 - Chromium / Vite / TypeScript type checks must pass in npm-enabled GitHub Actions before describing browser integration as verified.
 
 
-## Follow-up: source rail stack geometry and Explore placement — 2026-10-31
+## Follow-up: source rail stack geometry and destination grouping — 2026-10-31
 
-A second pass inspected the complete `dWc` / `gV` / `fUc` call chain in the supplied `app-initial-5851df3f6cb1.js` and the spacing utilities in `app-shared-dc7535e633d7.css`.
+A second pass inspected the complete `dWc` / `gV` / `fUc` / `TUc` call chain in the supplied `app-initial-5851df3f6cb1.js` and the spacing utilities in `app-shared-dc7535e633d7.css`.
 
 Verified source details:
 
 - `dWc` root rail uses `browser:w-13` (52px), `browser:gap-0`, `browser:px-0`, `browser:pt-0`, and `pb-2`.
 - Its scroll stack uses `browser:mt-2`, `browser:px-row-x`, `browser:pt-0`, and retains the base 2px bottom padding.
 - `gV(itemSpacing="rail")` resolves to `gap-2 browser:gap-px`; browser gap is exactly 1px.
-- The source destination control is the uniform `size="xl"` ghost button. The reconstruction retains its existing 36px control size, pending a separate icon-asset/size fingerprint.
-- `TUc` is the Explore menu action and is rendered in the scrolling destination stack, after destination/customization items. The default settings action is the rail footer.
+- The source `dWc` child order is Home, primary destinations, the `customize` destination, the `renderExploreMenu` slot and its horizontal divider, direct destinations, then the footer/settings action. When no custom Explore renderer is supplied, `TUc` is the fallback Explore menu item.
+- The source destination control is a uniform `size="xl"` ghost button. The reconstruction retains its existing 36px control size; exact icon asset/size fingerprinting remains separate.
 
 Implementation in this follow-up:
 
 - Remove the reconstruction's extra 2px top rail padding.
 - Move the scroll stack down by the source 8px margin.
-- Match the browser stack's 8px horizontal inset, 1px row gap and 2px bottom padding.
-- Move the disabled Explore affordance into the scroll stack; keep disabled Settings in the footer.
-- Add a Playwright geometry test for stack offset, row gap, 36px icon button, 8px rail inset, Explore/footer DOM ownership and bottom footer inset.
+- Match 8px horizontal inset, 1px browser row gap and 2px stack bottom padding.
+- Split the rail API into Home, primary destinations, customize, Explore, direct destinations and footer slots.
+- Match the source order: Home → Images / Scheduled / Library → Plugins → Explore → divider → Activity / Skills → Settings.
+- Keep unsupported destination actions disabled; only Home uses the existing real demo/home handler.
+- Add Playwright assertions for stack offset, row gap, 36px item width, 8px rail inset, the complete destination group order, divider placement and footer bottom inset.
 
-The Explore and Settings controls remain disabled because this independent host does not yet implement the source destination-discovery menu or real settings navigation. This change restores placement only; it does not claim the source account-backed pinning, destination ordering, unread badges, drag/drop, popovers or icon assets.
+The Images/Plugins/Activity/Skills icon glyphs are independently authored approximations, not extracted original Codex assets. Explore, Plugins, Settings and all non-Home destination actions remain disabled because this independent host does not yet implement the corresponding account-backed routes and commands. This is a structural/geometry reconstruction, not a claim of full navigation feature parity.
 
-Verification is pending the new PR's browser and Windows Electron CI.
+Verification is pending the updated PR's browser and Windows Electron CI.
