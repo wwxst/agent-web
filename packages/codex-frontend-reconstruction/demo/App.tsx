@@ -75,11 +75,10 @@ import {
   type DemoConversationId,
 } from "./mockConversation.js";
 
-function Icon({ name, size = 18 }: { name: "panel" | "search" | "bell" | "edit" | "plus" | "branch" | "dots" | "up" | "stop" | "bottom" | "top" | "play" | "refresh" | "terminal" | "check" | "menu" | "copy" | "folder" | "file" | "chevron" | "clock" | "plugin" | "settings" | "sliders" | "window" | "square" | "home" | "images" | "gpt" | "user" | "library" | "tiles" | "square-plus" | "computer"; size?: number }) {
+function Icon({ name, size = 18 }: { name: "panel" | "search" | "bell" | "edit" | "plus" | "branch" | "dots" | "up" | "stop" | "bottom" | "top" | "play" | "refresh" | "terminal" | "check" | "menu" | "copy" | "folder" | "file" | "chevron" | "clock" | "plugin" | "settings" | "sliders" | "window" | "square" | "home" | "images" | "user" | "library" | "tiles" | "square-plus" | "computer"; size?: number }) {
   const children: Record<typeof name, React.ReactNode> = {
     home: <><path d="m3 10 9-7 9 7v10H14v-6h-4v6H3z" fill="currentColor" stroke="currentColor" strokeLinejoin="round"/><path d="M10 20v-6h4v6" stroke="var(--demo-sidebar,#f5f5f5)" strokeWidth="1.5"/></>,
     images: <><rect x="3" y="5" width="14" height="14" rx="2"/><path d="m5 16 4-4 3 3 2-2 3 3"/><path d="M8 5V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-2"/></>,
-    gpt: <><circle cx="12" cy="12" r="9"/><path d="M7.2 9.3c1.1-2 3.7-3 6-2.3M16.8 14.7c-1.1 2-3.7 3-6 2.3"/><path d="m8.1 7.5-.9 2.2 2.3.5M15.9 16.5l.9-2.2-2.3-.5"/></>,
     user: <><circle cx="12" cy="8" r="3.4"/><path d="M5.5 20a6.5 6.5 0 0 1 13 0"/></>,
     library: <><path d="M4 5h5v15H4zM10 3h5v17h-5zM16 7h4v13h-4z"/></>,
     tiles: <><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></>,
@@ -1660,13 +1659,13 @@ export function App() {
     { id: "builtin:images", label: "图像", icon: <Icon name="images" size={18}/>, visualReferenceOnly: true },
     { id: "builtin:automations", label: "定时任务", icon: <Icon name="clock" size={18}/>, visualReferenceOnly: true },
     { id: "builtin:library", label: "资料库", icon: <Icon name="library" size={18}/>, visualReferenceOnly: true },
-    { id: "builtin:gpts", label: "GPT", icon: <Icon name="gpt" size={18}/>, visualReferenceOnly: true },
+    { id: "builtin:skills", label: "插件", icon: <Icon name="plugin" size={18}/>, visualReferenceOnly: true },
     { id: "builtin:pull-requests", label: "代码审查", icon: <Icon name="branch" size={18}/>, visualReferenceOnly: true },
-    { id: "builtin:space", label: "空间", icon: <Icon name="tiles" size={18}/>, visualReferenceOnly: true },
+    { id: "builtin:sites", label: "站点", icon: <Icon name="tiles" size={18}/>, visualReferenceOnly: true },
   ];
   const destinationProjection = projectNavigationDestinations(availableRailDestinations, {
     navigationRailEnabled,
-    directDestinationIds: ["builtin:home", "builtin:images", "builtin:automations", "builtin:library", "builtin:gpts", "builtin:pull-requests", "builtin:space"],
+    directDestinationIds: ["builtin:home", "builtin:images", "builtin:automations", "builtin:library", "builtin:skills", "builtin:pull-requests", "builtin:sites"],
   });
   const railDestinations = destinationProjection.railDestinations.map((item) =>
     availableRailDestinations.find((candidate) => candidate.id === item.id)!,
