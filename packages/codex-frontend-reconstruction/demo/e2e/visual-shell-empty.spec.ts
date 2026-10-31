@@ -109,6 +109,35 @@ test("shell-empty visual route mounts the real desktop shell, idle Composer and 
 });
 
 
+test("Windows screenshot rail keeps native 44px cadence and anonymous footer",async({page})=>{
+  await page.goto("/?visualScenario=shell-empty");
+  const rail=page.getByRole("navigation",{name:"App navigation"});
+  const footer=rail.locator('[data-visual-reference-only="account-avatar"]');
+  await expect(footer).toBeVisible();
+  await expect(page.getByTestId("navigation-rail-settings")).toHaveCount(0);
+  const geometry=await rail.evaluate(element=>{
+    const rect=(selector:string)=>element.querySelector(selector)!.getBoundingClientRect();
+    return {
+      railTop:element.getBoundingClientRect().top,
+      homeTop:rect('[data-sidebar-destination="builtin:home"]').top,
+      exploreTop:rect('[data-testid="navigation-rail-explore"]').top,
+      dividerTop:rect(".codex-navigation-rail__section-divider").top,
+      firstPinnedTop:rect('[data-sidebar-destination="builtin:activity"]').top,
+      avatarTop:rect('[data-visual-reference-only="account-avatar"]').top,
+      avatarLeft:rect('[data-visual-reference-only="account-avatar"]').left,
+      gap:getComputedStyle(element.querySelector(".codex-navigation-rail__destinations")!).rowGap,
+    };
+  });
+  expect(geometry.railTop).toBe(36);
+  expect(geometry.homeTop).toBeCloseTo(52,0);
+  expect(geometry.exploreTop).toBeCloseTo(272,0);
+  expect(geometry.dividerTop).toBeCloseTo(316,0);
+  expect(geometry.firstPinnedTop).toBeCloseTo(325,0);
+  expect(geometry.avatarTop).toBeCloseTo(722,0);
+  expect(geometry.avatarLeft).toBeCloseTo(14,0);
+  expect(geometry.gap).toBe("8px");
+});
+
 test("Codex sidebar sections use source disclosure rows and hover-only project actions",async({page})=>{
   await page.goto("/?visualScenario=shell-empty");
   const sidebar=page.getByRole("complementary",{name:"演示会话导航"});
