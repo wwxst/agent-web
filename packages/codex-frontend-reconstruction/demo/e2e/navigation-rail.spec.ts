@@ -75,8 +75,11 @@ test("rail Explore stays in the scroll stack while Settings remains in the foote
     return {
       stackOffset:sr.top-rr.top,
       stackGap:getComputedStyle(stack).rowGap,
+      stackAlignItems:getComputedStyle(stack).alignItems,
+      stackPaddingBottom:getComputedStyle(stack).paddingBottom,
       homeWidth:hr.width,
       homeLeft:hr.left-rr.left,
+      homeToImagesGap:stack.querySelector('[data-sidebar-destination="builtin:images"]')!.getBoundingClientRect().top-hr.bottom,
       exploreInsideStack:stack.contains(explore),
       settingsOutsideStack:!stack.contains(settings),
       pluginsBeforeExplore:plugins.compareDocumentPosition(explore)===Node.DOCUMENT_POSITION_FOLLOWING,
@@ -90,8 +93,11 @@ test("rail Explore stays in the scroll stack while Settings remains in the foote
   });
   expect(layout.stackOffset).toBe(8);
   expect(layout.stackGap).toBe("1px");
+  expect(layout.stackAlignItems).toBe("stretch");
+  expect(layout.stackPaddingBottom).toBe("8px");
   expect(layout.homeWidth).toBe(36);
   expect(layout.homeLeft).toBe(8);
+  expect(layout.homeToImagesGap).toBe(1);
   expect(layout.exploreInsideStack).toBe(true);
   expect(layout.settingsOutsideStack).toBe(true);
   expect(layout.pluginsBeforeExplore).toBe(true);
