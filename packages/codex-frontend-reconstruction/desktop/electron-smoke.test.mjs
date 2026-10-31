@@ -577,7 +577,7 @@ test("independent Electron file renderer starts, isolates preload and routes Fc 
     return {
       mainTop:main?.top??null,mainBottom:main?.bottom??null,
       headerHeight:header?.height??null,
-      headerBorderBottom:getComputedStyle(document.querySelector(".demo-header")!).borderBottomWidth,
+      headerBorderBottom:getComputedStyle(document.querySelector(".demo-header")).borderBottomWidth,
       composerTop:composer?.top??null,composerBottom:composer?.bottom??null,
       composerWidth:composer?.width??null,
       contextHeight:context?.height??null,contextBottom:context?.bottom??null,
