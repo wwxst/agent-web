@@ -47,14 +47,14 @@ These are source contracts, not a claim that private original React components o
 
 ## Verification
 
-Latest complete GitHub Actions run: [41183736749](https://github.com/wwxst/agent-web/actions/runs/41183736749).
+Latest complete GitHub Actions run: [41192330644](https://github.com/wwxst/agent-web/actions/runs/41192330644), on commit `ccf38631840716ca6b4eab933102ee36db880b6b`.
 
 - Core reconstruction/model tests: passed.
 - Demo data-model integration tests: passed.
 - React/TypeScript/Vite renderer build: passed.
 - Screenshot comparator pixel-diff smoke: passed.
-- Chromium Playwright browser suite: passed.
-- Windows Electron smoke: passed, including packaged renderer/preload startup and the native read-only folder picker.
+- Chromium Playwright browser suite: passed (97/97).
+- Windows Electron smoke: passed, including packaged renderer/preload startup, IPC/native menu checks and the native read-only folder picker.
 - Browser screenshot artifact was inspected at the fixed 1352×760 viewport. It shows the empty new-chat transcript with the localized Pinned / Projects / Recents reference sidebar fixture.
 - Windows Electron screenshot artifact was inspected separately. The packaged default launch does **not** mount the screenshot-only fixture and retains genuine empty Projects / Recents states.
 
