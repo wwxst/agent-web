@@ -104,6 +104,6 @@ test("thread header toggles the read-only side panel without unmounting tabs or 
   });
   expect(state.selects).toBe(1);
   const readSuffixes=state.reads.map(path=>
-    path.replace(/\\\\/g,"/").split("/").slice(-2).join("/"));
+    path.split("/").slice(-2).join("/"));
   expect(readSuffixes).toEqual(["src/App.tsx","src/index.ts"]);
 });
