@@ -46,7 +46,13 @@ button:focus-visible, textarea:focus-visible { outline: 2px solid #578cda; outli
   display:flex; align-items:center; gap:23px; padding:0 17px;
   font-size:13px; user-select:none; border-bottom:0;
 }
-.demo-menubar-back {font-size:23px;line-height:1;color:#b4b4b4;}
+/* Source back-forward-navigation-buttons uses a 16px icon canvas.
+ * Fixed boxes keep the y=18 center independent of the UI font/glyph metrics. */
+.demo-menubar-back{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:12px;min-width:12px;height:24px;flex:none;color:#b4b4b4;
+}
+.demo-menubar-back__svg{display:block;width:16px;height:16px;flex:0 0 16px;}
 .demo-menubar-panel {display:flex;align-items:center;margin-left:-6px;color:#898989;}
 /* Native Electron's titleBarOverlay owns the actual caption controls.
  * This browser-only fixture reproduces their 3 × 46px Windows hit-target
