@@ -34,7 +34,8 @@ test("thread header toggles the read-only side panel without unmounting tabs or 
   const row=page.locator('[data-demo-turn-id^="user-file-attachments-"]').last();
   await row.getByRole("button",{name:/App\.tsx/}).click();
 
-  const preview=page.getByRole("complementary",{name:"Local file preview"});
+  await expect(page.getByRole("complementary",{name:"Local file preview"})).toBeVisible();
+  const preview=page.locator("[data-independent-workspace-preview]");
   await expect(preview).toBeVisible();
   await expect(preview).toHaveAttribute("data-source-side-panel-visible","true");
   const toggle=page.getByTestId("toggle-side-panel");
@@ -53,7 +54,8 @@ test("thread header toggles the read-only side panel without unmounting tabs or 
   const originalScroll=await scroller.evaluate(element=>element.scrollTop);
   expect(originalScroll).toBeGreaterThan(0);
 
-  await toggle.click();
+  await toggle.focus();
+  await toggle.press("Space");
   await expect(toggle).toHaveAttribute("aria-pressed","false");
   await expect(preview).toBeHidden();
   await expect(preview).toHaveAttribute("hidden","");
@@ -64,7 +66,7 @@ test("thread header toggles the read-only side panel without unmounting tabs or 
   const focusedTestId=await page.evaluate(()=>document.activeElement?.getAttribute("data-testid"));
   expect(focusedTestId).toBe("toggle-side-panel");
 
-  await toggle.click();
+  await toggle.press("Enter");
   await expect(preview).toBeVisible();
   await expect(toggle).toHaveAttribute("aria-pressed","true");
   expect(await editor.evaluate(element=>
@@ -74,7 +76,7 @@ test("thread header toggles the read-only side panel without unmounting tabs or 
 
   // A newly opened file is an explicit panel-opening intent, even after the
   // user hid the previous panel. The native host is read only once per file.
-  await toggle.click();
+  await toggle.press("Space");
   await expect(preview).toBeHidden();
   await row.getByRole("button",{name:/index\.ts/}).click();
   await expect(preview).toBeVisible();
@@ -87,10 +89,10 @@ test("thread header toggles the read-only side panel without unmounting tabs or 
   const menu=page.getByRole("menu",{name:"Local file tab actions"});
   await menu.getByRole("menuitem",{name:"Pin to sidebar"}).click();
   const pinned=page.getByRole("navigation",{name:"Pinned content tabs"});
-  const appPin=pinned.locator('[data-pinned-content-tab-id]').filter({hasText:"App.tsx"});
+  const appPin=pinned.locator('[data-pinned-content-tab-id]').first();
   await expect(appPin).toBeVisible();
 
-  await toggle.click();
+  await toggle.press("Space");
   await expect(preview).toBeHidden();
   await appPin.locator(".demo-pinned-item__reveal").click();
   await expect(preview).toBeVisible();
