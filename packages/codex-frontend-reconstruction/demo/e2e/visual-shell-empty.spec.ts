@@ -188,6 +188,9 @@ test("real read-only workspace grant updates original home project Hero without 
   const choose=page.getByRole("button",{name:"Open local folder"});
   await expect(choose).toBeEnabled();
   await expect(page.getByText("No projects",{exact:true})).toBeVisible();
+  // The original Projects action is revealed by hovering/focusing its title row.
+  await page.locator('[data-app-action-sidebar-section-heading="Projects"] .demo-sidebar-section__header').hover();
+  await expect(choose).toBeVisible();
   await choose.click();
   await expect(page.getByRole("heading",{name:/What should we work on in codex-frontend-reconstruction/}))
     .toBeVisible();
