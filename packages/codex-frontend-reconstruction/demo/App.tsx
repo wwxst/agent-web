@@ -75,13 +75,18 @@ import {
   type DemoConversationId,
 } from "./mockConversation.js";
 
-function Icon({ name, size = 18 }: { name: "panel" | "search" | "plus" | "branch" | "dots" | "up" | "stop" | "bottom" | "top" | "play" | "refresh" | "terminal" | "check" | "menu" | "copy" | "folder" | "file" | "chevron" | "clock" | "plugin" | "settings" | "sliders" | "window" | "square" | "home" | "library" | "tiles" | "square-plus" | "computer"; size?: number }) {
+function Icon({ name, size = 18 }: { name: "panel" | "search" | "bell" | "edit" | "plus" | "branch" | "dots" | "up" | "stop" | "bottom" | "top" | "play" | "refresh" | "terminal" | "check" | "menu" | "copy" | "folder" | "file" | "chevron" | "clock" | "plugin" | "settings" | "sliders" | "window" | "square" | "home" | "images" | "orbit" | "user" | "library" | "tiles" | "square-plus" | "computer"; size?: number }) {
   const children: Record<typeof name, React.ReactNode> = {
     home: <><path d="m3 11 9-8 9 8v9H3z"/><path d="M9 20v-6h6v6"/></>,
+    images: <><rect x="2.5" y="7" width="15" height="14" rx="2"/><path d="M7 7V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-1"/><circle cx="7.5" cy="12" r="1.3"/><path d="m4 19 4.2-4 3.2 2.7"/></>,
+    orbit: <><circle cx="12" cy="12" r="2"/><ellipse cx="12" cy="12" rx="9" ry="4" transform="rotate(-45 12 12)"/><ellipse cx="12" cy="12" rx="9" ry="4" transform="rotate(45 12 12)"/></>,
+    user: <><circle cx="12" cy="8" r="3"/><path d="M5 20c.7-3.5 3-5.3 7-5.3s6.3 1.8 7 5.3"/><circle cx="12" cy="12" r="10"/></>,
     library: <><path d="M4 5h5v15H4zM10 3h5v17h-5zM16 7h4v13h-4z"/></>,
     tiles: <><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></>,
     panel: <><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/></>,
     search: <><circle cx="10.8" cy="10.8" r="6.2"/><path d="m16 16 4.5 4.5"/></>,
+    bell: <><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></>,
+    edit: <><path d="M12 20H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h10"/><path d="m16 3 5 5-9 9-5 1 1-5z"/></>,
     plus: <path d="M12 5v14M5 12h14"/>,
     branch: <><circle cx="6" cy="6" r="2"/><circle cx="18" cy="6" r="2"/><circle cx="6" cy="18" r="2"/><path d="M6 8v8M18 8c0 6-12 1-12 8"/></>,
     dots: <><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></>,
@@ -111,9 +116,10 @@ function Icon({ name, size = 18 }: { name: "panel" | "search" | "plus" | "branch
 }
 
 /**
- * Browser-only shell adapter. This renders the documented layout of the
- * desktop sidebar; it does not claim to restore Codex's private navigation.
- * Real buttons are wired; undiscovered product actions are plain text.
+ * Reconstructed shell adapter shared by browser preview and Electron.
+ * Section structure and disclosure geometry follow the supplied source
+ * component contracts; host-backed actions are enabled only when the
+ * independent desktop host exposes the corresponding capability.
  */
 interface PinnedSidebarItem{
   id:string;
@@ -122,6 +128,66 @@ interface PinnedSidebarItem{
   unavailable:boolean;
   isActive:boolean;
 }
+interface SidebarReferenceProject {
+  name:string;
+  threads:readonly string[];
+}
+/**
+ * Static, sanitized visual fixture for the supplied Codex home screenshot.
+ * It is enabled only by the Vite visualScenario=shell-empty route and is
+ * never sourced from, persisted to, or presented as the user's Agent data.
+ */
+const SIDEBAR_REFERENCE_FIXTURE={
+  pinned:["Codex 原版界面还原任务"],
+  projects:[
+    {name:"agent",threads:["任务：执行 Codex 原版 UI 还原","同步 agent-web GitHub 仓库"]},
+    {name:"promotion-demo",threads:[]},
+    {name:"agent-desktop",threads:[]},
+    {name:"atlas",threads:["远程服务器环境维护","GitHub 日志下载任务"]},
+    {name:"kasi-project",threads:["本地 kasi-project 项目任务"]},
+    {name:"deepseek-harness",threads:[]},
+    {name:"ai",threads:[]},
+  ] satisfies readonly SidebarReferenceProject[],
+  recents:["Codex 原版 UI 还原任务","远程环境维护任务"],
+} as const;
+type SidebarSectionKey="pinned"|"projects"|"recents";
+
+function SidebarSection(props:{
+  sectionId:SidebarSectionKey;
+  title:string;
+  collapsed:boolean;
+  onToggle:()=>void;
+  actions?:React.ReactNode;
+  children:React.ReactNode;
+}) {
+  const {sectionId,title,collapsed,onToggle,actions,children}=props;
+  const contentId=`demo-sidebar-${sectionId}-content`;
+  return <section className="demo-sidebar-section"
+    data-app-action-sidebar-section=""
+    data-app-action-sidebar-section-collapsed={String(collapsed)}
+    data-app-action-sidebar-section-key={sectionId}
+    data-app-action-sidebar-section-heading={title}>
+    <div className="demo-sidebar-section__header">
+      <button type="button"
+        className="demo-sidebar-section__toggle"
+        data-app-action-sidebar-section-toggle=""
+        data-testid={`sidebar-section-${sectionId}-toggle`}
+        aria-expanded={!collapsed}
+        aria-controls={contentId}
+        onClick={onToggle}>
+        <span className="demo-sidebar-section__label">{title}</span>
+        <span className={`demo-sidebar-section__chevron ${collapsed?"is-collapsed":""}`}>
+          <Icon name="chevron" size={12}/>
+        </span>
+      </button>
+      {actions!=null&&<div className="demo-sidebar-section__actions">{actions}</div>}
+    </div>
+    <div id={contentId} className="demo-sidebar-section__content" hidden={collapsed}>
+      {children}
+    </div>
+  </section>;
+}
+
 function ConversationSidebar(props: {
   active: DemoConversationId;
   collapsed: boolean;
@@ -134,99 +200,175 @@ function ConversationSidebar(props: {
   onOpenWorkspaceProject:()=>void;
   onClearWorkspaceProject:()=>void;
   navigationRailEnabled: boolean;
+  referenceFixture:boolean;
   pinnedItems:readonly PinnedSidebarItem[];
   onSelectPinned:(pinId:string)=>void;
   onUnpinPinned:(pinId:string)=>void;
   resizeHandle?:React.ReactNode;
 }) {
   const {
-    active,collapsed,onToggle,onSelect,onNewChat,navigationRailEnabled,
+    active,collapsed,onSelect,onNewChat,navigationRailEnabled,referenceFixture,
     workspaceProjectName,workspaceProjectBusy,workspaceProjectAvailable,
     onOpenWorkspaceProject,onClearWorkspaceProject,
     pinnedItems,onSelectPinned,onUnpinPinned,resizeHandle,
   } = props;
-  return <aside className={`demo-sidebar ${collapsed ? "demo-sidebar--collapsed" : ""}`} aria-label="演示会话导航">
+  const [collapsedSections,setCollapsedSections]=React.useState<Record<SidebarSectionKey,boolean>>({
+    pinned:false,projects:false,recents:false,
+  });
+  const toggleSection=(section:SidebarSectionKey)=>
+    setCollapsedSections(current=>({...current,[section]:!current[section]}));
+  const sidebarCopy=referenceFixture
+    ?{newChat:"新聊天",notifications:"通知",search:"搜索",pinned:"置顶",
+      projects:"项目",recents:"最近",addProject:"添加新项目"}
+    :{newChat:"New chat",notifications:"Notifications unavailable",search:"Search",
+      pinned:"Pinned",projects:"Projects",recents:"Recents",addProject:"Open local folder"};
+  const projectAction=<button type="button" className="demo-sidebar-project-add"
+    data-app-action-sidebar-project-create=""
+    aria-label={sidebarCopy.addProject} title={referenceFixture?sidebarCopy.addProject:
+      workspaceProjectAvailable
+        ?"Choose a local folder (read-only preview)"
+        :"Local folder selection requires the Electron desktop host"}
+    disabled={!workspaceProjectAvailable||workspaceProjectBusy}
+    onClick={props.onOpenWorkspaceProject}>
+    <Icon name="plus" size={15}/>
+  </button>;
+  const isHome=active==="visual-empty";
+
+  return <aside className={`demo-sidebar ${collapsed ? "demo-sidebar--collapsed" : ""}`}
+    aria-label="演示会话导航"
+    data-sidebar-reference-fixture={referenceFixture?"true":undefined}>
     <div className="demo-sidebar-head">
-      <div className="demo-logo">{collapsed ? <Icon name="folder" size={18}/> : <><strong>Codex</strong><Icon name="chevron" size={12}/></>}</div>
-      <button className="demo-icon-button" type="button" title="搜索尚未恢复" aria-label="搜索尚未恢复" disabled><Icon name="search" size={17}/></button>
+      <div className="demo-logo" aria-label="Codex">
+        {collapsed ? <Icon name="folder" size={18}/> : <><strong>Codex</strong><Icon name="chevron" size={12}/></>}
+      </div>
+      <div className="demo-sidebar-head__actions">
+        <button className="demo-icon-button" type="button"
+          title={sidebarCopy.notifications} aria-label={sidebarCopy.notifications}
+          data-testid="sidebar-notifications-unavailable" disabled>
+          <Icon name="bell" size={16}/>
+        </button>
+        <button className="demo-icon-button" type="button"
+          title={sidebarCopy.search} aria-label={sidebarCopy.search} data-testid="sidebar-search-unavailable"
+          disabled><Icon name="search" size={17}/></button>
+      </div>
     </div>
     <div className="demo-sidebar-actions">
-      <button type="button" className={`demo-nav-action ${active === "visual-empty" ? "is-active" : ""}`} title="New chat" aria-current={active === "visual-empty" ? "page" : undefined} onClick={onNewChat}><Icon name="plus" size={16}/>{!collapsed && <span>New chat</span>}</button>
+      <button type="button"
+        className="demo-nav-action"
+        title={sidebarCopy.newChat}
+        aria-label={sidebarCopy.newChat}
+        data-testid="sidebar-new-chat"
+        onClick={onNewChat}>
+        <Icon name="edit" size={15}/>{!collapsed && <span>{sidebarCopy.newChat}</span>}
+      </button>
       {!collapsed && !navigationRailEnabled && <>
-        <div className="demo-nav-action demo-nav-disabled" aria-label="Scheduled 尚未接入"><Icon name="clock" size={15}/> Scheduled</div>
-        <div className="demo-nav-action demo-nav-disabled" aria-label="Plugins 尚未接入"><Icon name="plugin" size={15}/> Plugins</div>
+        <div className="demo-nav-action demo-nav-disabled" aria-label="Scheduled unavailable"><Icon name="clock" size={15}/> Scheduled</div>
+        <div className="demo-nav-action demo-nav-disabled" aria-label="Plugins unavailable"><Icon name="plugin" size={15}/> Plugins</div>
       </>}
     </div>
-    <div className="demo-sidebar-scroll" data-sidebar-navigation-scroll="true">
-    {!collapsed && <>
-      {pinnedItems.length>0?<section className="demo-pinned-section"
-        aria-label="Pinned">
-        <div className="demo-section-heading">Pinned</div>
-        <nav className="demo-pinned-list" aria-label="Pinned content tabs">
-          {pinnedItems.map(item=><div key={item.id}
-            className="demo-pinned-item"
-            data-pinned-content-tab-id={item.id}
-            data-pinned-content-tab-unavailable={item.unavailable?"true":"false"}
-            data-pinned-content-tab-active={item.isActive?"true":"false"}>
-            <button type="button" className="demo-pinned-item__reveal"
-              title={item.unavailable
-                ?`${item.title} · Preview unavailable`
-                :item.subtitle}
-              aria-current={item.isActive?"page":undefined}
-              onClick={()=>onSelectPinned(item.id)}>
-              <Icon name="file" size={14}/>
-              <span className="demo-pinned-item__labels">
-                <span className="demo-pinned-item__title">{item.title}</span>
-                <small>{item.unavailable?"Preview unavailable":item.subtitle}</small>
-              </span>
-            </button>
-            <button type="button" className="demo-pinned-item__unpin"
-              aria-label="Unpin tab" title="Unpin tab"
-              onClick={()=>onUnpinPinned(item.id)}>×</button>
-          </div>)}
-        </nav>
-      </section>:null}
-      {active === "visual-empty" ? <>
-      <div className="demo-sidebar-projects-header">
-        <div className="demo-section-heading">Projects</div>
-        <button type="button" className="demo-sidebar-project-add"
-          aria-label="Open local folder" title={workspaceProjectAvailable
-            ? "Choose a local folder (read-only preview)"
-            : "Local folder selection requires the Electron desktop host"}
-          disabled={!workspaceProjectAvailable||workspaceProjectBusy}
-          onClick={onOpenWorkspaceProject}>
-          <Icon name="plus" size={15}/>
-        </button>
-      </div>
-      {workspaceProjectName==null
-        ?<div className="demo-sidebar-empty">No projects</div>
-        :<div className="demo-sidebar-local-project" data-local-workspace-project="">
-          <button type="button" className="demo-sidebar-local-project__name"
-            aria-label="Change local folder" title="Change read-only local folder"
-            onClick={onOpenWorkspaceProject} disabled={workspaceProjectBusy}>
-            <Icon name="folder" size={15}/>
-            <span>{workspaceProjectName}</span>
-            <small>Read-only</small>
-          </button>
-          <button type="button" className="demo-sidebar-local-project__clear"
-            aria-label="Clear local folder" title="Revoke folder access"
-            onClick={onClearWorkspaceProject} disabled={workspaceProjectBusy}>×</button>
-        </div>}
-      <div className="demo-section-heading demo-recent-heading">Recents</div>
-      <div className="demo-sidebar-empty">No chats</div>
-      </> : <>
-      <div className="demo-section-heading">Projects</div>
-      <nav className="demo-chat-list" aria-label="会话">
-        <div className="demo-project-heading"><Icon name="folder" size={16}/> agent web</div>
-        {DEMO_CONVERSATIONS.filter(item=>item.sidebarVisible!==false).map((item) => <button type="button" key={item.id} className={`demo-chat-link ${item.id === active ? "is-active" : ""}`} onClick={() => onSelect(item.id)} aria-current={item.id === active ? "page" : undefined}>
-          <span className="demo-chat-link-title">{item.title}</span>
-        </button>)}
-      </nav>
-      <div className="demo-sidebar-spacer"/>
-      <div className="demo-section-heading demo-recent-heading">Recents</div>
+    <div className="demo-sidebar-scroll"
+      data-app-action-sidebar-scroll=""
+      data-sidebar-navigation-scroll="true">
+      {!collapsed && <>
+        {(referenceFixture||pinnedItems.length>0)&&<SidebarSection sectionId="pinned"
+          title={sidebarCopy.pinned} collapsed={collapsedSections.pinned}
+          onToggle={()=>toggleSection("pinned")}>
+          {referenceFixture&&<div className="demo-sidebar-reference-pinned" role="list" aria-label="Pinned reference threads">
+            {SIDEBAR_REFERENCE_FIXTURE.pinned.map(title=>
+              <div key={title} className="demo-sidebar-reference-row"
+                role="listitem" aria-disabled="true"
+                data-visual-reference-only="pinned">{title}</div>)}
+          </div>}
+          {pinnedItems.length>0&&<nav className="demo-pinned-list" aria-label="Pinned content tabs">
+            {pinnedItems.map(item=><div key={item.id}
+              className="demo-pinned-item"
+              data-pinned-content-tab-id={item.id}
+              data-pinned-content-tab-unavailable={item.unavailable?"true":"false"}
+              data-pinned-content-tab-active={item.isActive?"true":"false"}>
+              <button type="button" className="demo-pinned-item__reveal"
+                title={item.unavailable
+                  ?`${item.title} · Preview unavailable`
+                  :item.subtitle}
+                aria-current={item.isActive?"page":undefined}
+                onClick={()=>onSelectPinned(item.id)}>
+                <Icon name="file" size={14}/>
+                <span className="demo-pinned-item__labels">
+                  <span className="demo-pinned-item__title">{item.title}</span>
+                  <small>{item.unavailable?"Preview unavailable":item.subtitle}</small>
+                </span>
+              </button>
+              <button type="button" className="demo-pinned-item__unpin"
+                aria-label="Unpin tab" title="Unpin tab"
+                onClick={()=>onUnpinPinned(item.id)}>×</button>
+            </div>)}
+          </nav>}
+        </SidebarSection>}
+        <SidebarSection sectionId="projects" title={sidebarCopy.projects}
+          collapsed={collapsedSections.projects}
+          onToggle={()=>toggleSection("projects")}
+          actions={projectAction}>
+          {isHome
+            ? referenceFixture
+              ? <div className="demo-sidebar-reference-projects" role="list" aria-label="Reference projects">
+                  {SIDEBAR_REFERENCE_FIXTURE.projects.map(project=>
+                    <div key={project.name} className="demo-sidebar-reference-project"
+                      role="listitem" aria-disabled="true"
+                      data-visual-reference-only="project">
+                      <div className="demo-sidebar-reference-project__row">
+                        <Icon name="folder" size={15}/>
+                        <span>{project.name}</span>
+                      </div>
+                      {project.threads.length>0&&<div className="demo-sidebar-reference-project__threads">
+                        {project.threads.map(thread=>
+                          <div key={thread} className="demo-sidebar-reference-project__thread"
+                            aria-disabled="true" data-visual-reference-only="project-thread">{thread}</div>)}
+                      </div>}
+                    </div>)}
+                </div>
+              : workspaceProjectName==null
+                ? <div className="demo-sidebar-empty">No projects</div>
+                : <div className="demo-sidebar-local-project" data-local-workspace-project="">
+                  <button type="button" className="demo-sidebar-local-project__name"
+                    aria-label="Change local folder" title="Change read-only local folder"
+                    onClick={onOpenWorkspaceProject} disabled={workspaceProjectBusy}>
+                    <Icon name="folder" size={15}/>
+                    <span>{workspaceProjectName}</span>
+                    <small>Read-only</small>
+                  </button>
+                  <button type="button" className="demo-sidebar-local-project__clear"
+                    aria-label="Clear local folder" title="Revoke folder access"
+                    onClick={onClearWorkspaceProject} disabled={workspaceProjectBusy}>×</button>
+                </div>
+            : <nav className="demo-chat-list" aria-label="Projects">
+                <div className="demo-project-heading"><Icon name="folder" size={16}/> agent web</div>
+              </nav>}
+        </SidebarSection>
+        <SidebarSection sectionId="recents" title={sidebarCopy.recents}
+          collapsed={collapsedSections.recents}
+          onToggle={()=>toggleSection("recents")}>
+          {isHome
+            ? referenceFixture
+              ? <div className="demo-sidebar-reference-recents" role="list" aria-label="Reference recent chats">
+                  {SIDEBAR_REFERENCE_FIXTURE.recents.map(title=>
+                    <div key={title} className="demo-chat-link demo-recent-chat-link"
+                      role="listitem" aria-disabled="true"
+                      data-visual-reference-only="recent">
+                      <span className="demo-chat-link-title">{title}</span>
+                    </div>)}
+                </div>
+              : <div className="demo-sidebar-empty">No chats</div>
+            : <nav className="demo-chat-list" aria-label="会话">
+                {DEMO_CONVERSATIONS.filter(item=>item.sidebarVisible!==false).map(item=>
+                  <button type="button" key={item.id}
+                    className={`demo-chat-link demo-recent-chat-link ${item.id===active?"is-active":""}`}
+                    onClick={()=>onSelect(item.id)}
+                    aria-current={item.id===active?"page":undefined}>
+                    <span className="demo-chat-link-title">{item.title}</span>
+                  </button>)}
+              </nav>}
+        </SidebarSection>
+        {!navigationRailEnabled&&<div className="demo-sidebar-foot"><Icon name="settings" size={15}/> 预览环境 · 本地模拟数据</div>}
       </>}
-      {!navigationRailEnabled && <div className="demo-sidebar-foot"><Icon name="settings" size={15}/> 预览环境 · 本地模拟数据</div>}
-    </>}
     </div>
     {!collapsed && resizeHandle}
   </aside>;
@@ -239,6 +381,8 @@ export function App() {
   const launchParams=typeof window==="undefined"?new URLSearchParams():
     new URLSearchParams(window.location.search);
   const isVisualShellScenario=launchParams.get("visualScenario")==="shell-empty";
+  const showSidebarReferenceFixture=isVisualShellScenario&&import.meta.env.DEV&&
+    (typeof window==="undefined"||window.agentWebDesktopHost==null);
   const explicitDemoScenario=launchParams.get("demoScenario");
   const devTestFixtures=import.meta.env.DEV&&
     import.meta.env.VITE_AGENT_WEB_DEMO_FIXTURES==="1";
@@ -1511,15 +1655,17 @@ export function App() {
   // The direct/more identity projection is sourced from original GZc/QZc;
   // routing/feature flags are supplied explicitly by this mock host.
   const availableRailDestinations: CodexRailDestination[] = [
-    { id: "builtin:home", label: "Home", icon: <Icon name="home" size={18}/>, isCurrentDestination: true, onSelect: () => demoFixtureEnabled ? switchConversation("frontend") : startNewChat() },
-    { id: "builtin:activity", label: "Activity", icon: <Icon name="branch" size={18}/> },
-    { id: "builtin:automations", label: "Scheduled", icon: <Icon name="clock" size={18}/> },
-    { id: "builtin:library", label: "Library", icon: <Icon name="library" size={18}/> },
-    { id: "builtin:skills", label: "Skills", icon: <Icon name="tiles" size={18}/> },
+    { id: "builtin:home", label: "Home", icon: <Icon name="home" size={18}/>, group:"primary", isCurrentDestination: true, onSelect: () => demoFixtureEnabled ? switchConversation("frontend") : startNewChat() },
+    { id: "builtin:images", label: "Images", icon: <Icon name="images" size={18}/>, group:"primary" },
+    { id: "builtin:automations", label: "Scheduled", icon: <Icon name="clock" size={18}/>, group:"primary" },
+    { id: "builtin:library", label: "Library", icon: <Icon name="library" size={18}/>, group:"primary" },
+    { id: "builtin:orbit", label: "Orbit", icon: <Icon name="orbit" size={18}/>, group:"primary" },
+    { id: "builtin:activity", label: "Activity", icon: <Icon name="branch" size={18}/>, group:"pinned" },
+    { id: "builtin:skills", label: "Skills", icon: <Icon name="tiles" size={18}/>, group:"pinned" },
   ];
   const destinationProjection = projectNavigationDestinations(availableRailDestinations, {
     navigationRailEnabled,
-    directDestinationIds: ["builtin:home", "builtin:activity", "builtin:automations", "builtin:library", "builtin:skills"],
+    directDestinationIds: ["builtin:home", "builtin:images", "builtin:automations", "builtin:library", "builtin:orbit", "builtin:activity", "builtin:skills"],
   });
   const railDestinations = destinationProjection.railDestinations.map((item) =>
     availableRailDestinations.find((candidate) => candidate.id === item.id)!,
@@ -1540,19 +1686,27 @@ export function App() {
               }}>{id[0]!.toUpperCase()}{id.slice(1)}</button>
           ))}
         </div>
-      ) : <><span>File</span><span>Edit</span><span>View</span><span>Help</span></>}
+      ) : showSidebarReferenceFixture
+        ? <><span>文件</span><span>编辑</span><span>视图</span><span>帮助</span></>
+        : <><span>File</span><span>Edit</span><span>View</span><span>Help</span></>}
       <span className="demo-window-buttons" aria-hidden="true">─　□　×</span>
     </div>
     <div className="demo-app" data-codex-shell-preview="light">
     {navigationRailEnabled && <CodexNavigationRail
       destinations={railDestinations}
       onMeasuredWidthChange={setMeasuredRailWidth}
+      moreAction={<button type="button" disabled aria-label="More（尚未接入）"
+        title="更多导航尚未接入"><Icon name="dots" size={18}/></button>}
       footer={<>
-        <button type="button" disabled aria-label="More（尚未接入）" title="更多导航尚未接入"><Icon name="dots" size={18}/></button>
-        <button type="button" disabled aria-label="Settings（尚未接入）" title="设置尚未接入"><Icon name="settings" size={18}/></button>
+        <button type="button" disabled className="codex-navigation-rail__account"
+          aria-label="Account（尚未连接）" title="账户尚未连接"><Icon name="user" size={16}/></button>
+        <button type="button" disabled aria-label="Settings（尚未接入）"
+          title="设置尚未接入"><Icon name="settings" size={18}/></button>
       </>}
     />}
-    <ConversationSidebar active={active} collapsed={collapsed} navigationRailEnabled={navigationRailEnabled} onToggle={() => setCollapsed((v) => !v)} onSelect={switchConversation} onNewChat={startNewChat}
+    <ConversationSidebar active={active} collapsed={collapsed} navigationRailEnabled={navigationRailEnabled}
+      referenceFixture={showSidebarReferenceFixture}
+      onToggle={() => setCollapsed((v) => !v)} onSelect={switchConversation} onNewChat={startNewChat}
       workspaceProjectName={workspaceProjectName} workspaceProjectBusy={workspaceProjectBusy}
       workspaceProjectAvailable={window.agentWebDesktopHost?.selectWorkspaceDirectory!=null}
       onOpenWorkspaceProject={()=>void openWorkspaceProject()}
@@ -1602,7 +1756,9 @@ export function App() {
               stroke="currentColor" strokeWidth="24" strokeLinecap="round"/>
           </svg>
           <h1 className="demo-home-hero__heading">
-            {workspaceProjectName==null?"What should we build?":<>
+            {workspaceProjectName==null
+              ? showSidebarReferenceFixture?"我们要构建什么？":"What should we build?"
+              : <>
               What should we work on in{" "}
               <button type="button" className="demo-home-hero__project-select"
                 onClick={()=>void openWorkspaceProject()} disabled={workspaceProjectBusy}
@@ -1825,8 +1981,12 @@ export function App() {
               onPastedImages={addComposerFiles}
               onPastedFiles={addComposerFiles}
               onPastedText={() => false}
-              placeholder={isNewChat ? "Do anything" : "Work with Codex"}
-              ariaLabel={isNewChat ? "Do anything" : "演示消息输入"}
+              placeholder={isNewChat
+                ? showSidebarReferenceFixture?"随心输入":"Do anything"
+                : "Work with Codex"}
+              ariaLabel={isNewChat
+                ? showSidebarReferenceFixture?"随心输入":"Do anything"
+                : "演示消息输入"}
             /> : <div data-composer-draft-hydrating="true" aria-live="polite">恢复输入内容中…</div>}
             leadingControls={<div className="demo-composer-options">
               <input ref={composerFileInputRef} type="file" multiple

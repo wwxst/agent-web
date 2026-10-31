@@ -182,6 +182,25 @@ function controlUnavailableTitle(
       "Agent 后端尚未提供此设置");
 }
 
+function ComposerControlChevron(){
+  return <svg className="demo-composer-control-trigger__chevron"
+    viewBox="0 0 12 12" width="12" height="12"
+    fill="none" stroke="currentColor" strokeWidth="1.5"
+    strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="m3 4.5 3 3 3-3"/>
+  </svg>;
+}
+
+function ComposerPermissionShield(){
+  return <svg className="demo-composer-control-trigger__shield"
+    viewBox="0 0 14 14" width="14" height="14"
+    fill="none" stroke="currentColor" strokeWidth="1.25"
+    strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M7 1.25 12 3v3.4c0 3.1-2 5.2-5 6.35C4 11.6 2 9.5 2 6.4V3z"/>
+    <path d="m4.8 6.9 1.45 1.45L9.4 5.2"/>
+  </svg>;
+}
+
 function ModelMenuOption(props:{
   option:SourceComposerModelOption;
   selected:boolean;
@@ -235,11 +254,11 @@ export function CodexComposerModelReasoningControl(props:{
       title={disabled?title:"选择模型与推理强度"}
       disabled={disabled}
       onClick={()=>setOpen(value=>!value)}>
-      <span>{label}</span>
+      <span className="demo-composer-control-trigger__label">{label}</span>
       {effort!=null?<span className="demo-composer-control-trigger__effort">{effort}</span>:null}
       {selected?.serviceTierLabel!=null
         ?<span className="demo-composer-control-trigger__tier">{selected.serviceTierLabel}</span>:null}
-      <span aria-hidden="true">⌄</span>
+      <ComposerControlChevron/>
     </button>
     {open&&snapshot!=null?<div className="demo-composer-control-menu demo-composer-control-menu--model"
       role="menu" aria-label="模型与推理强度"
@@ -311,9 +330,9 @@ export function CodexComposerPermissionModeControl(props:{
       title={disabled?title:"更改权限模式"}
       disabled={disabled}
       onClick={()=>setOpen(value=>!value)}>
-      <span className="demo-composer-control-trigger__shield" aria-hidden="true">◇</span>
-      <span>{label}</span>
-      <span aria-hidden="true">⌄</span>
+      <ComposerPermissionShield/>
+      <span className="demo-composer-control-trigger__label">{label}</span>
+      <ComposerControlChevron/>
     </button>
     {open&&snapshot!=null?<div className="demo-composer-control-menu demo-composer-control-menu--permissions"
       role="menu" aria-label="权限模式"

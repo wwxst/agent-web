@@ -1,6 +1,6 @@
 import {test,expect} from "@playwright/test";
 
-test("shell-empty visual route mounts the real desktop shell and idle Composer without demo rows",async({page},testInfo)=>{
+test("shell-empty visual route mounts the real desktop shell, idle Composer and source-reference sidebar fixture",async({page},testInfo)=>{
   await page.addInitScript(()=>{
     // A visual capture must not hydrate from or overwrite the user's saved pins.
     localStorage.setItem("pinned-content-tabs-v1","visual-baseline-preserve-me");
@@ -20,17 +20,27 @@ test("shell-empty visual route mounts the real desktop shell and idle Composer w
   await expect(page.getByTestId("home-computer-context")).toHaveText("此计算机");
   await expect(page.locator(".demo-row")).toHaveCount(0);
   await expect(page.locator(".demo-composer")).toBeVisible();
-  await expect(page.getByRole("heading",{name:"What should we build?"})).toBeVisible();
+  await expect(page.getByRole("heading",{name:"我们要构建什么？"})).toBeVisible();
   await expect(page.locator(".demo-home-hero__icon")).toHaveAttribute("width","56");
   await expect(page.locator(".demo-composer")).toHaveAttribute("data-composer-placement","home");
   await expect(page.locator('.demo-composer [contenteditable="true"]')).toBeVisible();
-  await expect(page.getByRole("textbox",{name:"Do anything"})).toBeVisible();
+  await expect(page.getByRole("textbox",{name:"随心输入"})).toBeVisible();
   await expect(page.locator(".demo-header-folder")).toHaveCount(0);
-  await expect(page.locator(".demo-project-heading")).toHaveCount(0);
-  await expect(page.locator(".demo-chat-link")).toHaveCount(0);
-  await expect(page.getByText("No projects",{exact:true})).toBeVisible();
-  await expect(page.getByText("No chats",{exact:true})).toBeVisible();
-  await expect(page.getByRole("button",{name:"New chat"})).toHaveAttribute("aria-current","page");
+  const referenceSidebar=page.locator('[data-sidebar-reference-fixture="true"]');
+  await expect(referenceSidebar).toBeVisible();
+  await expect(referenceSidebar.locator('[data-visual-reference-only="pinned"]')).toHaveCount(1);
+  await expect(referenceSidebar.locator('[data-visual-reference-only="project"]')).toHaveCount(7);
+  await expect(referenceSidebar.locator('[data-visual-reference-only="project-thread"]')).toHaveCount(5);
+  await expect(referenceSidebar.locator('[data-visual-reference-only="recent"]')).toHaveCount(2);
+  for(const project of ["agent","promotion-demo","agent-desktop","atlas","kasi-project","deepseek-harness","ai"])
+    await expect(referenceSidebar.getByText(project,{exact:true})).toBeVisible();
+  await expect(page.getByTestId("sidebar-notifications-unavailable")).toBeDisabled();
+  await expect(page.getByTestId("sidebar-new-chat")).not.toHaveAttribute("aria-current");
+  await expect(page.getByText("置顶",{exact:true})).toBeVisible();
+  await expect(page.getByText("项目",{exact:true})).toBeVisible();
+  await expect(page.getByText("最近",{exact:true})).toBeVisible();
+  await expect(page.getByText("No projects",{exact:true})).toHaveCount(0);
+  await expect(page.getByText("No chats",{exact:true})).toHaveCount(0);
   const modelControl=page.getByTestId("composer-model-control");
   const permissionControl=page.getByTestId("composer-permission-control");
   await expect(modelControl).toBeDisabled();
@@ -86,6 +96,54 @@ test("shell-empty visual route mounts the real desktop shell and idle Composer w
 });
 
 
+test("Codex sidebar sections use source disclosure rows and hover-only project actions",async({page})=>{
+  await page.goto("/?visualScenario=shell-empty");
+  const sidebar=page.getByRole("complementary",{name:"演示会话导航"});
+  await expect(sidebar).toBeVisible();
+  await expect(sidebar).toHaveAttribute("data-sidebar-reference-fixture","true");
+  await expect(sidebar.locator("[data-app-action-sidebar-scroll]")).toBeVisible();
+  const search=page.getByTestId("sidebar-search-unavailable");
+  await expect(search).toBeDisabled();
+  await expect(search).toHaveAttribute("aria-label","搜索");
+
+  const projects=page.locator('[data-app-action-sidebar-section-key="projects"]');
+  const projectsToggle=page.getByTestId("sidebar-section-projects-toggle");
+  await expect(projects).toHaveAttribute("data-app-action-sidebar-section-collapsed","false");
+  await expect(projectsToggle).toHaveAttribute("aria-expanded","true");
+  const projectActions=projects.locator(".demo-sidebar-section__actions");
+  const projectsHeader=projects.locator(".demo-sidebar-section__header");
+  const projectsDisclosure=projects.locator(".demo-sidebar-section__chevron");
+  await expect(projectActions).toHaveCSS("opacity","0");
+  await expect(projectsDisclosure).toHaveCSS("opacity","0");
+  await projectsHeader.hover();
+  await expect(projectActions).toHaveCSS("opacity","1");
+  await expect(projectsDisclosure).toHaveCSS("opacity","1");
+  await page.mouse.move(0,0);
+  await expect(projectActions).toHaveCSS("opacity","0");
+  await expect(projectsDisclosure).toHaveCSS("opacity","0");
+
+  const projectRows=projects.locator('[data-visual-reference-only="project"]');
+  await expect(projectRows).toHaveCount(7);
+  await projectsToggle.click();
+  await expect(projects).toHaveAttribute("data-app-action-sidebar-section-collapsed","true");
+  await expect(projectsToggle).toHaveAttribute("aria-expanded","false");
+  await expect(projects.locator(".demo-sidebar-section__content")).toBeHidden();
+  await projectsToggle.click();
+  await expect(projectRows).toHaveCount(7);
+
+  const recents=page.locator('[data-app-action-sidebar-section-key="recents"]');
+  const recentsToggle=page.getByTestId("sidebar-section-recents-toggle");
+  const recentRows=recents.locator('[data-visual-reference-only="recent"]');
+  await expect(recents).toHaveAttribute("data-app-action-sidebar-section-collapsed","false");
+  await expect(recentRows).toHaveCount(2);
+  await recentsToggle.click();
+  await expect(recentsToggle).toHaveAttribute("aria-expanded","false");
+  await expect(recents.locator(".demo-sidebar-section__content")).toBeHidden();
+  await recentsToggle.click();
+  await expect(recentRows).toHaveCount(2);
+});
+
+
 test("New chat opens the empty Codex home while the Home rail retains its existing route",async({page})=>{
   await page.goto("/");
   await expect(page.locator(".demo-header-location strong")).toHaveText("恢复 Codex 会话界面");
@@ -108,7 +166,7 @@ test("New chat opens the empty Codex home while the Home rail retains its existi
 
 test("empty Codex home preserves drafts and never silently sends to the demo responder",async({page})=>{
   await page.goto("/?visualScenario=shell-empty");
-  const editor=page.getByRole("textbox",{name:"Do anything"});
+  const editor=page.getByRole("textbox",{name:"随心输入"});
   await editor.fill("实际任务不能变成模拟回复");
   await expect(page.getByTestId("send-button")).toBeDisabled();
   await expect(page.getByTestId("send-button")).toHaveAttribute("title","Agent 未连接，暂不可发送");
@@ -116,7 +174,7 @@ test("empty Codex home preserves drafts and never silently sends to the demo res
   await expect(editor).toContainText("实际任务不能变成模拟回复");
   await expect(page.locator(".demo-row")).toHaveCount(0);
   await expect(page.getByText("已收到你的消息",{exact:false})).toHaveCount(0);
-  await expect(page.getByRole("heading",{name:"What should we build?"})).toBeVisible();
+  await expect(page.getByRole("heading",{name:"我们要构建什么？"})).toBeVisible();
 });
 
 
@@ -140,6 +198,9 @@ test("real read-only workspace grant updates original home project Hero without 
   const choose=page.getByRole("button",{name:"Open local folder"});
   await expect(choose).toBeEnabled();
   await expect(page.getByText("No projects",{exact:true})).toBeVisible();
+  // The original Projects action is revealed by hovering/focusing its title row.
+  await page.locator('[data-app-action-sidebar-section-key="projects"] .demo-sidebar-section__header').hover();
+  await expect(choose).toBeVisible();
   await choose.click();
   await expect(page.getByRole("heading",{name:/What should we work on in codex-frontend-reconstruction/}))
     .toBeVisible();

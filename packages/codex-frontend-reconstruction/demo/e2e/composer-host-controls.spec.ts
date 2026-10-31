@@ -215,6 +215,37 @@ test("missing host controls render disabled source-positioned placeholders rathe
   await expect(page.getByText(/Full access.*mock/)).toHaveCount(0);
 });
 
+test("permission and model control chevrons share the label centerline",async({page})=>{
+  await page.goto("/");
+  for(const testId of ["composer-permission-control","composer-model-control"]){
+    const trigger=page.getByTestId(testId);
+    const geometry=await trigger.evaluate(element=>{
+      const label=element.querySelector<HTMLElement>(".demo-composer-control-trigger__label");
+      const chevron=element.querySelector<SVGElement>(".demo-composer-control-trigger__chevron");
+      const shield=element.querySelector<SVGElement>(".demo-composer-control-trigger__shield");
+      if(label==null||chevron==null)throw new Error("Composer control label or chevron is missing.");
+      const labelRect=label.getBoundingClientRect();
+      const chevronRect=chevron.getBoundingClientRect();
+      const shieldRect=shield?.getBoundingClientRect();
+      const triggerRect=element.getBoundingClientRect();
+      return {
+        triggerHeight:triggerRect.height,
+        labelHeight:labelRect.height,
+        chevronHeight:chevronRect.height,
+        chevronCenterDelta:Math.abs(
+          (labelRect.top+labelRect.bottom)/2-(chevronRect.top+chevronRect.bottom)/2),
+        shieldCenterDelta:shieldRect==null?0:Math.abs(
+          (labelRect.top+labelRect.bottom)/2-(shieldRect.top+shieldRect.bottom)/2),
+      };
+    });
+    expect(geometry.triggerHeight).toBe(24);
+    expect(geometry.labelHeight).toBe(16);
+    expect(geometry.chevronHeight).toBe(12);
+    expect(geometry.chevronCenterDelta).toBeLessThanOrEqual(.5);
+    expect(geometry.shieldCenterDelta).toBeLessThanOrEqual(.5);
+  }
+});
+
 test("late model snapshots from a previous conversation cannot overwrite the active thread controls",async({page})=>{
   await page.addInitScript(()=>{
     const makeBaseHost=()=>({
