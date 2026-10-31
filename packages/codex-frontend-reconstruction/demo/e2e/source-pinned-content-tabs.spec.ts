@@ -179,10 +179,10 @@ test("a large pinned registry scrolls in a bounded sidebar list without pushing 
     const list=document.querySelector<HTMLElement>(".demo-pinned-list")!;
     const sidebar=document.querySelector<HTMLElement>(".demo-sidebar")!;
     const projects=document.querySelector<HTMLElement>(
-      '[data-app-action-sidebar-section-heading="Projects"] .demo-sidebar-section__header',
+      '[data-app-action-sidebar-section-key="projects"] .demo-sidebar-section__header',
     )!.getBoundingClientRect();
     const recents=document.querySelector<HTMLElement>(
-      '[data-app-action-sidebar-section-heading="Recents"] .demo-sidebar-section__header',
+      '[data-app-action-sidebar-section-key="recents"] .demo-sidebar-section__header',
     )!.getBoundingClientRect();
     return {
       navOverflow:getComputedStyle(nav).overflowY,
