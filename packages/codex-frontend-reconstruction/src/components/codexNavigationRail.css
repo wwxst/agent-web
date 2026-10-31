@@ -83,3 +83,29 @@
 .codex-navigation-rail__footer > button:hover:not(:disabled) { background: var(--demo-border, #e8e8e8); color: var(--demo-text, #242424); }
 .codex-navigation-rail__destination:disabled { opacity: .56; cursor: default; }
 .codex-navigation-rail__destination:focus-visible { outline: 2px solid #578cda; outline-offset: 1px; }
+
+/* The 1352x760 Windows Codex reference locates the first 36px rail tile at
+ * x=8, y=52. The menu bar remains source-defined at 36px; the source rail's
+ * top slot creates the remaining 12px inset. Keep the normal host unchanged. */
+.demo-desktop:has([data-sidebar-reference-fixture="true"]) .codex-navigation-rail__destinations {
+  padding-top: 14px;
+}
+.demo-desktop:has([data-sidebar-reference-fixture="true"]) .codex-navigation-rail {
+  padding-bottom: 14px;
+}
+.demo-desktop:has([data-sidebar-reference-fixture="true"]) .codex-navigation-rail__destination:disabled,
+.demo-desktop:has([data-sidebar-reference-fixture="true"]) .codex-navigation-rail__more > button:disabled {
+  opacity: 1;
+}
+/* The original screenshot has one account avatar at the foot of the rail,
+ * not the local host's disconnected Account/Settings controls. This circle is
+ * a geometry-only fixture; no private account initials or login are copied. */
+.codex-navigation-rail__reference-avatar {
+  display: block;
+  width: 24px;
+  height: 24px;
+  flex: 0 0 24px;
+  border-radius: 50%;
+  background: #e64d44;
+  pointer-events: none;
+}
