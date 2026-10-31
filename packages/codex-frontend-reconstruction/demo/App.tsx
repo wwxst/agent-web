@@ -345,7 +345,7 @@ function ConversationSidebar(props: {
                     </div>)}
                 </div>
               : <div className="demo-sidebar-empty">No chats</div>
-            : <nav className="demo-chat-list" aria-label="Recent chats">
+            : <nav className="demo-chat-list" aria-label="会话">
                 {DEMO_CONVERSATIONS.filter(item=>item.sidebarVisible!==false).map(item=>
                   <button type="button" key={item.id}
                     className={`demo-chat-link demo-recent-chat-link ${item.id===active?"is-active":""}`}
