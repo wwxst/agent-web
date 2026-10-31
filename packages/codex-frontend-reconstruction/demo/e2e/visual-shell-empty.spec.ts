@@ -12,7 +12,12 @@ test("shell-empty visual route mounts the real desktop shell and idle Composer w
   ));
 
   await expect(page.locator('[data-codex-shell-preview="light"]')).toBeVisible();
-  await expect(page.locator(".demo-header-location strong")).toHaveText("New chat");
+  await expect(page.locator(".demo-header-location")).toHaveCount(0);
+  await expect(page.getByTestId("home-new-tab-unavailable")).toBeDisabled();
+  await expect(page.locator(".demo-header")).toHaveCSS("border-bottom-width","0px");
+  await expect(page.getByTestId("home-composer-context")).toBeVisible();
+  await expect(page.getByRole("button",{name:"选择项目"})).toBeVisible();
+  await expect(page.getByTestId("home-computer-context")).toHaveText("此计算机");
   await expect(page.locator(".demo-row")).toHaveCount(0);
   await expect(page.locator(".demo-composer")).toBeVisible();
   await expect(page.getByRole("heading",{name:"What should we build?"})).toBeVisible();
@@ -44,30 +49,37 @@ test("shell-empty visual route mounts the real desktop shell and idle Composer w
     mainLeft:document.querySelector(".demo-main")?.getBoundingClientRect().left??null,
     sidebarScroll:document.querySelector("[data-sidebar-navigation-scroll]")?.getBoundingClientRect().height??null,
     header:document.querySelector(".demo-header")?.getBoundingClientRect().height??null,
+    headerBorderBottom:getComputedStyle(document.querySelector(".demo-header")!).borderBottomWidth,
     composer:document.querySelector(".demo-composer")?.getBoundingClientRect().toJSON()??null,
+    composerContext:document.querySelector(".demo-home-composer-context")?.getBoundingClientRect().toJSON()??null,
     hero:document.querySelector(".demo-home-hero")?.getBoundingClientRect().toJSON()??null,
+    heroIcon:document.querySelector(".demo-home-hero__icon")?.getBoundingClientRect().toJSON()??null,
     heroHeading:document.querySelector(".demo-home-hero__heading")?.getBoundingClientRect().toJSON()??null,
     composerPlacement:document.querySelector(".demo-composer")?.getAttribute("data-composer-placement"),
     rowCount:document.querySelectorAll(".demo-row").length,
     savedPin:localStorage.getItem("pinned-content-tabs-v1"),
   }));
   expect(capture.viewport).toEqual({width:1352,height:760,devicePixelRatio:1});
-  // Original compiled source tokens: menu 36px, rail 13 spacing units,
-  // sidebar preferred 275px, main toolbar 46px and 48rem Composer width.
+  // Match the captured Codex A-shell-empty state: 240px saved sidebar,
+  // 46px top action row, bottom Composer + context strip, and Hero placement.
   expect(capture.windowMenu).toBe(36);
   expect(capture.rail).toBe(52);
-  expect(capture.sidebar).toBe(275);
-  expect(capture.mainLeft).toBe(327);
+  expect(capture.sidebar).toBe(240);
+  expect(capture.mainLeft).toBe(292);
   expect(capture.header).toBe(46);
+  expect(capture.headerBorderBottom).toBe("0px");
   expect(capture.sidebarScroll).toBeGreaterThan(100);
-  expect(capture.composer?.width).toBe(768);
-  expect(capture.composerPlacement).toBe("home");
+  expect(capture.composer?.width).toBe(738);
   expect(capture.composer).not.toBeNull();
+  expect(capture.composerContext?.height).toBe(38);
+  expect(capture.composerContext?.bottom).toBe(capture.composer?.top);
+  expect(760-(capture.composer?.bottom??0)).toBe(19);
   expect(capture.hero).not.toBeNull();
+  expect(capture.heroIcon).not.toBeNull();
   expect(capture.heroHeading).not.toBeNull();
-  expect((capture.composer?.top??0)-(capture.heroHeading?.bottom??0)).toBeGreaterThan(15);
-  expect((capture.composer?.top??0)-(capture.heroHeading?.bottom??0)).toBeLessThan(30);
-  expect(Math.abs((capture.composer?.top??0)-(36+760*0.42))).toBeLessThan(4);
+  expect((capture.heroIcon?.top??0)+(capture.heroIcon?.height??0)/2).toBeCloseTo(327,0);
+  expect(capture.heroHeading?.top).toBeCloseTo(379,0);
+  expect(capture.composerPlacement).toBe("home");
   expect(capture.rowCount).toBe(0);
   expect(capture.savedPin).toBe("visual-baseline-preserve-me");
   await page.screenshot({path:testInfo.outputPath("shell-empty-visual-baseline.png"),fullPage:false});
