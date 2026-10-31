@@ -122,6 +122,43 @@ interface PinnedSidebarItem{
   unavailable:boolean;
   isActive:boolean;
 }
+type SidebarSectionKey="pinned"|"projects"|"recents";
+
+function SidebarSection(props:{
+  sectionId:SidebarSectionKey;
+  title:string;
+  collapsed:boolean;
+  onToggle:()=>void;
+  actions?:React.ReactNode;
+  children:React.ReactNode;
+}) {
+  const {sectionId,title,collapsed,onToggle,actions,children}=props;
+  const contentId=`demo-sidebar-${sectionId}-content`;
+  return <section className="demo-sidebar-section"
+    data-app-action-sidebar-section=""
+    data-app-action-sidebar-section-collapsed={String(collapsed)}
+    data-app-action-sidebar-section-heading={title}>
+    <div className="demo-sidebar-section__header">
+      <button type="button"
+        className="demo-sidebar-section__toggle"
+        data-app-action-sidebar-section-toggle=""
+        data-testid={`sidebar-section-${sectionId}-toggle`}
+        aria-expanded={!collapsed}
+        aria-controls={contentId}
+        onClick={onToggle}>
+        <span className="demo-sidebar-section__label">{title}</span>
+        <span className={`demo-sidebar-section__chevron ${collapsed?"is-collapsed":""}`}>
+          <Icon name="chevron" size={12}/>
+        </span>
+      </button>
+      {actions!=null&&<div className="demo-sidebar-section__actions">{actions}</div>}
+    </div>
+    <div id={contentId} className="demo-sidebar-section__content" hidden={collapsed}>
+      {children}
+    </div>
+  </section>;
+}
+
 function ConversationSidebar(props: {
   active: DemoConversationId;
   collapsed: boolean;
@@ -140,93 +177,121 @@ function ConversationSidebar(props: {
   resizeHandle?:React.ReactNode;
 }) {
   const {
-    active,collapsed,onToggle,onSelect,onNewChat,navigationRailEnabled,
+    active,collapsed,onSelect,onNewChat,navigationRailEnabled,
     workspaceProjectName,workspaceProjectBusy,workspaceProjectAvailable,
     onOpenWorkspaceProject,onClearWorkspaceProject,
     pinnedItems,onSelectPinned,onUnpinPinned,resizeHandle,
   } = props;
-  return <aside className={`demo-sidebar ${collapsed ? "demo-sidebar--collapsed" : ""}`} aria-label="演示会话导航">
+  const [collapsedSections,setCollapsedSections]=React.useState<Record<SidebarSectionKey,boolean>>({
+    pinned:false,projects:false,recents:false,
+  });
+  const toggleSection=(section:SidebarSectionKey)=>
+    setCollapsedSections(current=>({...current,[section]:!current[section]}));
+  const projectAction=<button type="button" className="demo-sidebar-project-add"
+    data-app-action-sidebar-project-create=""
+    aria-label="Open local folder" title={workspaceProjectAvailable
+      ?"Choose a local folder (read-only preview)"
+      :"Local folder selection requires the Electron desktop host"}
+    disabled={!workspaceProjectAvailable||workspaceProjectBusy}
+    onClick={props.onOpenWorkspaceProject}>
+    <Icon name="plus" size={15}/>
+  </button>;
+  const isHome=active==="visual-empty";
+
+  return <aside className={`demo-sidebar ${collapsed ? "demo-sidebar--collapsed" : ""}`}
+    aria-label="Conversation sidebar">
     <div className="demo-sidebar-head">
-      <div className="demo-logo">{collapsed ? <Icon name="folder" size={18}/> : <><strong>Codex</strong><Icon name="chevron" size={12}/></>}</div>
-      <button className="demo-icon-button" type="button" title="搜索尚未恢复" aria-label="搜索尚未恢复" disabled><Icon name="search" size={17}/></button>
+      <div className="demo-logo" aria-label="Codex">
+        {collapsed ? <Icon name="folder" size={18}/> : <><strong>Codex</strong><Icon name="chevron" size={12}/></>}
+      </div>
+      <button className="demo-icon-button" type="button"
+        title="Search" aria-label="Search" data-testid="sidebar-search-unavailable"
+        disabled><Icon name="search" size={17}/></button>
     </div>
     <div className="demo-sidebar-actions">
-      <button type="button" className={`demo-nav-action ${active === "visual-empty" ? "is-active" : ""}`} title="New chat" aria-current={active === "visual-empty" ? "page" : undefined} onClick={onNewChat}><Icon name="plus" size={16}/>{!collapsed && <span>New chat</span>}</button>
+      <button type="button"
+        className={`demo-nav-action ${isHome ? "is-active" : ""}`}
+        title="New chat"
+        aria-current={isHome ? "page" : undefined}
+        onClick={onNewChat}>
+        <Icon name="plus" size={16}/>{!collapsed && <span>New chat</span>}
+      </button>
       {!collapsed && !navigationRailEnabled && <>
-        <div className="demo-nav-action demo-nav-disabled" aria-label="Scheduled 尚未接入"><Icon name="clock" size={15}/> Scheduled</div>
-        <div className="demo-nav-action demo-nav-disabled" aria-label="Plugins 尚未接入"><Icon name="plugin" size={15}/> Plugins</div>
+        <div className="demo-nav-action demo-nav-disabled" aria-label="Scheduled unavailable"><Icon name="clock" size={15}/> Scheduled</div>
+        <div className="demo-nav-action demo-nav-disabled" aria-label="Plugins unavailable"><Icon name="plugin" size={15}/> Plugins</div>
       </>}
     </div>
-    <div className="demo-sidebar-scroll" data-sidebar-navigation-scroll="true">
-    {!collapsed && <>
-      {pinnedItems.length>0?<section className="demo-pinned-section"
-        aria-label="Pinned">
-        <div className="demo-section-heading">Pinned</div>
-        <nav className="demo-pinned-list" aria-label="Pinned content tabs">
-          {pinnedItems.map(item=><div key={item.id}
-            className="demo-pinned-item"
-            data-pinned-content-tab-id={item.id}
-            data-pinned-content-tab-unavailable={item.unavailable?"true":"false"}
-            data-pinned-content-tab-active={item.isActive?"true":"false"}>
-            <button type="button" className="demo-pinned-item__reveal"
-              title={item.unavailable
-                ?`${item.title} · Preview unavailable`
-                :item.subtitle}
-              aria-current={item.isActive?"page":undefined}
-              onClick={()=>onSelectPinned(item.id)}>
-              <Icon name="file" size={14}/>
-              <span className="demo-pinned-item__labels">
-                <span className="demo-pinned-item__title">{item.title}</span>
-                <small>{item.unavailable?"Preview unavailable":item.subtitle}</small>
-              </span>
-            </button>
-            <button type="button" className="demo-pinned-item__unpin"
-              aria-label="Unpin tab" title="Unpin tab"
-              onClick={()=>onUnpinPinned(item.id)}>×</button>
-          </div>)}
-        </nav>
-      </section>:null}
-      {active === "visual-empty" ? <>
-      <div className="demo-sidebar-projects-header">
-        <div className="demo-section-heading">Projects</div>
-        <button type="button" className="demo-sidebar-project-add"
-          aria-label="Open local folder" title={workspaceProjectAvailable
-            ? "Choose a local folder (read-only preview)"
-            : "Local folder selection requires the Electron desktop host"}
-          disabled={!workspaceProjectAvailable||workspaceProjectBusy}
-          onClick={onOpenWorkspaceProject}>
-          <Icon name="plus" size={15}/>
-        </button>
-      </div>
-      {workspaceProjectName==null
-        ?<div className="demo-sidebar-empty">No projects</div>
-        :<div className="demo-sidebar-local-project" data-local-workspace-project="">
-          <button type="button" className="demo-sidebar-local-project__name"
-            aria-label="Change local folder" title="Change read-only local folder"
-            onClick={onOpenWorkspaceProject} disabled={workspaceProjectBusy}>
-            <Icon name="folder" size={15}/>
-            <span>{workspaceProjectName}</span>
-            <small>Read-only</small>
-          </button>
-          <button type="button" className="demo-sidebar-local-project__clear"
-            aria-label="Clear local folder" title="Revoke folder access"
-            onClick={onClearWorkspaceProject} disabled={workspaceProjectBusy}>×</button>
-        </div>}
-      <div className="demo-section-heading demo-recent-heading">Recents</div>
-      <div className="demo-sidebar-empty">No chats</div>
-      </> : <>
-      <div className="demo-section-heading">Projects</div>
-      <nav className="demo-chat-list" aria-label="会话">
-        <div className="demo-project-heading"><Icon name="folder" size={16}/> agent web</div>
-        {DEMO_CONVERSATIONS.filter(item=>item.sidebarVisible!==false).map((item) => <button type="button" key={item.id} className={`demo-chat-link ${item.id === active ? "is-active" : ""}`} onClick={() => onSelect(item.id)} aria-current={item.id === active ? "page" : undefined}>
-          <span className="demo-chat-link-title">{item.title}</span>
-        </button>)}
-      </nav>
-      <div className="demo-sidebar-spacer"/>
-      <div className="demo-section-heading demo-recent-heading">Recents</div>
+    <div className="demo-sidebar-scroll"
+      data-app-action-sidebar-scroll=""
+      data-sidebar-navigation-scroll="true">
+      {!collapsed && <>
+        {pinnedItems.length>0&&<SidebarSection sectionId="pinned"
+          title="Pinned" collapsed={collapsedSections.pinned}
+          onToggle={()=>toggleSection("pinned")}>
+          <nav className="demo-pinned-list" aria-label="Pinned content tabs">
+            {pinnedItems.map(item=><div key={item.id}
+              className="demo-pinned-item"
+              data-pinned-content-tab-id={item.id}
+              data-pinned-content-tab-unavailable={item.unavailable?"true":"false"}
+              data-pinned-content-tab-active={item.isActive?"true":"false"}>
+              <button type="button" className="demo-pinned-item__reveal"
+                title={item.unavailable
+                  ?`${item.title} · Preview unavailable`
+                  :item.subtitle}
+                aria-current={item.isActive?"page":undefined}
+                onClick={()=>onSelectPinned(item.id)}>
+                <Icon name="file" size={14}/>
+                <span className="demo-pinned-item__labels">
+                  <span className="demo-pinned-item__title">{item.title}</span>
+                  <small>{item.unavailable?"Preview unavailable":item.subtitle}</small>
+                </span>
+              </button>
+              <button type="button" className="demo-pinned-item__unpin"
+                aria-label="Unpin tab" title="Unpin tab"
+                onClick={()=>onUnpinPinned(item.id)}>×</button>
+            </div>)}
+          </nav>
+        </SidebarSection>}
+        <SidebarSection sectionId="projects" title="Projects"
+          collapsed={collapsedSections.projects}
+          onToggle={()=>toggleSection("projects")}
+          actions={projectAction}>
+          {isHome
+            ? workspaceProjectName==null
+              ? <div className="demo-sidebar-empty">No projects</div>
+              : <div className="demo-sidebar-local-project" data-local-workspace-project="">
+                  <button type="button" className="demo-sidebar-local-project__name"
+                    aria-label="Change local folder" title="Change read-only local folder"
+                    onClick={onOpenWorkspaceProject} disabled={workspaceProjectBusy}>
+                    <Icon name="folder" size={15}/>
+                    <span>{workspaceProjectName}</span>
+                    <small>Read-only</small>
+                  </button>
+                  <button type="button" className="demo-sidebar-local-project__clear"
+                    aria-label="Clear local folder" title="Revoke folder access"
+                    onClick={onClearWorkspaceProject} disabled={workspaceProjectBusy}>×</button>
+                </div>
+            : <nav className="demo-chat-list" aria-label="Projects">
+                <div className="demo-project-heading"><Icon name="folder" size={16}/> agent web</div>
+              </nav>}
+        </SidebarSection>
+        <SidebarSection sectionId="recents" title="Recents"
+          collapsed={collapsedSections.recents}
+          onToggle={()=>toggleSection("recents")}>
+          {isHome
+            ? <div className="demo-sidebar-empty">No chats</div>
+            : <nav className="demo-chat-list" aria-label="Recent chats">
+                {DEMO_CONVERSATIONS.filter(item=>item.sidebarVisible!==false).map(item=>
+                  <button type="button" key={item.id}
+                    className={`demo-chat-link ${item.id===active?"is-active":""}`}
+                    onClick={()=>onSelect(item.id)}
+                    aria-current={item.id===active?"page":undefined}>
+                    <span className="demo-chat-link-title">{item.title}</span>
+                  </button>)}
+              </nav>}
+        </SidebarSection>
+        {!navigationRailEnabled&&<div className="demo-sidebar-foot"><Icon name="settings" size={15}/> 预览环境 · 本地模拟数据</div>}
       </>}
-      {!navigationRailEnabled && <div className="demo-sidebar-foot"><Icon name="settings" size={15}/> 预览环境 · 本地模拟数据</div>}
-    </>}
     </div>
     {!collapsed && resizeHandle}
   </aside>;
