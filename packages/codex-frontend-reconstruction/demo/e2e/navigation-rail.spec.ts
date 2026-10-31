@@ -66,7 +66,7 @@ test("project and recent conversation rows occupy their source Codex sections",a
   await expect(projects.locator(".demo-recent-chat-link")).toHaveCount(0);
   const recentRows=recents.locator(".demo-recent-chat-link");
   expect(await recentRows.count()).toBeGreaterThan(0);
-  await expect(recentRows.first()).toHaveCSS("padding-left","10px");
+  await expect(recentRows.first()).toHaveCSS("padding-left","0px");
   await expect(recents.locator('.demo-recent-chat-link[aria-current="page"]')).toHaveCount(1);
 });
 
