@@ -1690,10 +1690,13 @@ export function App() {
     {navigationRailEnabled && <CodexNavigationRail
       destinations={railDestinations}
       onMeasuredWidthChange={setMeasuredRailWidth}
-      footer={<>
-        <button type="button" disabled aria-label="More（尚未接入）" title="更多导航尚未接入"><Icon name="dots" size={18}/></button>
-        <button type="button" disabled aria-label="Settings（尚未接入）" title="设置尚未接入"><Icon name="settings" size={18}/></button>
-      </>}
+      explore={<button type="button" className="codex-navigation-rail__destination"
+        data-testid="navigation-rail-explore" aria-label="Explore（尚未接入）"
+        title="Explore 尚未接入" disabled><Icon name="dots" size={18}/></button>}
+      footer={<button type="button" data-testid="navigation-rail-settings"
+        disabled aria-label="Settings（尚未接入）" title="设置尚未接入">
+        <Icon name="settings" size={18}/>
+      </button>}
     />}
     <ConversationSidebar active={active} collapsed={collapsed} navigationRailEnabled={navigationRailEnabled}
       referenceFixture={showSidebarReferenceFixture}
