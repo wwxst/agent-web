@@ -32,7 +32,7 @@ test("thread header toggles the read-only side panel without unmounting tabs or 
   await page.getByRole("button",{name:"打开演示工具"}).click();
   await page.getByTestId("demo-source-user-file-attachments").click();
   const row=page.locator('[data-demo-turn-id^="user-file-attachments-"]').last();
-  await row.getByRole("button",{name:/App\\.tsx/}).click();
+  await row.getByRole("button",{name:/App\.tsx/}).click();
 
   const preview=page.getByRole("complementary",{name:"Local file preview"});
   await expect(preview).toBeVisible();
@@ -76,7 +76,7 @@ test("thread header toggles the read-only side panel without unmounting tabs or 
   // user hid the previous panel. The native host is read only once per file.
   await toggle.click();
   await expect(preview).toBeHidden();
-  await row.getByRole("button",{name:/index\\.ts/}).click();
+  await row.getByRole("button",{name:/index\.ts/}).click();
   await expect(preview).toBeVisible();
   await expect(preview.getByRole("tab",{name:"index.ts"})).toHaveAttribute("aria-selected","true");
 
