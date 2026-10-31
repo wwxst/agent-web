@@ -6,10 +6,17 @@ export interface CodexRailDestination extends NavigationDestination {
   icon: React.ReactNode;
   /** Navigation is inert until its host supplies a real handler. */
   onSelect?: () => void;
+  /** A source-positioned icon whose original account route is not connected. */
+  visualReferenceOnly?: boolean;
 }
 
 export interface CodexNavigationRailProps {
+  /** Fixed/home and primary destinations, in source order. */
   destinations: readonly CodexRailDestination[];
+  /** The source Explore/More popover trigger, rendered after primary items. */
+  moreAction?: React.ReactNode;
+  /** Account-pinned destinations rendered after the More divider. */
+  secondaryDestinations?: readonly CodexRailDestination[];
   header?: React.ReactNode;
   footer?: React.ReactNode;
   onMeasuredWidthChange?: (px: number) => void;
@@ -17,12 +24,17 @@ export interface CodexNavigationRailProps {
 
 /**
  * Reconstructed DOM hierarchy from app-initial-5851df3f6cb1.js `dWc`:
- * nav[data-app-navigation-rail] -> header, scrolling destinations, footer.
- * The source's account/store, drag-and-drop and popover controls are host
- * dependencies, not emulated here. Icons must be provided by the host.
+ * nav[data-app-navigation-rail] -> header, scrollable fixed/primary items,
+ * Explore trigger + divider, account-pinned destinations, and footer.
+ *
+ * Account/store, drag-and-drop, route and popover behavior remain host
+ * dependencies. Missing routes are rendered as visibly inert reference items,
+ * never as working navigation.
  */
 export function CodexNavigationRail({
   destinations,
+  moreAction,
+  secondaryDestinations = [],
   header,
   footer,
   onMeasuredWidthChange,
@@ -41,21 +53,33 @@ export function CodexNavigationRail({
     return () => observer.disconnect();
   }, [onMeasuredWidthChange]);
 
-  return <nav ref={navRef} className="codex-navigation-rail" data-app-navigation-rail="true" aria-label="App navigation">
+  const renderDestination = (destination: CodexRailDestination) => <button
+    key={destination.id}
+    type="button"
+    className="codex-navigation-rail__destination"
+    data-sidebar-destination={destination.id}
+    data-visual-reference-only={destination.visualReferenceOnly ? "true" : undefined}
+    aria-label={destination.label}
+    aria-current={destination.isCurrentDestination ? "page" : undefined}
+    title={destination.onSelect
+      ? destination.label
+      : `${destination.label}（尚未接入）`}
+    onClick={destination.onSelect}
+    disabled={!destination.onSelect}
+  ><span aria-hidden="true">{destination.icon}</span></button>;
+
+  return <nav ref={navRef} className="codex-navigation-rail"
+    data-app-navigation-rail="true" aria-label="应用导航">
     <div className="codex-navigation-rail__divider" aria-hidden="true"/>
     {header && <div className="codex-navigation-rail__header">{header}</div>}
     <div className="codex-navigation-rail__destinations" data-navigation-rail-scroll="true">
-      {destinations.map((destination) => <button
-        key={destination.id}
-        type="button"
-        className="codex-navigation-rail__destination"
-        data-sidebar-destination={destination.id}
-        aria-label={destination.label}
-        aria-current={destination.isCurrentDestination ? "page" : undefined}
-        title={destination.onSelect ? destination.label : `${destination.label}（尚未接入）`}
-        onClick={destination.onSelect}
-        disabled={!destination.onSelect}
-      ><span aria-hidden="true">{destination.icon}</span></button>)}
+      {destinations.map(renderDestination)}
+      {moreAction && <div className="codex-navigation-rail__more">{moreAction}</div>}
+      {secondaryDestinations.length > 0 && <>
+        <div className="codex-navigation-rail__section-divider"
+          data-navigation-rail-separator="true" aria-hidden="true"/>
+        {secondaryDestinations.map(renderDestination)}
+      </>}
     </div>
     {footer && <div className="codex-navigation-rail__footer">{footer}</div>}
   </nav>;
