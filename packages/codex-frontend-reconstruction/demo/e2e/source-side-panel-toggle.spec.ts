@@ -98,9 +98,10 @@ test("thread header toggles the read-only side panel without unmounting tabs or 
   await expect(preview).toBeVisible();
   await expect(preview.getByRole("tab",{name:"App.tsx"})).toHaveAttribute("aria-selected","true");
 
-  const state=await page.evaluate(()=>(
-    window as Window&{__sidePanelToggleTest:{selects:number;reads:string[]}}
-  ).__sidePanelToggleTest);
+  const state=await page.evaluate(()=>{
+    const target=window as unknown as {__sidePanelToggleTest:{selects:number;reads:string[]}};
+    return target.__sidePanelToggleTest;
+  });
   expect(state.selects).toBe(1);
   expect(state.reads).toEqual(["src/App.tsx","src/index.ts"]);
 });
