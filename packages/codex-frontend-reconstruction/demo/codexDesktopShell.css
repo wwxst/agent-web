@@ -310,9 +310,24 @@ button:focus-visible, textarea:focus-visible { outline: 2px solid #578cda; outli
 .demo-composer-model span{color:#919191;margin:0;}
 .demo-composer-host-control{position:relative;display:flex;align-items:center;min-width:0;}
 .demo-composer-control-trigger{
-  display:inline-flex;align-items:center;gap:5px;min-width:0;max-width:250px;
-  padding:5px 7px;border:0;border-radius:8px;background:transparent;color:#414141;
-  font-size:11.5px;line-height:1.35;white-space:nowrap;cursor:pointer;
+  display:inline-flex;align-items:center;gap:4px;min-width:0;max-width:250px;
+  min-height:24px;padding:4px 6px;border:0;border-radius:8px;
+  background:transparent;color:#414141;
+  font-size:11.5px;line-height:16px;white-space:nowrap;cursor:pointer;
+}
+.demo-composer-control-trigger__label,
+.demo-composer-control-trigger__effort,
+.demo-composer-control-trigger__tier {
+  display:block;
+  line-height:16px;
+}
+.demo-composer-control-trigger__chevron {
+  display:block;flex:0 0 12px;align-self:center;
+  width:12px;height:12px;margin:0;opacity:.72;
+}
+.demo-composer-control-trigger__shield {
+  display:block;flex:0 0 14px;align-self:center;
+  width:14px;height:14px;margin:0;
 }
 .demo-composer-control-trigger:hover:not(:disabled),
 .demo-composer-control-trigger[aria-expanded="true"]{background:#f1f1f1;}
@@ -322,7 +337,6 @@ button:focus-visible, textarea:focus-visible { outline: 2px solid #578cda; outli
 .demo-composer-control-trigger--model{color:#363636;}
 .demo-composer-control-trigger__effort,
 .demo-composer-control-trigger__tier{color:#929292;}
-.demo-composer-control-trigger__shield{font-size:13px;line-height:1;}
 .demo-composer-control-menu{
   position:absolute;bottom:calc(100% + 9px);z-index:90;display:flex;flex-direction:column;
   width:max-content;min-width:248px;max-width:min(360px,calc(100vw - 32px));
