@@ -75,7 +75,7 @@ import {
   type DemoConversationId,
 } from "./mockConversation.js";
 
-function Icon({ name, size = 18 }: { name: "panel" | "search" | "bell" | "plus" | "branch" | "dots" | "up" | "stop" | "bottom" | "top" | "play" | "refresh" | "terminal" | "check" | "menu" | "copy" | "folder" | "file" | "chevron" | "clock" | "plugin" | "settings" | "sliders" | "window" | "square" | "home" | "library" | "tiles" | "square-plus" | "computer"; size?: number }) {
+function Icon({ name, size = 18 }: { name: "panel" | "search" | "bell" | "edit" | "plus" | "branch" | "dots" | "up" | "stop" | "bottom" | "top" | "play" | "refresh" | "terminal" | "check" | "menu" | "copy" | "folder" | "file" | "chevron" | "clock" | "plugin" | "settings" | "sliders" | "window" | "square" | "home" | "library" | "tiles" | "square-plus" | "computer"; size?: number }) {
   const children: Record<typeof name, React.ReactNode> = {
     home: <><path d="m3 11 9-8 9 8v9H3z"/><path d="M9 20v-6h6v6"/></>,
     library: <><path d="M4 5h5v15H4zM10 3h5v17h-5zM16 7h4v13h-4z"/></>,
@@ -83,6 +83,7 @@ function Icon({ name, size = 18 }: { name: "panel" | "search" | "bell" | "plus" 
     panel: <><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/></>,
     search: <><circle cx="10.8" cy="10.8" r="6.2"/><path d="m16 16 4.5 4.5"/></>,
     bell: <><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></>,
+    edit: <><path d="M12 20H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h10"/><path d="m16 3 5 5-9 9-5 1 1-5z"/></>,
     plus: <path d="M12 5v14M5 12h14"/>,
     branch: <><circle cx="6" cy="6" r="2"/><circle cx="18" cy="6" r="2"/><circle cx="6" cy="18" r="2"/><path d="M6 8v8M18 8c0 6-12 1-12 8"/></>,
     dots: <><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></>,
@@ -243,11 +244,10 @@ function ConversationSidebar(props: {
     </div>
     <div className="demo-sidebar-actions">
       <button type="button"
-        className={`demo-nav-action ${isHome ? "is-active" : ""}`}
+        className="demo-nav-action"
         title="New chat"
-        aria-current={isHome ? "page" : undefined}
         onClick={onNewChat}>
-        <Icon name="plus" size={16}/>{!collapsed && <span>New chat</span>}
+        <Icon name="edit" size={15}/>{!collapsed && <span>New chat</span>}
       </button>
       {!collapsed && !navigationRailEnabled && <>
         <div className="demo-nav-action demo-nav-disabled" aria-label="Scheduled unavailable"><Icon name="clock" size={15}/> Scheduled</div>
