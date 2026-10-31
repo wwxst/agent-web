@@ -60,8 +60,8 @@ test("rail only navigates where mock host provides a handler", async ({ page }) 
 
 test("project and recent conversation rows occupy their source Codex sections",async({page})=>{
   await page.goto("/");
-  const projects=page.locator('[data-app-action-sidebar-section-heading="Projects"]');
-  const recents=page.locator('[data-app-action-sidebar-section-heading="Recents"]');
+  const projects=page.locator('[data-app-action-sidebar-section-key="projects"]');
+  const recents=page.locator('[data-app-action-sidebar-section-key="recents"]');
   await expect(projects.locator(".demo-project-heading")).toHaveText(/agent web/);
   await expect(projects.locator(".demo-recent-chat-link")).toHaveCount(0);
   const recentRows=recents.locator(".demo-recent-chat-link");
