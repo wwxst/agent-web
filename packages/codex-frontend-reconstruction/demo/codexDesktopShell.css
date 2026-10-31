@@ -48,7 +48,29 @@ button:focus-visible, textarea:focus-visible { outline: 2px solid #578cda; outli
 }
 .demo-menubar-back {font-size:23px;line-height:1;color:#b4b4b4;}
 .demo-menubar-panel {display:flex;align-items:center;margin-left:-6px;color:#898989;}
-.demo-window-buttons {margin-left:auto;font-family:Arial,sans-serif;color:#303030;font-size:16px;letter-spacing:1px;}
+/* Native Electron's titleBarOverlay owns the actual caption controls.
+ * This browser-only fixture reproduces their 3 × 46px Windows hit-target
+ * silhouette, without adding fake minimization/maximization interactions. */
+.demo-window-buttons {
+  display:flex;
+  align-self:stretch;
+  flex:0 0 138px;
+  margin-left:auto;
+  margin-right:-17px;
+  color:#202020;
+  pointer-events:none;
+}
+.demo-window-control {
+  display:grid;
+  place-items:center;
+  flex:0 0 46px;
+  width:46px;
+  height:36px;
+}
+.demo-window-control svg {display:block;}
+.demo-desktop:has([data-sidebar-reference-fixture="true"]) .demo-window-control--minimize {
+  background:#e1e1e1;
+}
 .demo-app {flex:1; height:auto; min-height:0; background:#fff; color:#242424;}
 .demo-sidebar {
   width:var(--spacing-token-sidebar); min-width:var(--spacing-token-sidebar); padding:15px 8px 8px;
