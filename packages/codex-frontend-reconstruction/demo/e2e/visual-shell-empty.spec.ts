@@ -88,7 +88,7 @@ test("shell-empty visual route mounts the real desktop shell and idle Composer w
 
 test("Codex sidebar sections use source disclosure rows and hover-only project actions",async({page})=>{
   await page.goto("/?visualScenario=shell-empty");
-  const sidebar=page.getByRole("complementary",{name:"Conversation sidebar"});
+  const sidebar=page.getByRole("complementary",{name:"演示会话导航"});
   await expect(sidebar).toBeVisible();
   await expect(sidebar.locator("[data-app-action-sidebar-scroll]")).toBeVisible();
   const search=page.getByTestId("sidebar-search-unavailable");
