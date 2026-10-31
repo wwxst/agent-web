@@ -62,8 +62,8 @@ test("source Codex rail order, 44px cadence, Explore divider and account footer 
   await page.goto("/?visualScenario=shell-empty");
   const rail=page.getByRole("navigation",{name:"应用导航"});
   await expect(rail).toBeVisible();
-  const primaryIds=["builtin:home","builtin:images","builtin:automations","builtin:library","builtin:gpts"];
-  const pinnedIds=["builtin:pull-requests","builtin:space"];
+  const primaryIds=["builtin:home","builtin:images","builtin:automations","builtin:library","builtin:skills"];
+  const pinnedIds=["builtin:pull-requests","builtin:sites"];
   for(const id of [...primaryIds,...pinnedIds]){
     const item=rail.locator(`[data-sidebar-destination="${id}"]`);
     await expect(item).toBeVisible();
@@ -91,7 +91,7 @@ test("source Codex rail order, 44px cadence, Explore divider and account footer 
       const box=element.getBoundingClientRect();
       return {center:box.top+box.height/2,top:box.top,height:box.height};
     };
-    const ids=["home","images","automations","library","gpts","pull-requests","space"];
+    const ids=["home","images","automations","library","skills","pull-requests","sites"];
     return {
       destinations:ids.map(id=>rect(`[data-sidebar-destination="builtin:${id}"]`)),
       more:rect(".codex-navigation-rail__more-button"),
