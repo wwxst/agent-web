@@ -52,6 +52,52 @@ Remove-Item Env:AGENT_WEB_VISUAL_SCENARIO -ErrorAction SilentlyContinue
 
 The browser E2E suite also checks this route and captures `shell-empty-visual-baseline.png` as a CI artifact.
 
+## Windows full-window capture helper
+
+The package now includes `scripts/capture-windows-window.ps1`. It is intended to run on the **same Windows machine and display** as the original Codex app and the reconstructed Electron app.
+
+First identify the visible process names/titles:
+
+```powershell
+Get-Process |
+  Where-Object { $_.MainWindowHandle -ne 0 } |
+  Select-Object ProcessName, Id, MainWindowTitle
+```
+
+Capture the original Codex app and reconstructed app separately. Replace the process names with the exact values returned on your machine; add `-WindowTitleRegex` if a process owns more than one visible window.
+
+```powershell
+npm run visual:capture:windows -- -ProcessName Codex -ScenarioId A-shell-empty -Theme light -OutputPath "$PWD/visual-captures/original-shell-empty.png"
+
+# Start the reconstructed app in a separate terminal with:
+$env:AGENT_WEB_VISUAL_SCENARIO = "shell-empty"
+npm run desktop:dev
+
+# After the Electron window is visible, capture it from another terminal:
+npm run visual:capture:windows -- -ProcessName electron -ScenarioId A-shell-empty -Theme light -OutputPath "$PWD/visual-captures/reconstructed-shell-empty.png"
+```
+
+If the reconstructed process is not named `electron`, use the exact `ProcessName` shown by `Get-Process`. If more than one window matches, narrow it with `-WindowTitleRegex`; the helper deliberately refuses to guess.
+
+The helper:
+- Restores the selected window, then sets its **visible DWM frame** to exactly 1352 × 760 physical pixels and centers that frame on the primary display.
+- Captures `DWMWA_EXTENDED_FRAME_BOUNDS` using a direct screen copy. It does not crop, resize, or substitute a renderer-only screenshot.
+- Moves the pointer outside the window where possible and waits for the requested settle interval.
+- Writes a companion `.png.json` file with scenario ID, theme, capture boundary, visible/outer bounds, window DPI/scale factor, process identity and PNG SHA-256.
+- Fails if the selected window is ambiguous, the requested visible bounds cannot be achieved, the window is not foreground, or the DWM capture boundary is unavailable.
+
+For a valid pair, keep both apps on the same display scale, use the same light/dark theme and app zoom, open the same new-chat state, close transient popovers/toasts, and ensure fonts/layout have settled. The metadata records window DPI; app zoom and conversation-content equivalence still require the operator to set and review the same state in both apps.
+
+Compare the pair with metadata validation enabled:
+
+```powershell
+npm run visual:compare -- --reference .\visual-captures\original-shell-empty.png --actual .\visual-captures\reconstructed-shell-empty.png --reference-meta .\visual-captures\original-shell-empty.png.json --actual-meta .\visual-captures\reconstructed-shell-empty.png.json --out-dir .\visual-comparison\A-shell-empty
+```
+
+When both metadata files are supplied, the comparator fails closed with exit code **3** if scenario ID, theme, capture boundary, window DPI/scale, visible screen position, or PNG dimensions differ. It creates a diagnostic `report.json` but no overlay/heatmap. Dimension-only mismatches without metadata retain exit code **2**. Metadata is optional for generic image comparisons, but mandatory for Codex visual acceptance.
+
+The Windows CI job compiles the native capture API and checks primary-display metrics with `npm run visual:capture:windows -- -SelfTest`; CI does not capture or upload private original Codex screenshots.
+
 ## Capture protocol — mandatory before accepting a pixel diff
 
 Both captures must share all of the following:
