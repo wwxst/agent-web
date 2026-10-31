@@ -1689,7 +1689,19 @@ export function App() {
       ) : showSidebarReferenceFixture
         ? <><span>文件</span><span>编辑</span><span>视图</span><span>帮助</span></>
         : <><span>File</span><span>Edit</span><span>View</span><span>Help</span></>}
-      <span className="demo-window-buttons" aria-hidden="true">─　□　×</span>
+      {/* Browser-only visual approximation of Windows' native caption buttons.
+           Native Electron hides this group and uses the real titleBarOverlay. */}
+      <span className="demo-window-buttons" aria-hidden="true">
+        <span className="demo-window-control demo-window-control--minimize">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1.5 6h9" stroke="currentColor" strokeWidth="1"/></svg>
+        </span>
+        <span className="demo-window-control demo-window-control--maximize">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><rect x="2" y="2" width="8" height="8" stroke="currentColor" strokeWidth="1"/></svg>
+        </span>
+        <span className="demo-window-control demo-window-control--close">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="m2.5 2.5 7 7m0-7-7 7" stroke="currentColor" strokeWidth="1"/></svg>
+        </span>
+      </span>
     </div>
     <div className="demo-app" data-codex-shell-preview="light">
     {navigationRailEnabled && <CodexNavigationRail
