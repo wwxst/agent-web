@@ -54,7 +54,7 @@ The browser E2E suite also checks this route and captures `shell-empty-visual-ba
 
 ## Windows full-window capture helper
 
-The package now includes `scripts/capture-windows-window.ps1`. It is intended to run on the **same Windows machine and display** as the original Codex app and the reconstructed Electron app.
+The package now includes `scripts/capture-windows-window.ps1`. It runs with the built-in Windows PowerShell 5.1 (`powershell.exe`); PowerShell 7 is not required. Run it on the **same Windows machine and display** as the original Codex app and the reconstructed Electron app.
 
 First identify the visible process names/titles:
 
