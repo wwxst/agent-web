@@ -4,6 +4,8 @@ import "./codexNavigationRail.css";
 
 export interface CodexRailDestination extends NavigationDestination {
   icon: React.ReactNode;
+  /** Source dWc keeps pinned destinations after the Explore separator. */
+  group?: "primary" | "pinned";
   /** Navigation is inert until its host supplies a real handler. */
   onSelect?: () => void;
 }
@@ -11,6 +13,8 @@ export interface CodexRailDestination extends NavigationDestination {
 export interface CodexNavigationRailProps {
   destinations: readonly CodexRailDestination[];
   header?: React.ReactNode;
+  /** Source TUc Explore action, kept separate from pinned destinations. */
+  moreAction?: React.ReactNode;
   footer?: React.ReactNode;
   onMeasuredWidthChange?: (px: number) => void;
 }
@@ -24,9 +28,23 @@ export interface CodexNavigationRailProps {
 export function CodexNavigationRail({
   destinations,
   header,
+  moreAction,
   footer,
   onMeasuredWidthChange,
 }: CodexNavigationRailProps): React.ReactElement {
+  const primaryDestinations=destinations.filter(item=>item.group!=="pinned");
+  const pinnedDestinations=destinations.filter(item=>item.group==="pinned");
+  const renderDestination=(destination:CodexRailDestination)=><button
+    key={destination.id}
+    type="button"
+    className="codex-navigation-rail__destination"
+    data-sidebar-destination={destination.id}
+    aria-label={destination.label}
+    aria-current={destination.isCurrentDestination?"page":undefined}
+    title={destination.onSelect?destination.label:`${destination.label}（尚未接入）`}
+    onClick={destination.onSelect}
+    disabled={!destination.onSelect}
+  ><span aria-hidden="true">{destination.icon}</span></button>;
   const navRef = React.useRef<HTMLElement | null>(null);
   React.useLayoutEffect(() => {
     const nav = navRef.current;
@@ -45,17 +63,11 @@ export function CodexNavigationRail({
     <div className="codex-navigation-rail__divider" aria-hidden="true"/>
     {header && <div className="codex-navigation-rail__header">{header}</div>}
     <div className="codex-navigation-rail__destinations" data-navigation-rail-scroll="true">
-      {destinations.map((destination) => <button
-        key={destination.id}
-        type="button"
-        className="codex-navigation-rail__destination"
-        data-sidebar-destination={destination.id}
-        aria-label={destination.label}
-        aria-current={destination.isCurrentDestination ? "page" : undefined}
-        title={destination.onSelect ? destination.label : `${destination.label}（尚未接入）`}
-        onClick={destination.onSelect}
-        disabled={!destination.onSelect}
-      ><span aria-hidden="true">{destination.icon}</span></button>)}
+      {primaryDestinations.map(renderDestination)}
+      {moreAction!=null&&<div className="codex-navigation-rail__more">{moreAction}</div>}
+      {pinnedDestinations.length>0&&<div
+        className="codex-navigation-rail__section-divider" aria-hidden="true"/>}
+      {pinnedDestinations.map(renderDestination)}
     </div>
     {footer && <div className="codex-navigation-rail__footer">{footer}</div>}
   </nav>;
