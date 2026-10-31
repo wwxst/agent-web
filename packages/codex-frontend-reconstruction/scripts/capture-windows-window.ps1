@@ -185,16 +185,16 @@ $callback = [CodexWindowCaptureNative+EnumWindowsProc]{
     return $true
   }
 
-  [uint32]$pid = 0
-  [void][CodexWindowCaptureNative]::GetWindowThreadProcessId($Handle, [ref]$pid)
-  $process = Get-Process -Id ([int]$pid) -ErrorAction SilentlyContinue
+  [uint32]$windowProcessId = 0
+  [void][CodexWindowCaptureNative]::GetWindowThreadProcessId($Handle, [ref]$windowProcessId)
+  $process = Get-Process -Id ([int]$windowProcessId) -ErrorAction SilentlyContinue
   if ($null -eq $process) {
     return $true
   }
 
   $windows.Add([pscustomobject]@{
     Handle = $Handle
-    ProcessId = [int]$pid
+    ProcessId = [int]$windowProcessId
     ProcessName = $process.ProcessName
     Title = $title
   })
