@@ -47,7 +47,18 @@ These are source contracts, not a claim that private original React components o
 
 ## Verification
 
-Pending GitHub Actions for this stacked sidebar PR. The required gates are the existing core/model checks, React/TypeScript build, Chromium Playwright suite, and native Electron smoke on Windows. The native smoke must exercise section collapse and the real read-only folder picker before this stage is called verified.
+Latest complete GitHub Actions run: [41183736749](https://github.com/wwxst/agent-web/actions/runs/41183736749).
+
+- Core reconstruction/model tests: passed.
+- Demo data-model integration tests: passed.
+- React/TypeScript/Vite renderer build: passed.
+- Screenshot comparator pixel-diff smoke: passed.
+- Chromium Playwright browser suite: passed.
+- Windows Electron smoke: passed, including packaged renderer/preload startup and the native read-only folder picker.
+- Browser screenshot artifact was inspected at the fixed 1352×760 viewport. It shows the empty new-chat transcript with the localized Pinned / Projects / Recents reference sidebar fixture.
+- Windows Electron screenshot artifact was inspected separately. The packaged default launch does **not** mount the screenshot-only fixture and retains genuine empty Projects / Recents states.
+
+This verifies the checked-in UI behavior and host boundary. It does not establish account-backed Codex sidebar services or Agent CIL integration.
 
 
 ## Full-home screenshot reference fixture
