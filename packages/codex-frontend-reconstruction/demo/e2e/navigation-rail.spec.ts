@@ -5,7 +5,7 @@ test("source-derived rail stays mounted when content sidebar is collapsed", asyn
   page.on("pageerror", error => errors.push(error.message));
   await page.goto("/");
   const rail = page.getByRole("navigation", { name: "App navigation" });
-  const panel = page.getByRole("complementary", { name: "演示会话导航" });
+  const panel = page.getByRole("complementary", { name: "Conversation sidebar" });
   await expect(rail).toBeVisible();
   await expect(panel).toBeVisible();
   const toolbar=page.getByRole("toolbar",{name:"聊天工具栏"});
@@ -63,7 +63,7 @@ test("original sbi separator supports keyboard, reset and pointer drag without m
   page.on("pageerror",error=>errors.push(error.message));
   await page.goto("/");
   const rail=page.getByRole("navigation",{name:"App navigation"});
-  const sidebar=page.getByRole("complementary",{name:"演示会话导航"});
+  const sidebar=page.getByRole("complementary",{name:"Conversation sidebar"});
   const handle=page.getByRole("separator",{name:"调整会话侧边栏宽度"});
   await expect(handle).toHaveAttribute("aria-valuenow","275");
   await handle.focus();
