@@ -1,6 +1,6 @@
 import {test,expect} from "@playwright/test";
 
-test("thread header toggles the read-only side panel without unmounting tabs or CodeMirror views",async({page})=>{
+test("thread header toggles the read-only side panel without unmounting tabs or CodeMirror views",async({page},testInfo)=>{
   await page.addInitScript(()=>{
     const state={selects:0,reads:[] as string[]};
     Object.assign(window,{__sidePanelToggleTest:state});
@@ -38,6 +38,8 @@ test("thread header toggles the read-only side panel without unmounting tabs or 
   const preview=page.locator("[data-independent-workspace-preview]");
   await expect(preview).toBeVisible();
   await expect(preview).toHaveAttribute("data-source-side-panel-visible","true");
+  await page.screenshot({path:testInfo.outputPath("side-panel-visible.png"),
+    fullPage:false,animations:"disabled"});
   const toggle=page.getByTestId("toggle-side-panel");
   await expect(toggle).toHaveAttribute("aria-pressed","true");
 
@@ -61,6 +63,8 @@ test("thread header toggles the read-only side panel without unmounting tabs or 
   await expect(preview).toHaveAttribute("hidden","");
   await expect(preview).toHaveAttribute("aria-hidden","true");
   await expect(preview).toHaveAttribute("data-source-side-panel-visible","false");
+  await page.screenshot({path:testInfo.outputPath("side-panel-hidden.png"),
+    fullPage:false,animations:"disabled"});
   // Hidden means no layout or accessibility surface, not a destroyed tab.
   await expect(preview.locator(".cm-editor")).toHaveCount(1);
   const focusedTestId=await page.evaluate(()=>document.activeElement?.getAttribute("data-testid"));
