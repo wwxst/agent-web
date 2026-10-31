@@ -1698,10 +1698,10 @@ export function App() {
       destinations={railDestinations}
       onMeasuredWidthChange={setMeasuredRailWidth}
       customize={<button type="button" className="codex-navigation-rail__destination"
-        data-testid="navigation-rail-plugins" aria-label="Plugins（尚未接入）"
+        data-testid="navigation-rail-plugins" data-navigation-rail-kind="customize" aria-label="Plugins（尚未接入）"
         title="Plugins 尚未接入" disabled><Icon name="plugin" size={18}/></button>}
       explore={<button type="button" className="codex-navigation-rail__destination"
-        data-testid="navigation-rail-explore" aria-label="Explore（尚未接入）"
+        data-testid="navigation-rail-explore" data-navigation-rail-kind="explore" aria-label="Explore（尚未接入）"
         title="Explore 尚未接入" disabled><Icon name="dots" size={18}/></button>}
       footer={<button type="button" data-testid="navigation-rail-settings"
         disabled aria-label="Settings（尚未接入）" title="设置尚未接入">
