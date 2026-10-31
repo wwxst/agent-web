@@ -1,0 +1,52 @@
+{
+  "scenarioId": "A-shell-empty",
+  "localTimezone": "Asia/Shanghai",
+  "os": "Microsoft Windows 10 Pro 10.0.19045",
+  "primaryDisplay": {
+    "width": 1920,
+    "height": 1080,
+    "capturePosition": {
+      "x": 284,
+      "y": 160
+    },
+    "displayScale": 1
+  },
+  "theme": "light",
+  "windowVisiblePhysicalPixels": [
+    1352,
+    760
+  ],
+  "dpiAwarenessScope": "capture thread: per-monitor-v2; original app not modified",
+  "applicationZoomPreparation": "Ctrl+0 sent to each actual application through normal keyboard input; proprietary numeric zoom not read",
+  "originalPackage": "OpenAI.Codex_26.1013.3656.0_x64__2p2nqsd0c76g0",
+  "reconstructionLaunch": "electron . (built demo-dist/index.html; no AGENT_WEB_DESKTOP_FIXTURE or AGENT_WEB_DEV_URL)",
+  "sourceBranch": "feat/windows-visual-capture-loop-20261031",
+  "sourceCommit": "64b6178600efec3608baed4604130e529e73e7ae",
+  "checkout": "detached worktree to preserve pre-existing untracked user package-lock.json",
+  "originalWorktreeBranch": "recovery/source-pinned-content-tabs-20261030",
+  "nodeVersion": "24.13.1",
+  "npmVersion": "11.8.0",
+  "electronVersion": "42.3.0",
+  "playwrightVersion": "1.64.1",
+  "comparisonChromiumVersion": "153.0.8010.12",
+  "comparisonChromiumCacheRevision": "1243",
+  "dependencySetup": "Fresh npm install failed ECONNRESET. Reused existing matching dependency tree via node_modules junction; no npm install performed through junction.",
+  "captureScriptUpstreamSha256": "0800fd62ab8fa922eb5adcaa94a63bdd7f8877cbb6f13027e8a15da74323cac9",
+  "captureScriptLocalSha256": "549022fad577d7c8cd6e36fd018d5ea017f3656f411e000993776f2c0ba3a06b",
+  "comparatorSha256": "ac279f14dd16eda6618c263b894bcd3deda6b11f62043e380b45567df3233337",
+  "metadataValidation": {
+    "ok": true,
+    "errors": []
+  },
+  "knownStateLimitations": [
+    "Original sidebar retains existing projects and recents; reconstruction has empty isolated profile.",
+    "Original is Chinese; reconstruction contains hardcoded English and Chinese.",
+    "Equal empty/idle input state does not imply equivalent model, permissions, voice or backend capabilities."
+  ],
+  "privacy": "Images and derived images published unchanged with explicit user consent. Active-chat preflight screenshots, accessibility trees, profiles, binaries and machine-specific launchers are excluded.",
+  "reconstructionSource": "packages/codex-frontend-reconstruction",
+  "publicationConsent": "User explicitly authorized publishing the unmodified original and derived images to PR #89 after review of visible project names, chat titles, server IP/username fragments and avatar initials.",
+  "metadataRedaction": "Only absolute screenshot paths, processId and windowHandle removed/replaced. DPI, dimensions, bounds, scenario, theme, capture time, PNG hashes, process name and window title retained.",
+  "comparisonLauncherAdapter": "Local-only NODE_OPTIONS preload selects installed Chromium revision 1243; no comparator or metadata validation changes. Standard reproduction: install the Chromium matching the installed Playwright.",
+  "upstreamCaptureFixPublished": true
+}

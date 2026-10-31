@@ -93,6 +93,11 @@ jobs:
           if (!(Test-Path "node_modules/electron/dist/electron.exe")) {
             throw "Electron Windows binary is missing"
           }
+      - name: Validate Windows visual capture helper
+        shell: powershell
+        run: npm run visual:capture:windows -- -SelfTest
+      - name: Regress Windows cursor coordinates and published baseline integrity
+        run: node --test scripts/capture-windows-window.test.mjs scripts/visual-acceptance-baseline.test.mjs
       - name: Real Windows Electron window, preload, IPC and native menu smoke
         run: npm run desktop:test:smoke
       - name: Upload Windows Electron screenshot

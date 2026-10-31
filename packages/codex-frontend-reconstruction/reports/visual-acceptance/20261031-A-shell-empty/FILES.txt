@@ -1,0 +1,15 @@
+.gitattributes
+FILES.txt
+README.md
+SHA256SUMS.txt
+VISUAL_ACCEPTANCE_A_SHELL_EMPTY.md
+comparison/difference.png
+comparison/overlay.png
+comparison/report.json
+comparison/side-by-side.png
+environment.json
+original-shell-empty.png
+original-shell-empty.png.json
+reconstructed-shell-empty.png
+reconstructed-shell-empty.png.json
+verification.json
