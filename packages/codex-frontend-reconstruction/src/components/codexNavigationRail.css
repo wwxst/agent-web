@@ -109,3 +109,35 @@
 .demo-desktop:not([data-independent-electron="true"]) .codex-navigation-rail__section-divider {
   margin: 8px 0;
 }
+
+/* The A-shell-empty screenshot is of the Windows Electron shell. The test
+ * route is hosted in a browser, whose original "browser:" rail utilities use
+ * 1px gaps. Override that one opt-in reference scene to the captured 44px
+ * Windows cadence; do not change actual native or ordinary browser layouts. */
+.demo-desktop:not([data-independent-electron="true"]):has([data-sidebar-reference-fixture="true"]) .codex-navigation-rail {
+  gap:0;
+  padding:2px 0 14px;
+}
+.demo-desktop:not([data-independent-electron="true"]):has([data-sidebar-reference-fixture="true"]) .codex-navigation-rail__destinations {
+  margin:0;
+  align-items:center;
+  gap:8px;
+  padding:14px 4px 2px;
+}
+.demo-desktop:not([data-independent-electron="true"]):has([data-sidebar-reference-fixture="true"]) .codex-navigation-rail__section-divider {
+  margin:0;
+}
+.demo-desktop:not([data-independent-electron="true"]):has([data-sidebar-reference-fixture="true"]) .codex-navigation-rail__destination:disabled {
+  opacity:1;
+}
+/* The reference account dot is an inert silhouette only. Never inject the
+ * original screenshot's initials or an actual account into the demo app. */
+.codex-navigation-rail__reference-avatar {
+  display:block;
+  flex:0 0 24px;
+  width:24px;
+  height:24px;
+  border-radius:50%;
+  background:#e64d44;
+  pointer-events:none;
+}
