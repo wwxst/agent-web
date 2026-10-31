@@ -65,3 +65,17 @@ Implementation in this follow-up:
 The Images/Plugins/Activity/Skills icon glyphs are independently authored approximations, not extracted original Codex assets. Explore, Plugins, Settings and all non-Home destination actions remain disabled because this independent host does not yet implement the corresponding account-backed routes and commands. This is a structural/geometry reconstruction, not a claim of full navigation feature parity.
 
 Verification is pending the updated PR's browser and Windows Electron CI.
+
+
+### Native Electron spacing variant
+
+The earlier geometry pass had applied the browser-specific `gap-px` / zero-top-padding values to both hosts. That was not correct for the Windows acceptance target: the compiled class list uses base utilities for Electron and `browser:` overrides only for the browser window type.
+
+The rail stylesheet now preserves both source variants:
+
+- **Native Electron base:** rail `gap-2`, `px-2 pt-2 pb-2`; scroll stack `m-0.5`, `pt-0.5`, `px-row-x`, `pb-2`, and `gap-2`; divider has no extra margin beyond the parent stack gap.
+- **Browser preview override:** rail `gap-0 px-0 pt-0`; scroll stack `m-0 mt-2 pt-0`, `gap-px`, and the browser divider margin.
+
+The Windows Electron default-home test now measures the native computed styles and geometry directly (52px rail, 8px native row rhythm, native top/side/bottom insets, divider placement and Settings footer inset). The browser Playwright test continues to assert its separate 1px / 8px browser variant.
+
+This distinction matters because the reference acceptance image is a native Windows Codex window; a browser-only 1px rhythm is not an acceptable substitute for the native rail.
