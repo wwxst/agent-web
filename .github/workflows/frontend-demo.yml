@@ -94,7 +94,7 @@ jobs:
             throw "Electron Windows binary is missing"
           }
       - name: Validate Windows visual capture helper
-        shell: pwsh
+        shell: powershell
         run: npm run visual:capture:windows -- -SelfTest
       - name: Real Windows Electron window, preload, IPC and native menu smoke
         run: npm run desktop:test:smoke
