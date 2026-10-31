@@ -149,7 +149,7 @@ Cross-window pinned-tab owner/reveal and durable preload remain documented work,
 ## Current limitations
 
 - The first screenshot pair cannot be pixel-compared due to the dimension and scenario mismatch documented above.
-- The screenshot tool is implemented, but no same-state pixel baseline has yet been accepted.
+- The PNG comparator and Windows full-window capture helper are implemented, but no same-state original-versus-reconstructed capture pair has yet been reviewed and accepted.
 - The current UI still contains an explicitly demo-only shell, synthetic transcript events, and mock Composer controls. This report does not claim they are complete.
 - The original Codex app must be captured again at the chosen canonical dimensions for each fixed scenario. A later same-size capture is still invalid if the scenario/content differs.
 
