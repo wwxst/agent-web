@@ -38,12 +38,25 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2px;
+  gap: 8px;
   padding: 2px 4px;
 }
 .codex-navigation-rail__destinations::-webkit-scrollbar { display: none; }
 .codex-navigation-rail__footer { flex-shrink: 0; width: 100%; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.codex-navigation-rail__more {
+  flex: 0 0 auto;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+.codex-navigation-rail__section-divider {
+  flex: 0 0 1px;
+  width: 24px;
+  margin: 0 auto;
+  background: var(--demo-border, #e7e7e7);
+}
 .codex-navigation-rail__destination,
+.codex-navigation-rail__more > button,
 .codex-navigation-rail__footer > button {
   width: var(--codex-rail-item-size);
   height: var(--codex-rail-item-size);
