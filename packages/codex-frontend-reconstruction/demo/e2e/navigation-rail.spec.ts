@@ -80,8 +80,29 @@ test("rail restores source primary destinations, Explore divider and pinned grou
   expect(activityBox).not.toBeNull();
   expect(moreBox!.y+moreBox!.height).toBeLessThanOrEqual(dividerBox!.y+1);
   expect(dividerBox!.y+dividerBox!.height).toBeLessThanOrEqual(activityBox!.y+1);
-  await expect(rail.getByRole("button",{name:"Account（尚未连接）"})).toBeDisabled();
-  await expect(rail.getByRole("button",{name:"Settings（尚未接入）"})).toBeDisabled();
+  // The screenshot-only avatar must not impersonate an authenticated account
+  // or expose the normal disconnected Account/Settings host controls.
+  await expect(rail.locator('[data-visual-reference-only="account-avatar"]')).toBeVisible();
+  await expect(rail.getByRole("button",{name:"Account（尚未连接）"})).toHaveCount(0);
+  await expect(rail.getByRole("button",{name:"Settings（尚未接入）"})).toHaveCount(0);
+  const geometry=await rail.evaluate(element=>{
+    const home=element.querySelector('[data-sidebar-destination="builtin:home"]')!.getBoundingClientRect();
+    const more=element.querySelector(".codex-navigation-rail__more button")!.getBoundingClientRect();
+    const divider=element.querySelector(".codex-navigation-rail__section-divider")!.getBoundingClientRect();
+    const activity=element.querySelector('[data-sidebar-destination="builtin:activity"]')!.getBoundingClientRect();
+    const avatar=element.querySelector('[data-visual-reference-only="account-avatar"]')!.getBoundingClientRect();
+    return {railTop:element.getBoundingClientRect().top,homeTop:home.top,
+      moreTop:more.top,dividerTop:divider.top,activityTop:activity.top,
+      avatarTop:avatar.top,avatarLeft:avatar.left,avatarSize:avatar.width};
+  });
+  expect(geometry.railTop).toBe(36);
+  expect(geometry.homeTop).toBeCloseTo(52,0);
+  expect(geometry.moreTop).toBeCloseTo(272,0);
+  expect(geometry.dividerTop).toBeCloseTo(316,0);
+  expect(geometry.activityTop).toBeCloseTo(325,0);
+  expect(geometry.avatarTop).toBeCloseTo(722,0);
+  expect(geometry.avatarLeft).toBeCloseTo(14,0);
+  expect(geometry.avatarSize).toBe(24);
 });
 
 test("project and recent conversation rows occupy their source Codex sections",async({page})=>{
