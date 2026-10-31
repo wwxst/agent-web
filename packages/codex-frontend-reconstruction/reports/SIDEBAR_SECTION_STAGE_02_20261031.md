@@ -48,3 +48,17 @@ These are source contracts, not a claim that private original React components o
 ## Verification
 
 Pending GitHub Actions for this stacked sidebar PR. The required gates are the existing core/model checks, React/TypeScript build, Chromium Playwright suite, and native Electron smoke on Windows. The native smoke must exercise section collapse and the real read-only folder picker before this stage is called verified.
+
+
+## Full-home screenshot reference fixture
+
+A fresh review of the actual Windows reference screenshot showed that the screenshot is an **empty new-chat transcript**, not an empty sidebar. The original sidebar still contains a Pinned thread, seven project groups, nested project chats and Recents.
+
+- Added a sanitized, static reference fixture to the existing `?visualScenario=shell-empty` Vite-only route. It preserves the empty home/Composer and zero transcript rows while showing the source screenshot's sidebar density and section order.
+- The fixture uses generic task labels; it does not copy the screenshot's server address, account name, credentials or private conversation text.
+- Reference rows are marked `data-visual-reference-only` and `aria-disabled`. They do not navigate, create projects, or masquerade as Agent CIL records.
+- The fixture is suppressed whenever an Electron host is present and is never enabled by the default browser or packaged Electron launch.
+- The Projects and Recents collapse tests now exercise the populated reference rows. The production Electron default-home test explicitly verifies that the reference fixture is absent and the genuine empty states remain visible.
+- Added the disabled Notifications affordance beside Search to match the visible source sidebar header. Search and Notifications remain unavailable until real host commands are implemented.
+
+The screenshot route is a deterministic **layout fixture**, not a claim that the actual account-backed Pinned/Projects/Recents services are integrated. Real data loading, sorting, drag/drop, unread status, pin actions and route navigation remain separate work.
