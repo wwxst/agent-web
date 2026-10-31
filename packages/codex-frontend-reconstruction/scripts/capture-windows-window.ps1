@@ -168,7 +168,7 @@ $callback = [CodexWindowCaptureNative+EnumWindowsProc]{
 [void][CodexWindowCaptureNative]::EnumWindows($callback, [IntPtr]::Zero)
 
 $candidates = @($windows | Where-Object {
-  ($ProcessName.Length -eq 0 -or $_.ProcessName -ieq $ProcessName) -and
+  ([string]::IsNullOrWhiteSpace($ProcessName) -or $_.ProcessName -ieq $ProcessName) -and
   ($null -eq $titlePattern -or $titlePattern.IsMatch($_.Title))
 })
 
@@ -333,7 +333,10 @@ $metadata = [ordered]@{
   sha256 = $hash
   capturedAtUtc = [DateTime]::UtcNow.ToString("o")
 }
-$metadata | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $metadataPath -Encoding utf8
+$metadataJson = $metadata | ConvertTo-Json -Depth 8
+[System.IO.File]::WriteAllText(
+  $metadataPath, $metadataJson, [System.Text.UTF8Encoding]::new($false)
+)
 
 Write-Output "Captured $($selected.ProcessName) / '$($selected.Title)'"
 Write-Output "PNG: $outputFullPath ($($Width)x$($Height))"
