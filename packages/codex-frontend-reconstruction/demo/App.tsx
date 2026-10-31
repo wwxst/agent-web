@@ -75,13 +75,14 @@ import {
   type DemoConversationId,
 } from "./mockConversation.js";
 
-function Icon({ name, size = 18 }: { name: "panel" | "search" | "plus" | "branch" | "dots" | "up" | "stop" | "bottom" | "top" | "play" | "refresh" | "terminal" | "check" | "menu" | "copy" | "folder" | "file" | "chevron" | "clock" | "plugin" | "settings" | "sliders" | "window" | "square" | "home" | "library" | "tiles" | "square-plus" | "computer"; size?: number }) {
+function Icon({ name, size = 18 }: { name: "panel" | "search" | "bell" | "plus" | "branch" | "dots" | "up" | "stop" | "bottom" | "top" | "play" | "refresh" | "terminal" | "check" | "menu" | "copy" | "folder" | "file" | "chevron" | "clock" | "plugin" | "settings" | "sliders" | "window" | "square" | "home" | "library" | "tiles" | "square-plus" | "computer"; size?: number }) {
   const children: Record<typeof name, React.ReactNode> = {
     home: <><path d="m3 11 9-8 9 8v9H3z"/><path d="M9 20v-6h6v6"/></>,
     library: <><path d="M4 5h5v15H4zM10 3h5v17h-5zM16 7h4v13h-4z"/></>,
     tiles: <><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></>,
     panel: <><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/></>,
     search: <><circle cx="10.8" cy="10.8" r="6.2"/><path d="m16 16 4.5 4.5"/></>,
+    bell: <><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></>,
     plus: <path d="M12 5v14M5 12h14"/>,
     branch: <><circle cx="6" cy="6" r="2"/><circle cx="18" cy="6" r="2"/><circle cx="6" cy="18" r="2"/><path d="M6 8v8M18 8c0 6-12 1-12 8"/></>,
     dots: <><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></>,
@@ -123,6 +124,28 @@ interface PinnedSidebarItem{
   unavailable:boolean;
   isActive:boolean;
 }
+interface SidebarReferenceProject {
+  name:string;
+  threads:readonly string[];
+}
+/**
+ * Static, sanitized visual fixture for the supplied Codex home screenshot.
+ * It is enabled only by the Vite visualScenario=shell-empty route and is
+ * never sourced from, persisted to, or presented as the user's Agent data.
+ */
+const SIDEBAR_REFERENCE_FIXTURE={
+  pinned:["Codex 原版界面还原任务"],
+  projects:[
+    {name:"agent",threads:["任务：执行 Codex 原版 UI 还原","同步 agent-web GitHub 仓库"]},
+    {name:"promotion-demo",threads:[]},
+    {name:"agent-desktop",threads:[]},
+    {name:"atlas",threads:["远程服务器环境维护","GitHub 日志下载任务"]},
+    {name:"kasi-project",threads:["本地 kasi-project 项目任务"]},
+    {name:"deepseek-harness",threads:[]},
+    {name:"ai",threads:[]},
+  ] satisfies readonly SidebarReferenceProject[],
+  recents:["Codex 原版 UI 还原任务","远程环境维护任务"],
+} as const;
 type SidebarSectionKey="pinned"|"projects"|"recents";
 
 function SidebarSection(props:{
@@ -172,13 +195,14 @@ function ConversationSidebar(props: {
   onOpenWorkspaceProject:()=>void;
   onClearWorkspaceProject:()=>void;
   navigationRailEnabled: boolean;
+  referenceFixture:boolean;
   pinnedItems:readonly PinnedSidebarItem[];
   onSelectPinned:(pinId:string)=>void;
   onUnpinPinned:(pinId:string)=>void;
   resizeHandle?:React.ReactNode;
 }) {
   const {
-    active,collapsed,onSelect,onNewChat,navigationRailEnabled,
+    active,collapsed,onSelect,onNewChat,navigationRailEnabled,referenceFixture,
     workspaceProjectName,workspaceProjectBusy,workspaceProjectAvailable,
     onOpenWorkspaceProject,onClearWorkspaceProject,
     pinnedItems,onSelectPinned,onUnpinPinned,resizeHandle,
@@ -200,14 +224,22 @@ function ConversationSidebar(props: {
   const isHome=active==="visual-empty";
 
   return <aside className={`demo-sidebar ${collapsed ? "demo-sidebar--collapsed" : ""}`}
-    aria-label="演示会话导航">
+    aria-label="演示会话导航"
+    data-sidebar-reference-fixture={referenceFixture?"true":undefined}>
     <div className="demo-sidebar-head">
       <div className="demo-logo" aria-label="Codex">
         {collapsed ? <Icon name="folder" size={18}/> : <><strong>Codex</strong><Icon name="chevron" size={12}/></>}
       </div>
-      <button className="demo-icon-button" type="button"
-        title="Search" aria-label="Search" data-testid="sidebar-search-unavailable"
-        disabled><Icon name="search" size={17}/></button>
+      <div className="demo-sidebar-head__actions">
+        <button className="demo-icon-button" type="button"
+          title="Notifications unavailable" aria-label="Notifications unavailable"
+          data-testid="sidebar-notifications-unavailable" disabled>
+          <Icon name="bell" size={16}/>
+        </button>
+        <button className="demo-icon-button" type="button"
+          title="Search" aria-label="Search" data-testid="sidebar-search-unavailable"
+          disabled><Icon name="search" size={17}/></button>
+      </div>
     </div>
     <div className="demo-sidebar-actions">
       <button type="button"
@@ -226,10 +258,16 @@ function ConversationSidebar(props: {
       data-app-action-sidebar-scroll=""
       data-sidebar-navigation-scroll="true">
       {!collapsed && <>
-        {pinnedItems.length>0&&<SidebarSection sectionId="pinned"
+        {(referenceFixture||pinnedItems.length>0)&&<SidebarSection sectionId="pinned"
           title="Pinned" collapsed={collapsedSections.pinned}
           onToggle={()=>toggleSection("pinned")}>
-          <nav className="demo-pinned-list" aria-label="Pinned content tabs">
+          {referenceFixture&&<div className="demo-sidebar-reference-pinned" role="list" aria-label="Pinned reference threads">
+            {SIDEBAR_REFERENCE_FIXTURE.pinned.map(title=>
+              <div key={title} className="demo-sidebar-reference-row"
+                role="listitem" aria-disabled="true"
+                data-visual-reference-only="pinned">{title}</div>)}
+          </div>}
+          {pinnedItems.length>0&&<nav className="demo-pinned-list" aria-label="Pinned content tabs">
             {pinnedItems.map(item=><div key={item.id}
               className="demo-pinned-item"
               data-pinned-content-tab-id={item.id}
@@ -251,16 +289,33 @@ function ConversationSidebar(props: {
                 aria-label="Unpin tab" title="Unpin tab"
                 onClick={()=>onUnpinPinned(item.id)}>×</button>
             </div>)}
-          </nav>
+          </nav>}
         </SidebarSection>}
         <SidebarSection sectionId="projects" title="Projects"
           collapsed={collapsedSections.projects}
           onToggle={()=>toggleSection("projects")}
           actions={projectAction}>
           {isHome
-            ? workspaceProjectName==null
-              ? <div className="demo-sidebar-empty">No projects</div>
-              : <div className="demo-sidebar-local-project" data-local-workspace-project="">
+            ? referenceFixture
+              ? <div className="demo-sidebar-reference-projects" role="list" aria-label="Reference projects">
+                  {SIDEBAR_REFERENCE_FIXTURE.projects.map(project=>
+                    <div key={project.name} className="demo-sidebar-reference-project"
+                      role="listitem" aria-disabled="true"
+                      data-visual-reference-only="project">
+                      <div className="demo-sidebar-reference-project__row">
+                        <Icon name="folder" size={15}/>
+                        <span>{project.name}</span>
+                      </div>
+                      {project.threads.length>0&&<div className="demo-sidebar-reference-project__threads">
+                        {project.threads.map(thread=>
+                          <div key={thread} className="demo-sidebar-reference-project__thread"
+                            aria-disabled="true" data-visual-reference-only="project-thread">{thread}</div>)}
+                      </div>}
+                    </div>)}
+                </div>
+              : workspaceProjectName==null
+                ? <div className="demo-sidebar-empty">No projects</div>
+                : <div className="demo-sidebar-local-project" data-local-workspace-project="">
                   <button type="button" className="demo-sidebar-local-project__name"
                     aria-label="Change local folder" title="Change read-only local folder"
                     onClick={onOpenWorkspaceProject} disabled={workspaceProjectBusy}>
@@ -280,7 +335,16 @@ function ConversationSidebar(props: {
           collapsed={collapsedSections.recents}
           onToggle={()=>toggleSection("recents")}>
           {isHome
-            ? <div className="demo-sidebar-empty">No chats</div>
+            ? referenceFixture
+              ? <div className="demo-sidebar-reference-recents" role="list" aria-label="Reference recent chats">
+                  {SIDEBAR_REFERENCE_FIXTURE.recents.map(title=>
+                    <div key={title} className="demo-chat-link demo-recent-chat-link"
+                      role="listitem" aria-disabled="true"
+                      data-visual-reference-only="recent">
+                      <span className="demo-chat-link-title">{title}</span>
+                    </div>)}
+                </div>
+              : <div className="demo-sidebar-empty">No chats</div>
             : <nav className="demo-chat-list" aria-label="Recent chats">
                 {DEMO_CONVERSATIONS.filter(item=>item.sidebarVisible!==false).map(item=>
                   <button type="button" key={item.id}
@@ -305,6 +369,7 @@ export function App() {
   const launchParams=typeof window==="undefined"?new URLSearchParams():
     new URLSearchParams(window.location.search);
   const isVisualShellScenario=launchParams.get("visualScenario")==="shell-empty";
+  const showSidebarReferenceFixture=isVisualShellScenario&&import.meta.env.DEV;
   const explicitDemoScenario=launchParams.get("demoScenario");
   const devTestFixtures=import.meta.env.DEV&&
     import.meta.env.VITE_AGENT_WEB_DEMO_FIXTURES==="1";
@@ -1618,7 +1683,9 @@ export function App() {
         <button type="button" disabled aria-label="Settings（尚未接入）" title="设置尚未接入"><Icon name="settings" size={18}/></button>
       </>}
     />}
-    <ConversationSidebar active={active} collapsed={collapsed} navigationRailEnabled={navigationRailEnabled} onToggle={() => setCollapsed((v) => !v)} onSelect={switchConversation} onNewChat={startNewChat}
+    <ConversationSidebar active={active} collapsed={collapsed} navigationRailEnabled={navigationRailEnabled}
+      referenceFixture={showSidebarReferenceFixture}
+      onToggle={() => setCollapsed((v) => !v)} onSelect={switchConversation} onNewChat={startNewChat}
       workspaceProjectName={workspaceProjectName} workspaceProjectBusy={workspaceProjectBusy}
       workspaceProjectAvailable={window.agentWebDesktopHost?.selectWorkspaceDirectory!=null}
       onOpenWorkspaceProject={()=>void openWorkspaceProject()}
