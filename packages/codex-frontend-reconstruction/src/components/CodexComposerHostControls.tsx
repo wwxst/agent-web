@@ -201,6 +201,17 @@ function ModelMenuOption(props:{
   </button>;
 }
 
+/** Match the original Composer dropdown's 16px SVG indicator.
+ * A Unicode chevron uses font glyph ascent/descent and sits below the label. */
+function ComposerControlChevron(){
+  return <svg className="demo-composer-control-trigger__chevron"
+    viewBox="0 0 16 16" width="16" height="16" fill="none"
+    aria-hidden="true" focusable="false">
+    <path d="m4.5 6 3.5 3.5L11.5 6" stroke="currentColor"
+      strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+  </svg>;
+}
+
 export function CodexComposerModelReasoningControl(props:{
   controls:CodexComposerControlsController;
 }){
@@ -235,11 +246,11 @@ export function CodexComposerModelReasoningControl(props:{
       title={disabled?title:"选择模型与推理强度"}
       disabled={disabled}
       onClick={()=>setOpen(value=>!value)}>
-      <span>{label}</span>
+      <span className="demo-composer-control-trigger__label">{label}</span>
       {effort!=null?<span className="demo-composer-control-trigger__effort">{effort}</span>:null}
       {selected?.serviceTierLabel!=null
         ?<span className="demo-composer-control-trigger__tier">{selected.serviceTierLabel}</span>:null}
-      <span aria-hidden="true">⌄</span>
+      <ComposerControlChevron/>
     </button>
     {open&&snapshot!=null?<div className="demo-composer-control-menu demo-composer-control-menu--model"
       role="menu" aria-label="模型与推理强度"
@@ -312,8 +323,8 @@ export function CodexComposerPermissionModeControl(props:{
       disabled={disabled}
       onClick={()=>setOpen(value=>!value)}>
       <span className="demo-composer-control-trigger__shield" aria-hidden="true">◇</span>
-      <span>{label}</span>
-      <span aria-hidden="true">⌄</span>
+      <span className="demo-composer-control-trigger__label">{label}</span>
+      <ComposerControlChevron/>
     </button>
     {open&&snapshot!=null?<div className="demo-composer-control-menu demo-composer-control-menu--permissions"
       role="menu" aria-label="权限模式"
