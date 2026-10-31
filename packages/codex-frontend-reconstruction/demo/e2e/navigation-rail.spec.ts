@@ -58,6 +58,18 @@ test("rail only navigates where mock host provides a handler", async ({ page }) 
   await expect(page.getByRole("button", {name: "Library"})).toBeDisabled();
 });
 
+test("project and recent conversation rows occupy their source Codex sections",async({page})=>{
+  await page.goto("/");
+  const projects=page.locator('[data-app-action-sidebar-section-heading="Projects"]');
+  const recents=page.locator('[data-app-action-sidebar-section-heading="Recents"]');
+  await expect(projects.locator(".demo-project-heading")).toHaveText(/agent web/);
+  await expect(projects.locator(".demo-recent-chat-link")).toHaveCount(0);
+  const recentRows=recents.locator(".demo-recent-chat-link");
+  expect(await recentRows.count()).toBeGreaterThan(0);
+  await expect(recentRows.first()).toHaveCSS("padding-left","10px");
+  await expect(recents.locator('.demo-recent-chat-link[aria-current="page"]')).toHaveCount(1);
+});
+
 test("original sbi separator supports keyboard, reset and pointer drag without moving the rail",async ({page})=>{
   const errors:string[]=[];
   page.on("pageerror",error=>errors.push(error.message));
