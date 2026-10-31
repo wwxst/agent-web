@@ -10,7 +10,7 @@ Restore the visible Windows Codex navigation-rail order, grouping, vertical cade
   - `dWc`: navigation landmark, fixed/primary destination stack, Explore/More trigger, separator, pinned destinations and footer.
   - `Fvc`, `xvc`, `Rhi`: destination identity and primary/more/pinned projection.
   - `MUc`, `TUc`: destination item and Explore menu trigger contracts.
-  - `pL`: destination IDs including images, automations, library, GPTs, pull requests and Space.
+  - `pL`: destination IDs including images, automations, library, skills/plugins, pull requests and Sites.
 - `zh-CN-7ba80cbb133d.js`: source labels 首页, 图像, 定时任务, 资料库, GPT, 探索, 代码审查 and 空间.
 - PR #89 [A-shell-empty visual acceptance report](https://github.com/wwxst/agent-web/blob/46fba0ea2978f9e4f60fbab2817a5b1cd1ec4d4d/packages/codex-frontend-reconstruction/reports/visual-acceptance/20261031-A-shell-empty/VISUAL_ACCEPTANCE_A_SHELL_EMPTY.md):
   - original rail width approximately 52px;
@@ -21,7 +21,7 @@ Restore the visible Windows Codex navigation-rail order, grouping, vertical cade
 ## Implementation
 
 - Split the rail API into primary destinations, Explore/More, account-pinned secondary destinations and footer.
-- Restore the visible source order: Home, Images, Scheduled, Library, GPT, Explore/More, Code review, Space, account avatar.
+- Restore the visible source order: Home, Images, Scheduled, Library, Plugins, Explore/More, Code review, Sites, account avatar.
 - Restore the 44px item cadence, 24px separator and footer alignment against the 1352×760 Windows reference.
 - Restore a filled Home icon and source-positioned image/GPT/library/clock/branch/grid affordances.
 - Localize accessible names to the supplied Chinese source bundle.
