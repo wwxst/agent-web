@@ -11,7 +11,7 @@ Restore the visible Windows Codex navigation-rail order, grouping, vertical cade
   - `Fvc`, `xvc`, `Rhi`: destination identity and primary/more/pinned projection.
   - `MUc`, `TUc`: destination item and Explore menu trigger contracts.
   - `pL`: destination IDs including images, automations, library, skills/plugins, pull requests and Sites.
-- `zh-CN-7ba80cbb133d.js`: source labels 首页, 图像, 定时任务, 资料库, GPT, 探索, 代码审查 and 空间.
+- `zh-CN-7ba80cbb133d.js`: source labels 首页, 图像, 定时任务, 资料库, 插件, 探索, 代码审查 and 站点.
 - PR #89 [A-shell-empty visual acceptance report](https://github.com/wwxst/agent-web/blob/46fba0ea2978f9e4f60fbab2817a5b1cd1ec4d4d/packages/codex-frontend-reconstruction/reports/visual-acceptance/20261031-A-shell-empty/VISUAL_ACCEPTANCE_A_SHELL_EMPTY.md):
   - original rail width approximately 52px;
   - original visible icon centers approximately y=70, 114, 158, 202, 246, 290, 344 and 388;
@@ -23,9 +23,9 @@ Restore the visible Windows Codex navigation-rail order, grouping, vertical cade
 - Split the rail API into primary destinations, Explore/More, account-pinned secondary destinations and footer.
 - Restore the visible source order: Home, Images, Scheduled, Library, Plugins, Explore/More, Code review, Sites, account avatar.
 - Restore the 44px item cadence, 24px separator and footer alignment against the 1352×760 Windows reference.
-- Restore a filled Home icon and source-positioned image/GPT/library/clock/branch/grid affordances.
+- Restore a filled Home icon and source-positioned image/plugin/library/clock/branch/grid affordances.
 - Localize accessible names to the supplied Chinese source bundle.
-- Keep Home connected to the existing real new-chat route. Images, Scheduled, Library, GPT, Explore, Code review and Space remain disabled with explicit not-connected tooltips and visual-reference markers.
+- Keep Home connected to the existing real new-chat route. Images, Scheduled, Library, Plugins, Explore, Code review and Sites remain disabled with explicit not-connected tooltips and visual-reference markers.
 - Use a generic account silhouette in the source avatar position; do not copy the real user's initials, profile image or account data.
 - Add Playwright coverage for destination order, disabled host boundaries, 44px cadence, separator position and footer geometry.
 
