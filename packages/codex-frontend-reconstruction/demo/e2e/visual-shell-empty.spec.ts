@@ -86,6 +86,49 @@ test("shell-empty visual route mounts the real desktop shell and idle Composer w
 });
 
 
+test("Codex sidebar sections use source disclosure rows and hover-only project actions",async({page})=>{
+  await page.goto("/?visualScenario=shell-empty");
+  const sidebar=page.getByRole("complementary",{name:"Conversation sidebar"});
+  await expect(sidebar).toBeVisible();
+  await expect(sidebar.locator("[data-app-action-sidebar-scroll]")).toBeVisible();
+  const search=page.getByTestId("sidebar-search-unavailable");
+  await expect(search).toBeDisabled();
+  await expect(search).toHaveAttribute("aria-label","Search");
+
+  const projects=page.locator('[data-app-action-sidebar-section-heading="Projects"]');
+  const projectsToggle=page.getByTestId("sidebar-section-projects-toggle");
+  await expect(projects).toHaveAttribute("data-app-action-sidebar-section-collapsed","false");
+  await expect(projectsToggle).toHaveAttribute("aria-expanded","true");
+  const projectActions=projects.locator(".demo-sidebar-section__actions");
+  await expect(projectActions).toHaveCSS("opacity","0");
+  await projects.hover();
+  await expect(projectActions).toHaveCSS("opacity","1");
+  await page.mouse.move(0,0);
+  await expect(projectActions).toHaveCSS("opacity","0");
+
+  const noProjects=page.getByText("No projects",{exact:true});
+  await expect(noProjects).toHaveCSS("font-size","14px");
+  await expect(noProjects).toHaveCSS("opacity","0.5");
+  await expect(noProjects).toHaveCSS("padding-top","8px");
+  await projectsToggle.click();
+  await expect(projects).toHaveAttribute("data-app-action-sidebar-section-collapsed","true");
+  await expect(projectsToggle).toHaveAttribute("aria-expanded","false");
+  await expect(noProjects).toBeHidden();
+  await projectsToggle.click();
+  await expect(noProjects).toBeVisible();
+
+  const recents=page.locator('[data-app-action-sidebar-section-heading="Recents"]');
+  const recentsToggle=page.getByTestId("sidebar-section-recents-toggle");
+  const noChats=page.getByText("No chats",{exact:true});
+  await expect(recents).toHaveAttribute("data-app-action-sidebar-section-collapsed","false");
+  await recentsToggle.click();
+  await expect(recentsToggle).toHaveAttribute("aria-expanded","false");
+  await expect(noChats).toBeHidden();
+  await recentsToggle.click();
+  await expect(noChats).toBeVisible();
+});
+
+
 test("New chat opens the empty Codex home while the Home rail retains its existing route",async({page})=>{
   await page.goto("/");
   await expect(page.locator(".demo-header-location strong")).toHaveText("恢复 Codex 会话界面");
