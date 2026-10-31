@@ -1689,6 +1689,13 @@ export function App() {
     availableRailDestinations.find((candidate) => candidate.id === item.id)!,
   );
 
+  // The original Windows application menu localizes its visible four labels.
+  // Use the renderer's actual locale, never force the screenshot's Chinese
+  // text onto unrelated English-language sessions.
+  const desktopMenuLabels=/^zh(?:-|$)/i.test(navigator.language)
+    ? {file:"文件",edit:"编辑",view:"视图",help:"帮助"} as const
+    : {file:"File",edit:"Edit",view:"View",help:"Help"} as const;
+
   return <div className="demo-desktop" data-app-shell-frame="true" data-independent-electron={window.agentWebDesktopHost != null} data-app-shell-feature-navigation={navigationRailEnabled} data-app-shell-sidebar-open={!collapsed} data-app-shell-application-menu-bar="true" style={{ "--app-shell-navigation-rail-width": navigationRailEnabled ? `${measuredRailWidth}px` : "0px" } as React.CSSProperties}>
     <div className="demo-window-menu" aria-label={window.agentWebDesktopHost != null ? "Electron 原生标题栏拖拽区域" : "桌面窗口示意（浏览器内，不是原生 Electron）"}>
       <span className="demo-menubar-back" aria-hidden="true"><DesktopHistoryArrow/></span><span className="demo-menubar-back" aria-hidden="true"><DesktopHistoryArrow forward/></span>
@@ -1697,11 +1704,11 @@ export function App() {
         <div className="demo-native-application-menus" aria-label="Electron 原生应用菜单">
           {(["file","edit","view","help"] as const).map((id) => (
             <button key={id} type="button" data-desktop-menu={id}
-              aria-label={`${id[0]!.toUpperCase()}${id.slice(1)} 菜单`}
+              aria-label={`${desktopMenuLabels[id]} 菜单`}
               onClick={(event) => {
                 const box=event.currentTarget.getBoundingClientRect();
                 void window.agentWebDesktopHost?.openMenu(id,{x:box.left,y:box.bottom});
-              }}>{id[0]!.toUpperCase()}{id.slice(1)}</button>
+              }}>{desktopMenuLabels[id]}</button>
           ))}
         </div>
       ) : showSidebarReferenceFixture
