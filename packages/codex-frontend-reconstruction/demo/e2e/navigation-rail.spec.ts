@@ -4,7 +4,7 @@ test("source-derived rail stays mounted when content sidebar is collapsed", asyn
   const errors: string[] = [];
   page.on("pageerror", error => errors.push(error.message));
   await page.goto("/");
-  const rail = page.getByRole("navigation", { name: "App navigation" });
+  const rail = page.getByRole("navigation", { name: "应用导航" });
   const panel = page.getByRole("complementary", { name: "演示会话导航" });
   await expect(rail).toBeVisible();
   await expect(panel).toBeVisible();
@@ -52,10 +52,60 @@ test("rail only navigates where mock host provides a handler", async ({ page }) 
   await page.goto("/");
   await page.getByRole("button", {name: /工具调用与审批交互/}).click();
   await expect(page.locator(".demo-header-location strong")).toHaveText("工具调用与审批交互");
-  await page.getByRole("button", {name: "Home"}).click();
+  await page.getByRole("button", {name: "首页"}).click();
   await expect(page.locator(".demo-header-location strong")).toHaveText("恢复 Codex 会话界面");
   await expect(page.locator(".demo-composer")).toHaveAttribute("data-composer-placement","thread");
-  await expect(page.getByRole("button", {name: "Library"})).toBeDisabled();
+  await expect(page.getByRole("button", {name: "资料库"})).toBeDisabled();
+});
+
+test("source Codex rail order, 44px cadence, Explore divider and account footer match the Windows reference",async({page})=>{
+  await page.goto("/?visualScenario=shell-empty");
+  const rail=page.getByRole("navigation",{name:"应用导航"});
+  await expect(rail).toBeVisible();
+  const primaryIds=["builtin:home","builtin:images","builtin:automations","builtin:library","builtin:skills"];
+  const pinnedIds=["builtin:pull-requests","builtin:sites"];
+  for(const id of [...primaryIds,...pinnedIds]){
+    const item=rail.locator(`[data-sidebar-destination="${id}"]`);
+    await expect(item).toBeVisible();
+    if(id==="builtin:home"){
+      await expect(item).toHaveAttribute("aria-current","page");
+      await expect(item).toBeEnabled();
+    }else{
+      await expect(item).toBeDisabled();
+      await expect(item).toHaveAttribute("data-visual-reference-only","true");
+    }
+  }
+  const more=rail.getByRole("button",{name:"探索"});
+  await expect(more).toBeDisabled();
+  await expect(more).toHaveAttribute("data-visual-reference-only","true");
+  await expect(rail.locator("[data-navigation-rail-separator]")).toBeVisible();
+  const account=rail.getByRole("button",{name:"账户（尚未接入）"});
+  await expect(account).toBeDisabled();
+  await expect(account).toHaveAttribute("data-visual-reference-only","true");
+
+  const geometry=await page.evaluate(()=>{
+    const root=document.querySelector("[data-app-navigation-rail]")!;
+    const rect=(selector:string)=>{
+      const element=root.querySelector(selector);
+      if(!element)return null;
+      const box=element.getBoundingClientRect();
+      return {center:box.top+box.height/2,top:box.top,height:box.height};
+    };
+    const ids=["home","images","automations","library","skills","pull-requests","sites"];
+    return {
+      destinations:ids.map(id=>rect(`[data-sidebar-destination="builtin:${id}"]`)),
+      more:rect(".codex-navigation-rail__more-button"),
+      separator:rect("[data-navigation-rail-separator]"),
+      account:rect(".codex-navigation-rail__footer > button"),
+    };
+  });
+  expect(geometry.destinations.map(item=>item?.center)).toEqual([
+    72,116,160,204,248,345,389,
+  ]);
+  expect(geometry.more?.center).toBe(292);
+  expect(geometry.separator?.height).toBe(1);
+  expect(geometry.separator?.center).toBe(318.5);
+  expect(geometry.account?.center).toBe(734);
 });
 
 test("project and recent conversation rows occupy their source Codex sections",async({page})=>{

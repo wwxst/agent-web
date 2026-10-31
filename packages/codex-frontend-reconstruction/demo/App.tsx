@@ -75,9 +75,11 @@ import {
   type DemoConversationId,
 } from "./mockConversation.js";
 
-function Icon({ name, size = 18 }: { name: "panel" | "search" | "bell" | "edit" | "plus" | "branch" | "dots" | "up" | "stop" | "bottom" | "top" | "play" | "refresh" | "terminal" | "check" | "menu" | "copy" | "folder" | "file" | "chevron" | "clock" | "plugin" | "settings" | "sliders" | "window" | "square" | "home" | "library" | "tiles" | "square-plus" | "computer"; size?: number }) {
+function Icon({ name, size = 18 }: { name: "panel" | "search" | "bell" | "edit" | "plus" | "branch" | "dots" | "up" | "stop" | "bottom" | "top" | "play" | "refresh" | "terminal" | "check" | "menu" | "copy" | "folder" | "file" | "chevron" | "clock" | "plugin" | "settings" | "sliders" | "window" | "square" | "home" | "images" | "user" | "library" | "tiles" | "square-plus" | "computer"; size?: number }) {
   const children: Record<typeof name, React.ReactNode> = {
-    home: <><path d="m3 11 9-8 9 8v9H3z"/><path d="M9 20v-6h6v6"/></>,
+    home: <><path d="m3 10 9-7 9 7v10H14v-6h-4v6H3z" fill="currentColor" stroke="currentColor" strokeLinejoin="round"/><path d="M10 20v-6h4v6" stroke="var(--demo-sidebar,#f5f5f5)" strokeWidth="1.5"/></>,
+    images: <><rect x="3" y="5" width="14" height="14" rx="2"/><path d="m5 16 4-4 3 3 2-2 3 3"/><path d="M8 5V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-2"/></>,
+    user: <><circle cx="12" cy="8" r="3.4"/><path d="M5.5 20a6.5 6.5 0 0 1 13 0"/></>,
     library: <><path d="M4 5h5v15H4zM10 3h5v17h-5zM16 7h4v13h-4z"/></>,
     tiles: <><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></>,
     panel: <><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/></>,
@@ -1649,22 +1651,27 @@ export function App() {
     });
   },[active,findOpen,findMatches.length]);
 
-  // The direct/more identity projection is sourced from original GZc/QZc;
-  // routing/feature flags are supplied explicitly by this mock host.
+  // Source dWc/Fvc order: Home, Images, Scheduled, Library, GPT; the
+  // account-pinned Code review and Space destinations follow Explore/More.
+  // Only Home has a real local route today. Other icons remain visibly inert.
   const availableRailDestinations: CodexRailDestination[] = [
-    { id: "builtin:home", label: "Home", icon: <Icon name="home" size={18}/>, isCurrentDestination: true, onSelect: () => demoFixtureEnabled ? switchConversation("frontend") : startNewChat() },
-    { id: "builtin:activity", label: "Activity", icon: <Icon name="branch" size={18}/> },
-    { id: "builtin:automations", label: "Scheduled", icon: <Icon name="clock" size={18}/> },
-    { id: "builtin:library", label: "Library", icon: <Icon name="library" size={18}/> },
-    { id: "builtin:skills", label: "Skills", icon: <Icon name="tiles" size={18}/> },
+    { id: "builtin:home", label: "首页", icon: <Icon name="home" size={18}/>, isCurrentDestination: isNewChat, onSelect: () => demoFixtureEnabled ? switchConversation("frontend") : startNewChat() },
+    { id: "builtin:images", label: "图像", icon: <Icon name="images" size={18}/>, visualReferenceOnly: true },
+    { id: "builtin:automations", label: "定时任务", icon: <Icon name="clock" size={18}/>, visualReferenceOnly: true },
+    { id: "builtin:library", label: "资料库", icon: <Icon name="library" size={18}/>, visualReferenceOnly: true },
+    { id: "builtin:skills", label: "插件", icon: <Icon name="plugin" size={18}/>, visualReferenceOnly: true },
+    { id: "builtin:pull-requests", label: "代码审查", icon: <Icon name="branch" size={18}/>, visualReferenceOnly: true },
+    { id: "builtin:sites", label: "站点", icon: <Icon name="tiles" size={18}/>, visualReferenceOnly: true },
   ];
   const destinationProjection = projectNavigationDestinations(availableRailDestinations, {
     navigationRailEnabled,
-    directDestinationIds: ["builtin:home", "builtin:activity", "builtin:automations", "builtin:library", "builtin:skills"],
+    directDestinationIds: ["builtin:home", "builtin:images", "builtin:automations", "builtin:library", "builtin:skills", "builtin:pull-requests", "builtin:sites"],
   });
   const railDestinations = destinationProjection.railDestinations.map((item) =>
     availableRailDestinations.find((candidate) => candidate.id === item.id)!,
   );
+  const primaryRailDestinations=railDestinations.slice(0,5);
+  const pinnedRailDestinations=railDestinations.slice(5);
 
   return <div className="demo-desktop" data-app-shell-frame="true" data-independent-electron={window.agentWebDesktopHost != null} data-app-shell-feature-navigation={navigationRailEnabled} data-app-shell-sidebar-open={!collapsed} data-app-shell-application-menu-bar="true" style={{ "--app-shell-navigation-rail-width": navigationRailEnabled ? `${measuredRailWidth}px` : "0px" } as React.CSSProperties}>
     <div className="demo-window-menu" aria-label={window.agentWebDesktopHost != null ? "Electron 原生标题栏拖拽区域" : "桌面窗口示意（浏览器内，不是原生 Electron）"}>
@@ -1688,12 +1695,18 @@ export function App() {
     </div>
     <div className="demo-app" data-codex-shell-preview="light">
     {navigationRailEnabled && <CodexNavigationRail
-      destinations={railDestinations}
+      destinations={primaryRailDestinations}
+      moreAction={<button type="button" className="codex-navigation-rail__more-button"
+        disabled data-visual-reference-only="true"
+        aria-label="探索" title="探索（尚未接入）">
+        <Icon name="dots" size={18}/>
+      </button>}
+      secondaryDestinations={pinnedRailDestinations}
       onMeasuredWidthChange={setMeasuredRailWidth}
-      footer={<>
-        <button type="button" disabled aria-label="More（尚未接入）" title="更多导航尚未接入"><Icon name="dots" size={18}/></button>
-        <button type="button" disabled aria-label="Settings（尚未接入）" title="设置尚未接入"><Icon name="settings" size={18}/></button>
-      </>}
+      footer={<button type="button" disabled data-visual-reference-only="true"
+        aria-label="账户（尚未接入）" title="账户尚未接入">
+        <span className="codex-navigation-rail__account-avatar"><Icon name="user" size={15}/></span>
+      </button>}
     />}
     <ConversationSidebar active={active} collapsed={collapsed} navigationRailEnabled={navigationRailEnabled}
       referenceFixture={showSidebarReferenceFixture}
