@@ -20,3 +20,27 @@ The original compiled Electron main from the user's `frontend.zip` uses `titleBa
 This screenshot-specific hover/highlight color is not a universal Windows native caption-state guarantee, and browser preview cannot reproduce native hover/press/accessibility behavior. Only a new same-state real Windows capture can validate the native frame visually. No backend, main-process or agent-cil changes.
 
 This change is stacked on PR #93 rather than creating an incompatible alternate navigation rail.
+
+
+## Native-versus-browser rail correction (same screenshot scene)
+
+The latest PR #93 browser artifact showed a meaningful visual regression despite
+its correct source separation: the **browser-specific** `gap-px` rail variant
+rendered Home/Images/... at approximately 37px cadence, while the supplied
+**Windows Electron** screenshot shows approximately 44px between centers.
+
+The screenshot fixture is still running in Chromium, so its selector must
+emulate the Windows scene instead of the ordinary browser variant. This pass
+scopes a `gap:8px`, first-tile y≈52 and divider y≈316 override **only** to
+`?visualScenario=shell-empty` when no Electron host exists. The real Windows
+Electron rail retains the PR #93 base CSS and its native smoke assertions;
+ordinary browser preview retains the source `browser:gap-px` utilities.
+
+The screenshot-only footer replaces the normally disconnected Settings button
+with an inert red 24px circle at y≈722, matching the reference geometry without
+copying initials or exposing a fake user account. Separate Playwright assertions
+cover destination coordinates, the 8px cadence and fixture-only footer.
+
+This is an intentional cross-host **test fixture** normalization for same-scene
+pixel comparison, not a claim that Codex uses the same rail CSS in browser and
+Electron.
