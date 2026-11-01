@@ -439,5 +439,5 @@ test("Electron-backed Projects section lists, selects, adds and removes real loc
   expect(result.selected).toEqual([second.id]);
   expect(result.removed).toEqual([added.id]);
   expect(result.adds).toBe(1);
-  expect(result.revokes).toBe(0);
+  expect(result.revokes).toBe(1);
 });
