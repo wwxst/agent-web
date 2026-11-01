@@ -63,10 +63,8 @@ test("native workspace projects persist across Electron restarts without persist
    assert.equal(await row.locator("[data-app-action-sidebar-select-project]")
      .getAttribute("aria-current"),null);
    await row.getByRole("button",{name:workspaceName}).click();
-   await assert.doesNotReject(async()=>{
-    await page.waitForFunction(()=>document.querySelector(
-      '[data-app-action-sidebar-select-project][aria-current="page"]')!=null,{timeout:10000});
-   });
+   await row.locator('[data-app-action-sidebar-select-project][aria-current="page"]')
+     .waitFor({state:"visible",timeout:10000});
    const active=await page.evaluate(()=>window.agentWebDesktopHost.listWorkspaceProjects());
    assert.equal(active.length,1);
    assert.equal(active[0].name,workspaceName);
