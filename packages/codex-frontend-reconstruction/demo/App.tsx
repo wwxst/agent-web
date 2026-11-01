@@ -613,8 +613,8 @@ export function App() {
   });
   const pinnedOwnerTokensRef=React.useRef(new Map<string,string>());
   const workspaceGrantRef=React.useRef(false);
-  // This is a read-only grant display, not a persistent Agent project or a
-  // claim that the selected folder is bound to an execution backend.
+  // This is the currently active read-only workspace grant. A persisted
+  // local project entry is not an Agent session or execution-backend binding.
   const [workspaceProjectName,setWorkspaceProjectName]=React.useState<string|null>(null);
   const [workspaceProjectBusy,setWorkspaceProjectBusy]=React.useState(false);
   const [workspaceProjects,setWorkspaceProjects]=React.useState<readonly WorkspaceProjectSummary[]>([]);
