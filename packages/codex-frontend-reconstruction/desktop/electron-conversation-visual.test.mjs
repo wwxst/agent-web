@@ -1716,12 +1716,12 @@ test("real Electron primary TitleBar keeps a 44px shell row over native 36px cap
   const titlebar=page.locator(".demo-window-menu");
   await expect(titlebar).toBeVisible({timeout:20000});
   const geometry=await titlebar.evaluate(element=>{
-   const rect=(selector:string)=>{
+   const rect=(selector)=>{
     const node=element.querySelector(selector);
     if(node==null)throw new Error("Missing titlebar control "+selector);
     const box=node.getBoundingClientRect();
     return {x:box.x,y:box.y,width:box.width,height:box.height,
-      tag:node.tagName.toLowerCase(),disabled:(node as HTMLButtonElement).disabled};
+      tag:node.tagName.toLowerCase(),disabled:node.disabled};
    };
    const row=element.getBoundingClientRect();
    return {
@@ -1744,7 +1744,7 @@ test("real Electron primary TitleBar keeps a 44px shell row over native 36px cap
   assert.equal(geometry.panel.height,28);
   assert.equal(geometry.fakeCaptionButtons,0,
    "real Electron must use native titleBarOverlay controls, not browser fixture controls");
-  assert.match(geometry.rightInset,/^\\d+(?:\\.\\d+)?px$/);
+  assert.match(geometry.rightInset,/^\d+(?:\.\d+)?px$/);
   const shell=page.locator(".demo-desktop");
   const toggle=page.getByTestId("titlebar-sidebar-toggle");
   await expect(shell).toHaveAttribute("data-app-shell-sidebar-open","true");
