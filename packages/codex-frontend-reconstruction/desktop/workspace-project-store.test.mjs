@@ -51,7 +51,9 @@ test("adding the same canonical directory is idempotent and retains its stable p
     assert.equal(duplicate.project.id,first.project.id);
     try{await symlink(root,alias,"dir");}
     catch(error){if(!["EPERM","EACCES","ENOSYS"].includes(error?.code))throw error;}
-    if(await import("node:fs/promises").then(fs=>fs.lstat(alias).then(()=>true).catch(()=>false))){
+    let aliasExists=true;
+    try{await stat(alias);}catch{aliasExists=false;}
+    if(aliasExists){
       const aliasResult=addWorkspaceProject(userData,alias);
       assert.equal(aliasResult.created,false);
       assert.equal(aliasResult.project.id,first.project.id);
