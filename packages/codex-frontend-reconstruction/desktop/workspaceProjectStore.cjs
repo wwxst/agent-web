@@ -40,20 +40,21 @@ function storePath(userData){
 function readWorkspaceProjects(userData,{filesystem=fs}={}){
   const filename=storePath(userData);
   let stat;
-  try{stat=filesystem.statSync(filename);}
+  try{stat=filesystem.lstatSync(filename);}
   catch(error){if(error?.code==="ENOENT")return [];throw error;}
-  if(!stat.isFile()||stat.size>MAX_STORE_BYTES)throw INVALID_STORE();
+  if(!stat.isFile()||stat.isSymbolicLink()||stat.size>MAX_STORE_BYTES)throw INVALID_STORE();
   let parsed;
   try{parsed=JSON.parse(filesystem.readFileSync(filename,"utf8"));}
   catch{throw INVALID_STORE();}
   if(!isRecord(parsed)||parsed.version!==1||!Array.isArray(parsed.projects)||
     parsed.projects.length>MAX_WORKSPACE_PROJECTS)throw INVALID_STORE();
-  const ids=new Set(),paths=new Set();
+  const ids=new Set(),paths=new Set(),identities=new Set();
   for(const project of parsed.projects){
     if(!validStoredProject(project)||ids.has(project.id))throw INVALID_STORE();
     const canonical=process.platform==="win32"?project.path.toLowerCase():project.path;
-    if(paths.has(canonical))throw INVALID_STORE();
-    ids.add(project.id);paths.add(canonical);
+    const identity=project.device+":"+project.inode;
+    if(paths.has(canonical)||identities.has(identity))throw INVALID_STORE();
+    ids.add(project.id);paths.add(canonical);identities.add(identity);
   }
   return parsed.projects.map(project=>({...project}));
 }
