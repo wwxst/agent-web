@@ -253,6 +253,7 @@ function ConversationSidebar(props: {
       projects:"项目",recents:"最近",addProject:"添加新项目"}
     :{newChat:"New chat",notifications:"Notifications unavailable",search:"Search",
       pinned:"Pinned",projects:"Projects",recents:"Recents",addProject:"Add new project"};
+  const isHome=active==="visual-empty";
   const projectAction=<button type="button" className="demo-sidebar-project-add"
     data-app-action-sidebar-project-create=""
     aria-label={sidebarCopy.addProject} title={referenceFixture?sidebarCopy.addProject:
