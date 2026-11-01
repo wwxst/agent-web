@@ -1730,6 +1730,7 @@ test("real Electron primary TitleBar keeps a 44px shell row over native 36px cap
     forward:rect('[data-desktop-history-navigation="forward"]'),
     panel:rect('[data-testid="titlebar-sidebar-toggle"]'),
     fakeCaptionButtons:element.querySelectorAll(".demo-window-control").length,
+    fakeCaptionGroupDisplay:getComputedStyle(element.querySelector(".demo-window-buttons")).display,
     rightInset:getComputedStyle(element).paddingRight,
    };
   });
@@ -1742,7 +1743,9 @@ test("real Electron primary TitleBar keeps a 44px shell row over native 36px cap
   assert.equal(geometry.forward.disabled,true);
   assert.equal(geometry.panel.width,28);
   assert.equal(geometry.panel.height,28);
-  assert.equal(geometry.fakeCaptionButtons,0,
+  assert.equal(geometry.fakeCaptionButtons,3,
+   "browser fixture controls remain in the DOM but must not paint in real Electron");
+  assert.equal(geometry.fakeCaptionGroupDisplay,"none",
    "real Electron must use native titleBarOverlay controls, not browser fixture controls");
   assert.match(geometry.rightInset,/^\d+(?:\.\d+)?px$/);
   const shell=page.locator(".demo-desktop");
