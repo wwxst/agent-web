@@ -1789,7 +1789,7 @@ test("real Electron restores the source page surface and persistent sidebar widt
    };
    return {viewport:{width:innerWidth,height:innerHeight},
     main:rect(".demo-main"),pageSurface:rect(".demo-page-surface"),
-    sidebarWidth:document.querySelector(".demo-sidebar")!.getBoundingClientRect().width};
+    sidebarWidth:document.querySelector(".demo-sidebar")?.getBoundingClientRect().width??null};
   });
   assert.equal(geometry.main.top,44);
   assert.equal(geometry.main.right,geometry.viewport.width-4);
