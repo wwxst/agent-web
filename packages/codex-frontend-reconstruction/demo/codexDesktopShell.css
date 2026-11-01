@@ -482,7 +482,7 @@ button:focus-visible, textarea:focus-visible { outline: 2px solid #578cda; outli
   padding-right:var(--window-titlebar-inset-right);
   height:max(var(--height-titlebar),env(titlebar-area-height,0px));
   min-height:var(--height-titlebar);
-  margin-bottom:calc(env(titlebar-area-height,36px) - var(--height-titlebar));
+  margin-bottom:min(0px,calc(env(titlebar-area-height,36px) - var(--height-titlebar)));
 }
 .demo-desktop[data-independent-electron="true"] .demo-window-buttons {
   display: none; /* native Electron owns caption buttons */
