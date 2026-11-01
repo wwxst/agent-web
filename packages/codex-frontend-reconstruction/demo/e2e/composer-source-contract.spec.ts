@@ -13,8 +13,8 @@ test("uses source-confirmed shell dimensions and composer component slots", asyn
     const height = (selector: string) => document.querySelector(selector)?.getBoundingClientRect().height;
     return { sidebar: width(".demo-sidebar"), menu: height(".demo-window-menu"), titlebar: height(".demo-header") };
   });
-  // Original compiled CSS: 44px TitleBar overlay, 46px app toolbar and 275px sidebar.
-  expect(measurements).toEqual({ sidebar: 275, menu: 44, titlebar: 46 });
+  // The app-initial state defaults to 340px; 275px is only the CSS fallback.
+  expect(measurements).toEqual({ sidebar: 340, menu: 44, titlebar: 46 });
 
   const composer = page.locator(".codex-composer-layout");
   await expect(composer).toHaveAttribute("data-composer-layout", "multiline");
