@@ -46,6 +46,10 @@ button:focus-visible, textarea:focus-visible { outline: 2px solid #578cda; outli
      native caption hit targets remain 36px high; the shell row is 44px. */
   height:max(var(--height-titlebar),env(titlebar-area-height,0px));
   min-height:var(--height-titlebar);
+  /* The source TitleBar overlays the native caption area: it paints to 44px,
+     while the Windows layout flow starts at the 36px overlay boundary. */
+  margin-bottom:-8px;
+  position:relative;z-index:30;
   background:#f6f6f6;color:#8a8a8a;
   display:flex;align-items:center;gap:8px;padding:0 8px;
   font-size:13px;user-select:none;border-bottom:0;
@@ -478,6 +482,7 @@ button:focus-visible, textarea:focus-visible { outline: 2px solid #578cda; outli
   padding-right:var(--window-titlebar-inset-right);
   height:max(var(--height-titlebar),env(titlebar-area-height,0px));
   min-height:var(--height-titlebar);
+  margin-bottom:calc(env(titlebar-area-height,36px) - var(--height-titlebar));
 }
 .demo-desktop[data-independent-electron="true"] .demo-window-buttons {
   display: none; /* native Electron owns caption buttons */
