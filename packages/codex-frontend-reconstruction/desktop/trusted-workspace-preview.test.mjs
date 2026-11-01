@@ -685,7 +685,7 @@ test("native TypeScript language service resolves grant-scoped definitions and r
 
 test("registered workspace projects activate through trusted sender and persisted directory identity",async()=>{
   const root=await mkdtemp(join(tmpdir(),"agent-web-registered-project-"));
-  const replacement=join(root,"replacement");
+  const replacement=root+"-replacement";
   const file=join(root,"src.ts");
   const event={sender:{id:9901}},untrusted={sender:{id:9902}};
   const host=createTrustedWorkspacePreviewHost({
