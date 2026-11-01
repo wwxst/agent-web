@@ -1,6 +1,6 @@
 /**
  * Original app-initial sidebar: tb width clamp, sbi/lbi keyboard values,
- * BYt/sidebar-width persistence boundary. Do not implement private BYt here.
+ * and the sidebar-width preference boundary. Keep private atom internals out.
  */
 export const SOURCE_SIDEBAR_MIN_WIDTH=240;
 export const SOURCE_SIDEBAR_MAX_WIDTH=520;
