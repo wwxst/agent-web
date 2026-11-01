@@ -421,7 +421,7 @@ test("Electron-backed Projects section lists, selects, adds and removes real loc
   await projects.getByRole("button",{name:"agent-cil"}).click();
   await expect(projects.locator('[data-app-action-sidebar-project-id="10000000-0000-4000-8000-000000000002"] button[data-app-action-sidebar-select-project]'))
     .toHaveAttribute("aria-current","page");
-  await expect(page.getByRole("button",{name:"选择项目"})).toContainText("agent-cil");
+  await expect(page.getByRole("button",{name:"更改项目"})).toContainText("agent-cil");
 
   await projects.getByRole("button",{name:"Add new project"}).click();
   await expect(projects.locator("[data-app-action-sidebar-project-row]")).toHaveCount(3);
