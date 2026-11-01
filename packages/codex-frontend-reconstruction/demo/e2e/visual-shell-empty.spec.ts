@@ -4,6 +4,7 @@ test("shell-empty visual route mounts the real desktop shell, idle Composer and 
   await page.addInitScript(()=>{
     // A visual capture must not hydrate from or overwrite the user's saved pins.
     localStorage.setItem("pinned-content-tabs-v1","visual-baseline-preserve-me");
+    localStorage.setItem("sidebar-width","420");
   });
   await page.goto("/?visualScenario=shell-empty");
   await page.waitForFunction(()=>document.fonts.status==="loaded");
@@ -64,6 +65,22 @@ test("shell-empty visual route mounts the real desktop shell, idle Composer and 
     rail:document.querySelector("[data-app-navigation-rail]")?.getBoundingClientRect().width??null,
     sidebar:document.querySelector(".demo-sidebar")?.getBoundingClientRect().width??null,
     mainLeft:document.querySelector(".demo-main")?.getBoundingClientRect().left??null,
+    mainSurface:(()=>{
+      const node=document.querySelector(".demo-main");
+      if(node==null)return null;
+      const r=node.getBoundingClientRect(),style=getComputedStyle(node);
+      return {left:r.left,top:r.top,right:r.right,bottom:r.bottom,width:r.width,
+        radius:style.borderTopLeftRadius,overflow:style.overflow,
+        background:style.backgroundColor};
+    })(),
+    pageSurface:(()=>{
+      const node=document.querySelector(".demo-page-surface");
+      if(node==null)return null;
+      const r=node.getBoundingClientRect(),style=getComputedStyle(node);
+      return {left:r.left,top:r.top,right:r.right,bottom:r.bottom,
+        radius:style.borderTopLeftRadius,shadow:style.boxShadow,
+        pointerEvents:style.pointerEvents};
+    })(),
     sidebarScroll:document.querySelector("[data-sidebar-navigation-scroll]")?.getBoundingClientRect().height??null,
     header:document.querySelector(".demo-header")?.getBoundingClientRect().height??null,
     headerBorderBottom:getComputedStyle(document.querySelector(".demo-header")!).borderBottomWidth,
@@ -75,6 +92,7 @@ test("shell-empty visual route mounts the real desktop shell, idle Composer and 
     composerPlacement:document.querySelector(".demo-composer")?.getAttribute("data-composer-placement"),
     rowCount:document.querySelectorAll(".demo-row").length,
     savedPin:localStorage.getItem("pinned-content-tabs-v1"),
+    savedSidebarWidth:localStorage.getItem("sidebar-width"),
   }));
   expect(capture.viewport).toEqual({width:1352,height:760,devicePixelRatio:1});
   // Match the captured Codex A-shell-empty state: 240px saved sidebar,
@@ -91,10 +109,21 @@ test("shell-empty visual route mounts the real desktop shell, idle Composer and 
   expect(capture.rail).toBe(52);
   expect(capture.sidebar).toBe(240);
   expect(capture.mainLeft).toBe(292);
+  expect(capture.mainSurface).toEqual({
+    left:292,top:44,right:1348,bottom:756,width:1056,
+    radius:"12px",overflow:"hidden",background:"rgb(255, 255, 255)",
+  });
+  expect(capture.pageSurface).not.toBeNull();
+  expect(capture.pageSurface).toMatchObject({
+    left:52,top:44,right:1348,bottom:756,radius:"12px",
+    pointerEvents:"none",
+  });
+  expect(capture.pageSurface?.shadow).not.toBe("none");
   expect(capture.header).toBe(46);
   expect(capture.headerBorderBottom).toBe("0px");
   expect(capture.sidebarScroll).toBeGreaterThan(100);
   expect(capture.composer?.width).toBe(738);
+  expect(capture.composer?.left).toBe(451);
   expect(capture.composer).not.toBeNull();
   expect(capture.composerContext?.height).toBe(38);
   expect(capture.composerContext?.bottom).toBe(capture.composer?.top);
@@ -107,6 +136,7 @@ test("shell-empty visual route mounts the real desktop shell, idle Composer and 
   expect(capture.composerPlacement).toBe("home");
   expect(capture.rowCount).toBe(0);
   expect(capture.savedPin).toBe("visual-baseline-preserve-me");
+  expect(capture.savedSidebarWidth).toBe("420");
   await page.screenshot({path:testInfo.outputPath("shell-empty-visual-baseline.png"),fullPage:false});
 });
 
@@ -328,4 +358,21 @@ test("titlebar panel button toggles the actual conversation sidebar",async({page
   await toggle.click();
   await expect(shell).toHaveAttribute("data-app-shell-sidebar-open","true");
   await expect(toggle).toHaveAttribute("aria-expanded","true");
+});
+
+
+test("sidebar width uses the source 340px default and persists user resizing",async({page})=>{
+  await page.addInitScript(()=>localStorage.removeItem("sidebar-width"));
+  await page.goto("/");
+  const sidebar=page.locator(".demo-sidebar");
+  const resize=page.getByRole("separator",{name:"调整会话侧边栏宽度"});
+  await expect(sidebar).toHaveCSS("width","340px");
+  await resize.press("Home");
+  await expect(sidebar).toHaveCSS("width","240px");
+  await expect.poll(()=>page.evaluate(()=>localStorage.getItem("sidebar-width"))).toBe("240");
+  await page.reload();
+  await expect(sidebar).toHaveCSS("width","240px");
+  await resize.dblclick();
+  await expect(sidebar).toHaveCSS("width","340px");
+  await expect.poll(()=>page.evaluate(()=>localStorage.getItem("sidebar-width"))).toBe("340");
 });
