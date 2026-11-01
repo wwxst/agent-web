@@ -362,7 +362,6 @@ test("titlebar panel button toggles the actual conversation sidebar",async({page
 
 
 test("sidebar width uses the source 340px default and persists user resizing",async({page})=>{
-  await page.addInitScript(()=>localStorage.removeItem("sidebar-width"));
   await page.goto("/");
   const sidebar=page.locator(".demo-sidebar");
   const resize=page.getByRole("separator",{name:"调整会话侧边栏宽度"});
