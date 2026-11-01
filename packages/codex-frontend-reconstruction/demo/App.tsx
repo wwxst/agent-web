@@ -801,9 +801,12 @@ export function App() {
         workspaceGrantRef.current=true;
         setWorkspaceProjectName(result.project.name);
         setActiveWorkspaceProjectId(result.project.id);
-        setWorkspaceProjects(current=>[
-          ...current.filter(project=>project.id!==result.project!.id),result.project!,
-        ]);
+        setWorkspaceProjects(current=>{
+          const exists=current.some(project=>project.id===result.project!.id);
+          return exists
+            ?current.map(project=>project.id===result.project!.id?result.project!:project)
+            :[...current,result.project!];
+        });
       }else{
         const grant=await host.selectWorkspaceDirectory();
         if(epoch!==workspaceRequestEpochRef.current){
