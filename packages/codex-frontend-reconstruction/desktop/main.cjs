@@ -240,10 +240,19 @@ function setupIpc(){
         return {selected:false};
       const added=addWorkspaceProject(app.getPath("userData"),result.filePaths[0]);
       const project=added.project;
-      const grant=await workspacePreviewHost.selectDirectoryPath(event,project.path,{
-        device:project.device,inode:project.inode,
-      });
-      if(!grant.selected)return {selected:false};
+      let grant;
+      try{
+        grant=await workspacePreviewHost.selectDirectoryPath(event,project.path,{
+          device:project.device,inode:project.inode,
+        });
+      }catch(error){
+        if(added.created)removeWorkspaceProject(app.getPath("userData"),project.id);
+        throw error;
+      }
+      if(!grant.selected){
+        if(added.created)removeWorkspaceProject(app.getPath("userData"),project.id);
+        return {selected:false};
+      }
       markWorkspaceProjectOpened(app.getPath("userData"),project.id);
       activeWorkspaceProjectBySender.set(senderId,project.id);
       const updated=getWorkspaceProject(app.getPath("userData"),project.id);
