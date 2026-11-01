@@ -1697,3 +1697,63 @@ test("native Electron mounts original F/I Subagents right tab and retains canoni
    await rm(profile,{recursive:true,force:true});
  }
 });
+
+
+test("real Electron primary TitleBar keeps a 44px shell row over native 36px caption chrome",{
+ timeout:70000,
+},async()=>{
+ const profile=await mkdtemp(join(tmpdir(),"agent-web-titlebar-geometry-"));
+ const app=await electron.launch({
+  executablePath,
+  args:[".",...(process.platform==="linux"&&process.env.CI?["--no-sandbox"]:[])],
+  cwd:root,
+  env:{...process.env,AGENT_WEB_DEV_URL:"",AGENT_WEB_USER_DATA_DIR:profile,
+   ELECTRON_DISABLE_SECURITY_WARNINGS:"true"},
+  timeout:40000,
+ });
+ try{
+  const page=await app.firstWindow();
+  const titlebar=page.locator(".demo-window-menu");
+  await expect(titlebar).toBeVisible({timeout:20000});
+  const geometry=await titlebar.evaluate(element=>{
+   const rect=(selector:string)=>{
+    const node=element.querySelector(selector);
+    if(node==null)throw new Error("Missing titlebar control "+selector);
+    const box=node.getBoundingClientRect();
+    return {x:box.x,y:box.y,width:box.width,height:box.height,
+      tag:node.tagName.toLowerCase(),disabled:(node as HTMLButtonElement).disabled};
+   };
+   const row=element.getBoundingClientRect();
+   return {
+    row:{x:row.x,y:row.y,width:row.width,height:row.height},
+    back:rect('[data-desktop-history-navigation="back"]'),
+    forward:rect('[data-desktop-history-navigation="forward"]'),
+    panel:rect('[data-testid="titlebar-sidebar-toggle"]'),
+    fakeCaptionButtons:element.querySelectorAll(".demo-window-control").length,
+    rightInset:getComputedStyle(element).paddingRight,
+   };
+  });
+  assert.equal(geometry.row.height,44);
+  assert.equal(geometry.back.width,28);
+  assert.equal(geometry.back.height,28);
+  assert.equal(geometry.forward.width,28);
+  assert.equal(geometry.forward.height,28);
+  assert.equal(geometry.back.disabled,true);
+  assert.equal(geometry.forward.disabled,true);
+  assert.equal(geometry.panel.width,28);
+  assert.equal(geometry.panel.height,28);
+  assert.equal(geometry.fakeCaptionButtons,0,
+   "real Electron must use native titleBarOverlay controls, not browser fixture controls");
+  assert.match(geometry.rightInset,/^\\d+(?:\\.\\d+)?px$/);
+  const shell=page.locator(".demo-desktop");
+  const toggle=page.getByTestId("titlebar-sidebar-toggle");
+  await expect(shell).toHaveAttribute("data-app-shell-sidebar-open","true");
+  await toggle.click();
+  await expect(shell).toHaveAttribute("data-app-shell-sidebar-open","false");
+  await toggle.click();
+  await expect(shell).toHaveAttribute("data-app-shell-sidebar-open","true");
+ }finally{
+  await app.close();
+  await rm(profile,{recursive:true,force:true});
+ }
+});
