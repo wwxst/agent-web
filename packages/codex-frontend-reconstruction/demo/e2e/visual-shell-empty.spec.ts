@@ -411,7 +411,7 @@ test("Electron-backed Projects section lists, selects, adds and removes real loc
       revokeWorkspaceDirectory:async()=>{state.revokes++;return true;},
     }});
   },{first,second,added});
-  await page.goto("/");
+  await page.goto("/?visualScenario=shell-empty");
   const projects=page.locator('[data-app-action-sidebar-section-key="projects"]');
   await expect(projects.locator("[data-app-action-sidebar-project-row]")).toHaveCount(2);
   await expect(projects.getByRole("button",{name:"agent-web"})).toBeVisible();
