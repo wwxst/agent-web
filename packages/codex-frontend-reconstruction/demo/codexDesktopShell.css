@@ -94,7 +94,21 @@ button:focus-visible, textarea:focus-visible { outline: 2px solid #578cda; outli
 .demo-desktop:has([data-sidebar-reference-fixture="true"]) .demo-window-control--minimize {
   background:#e1e1e1;
 }
-.demo-app {flex:1; height:auto; min-height:0; background:#fff; color:#242424;}
+.demo-app {position:relative;isolation:isolate;flex:1;height:auto;min-height:0;background:#f5f5f5;color:#242424;}
+/* Original PageSurface is a non-interactive shadow layer inset below the
+ * 44px titlebar, after the 52px navigation rail, and 4px from right/bottom.
+ * The app row starts at y=36 because the 44px TitleBar overlaps the 36px
+ * Windows caption overlay by 8px. */
+.demo-page-surface {
+  position:absolute;
+  inset-block:8px 4px;
+  inset-inline:var(--app-shell-navigation-rail-width,52px) 4px;
+  border-radius:var(--app-shell-window-radius,12px);
+  box-shadow:var(--app-shell-page-surface-shadow,
+    0 0 0 .5px rgb(0 0 0 / .04),0 4px 16px 0 #0000000d);
+  pointer-events:none;
+  z-index:0;
+}
 .demo-sidebar {
   width:var(--spacing-token-sidebar); min-width:var(--spacing-token-sidebar); padding:15px 8px 8px;
   background:#f5f5f5; border-right:1px solid #eaeaea;
@@ -122,7 +136,12 @@ button:focus-visible, textarea:focus-visible { outline: 2px solid #578cda; outli
 .demo-chat-link-title{font-size:12.5px;}
 .demo-recent-heading {border-top:1px solid #dedede;padding-top:12px;margin-top:0;}
 .demo-sidebar-foot {display:flex;align-items:center;gap:8px;padding:7px 12px 2px;border-top:1px solid #e0e0e0;color:#858585;font-size:11px;}
-.demo-main{position:relative;background:#fff;}
+.demo-main{
+  position:relative;z-index:1;height:auto;min-height:0;
+  margin:8px 4px 4px 0;
+  border-radius:var(--app-shell-window-radius,12px);
+  overflow:hidden;background:#fff;
+}
 .demo-header {height:var(--height-toolbar);min-height:var(--height-toolbar);padding:0 26px;border-bottom:1px solid #ebebeb;color:#292929;}
 .demo-header-location{font-size:13px;gap:12px;color:#242424;}
 .demo-header-location strong{font-size:13px;font-weight:600;}
@@ -949,7 +968,7 @@ button:focus-visible, textarea:focus-visible { outline: 2px solid #578cda; outli
 .demo-main[data-codex-home="true"] .demo-composer-zone {
   top: auto;
   bottom: 0;
-  padding: 0 0 19px;
+  padding: 0 0 15px;
   background: transparent;
   display: flex;
   align-items: flex-end;
@@ -1052,10 +1071,10 @@ button:focus-visible, textarea:focus-visible { outline: 2px solid #578cda; outli
  */
 .demo-main[data-codex-home="true"] .demo-home-hero {
   position: absolute;
-  top: var(--height-toolbar, 46px);
+  top: calc(var(--height-toolbar, 46px) - 8px);
   inset-inline: 0;
-  /* Screenshot-measured offset: source Hero glyph center is y≈327 at 760px,
-   * 70px below the previous reconstruction while retaining the 42svh anchor. */
+  /* The main surface now begins at y=44. Keep the captured Hero anchor at
+   * y≈82 in window coordinates, matching the original 327px icon center. */
   height: calc(var(--home-composer-top) + 70px);
   display: flex;
   justify-content: center;
