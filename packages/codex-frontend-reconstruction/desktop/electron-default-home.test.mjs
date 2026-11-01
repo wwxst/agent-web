@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {mkdir} from "node:fs/promises";
-import {resolve} from "node:path";
+import {resolve,basename} from "node:path";
 import {fileURLToPath} from "node:url";
 import {_electron as electron} from "playwright";
 
@@ -155,7 +155,7 @@ test("normal packaged Electron launch opens the empty Codex home, never a synthe
       path:resolve(root,"desktop/test-results/electron-home-readonly-workspace.png"),
       animations:"disabled",fullPage:false,
     });
-    await page.getByRole("button",{name:/Remove codex-frontend-reconstruction from projects/}).click();
+    await page.getByRole("button",{name:`Remove ${basename(process.cwd())} from projects`}).click();
     await page.getByRole("heading",{name:"What should we build?"})
       .waitFor({state:"visible",timeout:10000});
     assert.equal(await page.getByText("No projects",{exact:true}).count(),1);
