@@ -472,9 +472,9 @@ button:focus-visible, textarea:focus-visible { outline: 2px solid #578cda; outli
    Browser screenshots retain explicit non-interactive example controls. */
 .demo-desktop[data-independent-electron="true"] .demo-window-menu {
   -webkit-app-region: drag;
-  /* Mirror the source TitleBar's env-based caption-control inset. The 140px
+  /* Mirror the source TitleBar's env-based caption-control inset. The 138px
      fallback reserves 3×46px Windows controls plus the 8px outer inset. */
-  --window-titlebar-inset-right:calc(100vw - env(titlebar-area-x,0px) - env(titlebar-area-width,calc(100vw - 140px)) + var(--spacing) * 2);
+  --window-titlebar-inset-right:calc(100vw - env(titlebar-area-x,0px) - env(titlebar-area-width,calc(100vw - 138px)) + var(--spacing) * 2);
   padding-right:var(--window-titlebar-inset-right);
   height:max(var(--height-titlebar),env(titlebar-area-height,0px));
   min-height:var(--height-titlebar);
