@@ -1692,7 +1692,7 @@ export function App() {
   // The original Windows application menu localizes its visible four labels.
   // Use the renderer's actual locale, never force the screenshot's Chinese
   // text onto unrelated English-language sessions.
-  const isChineseDesktopLocale=/^zh(?:-|$)/i.test(navigator.language);
+  const isChineseDesktopLocale=showSidebarReferenceFixture||/^zh(?:-|$)/i.test(navigator.language);
   const desktopMenuLabels=isChineseDesktopLocale
     ? {file:"文件",edit:"编辑",view:"视图",help:"帮助"} as const
     : {file:"File",edit:"Edit",view:"View",help:"Help"} as const;
