@@ -263,7 +263,6 @@ function ConversationSidebar(props: {
     onClick={props.onOpenWorkspaceProject}>
     <Icon name="plus" size={15}/>
   </button>;
-  const isHome=active==="visual-empty";
 
   return <aside className={`demo-sidebar ${collapsed ? "demo-sidebar--collapsed" : ""}`}
     aria-label="演示会话导航"
