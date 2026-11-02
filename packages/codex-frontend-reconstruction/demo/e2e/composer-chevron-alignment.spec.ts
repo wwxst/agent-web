@@ -1,7 +1,7 @@
 import {test,expect} from "@playwright/test";
 
 test("Composer model and permission chevrons match source SVG geometry and placement spacing",async({page},testInfo)=>{
-  const assertControlsAligned=async(expectedGap:number,labels:readonly [string,string])=>{
+  const assertControlsAligned=async(expectedGap:number,labels:readonly [string,string],expectedEffortGap:number|null)=>{
     for(const [testId,label] of [
       ["composer-permission-control",labels[0]],
       ["composer-model-control",labels[1]],
@@ -37,7 +37,7 @@ test("Composer model and permission chevrons match source SVG geometry and place
       expect(geometry.chevronHeight).toBe(16);
       expect(Math.abs(geometry.centerDelta)).toBeLessThanOrEqual(0.5);
       expect(geometry.gap).toBe(expectedGap);
-      if(testId==="composer-model-control")expect(geometry.labelEffortGap).toBe(expectedGap);
+      if(testId==="composer-model-control")expect(geometry.labelEffortGap).toBe(expectedEffortGap);
     }
   };
 
@@ -45,12 +45,12 @@ test("Composer model and permission chevrons match source SVG geometry and place
   await page.waitForFunction(()=>document.fonts.status==="loaded");
   await expect(page.locator(".demo-composer")).toHaveAttribute("data-composer-placement","home");
   // Original ComposerFooterDropdown overrides the default 4px gap to 6px on home.
-  await assertControlsAligned(6,["完全访问","GPT-6.1 Sol"]);
+  await assertControlsAligned(6,["完全访问","GPT-6.1 Sol"],6);
   await page.screenshot({path:testInfo.outputPath("composer-chevron-alignment.png"),fullPage:false});
 
   await page.goto("/");
   await page.waitForFunction(()=>document.fonts.status==="loaded");
   await expect(page.locator(".demo-composer")).toHaveAttribute("data-composer-placement","thread");
   // Thread placement uses the original --spacing token (4px).
-  await assertControlsAligned(4,["权限未连接","模型未连接"]);
+  await assertControlsAligned(4,["权限未连接","模型未连接"],null);
 });
