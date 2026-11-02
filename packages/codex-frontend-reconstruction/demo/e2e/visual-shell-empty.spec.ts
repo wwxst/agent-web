@@ -265,7 +265,7 @@ test("empty Codex home preserves drafts and never silently sends to the demo res
   await expect(editor).toContainText("实际任务不能变成模拟回复");
   await expect(page.locator(".demo-row")).toHaveCount(0);
   await expect(page.getByText("已收到你的消息",{exact:false})).toHaveCount(0);
-  await expect(page.getByRole("heading",{name:"我们要构建什么？"})).toBeVisible();
+  await expect(page.getByRole("heading",{name:"我们应该在agent中做些什么？"})).toBeVisible();
 });
 
 
