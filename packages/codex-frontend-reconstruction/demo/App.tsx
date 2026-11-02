@@ -166,17 +166,17 @@ interface SidebarReferenceProject {
  * never sourced from, persisted to, or presented as the user's Agent data.
  */
 const SIDEBAR_REFERENCE_FIXTURE={
-  pinned:["Codex 原版界面还原任务"],
+  pinned:["帮我下载率土之滨最新版本看看"],
   projects:[
-    {name:"agent",threads:["任务：执行 Codex 原版 UI 还原","同步 agent-web GitHub 仓库"]},
+    {name:"agent",threads:["任务：执行 Codex 原版与 agent-web UI 对比","请拉取 GitHub 仓库： https://github.com/wwxst/agent-web"]},
     {name:"promotion-demo",threads:[]},
     {name:"agent-desktop",threads:[]},
-    {name:"atlas",threads:["远程服务器环境维护","GitHub 日志下载任务"]},
-    {name:"kasi-project",threads:["本地 kasi-project 项目任务"]},
+    {name:"atlas",threads:["远程主机连接信息（已脱敏）","Download Free GitHub Logs"]},
+    {name:"kasi-project",threads:["请在本地 kasi-project 项目中继续"]},
     {name:"deepseek-harness",threads:[]},
     {name:"ai",threads:[]},
   ] satisfies readonly SidebarReferenceProject[],
-  recents:["Codex 原版 UI 还原任务","远程环境维护任务"],
+  recents:["任务：执行 Codex 原版与 agent-web UI 对比","远程主机连接信息（已脱敏）"],
 } as const;
 type SidebarSectionKey="pinned"|"projects"|"recents";
 
@@ -2000,7 +2000,7 @@ export function App() {
           </svg>
           <h1 className="demo-home-hero__heading">
             {workspaceProjectName==null
-              ? showSidebarReferenceFixture?"我们要构建什么？":"What should we build?"
+              ? showSidebarReferenceFixture?"我们应该在agent中做些什么？":"What should we build?"
               : <>
               What should we work on in{" "}
               <button type="button" className="demo-home-hero__project-select"
