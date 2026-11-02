@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {mkdir} from "node:fs/promises";
-import {resolve} from "node:path";
+import {resolve,basename} from "node:path";
 import {fileURLToPath} from "node:url";
 import {_electron as electron} from "playwright";
 
@@ -132,24 +132,30 @@ test("normal packaged Electron launch opens the empty Codex home, never a synthe
     assert.equal(await actions.count(),0);
     assert.equal(await addContext.getAttribute("aria-expanded"),"false");
 
-    // The native permission dialog returns only a directory basename to the
-    // renderer; it does not provide a path or create an Agent project.
+    // Native project registration returns only an opaque ID and display
+    // metadata to the renderer; absolute paths stay in the main process.
     await app.evaluate(({dialog})=>{
       dialog.showOpenDialog=async()=>({canceled:false,filePaths:[process.cwd()]});
     });
-    assert.equal(await page.getByRole("button",{name:"Open local folder"}).isEnabled(),true);
-    // The Composer context action must use the existing native picker path.
+    assert.equal(await page.getByRole("button",{name:"Add new project"}).isEnabled(),true);
     await page.getByRole("button",{name:"选择项目"}).click();
     await page.getByRole("heading",{name:/What should we work on in/})
       .waitFor({state:"visible",timeout:15000});
-    assert.equal(await page.locator("[data-local-workspace-project]").count(),1);
+    const projectRow=page.locator("[data-app-action-sidebar-project-row]");
+    assert.equal(await projectRow.count(),1);
+    assert.equal(await projectRow.locator("[data-app-action-sidebar-select-project]")
+      .getAttribute("aria-current"),"page");
     assert.equal(await page.getByText("No projects",{exact:true}).count(),0);
     assert.equal(await page.getByTestId("send-button").isDisabled(),true);
+    const summaries=await page.evaluate(()=>
+      window.agentWebDesktopHost?.listWorkspaceProjects());
+    assert.equal(summaries?.length,1);
+    assert.equal(JSON.stringify(summaries).includes(process.cwd()),false);
     await page.screenshot({
       path:resolve(root,"desktop/test-results/electron-home-readonly-workspace.png"),
       animations:"disabled",fullPage:false,
     });
-    await page.getByRole("button",{name:"Clear local folder"}).click();
+    await page.getByRole("button",{name:`Remove ${basename(process.cwd())} from projects`}).click();
     await page.getByRole("heading",{name:"What should we build?"})
       .waitFor({state:"visible",timeout:10000});
     assert.equal(await page.getByText("No projects",{exact:true}).count(),1);

@@ -17,6 +17,10 @@ const UNSUPPORTED_FORM_REPLY_CHANNEL="agent-web:unsupported-form-reply";
 const TEXT_FORM_REPLY_CHANNEL="agent-web:text-form-reply";
 const OPEN_EXTERNAL_URL_CHANNEL="agent-web:open-external-url";
 const SELECT_WORKSPACE_CHANNEL="agent-web:select-workspace-directory";
+const LIST_WORKSPACE_PROJECTS_CHANNEL="agent-web:workspace-projects-list";
+const ADD_WORKSPACE_PROJECT_CHANNEL="agent-web:workspace-projects-add";
+const SELECT_WORKSPACE_PROJECT_CHANNEL="agent-web:workspace-projects-select";
+const REMOVE_WORKSPACE_PROJECT_CHANNEL="agent-web:workspace-projects-remove";
 const READ_WORKSPACE_TEXT_CHANNEL="agent-web:read-workspace-text";
 const LIST_WORKSPACE_DIRECTORY_CHANNEL="agent-web:list-workspace-directory";
 const READ_WORKSPACE_TREE_TEXT_CHANNEL="agent-web:read-workspace-tree-text";
@@ -170,6 +174,22 @@ contextBridge.exposeInMainWorld("agentWebDesktopHost",Object.freeze({
   // allows a user-approved native folder grant and a read-only UTF-8 preview.
   // A renderer cannot pass its own root or issue a generic filesystem action.
   selectWorkspaceDirectory:()=>ipcRenderer.invoke(SELECT_WORKSPACE_CHANNEL),
+  // Registered projects are selected by opaque IDs only. Canonical paths and
+  // directory identities remain in the trusted Electron main process.
+  listWorkspaceProjects:()=>ipcRenderer.invoke(LIST_WORKSPACE_PROJECTS_CHANNEL),
+  addWorkspaceProject:()=>ipcRenderer.invoke(ADD_WORKSPACE_PROJECT_CHANNEL),
+  selectWorkspaceProject(id){
+    if(typeof id!=="string"||
+      !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu.test(id))
+      return Promise.reject(new TypeError("WORKSPACE_PROJECT_ID_INVALID"));
+    return ipcRenderer.invoke(SELECT_WORKSPACE_PROJECT_CHANNEL,id);
+  },
+  removeWorkspaceProject(id){
+    if(typeof id!=="string"||
+      !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu.test(id))
+      return Promise.reject(new TypeError("WORKSPACE_PROJECT_ID_INVALID"));
+    return ipcRenderer.invoke(REMOVE_WORKSPACE_PROJECT_CHANNEL,id);
+  },
   revokeWorkspaceDirectory:()=>ipcRenderer.invoke(REVOKE_WORKSPACE_CHANNEL),
   readWorkspaceTextFile(request){
     if(request==null||typeof request!=="object"||Array.isArray(request)||

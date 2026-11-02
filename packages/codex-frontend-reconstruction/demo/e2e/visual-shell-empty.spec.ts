@@ -269,7 +269,7 @@ test("real read-only workspace grant updates original home project Hero without 
     }});
   });
   await page.goto("/?visualScenario=shell-empty");
-  const choose=page.getByRole("button",{name:"Open local folder"});
+  const choose=page.getByRole("button",{name:"Add new project"});
   await expect(choose).toBeEnabled();
   await expect(page.getByText("No projects",{exact:true})).toBeVisible();
   // The original Projects action is revealed by hovering/focusing its title row.
@@ -374,4 +374,71 @@ test("sidebar width uses the source 340px default and persists user resizing",as
   await resize.dblclick();
   await expect(sidebar).toHaveCSS("width","340px");
   await expect.poll(()=>page.evaluate(()=>localStorage.getItem("sidebar-width"))).toBe("340");
+});
+
+
+test("Electron-backed Projects section lists, selects, adds and removes real local workspace roots",async({page})=>{
+  const first={id:"10000000-0000-4000-8000-000000000001",name:"agent-web",
+    createdAt:"2026-11-01T10:00:00.000Z",lastOpenedAt:"2026-11-01T10:00:00.000Z"};
+  const second={id:"10000000-0000-4000-8000-000000000002",name:"agent-cil",
+    createdAt:"2026-11-01T10:01:00.000Z",lastOpenedAt:"2026-11-01T10:01:00.000Z"};
+  const added={id:"10000000-0000-4000-8000-000000000003",name:"new-project",
+    createdAt:"2026-11-01T10:02:00.000Z",lastOpenedAt:"2026-11-01T10:02:00.000Z"};
+  await page.addInitScript(({first,second,added})=>{
+    const state={projects:[first,second],selected:[] as string[],removed:[] as string[],adds:0,revokes:0};
+    Object.assign(window,{__workspaceProjectTestState:state});
+    Object.defineProperty(window,"agentWebDesktopHost",{configurable:true,value:{
+      getHostInfo:async()=>({windowType:"electron",platform:"test",theme:"light",backendConnected:false}),
+      getComposerDrafts:async()=>({}),setComposerDraft:async()=>true,
+      subscribeHostEvents:()=>()=>{},subscribeUiCommands:()=>()=>{},
+      openMenu:async()=>false,
+      listWorkspaceProjects:async()=>state.projects.map(project=>({...project})),
+      addWorkspaceProject:async()=>{
+        state.adds++;
+        state.projects=[...state.projects,added];
+        return {selected:true,created:true,project:added};
+      },
+      selectWorkspaceProject:async(id:string)=>{
+        state.selected.push(id);
+        const project=state.projects.find(item=>item.id===id);
+        return project==null?{selected:false}:{selected:true,project};
+      },
+      removeWorkspaceProject:async(id:string)=>{
+        state.removed.push(id);
+        state.projects=state.projects.filter(item=>item.id!==id);
+        return true;
+      },
+      revokeWorkspaceDirectory:async()=>{state.revokes++;return true;},
+    }});
+  },{first,second,added});
+  await page.goto("/?visualScenario=shell-empty");
+  const projects=page.locator('[data-app-action-sidebar-section-key="projects"]');
+  await expect(projects.locator("[data-app-action-sidebar-project-row]")).toHaveCount(2);
+  await expect(projects.getByRole("button",{name:"agent-web",exact:true})).toBeVisible();
+  await expect(projects.getByRole("button",{name:"agent-cil",exact:true})).toBeVisible();
+  await expect(page.getByText("No chats",{exact:true})).toBeVisible();
+
+  await projects.getByRole("button",{name:"agent-cil",exact:true}).click();
+  await expect(projects.locator('[data-app-action-sidebar-project-id="10000000-0000-4000-8000-000000000002"] button[data-app-action-sidebar-select-project]'))
+    .toHaveAttribute("aria-current","page");
+  await expect(page.getByRole("button",{name:"更改项目"})).toContainText("agent-cil");
+
+  await projects.locator(".demo-sidebar-section__header").hover();
+  await projects.getByRole("button",{name:"Add new project"}).click();
+  await expect(projects.locator("[data-app-action-sidebar-project-row]")).toHaveCount(3);
+  await expect(projects.getByRole("button",{name:"new-project",exact:true})).toBeVisible();
+  await expect(projects.locator('[data-app-action-sidebar-project-id="10000000-0000-4000-8000-000000000003"] button[data-app-action-sidebar-select-project]'))
+    .toHaveAttribute("aria-current","page");
+
+  await projects.getByRole("button",{name:"Remove new-project from projects"}).click();
+  await expect(projects.locator("[data-app-action-sidebar-project-row]")).toHaveCount(2);
+  await expect(projects.getByRole("button",{name:"new-project"})).toHaveCount(0);
+  const result=await page.evaluate(()=>
+    (window as unknown as Window&{__workspaceProjectTestState:{
+      selected:string[];removed:string[];adds:number;revokes:number;
+    }}).__workspaceProjectTestState);
+  expect(result.selected).toEqual([second.id]);
+  expect(result.removed).toEqual([added.id]);
+  expect(result.adds).toBe(1);
+  expect(result.revokes).toBe(1);
 });

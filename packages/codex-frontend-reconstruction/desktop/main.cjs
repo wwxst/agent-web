@@ -23,6 +23,10 @@ const {handleUnsupportedFormReply}=require("./unsupportedFormReply.cjs");
 const {handleFormTextReply}=require("./textFormReply.cjs");
 const {handleExternalUrlOpen,sourceSafeExternalHttpsUrl}=require("./externalUrlAction.cjs");
 const {createTrustedWorkspacePreviewHost}=require("./trustedWorkspacePreview.cjs");
+const {
+  addWorkspaceProject,getWorkspaceProject,listWorkspaceProjects,
+  markWorkspaceProjectOpened,removeWorkspaceProject,
+}=require("./workspaceProjectStore.cjs");
 
 const HOST_INFO_CHANNEL = "agent-web:host-info";
 const HOST_EVENT_CHANNEL = "agent-web:host-event";
@@ -36,6 +40,10 @@ const UNSUPPORTED_FORM_REPLY_CHANNEL="agent-web:unsupported-form-reply";
 const TEXT_FORM_REPLY_CHANNEL="agent-web:text-form-reply";
 const OPEN_EXTERNAL_URL_CHANNEL="agent-web:open-external-url";
 const SELECT_WORKSPACE_CHANNEL="agent-web:select-workspace-directory";
+const LIST_WORKSPACE_PROJECTS_CHANNEL="agent-web:workspace-projects-list";
+const ADD_WORKSPACE_PROJECT_CHANNEL="agent-web:workspace-projects-add";
+const SELECT_WORKSPACE_PROJECT_CHANNEL="agent-web:workspace-projects-select";
+const REMOVE_WORKSPACE_PROJECT_CHANNEL="agent-web:workspace-projects-remove";
 const READ_WORKSPACE_TEXT_CHANNEL="agent-web:read-workspace-text";
 const LIST_WORKSPACE_DIRECTORY_CHANNEL="agent-web:list-workspace-directory";
 const READ_WORKSPACE_TREE_TEXT_CHANNEL="agent-web:read-workspace-tree-text";
@@ -56,6 +64,8 @@ if(typeof dataDirOverride==="string"&&path.isAbsolute(dataDirOverride)){
 }
 let mainWindow=null;
 let workspacePreviewHost=null;
+const activeWorkspaceProjectBySender=new Map();
+const workspaceProjectPickers=new Set();
 
 function isAllowedNavigation(url){
   return allowedNavigation(url,{devUrl,indexPath});
@@ -83,8 +93,14 @@ function createWindow(){
   // win.webContents inside BrowserWindow's "closed" event is not safe on
   // every Electron/Windows build and can interrupt app shutdown.
   const workspaceSenderId=win.webContents.id;
-  win.webContents.on("did-navigate",()=>workspacePreviewHost?.clearSender(workspaceSenderId));
-  win.on("closed",()=>workspacePreviewHost?.clearSender(workspaceSenderId));
+  win.webContents.on("did-navigate",()=>{
+    workspacePreviewHost?.clearSender(workspaceSenderId);
+    activeWorkspaceProjectBySender.delete(workspaceSenderId);
+  });
+  win.on("closed",()=>{
+    workspacePreviewHost?.clearSender(workspaceSenderId);
+    activeWorkspaceProjectBySender.delete(workspaceSenderId);
+  });
   // Original keeps accelerators in native Menu while its own window owns
   // the visible File/Edit/View/Help chrome. Our header requests bounded
   // submenu popups from main, rather than a separate renderer menu model.
@@ -200,8 +216,79 @@ function setupIpc(){
       {title:"Select workspace folder for read-only previews",
        properties:["openDirectory","dontAddToRecent"]}),
   });
-  ipcMain.handle(SELECT_WORKSPACE_CHANNEL,(event)=>
-    workspacePreviewHost.selectDirectory(event));
+  ipcMain.handle(SELECT_WORKSPACE_CHANNEL,(event)=>{
+    if(!isTrustedRenderer(event))return {selected:false};
+    activeWorkspaceProjectBySender.delete(event.sender.id);
+    return workspacePreviewHost.selectDirectory(event);
+  });
+  ipcMain.handle(LIST_WORKSPACE_PROJECTS_CHANNEL,event=>{
+    if(!isTrustedRenderer(event))return [];
+    return listWorkspaceProjects(app.getPath("userData"));
+  });
+  ipcMain.handle(ADD_WORKSPACE_PROJECT_CHANNEL,async event=>{
+    if(!isTrustedRenderer(event))return {selected:false};
+    const senderId=event.sender.id;
+    if(workspaceProjectPickers.has(senderId))return {selected:false};
+    workspaceProjectPickers.add(senderId);
+    try{
+      const result=await dialog.showOpenDialog(
+        BrowserWindow.fromWebContents(event.sender),
+        {title:"Add local project folder",
+         properties:["openDirectory","dontAddToRecent"]});
+      if(!isTrustedRenderer(event)||result?.canceled===true||
+        !Array.isArray(result?.filePaths)||result.filePaths.length!==1)
+        return {selected:false};
+      const added=addWorkspaceProject(app.getPath("userData"),result.filePaths[0]);
+      const project=added.project;
+      let grant;
+      try{
+        grant=await workspacePreviewHost.selectDirectoryPath(event,project.path,{
+          device:project.device,inode:project.inode,
+        });
+      }catch(error){
+        if(added.created)removeWorkspaceProject(app.getPath("userData"),project.id);
+        throw error;
+      }
+      if(!grant.selected){
+        if(added.created)removeWorkspaceProject(app.getPath("userData"),project.id);
+        return {selected:false};
+      }
+      markWorkspaceProjectOpened(app.getPath("userData"),project.id);
+      activeWorkspaceProjectBySender.set(senderId,project.id);
+      const updated=getWorkspaceProject(app.getPath("userData"),project.id);
+      return {selected:true,created:added.created,project:{
+        id:project.id,name:project.name,
+        createdAt:updated?.createdAt??project.createdAt,
+        lastOpenedAt:updated?.lastOpenedAt??project.lastOpenedAt,
+      }};
+    }finally{workspaceProjectPickers.delete(senderId);}
+  });
+  ipcMain.handle(SELECT_WORKSPACE_PROJECT_CHANNEL,async(event,id)=>{
+    if(!isTrustedRenderer(event))return {selected:false};
+    const project=getWorkspaceProject(app.getPath("userData"),id);
+    if(project==null)return {selected:false};
+    const grant=await workspacePreviewHost.selectDirectoryPath(event,project.path,{
+      device:project.device,inode:project.inode,
+    });
+    if(!grant.selected)return {selected:false};
+    markWorkspaceProjectOpened(app.getPath("userData"),project.id);
+    activeWorkspaceProjectBySender.set(event.sender.id,project.id);
+    const updated=getWorkspaceProject(app.getPath("userData"),project.id);
+    return {selected:true,project:{
+      id:project.id,name:project.name,
+      createdAt:updated?.createdAt??project.createdAt,
+      lastOpenedAt:updated?.lastOpenedAt??project.lastOpenedAt,
+    }};
+  });
+  ipcMain.handle(REMOVE_WORKSPACE_PROJECT_CHANNEL,(event,id)=>{
+    if(!isTrustedRenderer(event))return false;
+    const removed=removeWorkspaceProject(app.getPath("userData"),id);
+    if(removed&&activeWorkspaceProjectBySender.get(event.sender.id)===id){
+      workspacePreviewHost.revoke(event);
+      activeWorkspaceProjectBySender.delete(event.sender.id);
+    }
+    return removed;
+  });
   ipcMain.handle(READ_WORKSPACE_TEXT_CHANNEL,(event,request)=>
     workspacePreviewHost.readTextFile(event,request));
   ipcMain.handle(LIST_WORKSPACE_DIRECTORY_CHANNEL,(event,request)=>
@@ -210,8 +297,11 @@ function setupIpc(){
     workspacePreviewHost.readTreeTextFile(event,request));
   ipcMain.handle(SEARCH_WORKSPACE_FILES_CHANNEL,(event,request)=>
     workspacePreviewHost.searchDirectoryFiles(event,request));
-  ipcMain.handle(REVOKE_WORKSPACE_CHANNEL,event=>
-    workspacePreviewHost.revoke(event));
+  ipcMain.handle(REVOKE_WORKSPACE_CHANNEL,event=>{
+    if(!isTrustedRenderer(event))return false;
+    activeWorkspaceProjectBySender.delete(event.sender.id);
+    return workspacePreviewHost.revoke(event);
+  });
   ipcMain.handle(COPY_WORKSPACE_PATH_CHANNEL,(event,path)=>
     workspacePreviewHost.copyFilePath(event,path));
   ipcMain.handle(COPY_WORKSPACE_CONTENTS_CHANNEL,(event,request)=>
@@ -270,7 +360,7 @@ app.on("window-all-closed",()=>{if(process.platform!=="darwin")app.quit();});
 app.on("activate",()=>{if(BrowserWindow.getAllWindows().length===0)createWindow();});
 app.whenReady().then(()=>{setupIpc();createWindow();});
 app.on("before-quit",()=>{
-  for(const channel of [HOST_INFO_CHANNEL,OPEN_MENU_CHANNEL,READ_DRAFTS_CHANNEL,WRITE_DRAFT_CHANNEL,MCP_APPROVAL_REPLY_CHANNEL,OPEN_EXTERNAL_URL_CHANNEL,USER_VERIFICATION_CANCEL_CHANNEL,UNSUPPORTED_FORM_REPLY_CHANNEL,TEXT_FORM_REPLY_CHANNEL,SELECT_WORKSPACE_CHANNEL,READ_WORKSPACE_TEXT_CHANNEL,
+  for(const channel of [HOST_INFO_CHANNEL,OPEN_MENU_CHANNEL,READ_DRAFTS_CHANNEL,WRITE_DRAFT_CHANNEL,MCP_APPROVAL_REPLY_CHANNEL,OPEN_EXTERNAL_URL_CHANNEL,USER_VERIFICATION_CANCEL_CHANNEL,UNSUPPORTED_FORM_REPLY_CHANNEL,TEXT_FORM_REPLY_CHANNEL,SELECT_WORKSPACE_CHANNEL,LIST_WORKSPACE_PROJECTS_CHANNEL,ADD_WORKSPACE_PROJECT_CHANNEL,SELECT_WORKSPACE_PROJECT_CHANNEL,REMOVE_WORKSPACE_PROJECT_CHANNEL,READ_WORKSPACE_TEXT_CHANNEL,
     LIST_WORKSPACE_DIRECTORY_CHANNEL,READ_WORKSPACE_TREE_TEXT_CHANNEL,
     SEARCH_WORKSPACE_FILES_CHANNEL,
     REVOKE_WORKSPACE_CHANNEL,COPY_WORKSPACE_PATH_CHANNEL,COPY_WORKSPACE_CONTENTS_CHANNEL]){

@@ -215,6 +215,37 @@ function createTrustedWorkspacePreviewHost({
       pendingPickers.delete(id);
     }
   }
+  /**
+   * Activate a previously registered project without exposing its canonical
+   * root to the renderer. The persisted device/inode fence prevents a moved
+   * or replaced directory from silently inheriting an old project identity.
+   */
+  async function selectDirectoryPath(event,selectedPath,expectedIdentity){
+    const id=sender(event);
+    if(pendingPickers.has(id))denied("WORKSPACE_PICKER_IN_PROGRESS");
+    if(!isSafePathInput(selectedPath))denied("WORKSPACE_INVALID_DIRECTORY");
+    const epoch=currentEpoch(id);
+    let root;
+    try{root=await filesystem.realpath(selectedPath);}
+    catch{denied("WORKSPACE_PROJECT_UNAVAILABLE");}
+    if(!stillCurrent(event,id,epoch))return {selected:false};
+    let stat;
+    try{stat=await filesystem.stat(root);}
+    catch{denied("WORKSPACE_PROJECT_UNAVAILABLE");}
+    if(!stillCurrent(event,id,epoch))return {selected:false};
+    if(!stat.isDirectory())denied("WORKSPACE_INVALID_DIRECTORY");
+    if(expectedIdentity!=null){
+      if(typeof expectedIdentity.device!=="string"||
+        typeof expectedIdentity.inode!=="string"||
+        String(stat.dev)!==expectedIdentity.device||
+        String(stat.ino)!==expectedIdentity.inode)
+        denied("WORKSPACE_PROJECT_CHANGED");
+    }
+    disposeLanguageCache(id);
+    grants.set(id,root);
+    directoryIdentities.set(id,stat);
+    return {selected:true,name:path.basename(root)};
+  }
   async function readTextFile(event,request){
     const id=sender(event);
     if(!isValidPreviewRequest(request))denied("WORKSPACE_INVALID_FILE_REQUEST");
@@ -585,7 +616,7 @@ function createTrustedWorkspacePreviewHost({
     clearSender(id);
     return true;
   }
-  return {selectDirectory,readTextFile,listDirectory,searchDirectoryFiles,readTreeTextFile,
+  return {selectDirectory,selectDirectoryPath,readTextFile,listDirectory,searchDirectoryFiles,readTreeTextFile,
     copyFilePath,copyFileContents,getLanguageCapabilities,getLanguageLocations,
     revoke,clearSender,
     // No method intentionally exposes the granted root to a renderer.
