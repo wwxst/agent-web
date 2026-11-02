@@ -4,7 +4,7 @@ import {mkdtemp,mkdir,symlink,rm,writeFile,readFile,stat,realpath} from "node:fs
 import {tmpdir} from "node:os";
 import {join,resolve} from "node:path";
 import {
-  WORKSPACE_PROJECTS_FILENAME,addWorkspaceProject,getWorkspaceProject,
+  WORKSPACE_PROJECTS_FILENAME,addWorkspaceProject,canonicalDirectory,getWorkspaceProject,
   listWorkspaceProjects,markWorkspaceProjectOpened,removeWorkspaceProject,
   readWorkspaceProjects,
 } from "./workspaceProjectStore.cjs";
@@ -19,7 +19,7 @@ test("workspace projects are persisted as native-granted roots and renderer summ
     });
     assert.equal(first.created,true);
     assert.equal(first.project.name,root.split(/[\\/]/u).at(-1));
-    assert.equal(first.project.path,await realpath(root));
+    assert.equal(first.project.path,canonicalDirectory(root).path);
     assert.ok(first.project.id);
     assert.deepEqual(listWorkspaceProjects(userData),[{
       id:first.project.id,name:first.project.name,
