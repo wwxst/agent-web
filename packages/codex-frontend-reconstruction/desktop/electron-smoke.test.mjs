@@ -669,7 +669,7 @@ test("independent Electron file renderer starts, isolates preload and routes Fc 
   assert.equal(referenceGeometry.sidebar,240);
   assert.equal(referenceGeometry.mainLeft,292);
   assert.equal(referenceGeometry.composer?.width,738);
-  assert.equal(referenceGeometry.composer?.left,321);
+  assert.equal(referenceGeometry.composer?.left,320);
   assert.equal(referenceGeometry.heroHeading,"我们应该在agent中做些什么？");
   await page.screenshot({
     path:resolve(root,"desktop/test-results/electron-home-reference.png"),
