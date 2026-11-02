@@ -414,11 +414,11 @@ test("Electron-backed Projects section lists, selects, adds and removes real loc
   await page.goto("/?visualScenario=shell-empty");
   const projects=page.locator('[data-app-action-sidebar-section-key="projects"]');
   await expect(projects.locator("[data-app-action-sidebar-project-row]")).toHaveCount(2);
-  await expect(projects.getByRole("button",{name:"agent-web"})).toBeVisible();
-  await expect(projects.getByRole("button",{name:"agent-cil"})).toBeVisible();
+  await expect(projects.getByRole("button",{name:"agent-web",exact:true})).toBeVisible();
+  await expect(projects.getByRole("button",{name:"agent-cil",exact:true})).toBeVisible();
   await expect(page.getByText("No chats",{exact:true})).toBeVisible();
 
-  await projects.getByRole("button",{name:"agent-cil"}).click();
+  await projects.getByRole("button",{name:"agent-cil",exact:true}).click();
   await expect(projects.locator('[data-app-action-sidebar-project-id="10000000-0000-4000-8000-000000000002"] button[data-app-action-sidebar-select-project]'))
     .toHaveAttribute("aria-current","page");
   await expect(page.getByRole("button",{name:"更改项目"})).toContainText("agent-cil");
