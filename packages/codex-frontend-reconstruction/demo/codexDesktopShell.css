@@ -142,6 +142,10 @@ button:focus-visible, textarea:focus-visible { outline: 2px solid #578cda; outli
   width:239px;
   min-width:239px;
 }
+.demo-desktop[data-independent-electron="true"]:has([data-sidebar-reference-fixture="true"]) .demo-logo {
+  margin-left:1px;
+  font-size:17px;
+}
 .demo-desktop[data-independent-electron="true"]:has([data-sidebar-reference-fixture="true"]) .demo-main {
   margin-right:3px;
 }
@@ -155,7 +159,7 @@ button:focus-visible, textarea:focus-visible { outline: 2px solid #578cda; outli
   margin-right:-8px;
   padding-top:2px;
   /* Preserve the original thumb length while representing off-screen rows. */
-  padding-bottom:405px;
+  padding-bottom:380px;
 }
 .demo-desktop[data-independent-electron="true"]:has([data-sidebar-reference-fixture="true"]) .demo-sidebar-actions .demo-nav-action {
   transform:translateY(2px);
@@ -198,7 +202,8 @@ button:focus-visible, textarea:focus-visible { outline: 2px solid #578cda; outli
 }
 .demo-desktop[data-independent-electron="true"]:has([data-sidebar-reference-fixture="true"]) .demo-sidebar-reference-project__row[data-visual-reference-selected="true"] {
   min-height:36px;
-  margin-inline:-8px;
+  margin-inline-start:-8px;
+  margin-inline-end:0;
   padding-inline:8px;
   background:linear-gradient(#ededed 0 0) center / 100% 30px no-repeat;
   border-radius:9px;
@@ -220,7 +225,7 @@ button:focus-visible, textarea:focus-visible { outline: 2px solid #578cda; outli
   gap:56px;
 }
 .demo-desktop:has([data-sidebar-reference-fixture="true"]) .demo-composer {
-  min-height:100px;
+  min-height:99px;
 }
 .demo-desktop:has([data-sidebar-reference-fixture="true"]) .demo-composer-options {
   gap:6px;
