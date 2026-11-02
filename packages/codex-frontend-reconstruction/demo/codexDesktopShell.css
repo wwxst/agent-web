@@ -218,11 +218,11 @@ button:focus-visible, textarea:focus-visible { outline: 2px solid #578cda; outli
 .demo-desktop:has([data-sidebar-reference-fixture="true"]) .demo-home-hero__heading {
   font-size:28px;
   line-height:34px;
-  letter-spacing:-.5px;
+  letter-spacing:-.125px;
 }
 .demo-desktop:has([data-sidebar-reference-fixture="true"]) .demo-home-composer-context {
   margin-inline:14px;
-  gap:56px;
+  gap:36px;
 }
 .demo-desktop:has([data-sidebar-reference-fixture="true"]) .demo-composer {
   min-height:99px;
