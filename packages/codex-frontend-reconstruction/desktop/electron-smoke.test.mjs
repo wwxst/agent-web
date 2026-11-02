@@ -588,9 +588,11 @@ test("independent Electron file renderer starts, isolates preload and routes Fc 
       composerWidth:composer?.width??null,
       contextHeight:context?.height??null,contextBottom:context?.bottom??null,
       heroIconCenterY:heroIcon==null?null:heroIcon.top+heroIcon.height/2,
-      expectedHeroIconCenterY:main==null?null:main.top+innerHeight*.42-28,
+      // The rounded PageSurface starts at y=44, while the source home anchor
+      // remains aligned to the 36px Windows caption-layout origin.
+      expectedHeroIconCenterY:main==null?null:main.top+innerHeight*.42-36,
       heroHeadingTop:heroHeading?.top??null,
-      expectedHeroHeadingTop:main==null?null:main.top+innerHeight*.42+24,
+      expectedHeroHeadingTop:main==null?null:main.top+innerHeight*.42+16,
       placement:document.querySelector(".demo-composer")?.getAttribute("data-composer-placement"),
     };
   });
@@ -601,7 +603,7 @@ test("independent Electron file renderer starts, isolates preload and routes Fc 
   assert.equal(homeGeometry.contextHeight,38);
   assert.equal(homeGeometry.contextBottom,homeGeometry.composerTop);
   assert.ok(homeGeometry.mainBottom!=null&&homeGeometry.composerBottom!=null&&
-    Math.abs(homeGeometry.mainBottom-homeGeometry.composerBottom-19)<1,
+    Math.abs(homeGeometry.mainBottom-homeGeometry.composerBottom-15)<1,
     JSON.stringify(homeGeometry));
   assert.ok(homeGeometry.heroIconCenterY!=null&&homeGeometry.expectedHeroIconCenterY!=null&&
     Math.abs(homeGeometry.heroIconCenterY-homeGeometry.expectedHeroIconCenterY)<2,
