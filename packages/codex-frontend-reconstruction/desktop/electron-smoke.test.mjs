@@ -639,7 +639,7 @@ test("independent Electron file renderer starts, isolates preload and routes Fc 
     return {fontSize:style.fontSize,lineHeight:style.lineHeight,
       letterSpacing:style.letterSpacing,fontWeight:style.fontWeight};
   });
-  assert.deepEqual(heroStyle,{fontSize:"28px",lineHeight:"34px",letterSpacing:"0.38px",fontWeight:"400"});
+  assert.deepEqual(heroStyle,{fontSize:"32px",lineHeight:"38px",letterSpacing:"-0.8px",fontWeight:"400"});
   await page.evaluate(()=>document.fonts.ready);
   await page.screenshot({
     path:resolve(root,"desktop/test-results/electron-home-reference.png"),
