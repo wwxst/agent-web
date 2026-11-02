@@ -21,7 +21,7 @@ test("shell-empty visual route mounts the real desktop shell, idle Composer and 
   await expect(page.getByTestId("home-computer-context")).toHaveText("此计算机");
   await expect(page.locator(".demo-row")).toHaveCount(0);
   await expect(page.locator(".demo-composer")).toBeVisible();
-  await expect(page.getByRole("heading",{name:"我们要构建什么？"})).toBeVisible();
+  await expect(page.getByRole("heading",{name:"我们应该在agent中做些什么？"})).toBeVisible();
   await expect(page.locator(".demo-home-hero__icon")).toHaveAttribute("width","56");
   await expect(page.locator(".demo-composer")).toHaveAttribute("data-composer-placement","home");
   await expect(page.locator('.demo-composer [contenteditable="true"]')).toBeVisible();
