@@ -78,7 +78,7 @@ import {
 function Icon({ name, size = 18 }: { name: "panel" | "panel-right" | "search" | "bell" | "edit" | "plus" | "branch" | "dots" | "up" | "stop" | "bottom" | "top" | "play" | "refresh" | "terminal" | "check" | "menu" | "copy" | "folder" | "file" | "chevron" | "clock" | "plugin" | "settings" | "sliders" | "window" | "square" | "home" | "images" | "orbit" | "user" | "library" | "tiles" | "square-plus" | "computer"; size?: number }) {
   const children: Record<typeof name, React.ReactNode> = {
     home: <><path d="m3 11 9-8 9 8v9H3z"/><path d="M9 20v-6h6v6"/></>,
-    images: <><rect x="2.5" y="7" width="15" height="14" rx="2"/><path d="M7 7V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-1"/><circle cx="7.5" cy="12" r="1.3"/><path d="m4 19 4.2-4 3.2 2.7"/></>,
+    images: <><rect x="4" y="5" width="14" height="13" rx="2"/><path d="M8 18v2h12a2 2 0 0 0 2-2V9h-4"/><circle cx="9" cy="10" r="1.4"/><path d="m6 16 4-4 3 3 2-2 3 3"/></>,
     orbit: <><circle cx="12" cy="12" r="2"/><ellipse cx="12" cy="12" rx="9" ry="4" transform="rotate(-45 12 12)"/><ellipse cx="12" cy="12" rx="9" ry="4" transform="rotate(45 12 12)"/></>,
     user: <><circle cx="12" cy="8" r="3"/><path d="M5 20c.7-3.5 3-5.3 7-5.3s6.3 1.8 7 5.3"/><circle cx="12" cy="12" r="10"/></>,
     library: <><path d="M4 5h5v15H4zM10 3h5v17h-5zM16 7h4v13h-4z"/></>,
@@ -1661,20 +1661,22 @@ export function App() {
     });
   },[active,findOpen,findMatches.length]);
 
-  // The direct/more identity projection is sourced from original GZc/QZc;
-  // routing/feature flags are supplied explicitly by this mock host.
+  // dWc separates Home and primary destinations from the Explore divider
+  // and the direct/pinned destination stack. Only Home has a real host route.
   const availableRailDestinations: CodexRailDestination[] = [
-    { id: "builtin:home", label: "Home", icon: <Icon name="home" size={18}/>, group:"primary", isCurrentDestination: true, onSelect: () => demoFixtureEnabled ? switchConversation("frontend") : startNewChat() },
-    { id: "builtin:images", label: "Images", icon: <Icon name="images" size={18}/>, group:"primary" },
-    { id: "builtin:automations", label: "Scheduled", icon: <Icon name="clock" size={18}/>, group:"primary" },
-    { id: "builtin:library", label: "Library", icon: <Icon name="library" size={18}/>, group:"primary" },
-    { id: "builtin:orbit", label: "Orbit", icon: <Icon name="orbit" size={18}/>, group:"primary" },
-    { id: "builtin:activity", label: "Activity", icon: <Icon name="branch" size={18}/>, group:"pinned" },
-    { id: "builtin:skills", label: "Skills", icon: <Icon name="tiles" size={18}/>, group:"pinned" },
+    { id: "builtin:home", label: "Home", icon: <Icon name="home" size={18}/>, isCurrentDestination: true, onSelect: () => demoFixtureEnabled ? switchConversation("frontend") : startNewChat() },
+    { id: "builtin:images", label: "Images", icon: <Icon name="images" size={18}/> },
+    { id: "builtin:automations", label: "Scheduled", icon: <Icon name="clock" size={18}/> },
+    { id: "builtin:library", label: "Library", icon: <Icon name="library" size={18}/> },
+    { id: "builtin:activity", label: "Activity", icon: <Icon name="branch" size={18}/> },
+    { id: "builtin:skills", label: "Skills", icon: <Icon name="tiles" size={18}/> },
   ];
+  const homeRailDestination=availableRailDestinations.find(item=>item.id==="builtin:home")!;
+  const primaryRailDestinations=["builtin:images","builtin:automations","builtin:library"]
+    .map(id=>availableRailDestinations.find(item=>item.id===id)!);
   const destinationProjection = projectNavigationDestinations(availableRailDestinations, {
     navigationRailEnabled,
-    directDestinationIds: ["builtin:home", "builtin:images", "builtin:automations", "builtin:library", "builtin:orbit", "builtin:activity", "builtin:skills"],
+    directDestinationIds: ["builtin:activity", "builtin:skills"],
   });
   const railDestinations = destinationProjection.railDestinations.map((item) =>
     availableRailDestinations.find((candidate) => candidate.id === item.id)!,
@@ -1702,16 +1704,20 @@ export function App() {
     </div>
     <div className="demo-app" data-codex-shell-preview="light">
     {navigationRailEnabled && <CodexNavigationRail
+      home={homeRailDestination}
+      primaryDestinations={primaryRailDestinations}
       destinations={railDestinations}
       onMeasuredWidthChange={setMeasuredRailWidth}
-      moreAction={<button type="button" disabled aria-label="More（尚未接入）"
-        title="更多导航尚未接入"><Icon name="dots" size={18}/></button>}
-      footer={<>
-        <button type="button" disabled className="codex-navigation-rail__account"
-          aria-label="Account（尚未连接）" title="账户尚未连接"><Icon name="user" size={16}/></button>
-        <button type="button" disabled aria-label="Settings（尚未接入）"
-          title="设置尚未接入"><Icon name="settings" size={18}/></button>
-      </>}
+      customize={<button type="button" className="codex-navigation-rail__destination"
+        data-testid="navigation-rail-plugins" data-navigation-rail-kind="customize" aria-label="Plugins（尚未接入）"
+        title="Plugins 尚未接入" disabled><Icon name="plugin" size={18}/></button>}
+      explore={<button type="button" className="codex-navigation-rail__destination"
+        data-testid="navigation-rail-explore" data-navigation-rail-kind="explore" aria-label="Explore（尚未接入）"
+        title="Explore 尚未接入" disabled><Icon name="dots" size={18}/></button>}
+      footer={<button type="button" data-testid="navigation-rail-settings"
+        disabled aria-label="Settings（尚未接入）" title="设置尚未接入">
+        <Icon name="settings" size={18}/>
+      </button>}
     />}
     <ConversationSidebar active={active} collapsed={collapsed} navigationRailEnabled={navigationRailEnabled}
       referenceFixture={showSidebarReferenceFixture}
