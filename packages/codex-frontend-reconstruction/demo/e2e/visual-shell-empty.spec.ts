@@ -100,6 +100,7 @@ test("shell-empty visual route mounts the real desktop shell, idle Composer and 
         letterSpacing:style.letterSpacing,fontWeight:style.fontWeight};
     })(),
     contextProject:document.querySelector(".demo-home-composer-context__project")?.getBoundingClientRect().toJSON()??null,
+    contextProjectColor:getComputedStyle(document.querySelector(".demo-home-composer-context__project")!).color,
     contextComputer:document.querySelector(".demo-home-composer-context__computer")?.getBoundingClientRect().toJSON()??null,
     composerPlacement:document.querySelector(".demo-composer")?.getAttribute("data-composer-placement"),
     rowCount:document.querySelectorAll(".demo-row").length,
@@ -147,6 +148,7 @@ test("shell-empty visual route mounts the real desktop shell, idle Composer and 
     fontSize:"28px",lineHeight:"34px",letterSpacing:"-0.125px",fontWeight:"400",
   });
   expect(capture.contextProject?.left).toBeCloseTo(480,0);
+  expect(capture.contextProjectColor).toBe("rgb(54, 54, 54)");
   expect(capture.contextComputer?.left).toBeCloseTo(566,0);
   expect((capture.heroIcon?.top??0)+(capture.heroIcon?.height??0)/2).toBeCloseTo(327,0);
   expect(capture.heroHeading?.top).toBeCloseTo(379,0);
