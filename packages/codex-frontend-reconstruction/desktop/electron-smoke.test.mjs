@@ -18,7 +18,7 @@ test("independent Electron file renderer starts, isolates preload and routes Fc 
   executablePath,
   args:[".",...(process.platform==="linux"&&process.env.CI?["--no-sandbox"]:[])],
   cwd:root,
-  env:{...process.env,AGENT_WEB_DEV_URL:"",ELECTRON_DISABLE_SECURITY_WARNINGS:"true"},
+  env:{...process.env,AGENT_WEB_DEV_URL:"",AGENT_WEB_VISUAL_SCENARIO:"shell-empty-reference",ELECTRON_DISABLE_SECURITY_WARNINGS:"true"},
   timeout:40000,
  });
  try{
@@ -36,6 +36,7 @@ test("independent Electron file renderer starts, isolates preload and routes Fc 
   assert.equal(host.hasHost,true);
   assert.equal(host.info.windowType,"electron");
   assert.equal(host.info.backendConnected,false);
+  assert.equal(host.info.visualScenario,"shell-empty-reference");
   assert.equal(host.exposedNode,"undefined");
   assert.equal(host.processType,"undefined");
   // Confirm the real context-isolated preload routes both new scoped tree
@@ -613,6 +614,24 @@ test("independent Electron file renderer starts, isolates preload and routes Fc 
     JSON.stringify(homeGeometry));
   await page.screenshot({
     path:resolve(root,"desktop/test-results/electron-home-new-chat.png"),
+    fullPage:false,animations:"disabled",
+  });
+
+  // Capture the same empty-home layout with the sanitized source-reference
+  // sidebar data. The main process only enables this fixture in an unpackaged
+  // Electron test process explicitly marked by AGENT_WEB_VISUAL_SCENARIO.
+  const referenceUrl=new URL(homeUrl);
+  referenceUrl.searchParams.set("visualScenario","shell-empty-reference");
+  await page.goto(referenceUrl.toString());
+  await page.locator('[data-sidebar-reference-fixture="true"]').waitFor({timeout:15000});
+  assert.equal(await page.locator('[data-visual-reference-only="pinned"]').count(),1);
+  assert.equal(await page.locator('[data-visual-reference-only="project"]').count(),7);
+  assert.equal(await page.locator('[data-visual-reference-only="project-thread"]').count(),5);
+  assert.equal(await page.getByRole("heading",{name:"我们要构建什么？"}).count(),1);
+  assert.equal(await page.getByRole("textbox",{name:"随心输入"}).count(),1);
+  await page.evaluate(()=>document.fonts.ready);
+  await page.screenshot({
+    path:resolve(root,"desktop/test-results/electron-home-reference.png"),
     fullPage:false,animations:"disabled",
   });
  }finally{await app.close();}
