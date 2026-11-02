@@ -17,7 +17,7 @@ test("shell-empty visual route mounts the real desktop shell, idle Composer and 
   await expect(page.getByTestId("home-new-tab-unavailable")).toBeDisabled();
   await expect(page.locator(".demo-header")).toHaveCSS("border-bottom-width","0px");
   await expect(page.getByTestId("home-composer-context")).toBeVisible();
-  await expect(page.getByRole("button",{name:"agent"})).toBeVisible();
+  await expect(page.getByTestId("home-composer-context").getByRole("button",{name:"agent"})).toBeVisible();
   await expect(page.getByTestId("home-computer-context")).toHaveText("此计算机");
   await expect(page.locator(".demo-row")).toHaveCount(0);
   await expect(page.locator(".demo-composer")).toBeVisible();
