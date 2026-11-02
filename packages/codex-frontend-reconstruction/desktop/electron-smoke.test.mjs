@@ -1,7 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {mkdir} from "node:fs/promises";
-import {resolve} from "node:path";
+import {mkdir,mkdtemp,rm} from "node:fs/promises";
+import {resolve,join} from "node:path";
+import {tmpdir} from "node:os";
 import {fileURLToPath} from "node:url";
 import {_electron as electron} from "playwright";
 
@@ -14,11 +15,13 @@ test("independent Electron file renderer starts, isolates preload and routes Fc 
 },async()=>{
  const executablePath=resolve(root,"node_modules","electron","dist",
   process.platform==="win32"?"electron.exe":process.platform==="darwin"?"Electron.app/Contents/MacOS/Electron":"electron");
+ const userDataDir=await mkdtemp(join(tmpdir(),"agent-web-electron-smoke-"));
  const app=await electron.launch({
   executablePath,
   args:[".",...(process.platform==="linux"&&process.env.CI?["--no-sandbox"]:[])],
   cwd:root,
-  env:{...process.env,AGENT_WEB_DEV_URL:"",AGENT_WEB_VISUAL_SCENARIO:"shell-empty-reference",ELECTRON_DISABLE_SECURITY_WARNINGS:"true"},
+  env:{...process.env,AGENT_WEB_DEV_URL:"",AGENT_WEB_VISUAL_SCENARIO:"shell-empty-reference",
+   AGENT_WEB_USER_DATA_DIR:userDataDir,ELECTRON_DISABLE_SECURITY_WARNINGS:"true"},
   timeout:40000,
  });
  try{
@@ -642,5 +645,8 @@ test("independent Electron file renderer starts, isolates preload and routes Fc 
     path:resolve(root,"desktop/test-results/electron-home-reference.png"),
     fullPage:false,animations:"disabled",
   });
- }finally{await app.close();}
+ }finally{
+  try{await app.close();}
+  finally{await rm(userDataDir,{recursive:true,force:true});}
+ }
 });
