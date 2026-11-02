@@ -136,6 +136,62 @@ button:focus-visible, textarea:focus-visible { outline: 2px solid #578cda; outli
 .demo-chat-link-title{font-size:12.5px;}
 .demo-recent-heading {border-top:1px solid #dedede;padding-top:12px;margin-top:0;}
 .demo-sidebar-foot {display:flex;align-items:center;gap:8px;padding:7px 12px 2px;border-top:1px solid #e0e0e0;color:#858585;font-size:11px;}
+/* Latest user-provided 1090×760 Codex Windows reference only.
+ * Native shell keeps its regular sizing outside this opt-in visual scene. */
+.demo-desktop[data-independent-electron="true"]:has([data-sidebar-reference-fixture="true"]) .demo-sidebar {
+  width:239px;
+  min-width:239px;
+}
+.demo-desktop[data-independent-electron="true"]:has([data-sidebar-reference-fixture="true"]) .demo-main {
+  margin-right:3px;
+}
+.demo-desktop[data-independent-electron="true"]:has([data-sidebar-reference-fixture="true"]) .demo-page-surface {
+  inset-inline-end:3px;
+}
+.demo-desktop[data-independent-electron="true"]:has([data-sidebar-reference-fixture="true"]) .demo-sidebar-section[data-app-action-sidebar-section-key="pinned"] .demo-sidebar-section__header,
+.demo-desktop[data-independent-electron="true"]:has([data-sidebar-reference-fixture="true"]) .demo-sidebar-section[data-app-action-sidebar-section-key="pinned"] .demo-sidebar-section__toggle {
+  min-height:29px;
+  height:29px;
+}
+.demo-desktop[data-independent-electron="true"]:has([data-sidebar-reference-fixture="true"]) .demo-sidebar-section[data-app-action-sidebar-section-key="projects"] {
+  margin-top:13px;
+}
+.demo-desktop[data-independent-electron="true"]:has([data-sidebar-reference-fixture="true"]) .demo-sidebar-section[data-app-action-sidebar-section-key="projects"] .demo-sidebar-section__header,
+.demo-desktop[data-independent-electron="true"]:has([data-sidebar-reference-fixture="true"]) .demo-sidebar-section[data-app-action-sidebar-section-key="projects"] .demo-sidebar-section__toggle {
+  min-height:27px;
+  height:27px;
+}
+.demo-desktop[data-independent-electron="true"]:has([data-sidebar-reference-fixture="true"]) .demo-sidebar-reference-project__row {
+  min-height:32px;
+}
+.demo-desktop[data-independent-electron="true"]:has([data-sidebar-reference-fixture="true"]) .demo-sidebar-reference-project__row[data-visual-reference-selected="true"] {
+  min-height:36px;
+  margin-inline:-8px;
+  padding-inline:8px;
+  background:linear-gradient(#ededed 0 0) center / 100% 30px no-repeat;
+  border-radius:9px;
+}
+.demo-desktop[data-independent-electron="true"]:has([data-sidebar-reference-fixture="true"]) .demo-sidebar-reference-project__threads {
+  margin-bottom:2px;
+}
+.demo-desktop[data-independent-electron="true"]:has([data-sidebar-reference-fixture="true"]) .demo-home-composer-context {
+  margin-inline:14px;
+  gap:56px;
+}
+.demo-desktop[data-independent-electron="true"]:has([data-sidebar-reference-fixture="true"]) .demo-composer {
+  min-height:100px;
+}
+.demo-desktop[data-independent-electron="true"]:has([data-sidebar-reference-fixture="true"]) .demo-composer-options {
+  gap:6px;
+}
+.demo-desktop[data-independent-electron="true"]:has([data-sidebar-reference-fixture="true"]) .demo-composer-right {
+  gap:9px;
+}
+.demo-desktop[data-independent-electron="true"]:has([data-sidebar-reference-fixture="true"]) .demo-main[data-codex-home="true"] .demo-header {
+  height:52px;
+  min-height:52px;
+  padding-inline:15px;
+}
 .demo-main{
   position:relative;z-index:1;height:auto;min-height:0;
   margin:8px 4px 4px 0;
@@ -1090,8 +1146,7 @@ button:focus-visible, textarea:focus-visible { outline: 2px solid #578cda; outli
   position: absolute;
   top: calc(var(--height-toolbar, 46px) - 8px);
   inset-inline: 0;
-  /* app-primary-fe8a450b3b04.js DBt renders heading-xl font-normal.
-   * app-shared-dc7535e633d7.css resolves it to 32px / 38px / tracking-tight. */
+  /* Screenshot-calibrated against the current 1090×760 Codex Windows home. */
   height: calc(var(--home-composer-top) + 84px);
   display: flex;
   justify-content: center;
@@ -1119,11 +1174,11 @@ button:focus-visible, textarea:focus-visible { outline: 2px solid #578cda; outli
 .demo-home-hero__heading {
   margin: 0;
   color: var(--color-text, #292929);
-  /* DBt's source heading-xl + font-normal; resolved shared tokens. */
-  font-size: 32px;
+  /* Current localized Windows home screenshot measures 28px / 34px. */
+  font-size: 28px;
   font-weight: 400;
-  line-height: 38px;
-  letter-spacing: -.8px;
+  line-height: 34px;
+  letter-spacing: -.5px;
   text-align: center;
   white-space: pre-wrap;
 }
