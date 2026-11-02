@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "sourceCaptureCommit": "64b6178600efec3608baed4604130e529e73e7ae",
+  "metadataValidation": {
+    "ok": true,
+    "errors": []
+  },
+  "imageDimensionsVerified": true,
+  "originalAndDerivedImageBytesUnchanged": [
+    "original-shell-empty.png",
+    "reconstructed-shell-empty.png",
+    "comparison/overlay.png",
+    "comparison/difference.png",
+    "comparison/side-by-side.png"
+  ],
+  "sourceImageSha256Verified": true,
+  "recomputedMetricsEqualOriginalReport": true,
+  "metrics": {
+    "width": 1352,
+    "height": 760,
+    "threshold": 24,
+    "totalPixels": 1027520,
+    "changedPixels": 27813,
+    "changedPixelRatio": 0.02706808626596076,
+    "changedPixelPercent": 2.706808626596076,
+    "meanAbsoluteError": 4.9862143802553724,
+    "maxChannelDifference": 248
+  },
+  "windowsPowerShellCursorRegression": {
+    "status": "passed",
+    "testFirstFailure": "Old production assignment failed with op_Subtraction before applying the three parentheses corrections.",
+    "sizes": [
+      "1920x1080",
+      "640x480",
+      "7680x4320"
+    ]
+  },
+  "windowsNativeCaptureSelfTest": "passed",
+  "captureScriptMatchesSuccessfulLocalCopySha256": "549022fad577d7c8cd6e36fd018d5ea017f3656f411e000993776f2c0ba3a06b",
+  "publicMetadataChanges": [
+    "screenshot paths made relative",
+    "processId removed",
+    "windowHandle removed"
+  ],
+  "publicComparisonReportChanges": [
+    "machine paths made relative; metrics and image hashes unchanged"
+  ],
+  "imagesPublicationExplicitlyAuthorized": true,
+  "ci": "See PR #89 Checks for the new commit. Prior capture-head CI is linked in the report."
+}

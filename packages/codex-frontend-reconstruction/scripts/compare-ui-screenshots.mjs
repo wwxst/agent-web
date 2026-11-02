@@ -28,7 +28,7 @@ export function parseArgs(argv){
   for(let i=0;i<argv.length;i++){
     const arg=argv[i];
     if(arg==="--help"||arg==="-h")return {help:true};
-    if(!["--reference","--actual","--out-dir","--threshold"].includes(arg)){
+    if(!["--reference","--actual","--reference-meta","--actual-meta","--out-dir","--threshold"].includes(arg)){
       throw new Error(`Unknown argument: ${arg}`);
     }
     const value=argv[++i];
@@ -38,6 +38,9 @@ export function parseArgs(argv){
   if(!values["--reference"]||!values["--actual"]){
     throw new Error("--reference and --actual are required.");
   }
+  if(Boolean(values["--reference-meta"])!==Boolean(values["--actual-meta"])){
+    throw new Error("--reference-meta and --actual-meta must be supplied together.");
+  }
   const threshold=values["--threshold"]==null?24:Number(values["--threshold"]);
   if(!Number.isInteger(threshold)||threshold<0||threshold>255){
     throw new Error("--threshold must be an integer from 0 to 255.");
@@ -46,6 +49,8 @@ export function parseArgs(argv){
     help:false,
     referencePath:resolve(values["--reference"]),
     actualPath:resolve(values["--actual"]),
+    referenceMetaPath:values["--reference-meta"]==null?undefined:resolve(values["--reference-meta"]),
+    actualMetaPath:values["--actual-meta"]==null?undefined:resolve(values["--actual-meta"]),
     outputDir:resolve(values["--out-dir"]??"visual-comparison-output"),
     threshold,
   };
@@ -56,8 +61,78 @@ function imageMeta(filePath,bytes){
   return {path:filePath,width,height,bytes:bytes.length,sha256:sha256(bytes)};
 }
 
+export function validateCaptureMetadata(reference,actual,referenceImage,actualImage){
+  const errors=[];
+  const validateOne=(meta,label,image)=>{
+    if(meta==null||typeof meta!=="object"||Array.isArray(meta)){
+      errors.push(`${label} metadata must be a JSON object.`);
+      return;
+    }
+    if(meta.schemaVersion!==1)errors.push(`${label} metadata schemaVersion must be 1.`);
+    if(typeof meta.scenarioId!=="string"||meta.scenarioId.trim()===""){
+      errors.push(`${label} metadata is missing scenarioId.`);
+    }
+    if(!["light","dark"].includes(meta.theme)){
+      errors.push(`${label} metadata theme must be light or dark.`);
+    }
+    if(typeof meta.captureBoundary!=="string"||meta.captureBoundary.trim()===""){
+      errors.push(`${label} metadata is missing captureBoundary.`);
+    }
+    if(meta.dpiAwareness!=="per-monitor-v2-thread"){
+      errors.push(`${label} metadata dpiAwareness must be per-monitor-v2-thread.`);
+    }
+    if(!Number.isSafeInteger(meta.windowDpi)||meta.windowDpi<48||meta.windowDpi>768){
+      errors.push(`${label} metadata windowDpi is invalid.`);
+    }
+    if(typeof meta.windowScaleFactor!=="number"||!Number.isFinite(meta.windowScaleFactor)||
+      meta.windowScaleFactor<=0){
+      errors.push(`${label} metadata windowScaleFactor is invalid.`);
+    }else if(Number.isSafeInteger(meta.windowDpi)&&
+      Math.abs(meta.windowScaleFactor-meta.windowDpi/96)>0.0001){
+      errors.push(`${label} metadata windowScaleFactor does not match windowDpi/96.`);
+    }
+    if(!Number.isSafeInteger(meta.width)||!Number.isSafeInteger(meta.height)||
+      meta.width<1||meta.height<1){
+      errors.push(`${label} metadata dimensions are invalid.`);
+    }else if(meta.width!==image.width||meta.height!==image.height){
+      errors.push(`${label} metadata dimensions do not match its PNG.`);
+    }
+    const bounds=meta.visibleBounds;
+    if(bounds==null||typeof bounds!=="object"||Array.isArray(bounds)||
+      !["x","y","width","height"].every(key=>Number.isSafeInteger(bounds[key]))||
+      bounds.width<1||bounds.height<1){
+      errors.push(`${label} metadata visibleBounds are invalid.`);
+    }else if(bounds.width!==image.width||bounds.height!==image.height){
+      errors.push(`${label} visibleBounds dimensions do not match its PNG.`);
+    }
+  };
+  validateOne(reference,"Reference",referenceImage);
+  validateOne(actual,"Actual",actualImage);
+  if(errors.length===0){
+    for(const key of ["scenarioId","theme","captureBoundary","dpiAwareness","windowDpi","windowScaleFactor"]){
+      if(reference[key]!==actual[key]){
+        errors.push(`Capture metadata differs for ${key}: reference=${reference[key]}, actual=${actual[key]}.`);
+      }
+    }
+    for(const key of ["x","y","width","height"]){
+      if(reference.visibleBounds[key]!==actual.visibleBounds[key]){
+        errors.push(`Capture metadata differs for visibleBounds.${key}: reference=${reference.visibleBounds[key]}, actual=${actual.visibleBounds[key]}.`);
+      }
+    }
+  }
+  return {ok:errors.length===0,errors};
+}
+
+async function readCaptureMetadata(filePath){
+  try{
+    return JSON.parse(await readFile(filePath,"utf8"));
+  }catch(error){
+    throw new Error(`Could not read capture metadata at ${filePath}: ${error instanceof Error?error.message:String(error)}`);
+  }
+}
+
 export async function compareScreenshots({
-  referencePath,actualPath,outputDir,threshold=24,
+  referencePath,actualPath,referenceMetaPath,actualMetaPath,outputDir,threshold=24,
 }){
   if(!Number.isInteger(threshold)||threshold<0||threshold>255){
     throw new Error("threshold must be an integer from 0 to 255.");
@@ -68,11 +143,39 @@ export async function compareScreenshots({
   const actual=imageMeta(actualPath,actualBytes);
   await mkdir(outputDir,{recursive:true});
 
+  if(Boolean(referenceMetaPath)!==Boolean(actualMetaPath)){
+    throw new Error("referenceMetaPath and actualMetaPath must be supplied together.");
+  }
+  let captureMetadata;
+  if(referenceMetaPath!=null&&actualMetaPath!=null){
+    const [referenceData,actualData]=await Promise.all([
+      readCaptureMetadata(referenceMetaPath),readCaptureMetadata(actualMetaPath),
+    ]);
+    const validation=validateCaptureMetadata(referenceData,actualData,reference,actual);
+    captureMetadata={
+      referencePath:referenceMetaPath,actualPath:actualMetaPath,
+      reference:referenceData,actual:actualData,
+      validation,
+    };
+    if(!validation.ok){
+      const report={
+        schemaVersion:1,status:"metadata-mismatch",
+        reason:"Capture metadata does not describe the same scenario, theme, visible window bounds, DPI and capture boundary. No pixel comparison was performed.",
+        reference,actual,captureMetadata,threshold,
+        nextAction:"Recapture both applications with the Windows capture helper using the same scenario ID, theme, visible bounds and display scale.",
+      };
+      await writeFile(resolve(outputDir,"report.json"),JSON.stringify(report,null,2)+"\n");
+      return {exitCode:3,report};
+    }
+  }
+
   if(reference.width!==actual.width||reference.height!==actual.height){
     const report={
       schemaVersion:1,status:"dimension-mismatch",
       reason:"Reference and actual screenshots must have identical pixel dimensions. No scaling or cropping was applied.",
-      reference,actual,threshold,
+      reference,actual,
+      ...(captureMetadata==null?{}:{captureMetadata}),
+      threshold,
       nextAction:"Capture both applications at the same window size, display scale, and device-pixel ratio, then compare again.",
     };
     await writeFile(resolve(outputDir,"report.json"),JSON.stringify(report,null,2)+"\n");
@@ -171,7 +274,9 @@ export async function compareScreenshots({
     ]);
     const report={
       schemaVersion:1,status:"compared",
-      reference,actual,metrics:rendered.metrics,
+      reference,actual,
+      ...(captureMetadata==null?{}:{captureMetadata}),
+      metrics:rendered.metrics,
       outputs:outputFiles,
       notes:[
         "Pixel comparison is meaningful only when both captures show the same scenario, content, theme, window bounds, display scale, and device-pixel ratio.",
@@ -191,8 +296,9 @@ function usage(){
     "Compare two same-size Codex UI PNG screenshots without resizing either image.",
     "",
     "Usage:",
-    "  npm run visual:compare -- --reference <original.png> --actual <reconstructed.png> [--out-dir <dir>] [--threshold 24]",
+    "  npm run visual:compare -- --reference <original.png> --actual <reconstructed.png> [--reference-meta <original.png.json> --actual-meta <reconstructed.png.json>] [--out-dir <dir>] [--threshold 24]",
     "",
+    "For Codex window acceptance, pass both capture metadata files. Different scenario/theme/DPI/bounds/boundary values fail closed before pixel comparison.",
     "Outputs: overlay.png, difference.png, side-by-side.png, report.json.",
     "Different dimensions produce report.json and exit code 2; capture both windows at the same size instead of accepting a misleading scaled diff.",
   ].join("\n");

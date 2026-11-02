@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "scenarioId": "A-shell-empty",
+  "theme": "light",
+  "captureBoundary": "dwm-extended-frame-bounds",
+  "screenshot": "original-shell-empty.png",
+  "width": 1352,
+  "height": 760,
+  "windowDpi": 96,
+  "windowScaleFactor": 1,
+  "dpiAwareness": "per-monitor-v2-thread",
+  "processName": "ChatGPT",
+  "windowTitle": "ChatGPT",
+  "visibleBounds": {
+    "x": 284,
+    "y": 160,
+    "width": 1352,
+    "height": 760
+  },
+  "outerBounds": {
+    "x": 284,
+    "y": 160,
+    "width": 1352,
+    "height": 760
+  },
+  "sha256": "3c6b61a4798b51614fa5dd9b7fe0e512f7d5cae80f56093c033332af17520a3b",
+  "capturedAtUtc": "2026-10-31T03:38:43.0048205Z"
+}
