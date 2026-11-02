@@ -28,7 +28,10 @@ test("normal packaged Electron launch opens the empty Codex home, never a synthe
     await page.locator('[data-app-shell-frame="true"]').waitFor({timeout:20000});
     await page.locator('.demo-composer[data-composer-placement="home"]')
       .waitFor({timeout:15000});
-    assert.equal(await page.locator(".demo-header-location strong").textContent(),"New chat");
+    assert.equal(await page.locator(".demo-header-location").count(),0);
+    assert.equal(await page.getByTestId("home-new-tab-unavailable").isDisabled(),true);
+    assert.equal(await page.getByTestId("home-composer-context").count(),1);
+    assert.equal(await page.getByTestId("home-computer-context").textContent(),"此计算机");
     assert.equal(await page.getByRole("heading",{name:"What should we build?"}).count(),1);
     assert.equal(await page.getByText("No projects",{exact:true}).count(),1);
     assert.equal(await page.getByText("No chats",{exact:true}).count(),1);
@@ -68,7 +71,9 @@ test("normal packaged Electron launch opens the empty Codex home, never a synthe
     await app.evaluate(({dialog})=>{
       dialog.showOpenDialog=async()=>({canceled:false,filePaths:[process.cwd()]});
     });
-    await page.getByRole("button",{name:"Open local folder"}).click();
+    assert.equal(await page.getByRole("button",{name:"Open local folder"}).isEnabled(),true);
+    // The Composer context action must use the existing native picker path.
+    await page.getByRole("button",{name:"选择项目"}).click();
     await page.getByRole("heading",{name:/What should we work on in/})
       .waitFor({state:"visible",timeout:15000});
     assert.equal(await page.locator("[data-local-workspace-project]").count(),1);
@@ -85,14 +90,16 @@ test("normal packaged Electron launch opens the empty Codex home, never a synthe
 
     // A normal Home action must not expose fixtures either.
     await page.getByRole("button",{name:"Home"}).click();
-    assert.equal(await page.locator(".demo-header-location strong").textContent(),"New chat");
+    assert.equal(await page.locator(".demo-header-location").count(),0);
+    assert.equal(await page.getByTestId("home-new-tab-unavailable").isDisabled(),true);
     assert.equal(await page.locator(".demo-row").count(),0);
     // The actual native View menu shortcut cannot jump to a hidden
     // synthetic review fixture in the normal application.
     await app.evaluate(({Menu})=>{
       Menu.getApplicationMenu().getMenuItemById("previousThread").click();
     });
-    assert.equal(await page.locator(".demo-header-location strong").textContent(),"New chat");
+    assert.equal(await page.locator(".demo-header-location").count(),0);
+    assert.equal(await page.getByTestId("home-new-tab-unavailable").isDisabled(),true);
     assert.equal(await page.locator(".demo-row").count(),0);
     const editor=page.getByRole("textbox",{name:"Do anything"});
     await editor.fill("draft stays here until a real Agent host exists");
