@@ -445,6 +445,21 @@ button:focus-visible, textarea:focus-visible { outline: 2px solid #578cda; outli
 .demo-send-button{width:29px;height:29px;border-radius:50%;background:#909090;color:#fff;}
 .demo-send-button:hover:not(:disabled){background:#595959;}
 .demo-send-button:disabled {background:#bebebe;color:#fff;}
+/* Empty Codex home keeps the source microphone + voice-mode affordances.
+ * This host has no dictation/realtime voice capability yet, so both controls
+ * remain genuinely disabled while preserving the original control geometry. */
+.demo-composer-voice-unavailable{
+  display:grid;place-items:center;flex:0 0 24px;width:24px;height:28px;
+  padding:0;border:0;border-radius:7px;background:transparent;color:#555;
+  cursor:not-allowed;
+}
+.demo-composer-voice-unavailable:disabled{opacity:.72;}
+.demo-composer-voice-mode-unavailable{
+  display:grid;place-items:center;flex:0 0 30px;width:30px;height:30px;
+  padding:0;border:0;border-radius:50%;background:#3478f6;color:#fff;
+  cursor:not-allowed;
+}
+.demo-composer-voice-mode-unavailable:disabled{opacity:.62;}
 .demo-toast{background:#fff;color:#444;border:1px solid #e1e1e1;box-shadow:0 7px 25px #0002;}
 @media(max-width:860px){.demo-sidebar--collapsed{width:56px;min-width:56px}.demo-transcript-column{width:min(100% - 35px,var(--thread-content-max-width))}.demo-composer-zone{padding:8px 17px 12px}}
 @media(max-width:600px){.demo-window-menu{gap:12px;padding:0 9px}.demo-window-buttons{font-size:11px}.demo-sidebar:not(.demo-sidebar--collapsed){width:56px;min-width:56px}.demo-sidebar:not(.demo-sidebar--collapsed) .demo-sidebar-actions{display:grid}.demo-sidebar:not(.demo-sidebar--collapsed) .demo-nav-action{font-size:0;padding:7px}.demo-sidebar:not(.demo-sidebar--collapsed) .demo-nav-action span,.demo-sidebar:not(.demo-sidebar--collapsed) .demo-section-heading,.demo-sidebar:not(.demo-sidebar--collapsed) .demo-chat-list,.demo-sidebar:not(.demo-sidebar--collapsed) .demo-sidebar-foot{display:none}.demo-header{padding:0 12px}.demo-composer-model{font-size:11px}.demo-transcript-column{width:calc(100% - 26px)}}
@@ -985,10 +1000,10 @@ button:focus-visible, textarea:focus-visible { outline: 2px solid #578cda; outli
   box-sizing: border-box;
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 32px;
   height: 38px;
   margin: 0 12px;
-  padding: 0 10px;
+  padding: 0 15px;
   border-radius: 9px 9px 0 0;
   background: #f5f5f5;
   color: #858585;
@@ -1017,7 +1032,7 @@ button:focus-visible, textarea:focus-visible { outline: 2px solid #578cda; outli
   color: #858585;
   cursor: not-allowed;
 }
-.demo-home-composer-context__computer { color: #555; font-weight: 500; }
+.demo-home-composer-context__computer { color: #363636; font-weight: 500; }
 .demo-main[data-codex-home="true"] .demo-header {
   padding-inline: 18px;
   border-bottom: 0;
@@ -1104,9 +1119,11 @@ button:focus-visible, textarea:focus-visible { outline: 2px solid #578cda; outli
 .demo-home-hero__heading {
   margin: 0;
   color: var(--color-text, #292929);
-  font-size: var(--text-xl, 20px);
+  /* home-58555ba264e5.css: ._hero_69e8b_9 ._title_69e8b_44 */
+  font-size: 28px;
   font-weight: 400;
-  line-height: 1.2;
+  line-height: 34px;
+  letter-spacing: .38px;
   text-align: center;
   white-space: pre-wrap;
 }
