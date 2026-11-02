@@ -80,11 +80,11 @@ import {
 
 function Icon({ name, size = 18 }: { name: "panel" | "panel-right" | "search" | "bell" | "edit" | "plus" | "branch" | "dots" | "up" | "stop" | "bottom" | "top" | "play" | "refresh" | "terminal" | "check" | "menu" | "copy" | "folder" | "folder-open" | "file" | "chevron" | "clock" | "plugin" | "settings" | "sliders" | "window" | "square" | "home" | "images" | "orbit" | "user" | "library" | "tiles" | "square-plus" | "computer" | "laptop"; size?: number }) {
   const children: Record<typeof name, React.ReactNode> = {
-    home: <path d="M3 10.5 12 3l9 7.5v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z M9 21v-6h6v6z" fill="currentColor" fillRule="evenodd" stroke="none"/>,
+    home: <path d="M3 10.5 12 3l9 7.5v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z" fill="currentColor" stroke="none"/>,
     images: <><path d="M18 22H4a2 2 0 0 1-2-2V6"/><path d="m22 13-1.296-1.296a2.41 2.41 0 0 0-3.408 0L11 18"/><circle cx="12" cy="8" r="2"/><rect width="16" height="16" x="6" y="2" rx="2"/></>,
-    orbit: <><circle cx="12" cy="12" r="2"/><ellipse cx="12" cy="12" rx="9" ry="4" transform="rotate(-45 12 12)"/><ellipse cx="12" cy="12" rx="9" ry="4" transform="rotate(45 12 12)"/></>,
+    orbit: <><circle cx="12" cy="12" r="3"/><circle cx="19" cy="5" r="2"/><circle cx="5" cy="19" r="2"/><path d="M10.4 21.9a10 10 0 0 0 9.941-15.416"/><path d="M13.5 2.1a10 10 0 0 0-9.841 15.416"/></>,
     user: <><circle cx="12" cy="8" r="3"/><path d="M5 20c.7-3.5 3-5.3 7-5.3s6.3 1.8 7 5.3"/><circle cx="12" cy="12" r="10"/></>,
-    library: <><path d="m16 6 4 14"/><path d="M12 6v14"/><path d="M8 8v12"/><path d="M4 4v16"/></>,
+    library: <><rect width="8" height="18" x="3" y="3" rx="1"/><path d="M7 3v18"/><path d="M20.4 18.9c.2.5-.1 1.1-.6 1.3l-1.9.7c-.5.2-1.1-.1-1.3-.6L11.1 5.1c-.2-.5.1-1.1.6-1.3l1.9-.7c.5-.2 1.1.1 1.3.6z"/></>,
     tiles: <><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></>,
     panel: <><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/></>,
     "panel-right": <><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M15 3v18"/></>,
@@ -1929,7 +1929,7 @@ export function App() {
       onMeasuredWidthChange={setMeasuredRailWidth}
       customize={<button type="button" className="codex-navigation-rail__destination"
         data-testid="navigation-rail-plugins" data-navigation-rail-kind="customize" aria-label="Plugins（尚未接入）"
-        title="Plugins 尚未接入" disabled><Icon name="plugin" size={18}/></button>}
+        title="Plugins 尚未接入" disabled><Icon name="orbit" size={18}/></button>}
       explore={<button type="button" className="codex-navigation-rail__destination"
         data-testid="navigation-rail-explore" data-navigation-rail-kind="explore" aria-label="Explore（尚未接入）"
         title="Explore 尚未接入" disabled><Icon name="dots" size={18}/></button>}
