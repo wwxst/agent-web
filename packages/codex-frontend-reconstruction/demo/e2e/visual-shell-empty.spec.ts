@@ -144,10 +144,10 @@ test("shell-empty visual route mounts the real desktop shell, idle Composer and 
   expect(capture.heroIcon).not.toBeNull();
   expect(capture.heroHeading).not.toBeNull();
   expect(capture.heroHeadingStyle).toEqual({
-    fontSize:"28px",lineHeight:"34px",letterSpacing:"-0.5px",fontWeight:"400",
+    fontSize:"28px",lineHeight:"34px",letterSpacing:"-0.125px",fontWeight:"400",
   });
   expect(capture.contextProject?.left).toBeCloseTo(480,0);
-  expect(capture.contextComputer?.left).toBeCloseTo(586,0);
+  expect(capture.contextComputer?.left).toBeCloseTo(566,0);
   expect((capture.heroIcon?.top??0)+(capture.heroIcon?.height??0)/2).toBeCloseTo(327,0);
   expect(capture.heroHeading?.top).toBeCloseTo(379,0);
   expect(capture.composerPlacement).toBe("home");
