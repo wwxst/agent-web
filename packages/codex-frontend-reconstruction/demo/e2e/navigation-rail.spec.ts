@@ -58,6 +58,44 @@ test("rail only navigates where mock host provides a handler", async ({ page }) 
   await expect(page.getByRole("button", {name: "Library"})).toBeDisabled();
 });
 
+test("rail restores source primary destinations, Explore divider and pinned group order",async({page})=>{
+  await page.goto("/?visualScenario=shell-empty");
+  const rail=page.getByRole("navigation",{name:"App navigation"});
+  const destinationIds=await rail.locator("[data-sidebar-destination]").evaluateAll(nodes=>
+    nodes.map(node=>node.getAttribute("data-sidebar-destination")));
+  expect(destinationIds).toEqual([
+    "builtin:home","builtin:images","builtin:automations","builtin:library",
+    "builtin:orbit","builtin:activity","builtin:skills",
+  ]);
+  const more=rail.getByRole("button",{name:"More（尚未接入）"});
+  const divider=rail.locator(".codex-navigation-rail__section-divider");
+  const activity=rail.locator('[data-sidebar-destination="builtin:activity"]');
+  await expect(more).toBeDisabled();
+  await expect(divider).toBeVisible();
+  const [moreBox,dividerBox,activityBox]=await Promise.all([
+    more.boundingBox(),divider.boundingBox(),activity.boundingBox(),
+  ]);
+  expect(moreBox).not.toBeNull();
+  expect(dividerBox).not.toBeNull();
+  expect(activityBox).not.toBeNull();
+  expect(moreBox!.y+moreBox!.height).toBeLessThanOrEqual(dividerBox!.y+1);
+  expect(dividerBox!.y+dividerBox!.height).toBeLessThanOrEqual(activityBox!.y+1);
+  await expect(rail.getByRole("button",{name:"Account（尚未连接）"})).toBeDisabled();
+  await expect(rail.getByRole("button",{name:"Settings（尚未接入）"})).toBeDisabled();
+});
+
+test("project and recent conversation rows occupy their source Codex sections",async({page})=>{
+  await page.goto("/");
+  const projects=page.locator('[data-app-action-sidebar-section-key="projects"]');
+  const recents=page.locator('[data-app-action-sidebar-section-key="recents"]');
+  await expect(projects.locator(".demo-project-heading")).toHaveText(/agent web/);
+  await expect(projects.locator(".demo-recent-chat-link")).toHaveCount(0);
+  const recentRows=recents.locator(".demo-recent-chat-link");
+  expect(await recentRows.count()).toBeGreaterThan(0);
+  await expect(recentRows.first()).toHaveCSS("padding-left","0px");
+  await expect(recents.locator('.demo-recent-chat-link[aria-current="page"]')).toHaveCount(1);
+});
+
 test("original sbi separator supports keyboard, reset and pointer drag without moving the rail",async ({page})=>{
   const errors:string[]=[];
   page.on("pageerror",error=>errors.push(error.message));
