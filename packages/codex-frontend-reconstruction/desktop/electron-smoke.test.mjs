@@ -590,8 +590,7 @@ test("independent Electron file renderer starts, isolates preload and routes Fc 
       headerBorderBottom:getComputedStyle(document.querySelector(".demo-header")).borderBottomWidth,
       composerTop:composer?.top??null,composerBottom:composer?.bottom??null,
       composerWidth:composer?.width??null,
-      contextHeight:context?.height??null,contextTop:context?.top??null,
-      contextBottom:context?.bottom??null,
+      contextHeight:context?.height??null,contextBottom:context?.bottom??null,
       heroIconCenterY:heroIcon==null?null:heroIcon.top+heroIcon.height/2,
       // The rounded PageSurface starts at y=44, while the source home anchor
       // remains aligned to the 36px Windows caption-layout origin.
@@ -605,9 +604,7 @@ test("independent Electron file renderer starts, isolates preload and routes Fc 
   assert.equal(homeGeometry.headerHeight,46);
   assert.equal(homeGeometry.headerBorderBottom,"0px");
   assert.equal(homeGeometry.composerWidth,738);
-  assert.equal(homeGeometry.composerTop,642);
   assert.equal(homeGeometry.contextHeight,38);
-  assert.equal(homeGeometry.contextTop,604);
   assert.equal(homeGeometry.contextBottom,homeGeometry.composerTop);
   assert.ok(homeGeometry.mainBottom!=null&&homeGeometry.composerBottom!=null&&
     Math.abs(homeGeometry.mainBottom-homeGeometry.composerBottom-15)<1,
@@ -666,6 +663,7 @@ test("independent Electron file renderer starts, isolates preload and routes Fc 
     mainLeft:document.querySelector(".demo-main")?.getBoundingClientRect().left??null,
     header:document.querySelector(".demo-header")?.getBoundingClientRect().height??null,
     composer:document.querySelector(".demo-composer")?.getBoundingClientRect().toJSON()??null,
+    contextTop:document.querySelector(".demo-home-composer-context")?.getBoundingClientRect().top??null,
     projectContext:document.querySelector(".demo-home-composer-context__project")?.textContent?.trim()??null,
     projectContextLeft:document.querySelector(".demo-home-composer-context__project")?.getBoundingClientRect().left??null,
     computerContextLeft:document.querySelector(".demo-home-composer-context__computer")?.getBoundingClientRect().left??null,
@@ -682,6 +680,8 @@ test("independent Electron file renderer starts, isolates preload and routes Fc 
   assert.equal(referenceGeometry.header,52);
   assert.equal(referenceGeometry.composer?.width,738);
   assert.equal(referenceGeometry.composer?.left,320);
+  assert.equal(referenceGeometry.composer?.top,642);
+  assert.equal(referenceGeometry.contextTop,604);
   assert.equal(referenceGeometry.projectContext,"agent");
   assert.equal(referenceGeometry.projectContextLeft,349);
   assert.ok(Math.abs(referenceGeometry.computerContextLeft-455)<0.5);
