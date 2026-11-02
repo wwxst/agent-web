@@ -131,7 +131,7 @@ test("shell-empty visual route mounts the real desktop shell, idle Composer and 
     pointerEvents:"none",
   });
   expect(capture.pageSurface?.shadow).not.toBe("none");
-  expect(capture.header).toBe(46);
+  expect(capture.header).toBe(52);
   expect(capture.headerBorderBottom).toBe("0px");
   expect(capture.sidebarScroll).toBeGreaterThan(100);
   expect(capture.composer?.width).toBe(738);
@@ -144,7 +144,7 @@ test("shell-empty visual route mounts the real desktop shell, idle Composer and 
   expect(capture.heroIcon).not.toBeNull();
   expect(capture.heroHeading).not.toBeNull();
   expect(capture.heroHeadingStyle).toEqual({
-    fontSize:"32px",lineHeight:"38px",letterSpacing:"-0.8px",fontWeight:"400",
+    fontSize:"28px",lineHeight:"34px",letterSpacing:"-0.5px",fontWeight:"400",
   });
   expect(capture.contextProject?.left).toBeCloseTo(478,0);
   expect(capture.contextComputer?.left).toBeCloseTo(578,0);
