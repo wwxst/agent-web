@@ -21,9 +21,9 @@ export const DEMO_CONVERSATIONS: ReadonlyArray<{
 }> = [
   { id: "frontend", title: "恢复 Codex 会话界面", subtitle: "正在重构 · 今天" },
   { id: "review", title: "工具调用与审批交互", subtitle: "界面审阅 · 昨天" },
-  // Test-only route: mounts the same shell and Composer around a genuinely
-  // empty transcript; it is not a third demo conversation in the sidebar.
-  { id: "visual-empty", title: "New chat", subtitle: "Visual baseline", sidebarVisible: false },
+  // Shared blank new-chat/home surface and screenshot baseline. It is not a
+  // synthetic transcript or a third demo conversation in the sidebar.
+  { id: "visual-empty", title: "New chat", subtitle: "", sidebarVisible: false },
 ];
 
 export function demoItem(id: string, type: string, content?: string, extra: Record<string, unknown> = {}): ConversationMessageItem {
