@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {mkdir,mkdtemp,rm} from "node:fs/promises";
+import {spawnSync} from "node:child_process";
+import {mkdir,mkdtemp,readFile,rm,stat} from "node:fs/promises";
 import {resolve,join} from "node:path";
 import {tmpdir} from "node:os";
 import {fileURLToPath} from "node:url";
@@ -696,6 +697,43 @@ test("independent Electron file renderer starts, isolates preload and routes Fc 
     path:resolve(root,"desktop/test-results/electron-home-reference.png"),
     fullPage:false,animations:"disabled",
   });
+
+  // Keep the renderer-only image for DOM/layout debugging, but also capture
+  // the actual Windows HWND through the existing DWM full-window helper.
+  // Playwright page.screenshot omits native title-bar overlay controls; it is
+  // not a valid full-window Codex comparison image.
+  if(process.platform==="win32"){
+    const captureWindowTitle="agent-web Codex visual capture";
+    await app.evaluate(({BrowserWindow})=>{
+      const window=BrowserWindow.getAllWindows()[0];
+      if(window==null)throw new Error("Electron visual window is unavailable");
+      // Unique selector avoids colliding with the concurrently running
+      // default-home smoke process, which owns the same production title.
+      window.setTitle("agent-web Codex visual capture");
+    });
+    const fullWindowPath=resolve(root,"desktop/test-results/electron-home-reference-window.png");
+    const capture=spawnSync("powershell.exe",[
+      "-NoProfile","-NonInteractive","-ExecutionPolicy","Bypass","-File",
+      resolve(root,"scripts/capture-windows-window.ps1"),
+      "-WindowTitleRegex","^agent-web Codex visual capture$",
+      "-OutputPath",fullWindowPath,
+      "-ScenarioId","A-shell-empty",
+      "-Theme","light",
+      "-Width","1090",
+      "-Height","760",
+      "-WaitMilliseconds","300",
+    ],{encoding:"utf8",timeout:30000,windowsHide:true});
+    assert.ifError(capture.error);
+    assert.equal(capture.status,0,(capture.stdout??"")+"\\n"+(capture.stderr??""));
+    const metadata=JSON.parse(await readFile(fullWindowPath+".json","utf8"));
+    assert.equal(metadata.scenarioId,"A-shell-empty");
+    assert.equal(metadata.theme,"light");
+    assert.equal(metadata.captureBoundary,"dwm-extended-frame-bounds");
+    assert.equal(metadata.width,1090);
+    assert.equal(metadata.height,760);
+    assert.equal(metadata.windowScaleFactor,1);
+    assert.ok((await stat(fullWindowPath)).size>10000);
+  }
  }finally{
   try{await app.close();}
   finally{await rm(userDataDir,{recursive:true,force:true});}
