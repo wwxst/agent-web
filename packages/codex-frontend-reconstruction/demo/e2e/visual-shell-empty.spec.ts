@@ -79,10 +79,12 @@ test("shell-empty visual route mounts the real desktop shell, idle Composer and 
   expect(capture.viewport).toEqual({width:1352,height:760,devicePixelRatio:1});
   // Match the captured Codex A-shell-empty state: 240px saved sidebar,
   // 46px top action row, bottom Composer + context strip, and Hero placement.
-  expect(capture.windowMenu).toBe(36);
+  // Original TitleBar is 44px; the native Windows caption overlay remains 36px.
+  expect(capture.windowMenu).toBe(44);
   expect(capture.captionButtons).toHaveLength(3);
   expect(capture.captionButtons.map(item=>item.width)).toEqual([46,46,46]);
   expect(capture.captionButtons.map(item=>item.height)).toEqual([36,36,36]);
+  expect(capture.captionButtons.map(item=>item.top)).toEqual([0,0,0]);
   expect(capture.captionButtons[0]?.left).toBe(1214);
   expect(capture.captionButtons[2]?.right).toBe(1352);
   expect(capture.captionButtons[0]?.background).toBe("rgb(225, 225, 225)");
@@ -260,13 +262,19 @@ test("real read-only workspace grant updates original home project Hero without 
 });
 
 
-test("titlebar history icon boxes remain centered and mirror the source 16px canvas",async({page})=>{
+test("titlebar uses the 44px source row and 28px disabled history buttons",async({page})=>{
   await page.goto("/?visualScenario=shell-empty");
   await page.waitForFunction(()=>document.fonts.status==="loaded");
-  const icons=page.locator(".demo-window-menu .demo-menubar-back__svg");
+  const buttons=page.locator(".demo-window-menu .demo-menubar-history-button");
+  await expect(buttons).toHaveCount(2);
+  await expect(buttons.nth(0)).toHaveAttribute("data-desktop-history-navigation","back");
+  await expect(buttons.nth(1)).toHaveAttribute("data-desktop-history-navigation","forward");
+  await expect(buttons.nth(0)).toHaveAttribute("aria-label",/^(返回|Back)$/);
+  await expect(buttons.nth(1)).toHaveAttribute("aria-label",/^(前进|Forward)$/);
+  await expect(buttons.nth(0)).toBeDisabled();
+  await expect(buttons.nth(1)).toBeDisabled();
+  const icons=buttons.locator("svg");
   await expect(icons).toHaveCount(2);
-  await expect(icons.nth(0)).toHaveAttribute("data-menubar-history-direction","back");
-  await expect(icons.nth(1)).toHaveAttribute("data-menubar-history-direction","forward");
   for(const icon of await icons.all()){
     await expect(icon).toHaveAttribute("viewBox","0 0 16 16");
     await expect(icon).toHaveAttribute("stroke-width","1.1");
@@ -276,31 +284,48 @@ test("titlebar history icon boxes remain centered and mirror the source 16px can
   }
   const geometry=await page.locator(".demo-window-menu").evaluate(menu=>{
     const center=(r:DOMRect)=>({x:r.x+r.width/2,y:r.y+r.height/2});
-    const menuCenterY=center(menu.getBoundingClientRect()).y;
-    const spans=Array.from(menu.querySelectorAll(".demo-menubar-back"));
-    return spans.map(span=>{
-      const svg=span.querySelector("svg")!;
-      const icon=svg.getBoundingClientRect();
-      const slot=span.getBoundingClientRect();
-      return {w:icon.width,h:icon.height,slotHeight:slot.height,
-        iconCenterY:center(icon).y,slotCenterY:center(slot).y,
-        menuCenterY,transform:getComputedStyle(svg).transform,
-        pointerTag:span.tagName.toLowerCase(),
-        ariaHidden:span.getAttribute("aria-hidden"),
-        text:span.textContent};
-    });
+    const menuRect=menu.getBoundingClientRect();
+    const buttons=Array.from(menu.querySelectorAll(".demo-menubar-history-button"));
+    return {menuHeight:menuRect.height,menuCenterY:center(menuRect).y,
+      buttons:buttons.map(button=>{
+        const icon=button.querySelector("svg")!.getBoundingClientRect();
+        const slot=button.getBoundingClientRect();
+        return {w:slot.width,h:slot.height,iconW:icon.width,iconH:icon.height,
+          iconCenterY:center(icon).y,slotCenterY:center(slot).y,
+          transform:getComputedStyle(button.querySelector("svg")!).transform,
+          tag:button.tagName.toLowerCase(),disabled:(button as HTMLButtonElement).disabled,
+          ariaHidden:button.getAttribute("aria-hidden"),text:button.textContent};
+      })};
   });
-  expect(geometry).toHaveLength(2);
-  for(const icon of geometry){
-    expect(icon.w).toBe(16);
-    expect(icon.h).toBe(16);
-    expect(icon.slotHeight).toBe(24);
-    expect(Math.abs(icon.iconCenterY-icon.slotCenterY)).toBeLessThanOrEqual(.5);
-    expect(Math.abs(icon.iconCenterY-icon.menuCenterY)).toBeLessThanOrEqual(.5);
-    expect(icon.pointerTag).toBe("span");
-    expect(icon.ariaHidden).toBe("true");
-    expect(icon.text).toBe("");
+  expect(geometry.menuHeight).toBe(44);
+  expect(geometry.menuCenterY).toBe(22);
+  expect(geometry.buttons).toHaveLength(2);
+  for(const button of geometry.buttons){
+    expect(button.w).toBe(28);
+    expect(button.h).toBe(28);
+    expect(button.iconW).toBe(16);
+    expect(button.iconH).toBe(16);
+    expect(Math.abs(button.iconCenterY-button.slotCenterY)).toBeLessThanOrEqual(.5);
+    expect(Math.abs(button.iconCenterY-geometry.menuCenterY)).toBeLessThanOrEqual(.5);
+    expect(button.tag).toBe("button");
+    expect(button.disabled).toBe(true);
+    expect(button.ariaHidden).toBeNull();
+    expect(button.text).toBe("");
   }
-  expect(geometry[0]?.transform).toBe("none");
-  expect(geometry[1]?.transform).toBe("matrix(-1, 0, 0, 1, 0, 0)");
+  expect(geometry.buttons[0]?.transform).toBe("none");
+  expect(geometry.buttons[1]?.transform).toBe("matrix(-1, 0, 0, 1, 0, 0)");
+});
+
+test("titlebar panel button toggles the actual conversation sidebar",async({page})=>{
+  await page.goto("/?visualScenario=shell-empty");
+  const shell=page.locator(".demo-desktop");
+  const toggle=page.getByTestId("titlebar-sidebar-toggle");
+  await expect(shell).toHaveAttribute("data-app-shell-sidebar-open","true");
+  await expect(toggle).toHaveAttribute("aria-expanded","true");
+  await toggle.click();
+  await expect(shell).toHaveAttribute("data-app-shell-sidebar-open","false");
+  await expect(toggle).toHaveAttribute("aria-expanded","false");
+  await toggle.click();
+  await expect(shell).toHaveAttribute("data-app-shell-sidebar-open","true");
+  await expect(toggle).toHaveAttribute("aria-expanded","true");
 });

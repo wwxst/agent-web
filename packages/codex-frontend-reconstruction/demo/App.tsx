@@ -1703,14 +1703,40 @@ export function App() {
   // The original Windows application menu localizes its visible four labels.
   // Use the renderer's actual locale, never force the screenshot's Chinese
   // text onto unrelated English-language sessions.
-  const desktopMenuLabels=/^zh(?:-|$)/i.test(navigator.language)
+  const isChineseDesktopLocale=showSidebarReferenceFixture||/^zh(?:-|$)/i.test(navigator.language);
+  const desktopMenuLabels=isChineseDesktopLocale
     ? {file:"文件",edit:"编辑",view:"视图",help:"帮助"} as const
     : {file:"File",edit:"Edit",view:"View",help:"Help"} as const;
+  // The original back-forward-navigation-buttons passes localized command
+  // labels into real toolbar buttons. This shell has no route-history provider,
+  // so the empty-home state exposes the source-equivalent disabled controls.
+  const desktopHistoryLabels=isChineseDesktopLocale
+    ? {back:"返回",forward:"前进"} as const
+    : {back:"Back",forward:"Forward"} as const;
+  const desktopSidebarToggleLabels=isChineseDesktopLocale
+    ? {collapse:"收起侧边栏",expand:"展开侧边栏"} as const
+    : {collapse:"Collapse sidebar",expand:"Expand sidebar"} as const;
 
   return <div className="demo-desktop" data-app-shell-frame="true" data-independent-electron={window.agentWebDesktopHost != null} data-app-shell-feature-navigation={navigationRailEnabled} data-app-shell-sidebar-open={!collapsed} data-app-shell-application-menu-bar="true" style={{ "--app-shell-navigation-rail-width": navigationRailEnabled ? `${measuredRailWidth}px` : "0px" } as React.CSSProperties}>
-    <div className="demo-window-menu" aria-label={window.agentWebDesktopHost != null ? "Electron 原生标题栏拖拽区域" : "桌面窗口示意（浏览器内，不是原生 Electron）"}>
-      <span className="demo-menubar-back" aria-hidden="true"><DesktopHistoryArrow/></span><span className="demo-menubar-back" aria-hidden="true"><DesktopHistoryArrow forward/></span>
-      <span className="demo-menubar-panel" aria-hidden="true"><Icon name="panel" size={15}/></span>
+    <div className="demo-window-menu"
+      data-controls-overlay-visible={window.agentWebDesktopHost != null ? "true" : undefined}
+      aria-label={window.agentWebDesktopHost != null ? "Electron 原生标题栏拖拽区域" : "桌面窗口示意（浏览器内，不是原生 Electron）"}>
+      <button type="button" className="demo-menubar-history-button"
+        data-testid="titlebar-history-back" data-desktop-history-navigation="back"
+        aria-label={desktopHistoryLabels.back} title={desktopHistoryLabels.back} disabled>
+        <DesktopHistoryArrow/>
+      </button>
+      <button type="button" className="demo-menubar-history-button"
+        data-testid="titlebar-history-forward" data-desktop-history-navigation="forward"
+        aria-label={desktopHistoryLabels.forward} title={desktopHistoryLabels.forward} disabled>
+        <DesktopHistoryArrow forward/>
+      </button>
+      <button type="button" className="demo-menubar-panel"
+        data-testid="titlebar-sidebar-toggle" aria-label={collapsed?desktopSidebarToggleLabels.expand:desktopSidebarToggleLabels.collapse}
+        title={collapsed?desktopSidebarToggleLabels.expand:desktopSidebarToggleLabels.collapse}
+        aria-expanded={!collapsed} onClick={()=>setCollapsed(value=>!value)}>
+        <Icon name="panel" size={16}/>
+      </button>
       {window.agentWebDesktopHost != null ? (
         <div className="demo-native-application-menus" aria-label="Electron 原生应用菜单">
           {(["file","edit","view","help"] as const).map((id) => (

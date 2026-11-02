@@ -119,7 +119,9 @@ test("independent Electron file renderer starts, isolates preload and routes Fc 
   });
   assert.equal(windowChrome.electron,"true");
   assert.equal(windowChrome.title,"Electron 原生标题栏拖拽区域");
-  assert.equal(windowChrome.titlebarHeight,36);
+  // The shell TitleBar is 44px; the independent native caption overlay
+  // remains 36px as separately asserted by window-chrome.test.mjs.
+  assert.equal(windowChrome.titlebarHeight,44);
   assert.equal(windowChrome.duplicateCaptionDisplay,"none");
   assert.equal(windowChrome.decorativeCaptionCount,3);
   assert.equal(windowChrome.fakeCaptionActionCount,0);

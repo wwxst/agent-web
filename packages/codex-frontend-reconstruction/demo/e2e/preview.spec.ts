@@ -24,7 +24,7 @@ test("mounts recovered transcript components and handles mock-only interactions"
   expect(layout.rail?.width).toBe(52); // compiled dWc browser:w-13, token --spacing: 4px
   expect(layout.sidebar?.width).toBe(275); // separate app-shared preferred panel width
   expect(layout.sidebar?.x).toBe(52); // rail and secondary sidebar are siblings
-  expect(layout.menubar?.height).toBe(36);
+  expect(layout.menubar?.height).toBe(44);
   expect(layout.header?.height).toBe(46); // app-shared --height-toolbar
   expect(layout.composer?.width).toBeGreaterThan(650);
   const footerGeometry=await page.evaluate(()=>{
