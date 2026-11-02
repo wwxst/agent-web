@@ -710,6 +710,7 @@ test("independent Electron file renderer starts, isolates preload and routes Fc 
       // Unique selector avoids colliding with the concurrently running
       // default-home smoke process, which owns the same production title.
       window.setTitle("agent-web Codex visual capture");
+      window.focus();
     });
     const fullWindowPath=resolve(root,"desktop/test-results/electron-home-reference-window.png");
     const capture=spawnSync("powershell.exe",[
