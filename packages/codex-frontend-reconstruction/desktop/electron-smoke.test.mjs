@@ -644,6 +644,11 @@ test("independent Electron file renderer starts, isolates preload and routes Fc 
   assert.equal(await page.getByRole("textbox",{name:"随心输入"}).count(),1);
   assert.equal(await page.getByTestId("composer-microphone-unavailable").isDisabled(),true);
   assert.equal(await page.getByTestId("composer-voice-mode-unavailable").isDisabled(),true);
+  assert.equal(await page.getByTestId("composer-model-control").isDisabled(),true);
+  assert.equal(await page.getByTestId("composer-model-control").textContent(),"GPT-6.1 Sol高");
+  assert.equal(await page.getByTestId("composer-permission-control").isDisabled(),true);
+  assert.equal(await page.getByTestId("composer-permission-control").textContent(),"完全访问");
+  assert.equal(await page.locator('[data-visual-reference-only="account-avatar"]').textContent(),"KA");
   const heroStyle=await page.locator(".demo-home-hero__heading").evaluate(node=>{
     const style=getComputedStyle(node);
     return {fontSize:style.fontSize,lineHeight:style.lineHeight,
