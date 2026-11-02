@@ -19,13 +19,17 @@ test("Composer model and permission chevrons match source SVG geometry and place
       // accidental text-chevron regressions and icon/line-height drift.
       const geometry=await control.evaluate(button=>{
         const labelBox=button.querySelector(".demo-composer-control-trigger__label")!.getBoundingClientRect();
-        const chevronBox=button.querySelector("svg.demo-composer-control-trigger__chevron")!.getBoundingClientRect();
+        const chevron=button.querySelector("svg.demo-composer-control-trigger__chevron")!;
+        const chevronBox=chevron.getBoundingClientRect();
+        const precedingBox=(chevron.previousElementSibling as HTMLElement).getBoundingClientRect();
+        const effortBox=button.querySelector(".demo-composer-control-trigger__effort")?.getBoundingClientRect()??null;
         return {
           labelHeight:labelBox.height,
           chevronHeight:chevronBox.height,
           chevronWidth:chevronBox.width,
-          centerDelta:(labelBox.top+labelBox.height/2)-(chevronBox.top+chevronBox.height/2),
-          gap:chevronBox.left-labelBox.right,
+          centerDelta:(precedingBox.top+precedingBox.height/2)-(chevronBox.top+chevronBox.height/2),
+          gap:chevronBox.left-precedingBox.right,
+          labelEffortGap:effortBox==null?null:effortBox.left-labelBox.right,
         };
       });
       expect(geometry.labelHeight).toBe(16);
@@ -33,6 +37,7 @@ test("Composer model and permission chevrons match source SVG geometry and place
       expect(geometry.chevronHeight).toBe(16);
       expect(Math.abs(geometry.centerDelta)).toBeLessThanOrEqual(0.5);
       expect(geometry.gap).toBe(expectedGap);
+      if(testId==="composer-model-control")expect(geometry.labelEffortGap).toBe(expectedGap);
     }
   };
 
