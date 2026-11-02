@@ -426,7 +426,7 @@ test("Electron-backed Projects section lists, selects, adds and removes real loc
   await projects.locator(".demo-sidebar-section__header").hover();
   await projects.getByRole("button",{name:"Add new project"}).click();
   await expect(projects.locator("[data-app-action-sidebar-project-row]")).toHaveCount(3);
-  await expect(projects.getByRole("button",{name:"new-project"})).toBeVisible();
+  await expect(projects.getByRole("button",{name:"new-project",exact:true})).toBeVisible();
   await expect(projects.locator('[data-app-action-sidebar-project-id="10000000-0000-4000-8000-000000000003"] button[data-app-action-sidebar-select-project]'))
     .toHaveAttribute("aria-current","page");
 
