@@ -666,6 +666,7 @@ test("independent Electron file renderer starts, isolates preload and routes Fc 
     contextTop:document.querySelector(".demo-home-composer-context")?.getBoundingClientRect().top??null,
     projectContext:document.querySelector(".demo-home-composer-context__project")?.textContent?.trim()??null,
     projectContextLeft:document.querySelector(".demo-home-composer-context__project")?.getBoundingClientRect().left??null,
+    projectContextColor:getComputedStyle(document.querySelector(".demo-home-composer-context__project")).color,
     computerContextLeft:document.querySelector(".demo-home-composer-context__computer")?.getBoundingClientRect().left??null,
     selectedProjectRight:document.querySelector('[data-visual-reference-selected="true"]')?.getBoundingClientRect().right??null,
     logoFontSize:getComputedStyle(document.querySelector(".demo-logo")).fontSize,
@@ -684,6 +685,7 @@ test("independent Electron file renderer starts, isolates preload and routes Fc 
   assert.equal(referenceGeometry.contextTop,604);
   assert.equal(referenceGeometry.projectContext,"agent");
   assert.equal(referenceGeometry.projectContextLeft,349);
+  assert.equal(referenceGeometry.projectContextColor,"rgb(54, 54, 54)");
   assert.ok(Math.abs(referenceGeometry.computerContextLeft-435)<0.5);
   assert.equal(referenceGeometry.selectedProjectRight,272);
   assert.equal(referenceGeometry.logoFontSize,"17px");
