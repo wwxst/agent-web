@@ -132,6 +132,10 @@
 }
 /* Anonymous visual-only initials reproduce the current screenshot's
  * account badge geometry without reading or exposing any account identity. */
+.demo-desktop[data-independent-electron="true"]:has([data-sidebar-reference-fixture="true"]) .codex-navigation-rail {
+  padding-top:12px;
+  padding-bottom:12px;
+}
 .codex-navigation-rail__reference-avatar {
   display:grid;
   place-items:center;
