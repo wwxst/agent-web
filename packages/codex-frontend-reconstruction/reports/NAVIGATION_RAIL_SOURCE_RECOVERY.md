@@ -38,3 +38,44 @@ Do not commit either private compiled file to the public repository.
 - `npm run test:core` → 144/144 local core tests pass (baseline 140 + 4 rail projection tests).
 - `npm run demo:check-model` → 4/4 local synthetic host tests pass.
 - Chromium / Vite / TypeScript type checks must pass in npm-enabled GitHub Actions before describing browser integration as verified.
+
+
+## Follow-up: source rail stack geometry and destination grouping — 2026-10-31
+
+A second pass inspected the complete `dWc` / `gV` / `fUc` / `TUc` call chain in the supplied `app-initial-5851df3f6cb1.js` and the spacing utilities in `app-shared-dc7535e633d7.css`.
+
+Verified source details:
+
+- `dWc` root rail uses `browser:w-13` (52px), `browser:gap-0`, `browser:px-0`, `browser:pt-0`, and `pb-2`.
+- Its scroll stack uses `browser:mt-2`, `browser:px-row-x`, `browser:pt-0`, and retains the base 2px bottom padding.
+- `gV(itemSpacing="rail")` resolves to `gap-2 browser:gap-px`; browser gap is exactly 1px.
+- The source `dWc` child order is Home, primary destinations, the `customize` destination, the `renderExploreMenu` slot and its horizontal divider, direct destinations, then the footer/settings action. When no custom Explore renderer is supplied, `TUc` is the fallback Explore menu item.
+- The source destination control is a uniform `size="xl"` ghost button. The reconstruction retains its existing 36px control size; exact icon asset/size fingerprinting remains separate.
+
+Implementation in this follow-up:
+
+- Remove the reconstruction's extra 2px top rail padding.
+- Move the scroll stack down by the source 8px margin.
+- Match 8px horizontal inset, 1px browser row gap and 2px stack bottom padding.
+- Split the rail API into Home, primary destinations, customize, Explore, direct destinations and footer slots.
+- Match the source order: Home → Images / Scheduled / Library → Plugins → Explore → divider → Activity / Skills → Settings.
+- Keep unsupported destination actions disabled; only Home uses the existing real demo/home handler.
+- Add Playwright assertions for stack offset, row gap, 36px item width, 8px rail inset, the complete destination group order, divider placement and footer bottom inset.
+
+The Images/Plugins/Activity/Skills icon glyphs are independently authored approximations, not extracted original Codex assets. Explore, Plugins, Settings and all non-Home destination actions remain disabled because this independent host does not yet implement the corresponding account-backed routes and commands. This is a structural/geometry reconstruction, not a claim of full navigation feature parity.
+
+Verification is pending the updated PR's browser and Windows Electron CI.
+
+
+### Native Electron spacing variant
+
+The earlier geometry pass had applied the browser-specific `gap-px` / zero-top-padding values to both hosts. That was not correct for the Windows acceptance target: the compiled class list uses base utilities for Electron and `browser:` overrides only for the browser window type.
+
+The rail stylesheet now preserves both source variants:
+
+- **Native Electron base:** rail `gap-2`, `px-2 pt-2 pb-2`; scroll stack `m-0.5`, `pt-0.5`, `px-row-x`, `pb-2`, and `gap-2`; divider has no extra margin beyond the parent stack gap.
+- **Browser preview override:** rail `gap-0 px-0 pt-0`; scroll stack `m-0 mt-2 pt-0`, `gap-px`, and the browser divider margin.
+
+The Windows Electron default-home test now measures the native computed styles and geometry directly (52px rail, 8px native row rhythm, native top/side/bottom insets, divider placement and Settings footer inset). The browser Playwright test continues to assert its separate 1px / 8px browser variant.
+
+This distinction matters because the reference acceptance image is a native Windows Codex window; a browser-only 1px rhythm is not an acceptable substitute for the native rail.
