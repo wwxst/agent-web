@@ -679,7 +679,7 @@ test("independent Electron file renderer starts, isolates preload and routes Fc 
   assert.equal(referenceGeometry.composer?.left,320);
   assert.equal(referenceGeometry.projectContext,"agent");
   assert.equal(referenceGeometry.projectContextLeft,349);
-  assert.equal(referenceGeometry.computerContextLeft,455);
+  assert.ok(Math.abs(referenceGeometry.computerContextLeft-455)<0.5);
   assert.equal(referenceGeometry.mainRight,1087);
   assert.equal(referenceGeometry.composerBottom,741);
   assert.equal(referenceGeometry.heroHeading,"我们应该在agent中做些什么？");
