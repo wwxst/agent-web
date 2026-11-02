@@ -1134,10 +1134,9 @@ button:focus-visible, textarea:focus-visible { outline: 2px solid #578cda; outli
   color: #858585;
   cursor: not-allowed;
 }
-.demo-desktop:has([data-sidebar-reference-fixture="true"]) .demo-home-composer-context__project:disabled {
+.demo-desktop:has([data-sidebar-reference-fixture="true"]) .demo-home-composer-context__project {
   color:#363636;
   -webkit-text-fill-color:#363636;
-  opacity:1;
 }
 .demo-home-composer-context__computer { color: #363636; font-weight: 500; }
 .demo-main[data-codex-home="true"] .demo-header {
