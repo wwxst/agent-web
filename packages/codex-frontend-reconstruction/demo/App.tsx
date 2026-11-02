@@ -48,7 +48,10 @@ import { CodexSourceScrollToBottomButton } from "../src/components/CodexSourceSc
 import { DemoProseMirrorComposerEditor } from "./DemoProseMirrorComposerEditor.js";
 import { CodexNavigationRail, type CodexRailDestination } from "../src/components/CodexNavigationRail.js";
 import { CodexSourceSidebarResizeHandle } from "../src/components/CodexSourceSidebarResizeHandle.js";
-import { clampSourceSidebarWidth } from "../src/conversation/SourceSidebarResizeModel.js";
+import {
+  clampSourceSidebarWidth,SOURCE_SIDEBAR_DEFAULT_WIDTH,SOURCE_SIDEBAR_MIN_WIDTH,
+  SOURCE_SIDEBAR_WIDTH_STORAGE_KEY,sourceSidebarWidthFromPreference,
+} from "../src/conversation/SourceSidebarResizeModel.js";
 import { projectNavigationDestinations } from "../src/conversation/NavigationRailModel.js";
 import type { VirtualizedTurnListApi } from "../src/components/VirtualizedTurnList.js";
 import { ConnectedLiveConversationTranscript } from "../src/components/ConnectedLiveConversationTranscript.js";
@@ -421,11 +424,28 @@ export function App() {
   // to exercise the independently reconstructed original navigation layout.
   const navigationRailEnabled = true;
   const [collapsed, setCollapsed] = React.useState(false);
-  // The real A-shell-empty reference was captured with the original sidebar
-  // at its 240px minimum. Keep the normal app default (275px) unchanged.
-  const [sidebarWidth,setSidebarWidth]=React.useState(isVisualShellScenario?240:275);
+  // The original stores the resizable panel in localStorage["sidebar-width"].
+  // Its real default is 340px; the 240px visual fixture is a saved-width
+  // reference state and must never overwrite the user's normal preference.
+  const [sidebarWidth,setSidebarWidth]=React.useState(()=>{
+    if(isVisualShellScenario)return SOURCE_SIDEBAR_MIN_WIDTH;
+    try{
+      return sourceSidebarWidthFromPreference(
+        window.localStorage.getItem(SOURCE_SIDEBAR_WIDTH_STORAGE_KEY),
+        window.innerWidth,
+      );
+    }catch{return SOURCE_SIDEBAR_DEFAULT_WIDTH;}
+  });
   const [availableWidth,setAvailableWidth]=React.useState(()=>
     typeof window==="undefined"?1352:window.innerWidth);
+  const setSidebarWidthAndPersist=React.useCallback((nextWidth:number)=>{
+    const normalized=clampSourceSidebarWidth(nextWidth,availableWidth);
+    setSidebarWidth(normalized);
+    if(!isVisualShellScenario){
+      try{window.localStorage.setItem(SOURCE_SIDEBAR_WIDTH_STORAGE_KEY,String(normalized));}
+      catch{/* Source storage may be unavailable in restricted browser contexts. */}
+    }
+  },[availableWidth,isVisualShellScenario]);
   React.useEffect(()=>{
     const update=()=>{
       const width=window.innerWidth;
@@ -1717,7 +1737,7 @@ export function App() {
     ? {collapse:"收起侧边栏",expand:"展开侧边栏"} as const
     : {collapse:"Collapse sidebar",expand:"Expand sidebar"} as const;
 
-  return <div className="demo-desktop" data-app-shell-frame="true" data-independent-electron={window.agentWebDesktopHost != null} data-app-shell-feature-navigation={navigationRailEnabled} data-app-shell-sidebar-open={!collapsed} data-app-shell-application-menu-bar="true" style={{ "--app-shell-navigation-rail-width": navigationRailEnabled ? `${measuredRailWidth}px` : "0px" } as React.CSSProperties}>
+  return <div className="demo-desktop" data-app-shell-frame="true" data-app-shell-page-surface="true" data-independent-electron={window.agentWebDesktopHost != null} data-app-shell-feature-navigation={navigationRailEnabled} data-app-shell-sidebar-open={!collapsed} data-app-shell-application-menu-bar="true" style={{ "--app-shell-navigation-rail-width": navigationRailEnabled ? `${measuredRailWidth}px` : "0px" } as React.CSSProperties}>
     <div className="demo-window-menu"
       data-controls-overlay-visible={window.agentWebDesktopHost != null ? "true" : undefined}
       aria-label={window.agentWebDesktopHost != null ? "Electron 原生标题栏拖拽区域" : "桌面窗口示意（浏览器内，不是原生 Electron）"}>
@@ -1766,6 +1786,8 @@ export function App() {
       </span>
     </div>
     <div className="demo-app" data-codex-shell-preview="light">
+    <div className="demo-page-surface" data-testid="page-surface-shadow"
+      data-app-shell-page-surface-overlay="true" aria-hidden="true"/>
     {navigationRailEnabled && <CodexNavigationRail
       home={homeRailDestination}
       primaryDestinations={primaryRailDestinations}
@@ -1797,7 +1819,7 @@ export function App() {
       onUnpinPinned={unpinPinnedContentTab}
       resizeHandle={<CodexSourceSidebarResizeHandle
         width={sidebarWidth} availableWidth={availableWidth}
-        onWidthChange={setSidebarWidth}/>}/>
+        onWidthChange={setSidebarWidthAndPersist}/>}/>
     <div className="demo-main" data-codex-home={isNewChat ? "true" : undefined} data-app-shell-main-surface="default"
       data-thread-scroll-layout="default">
       <header className={`demo-header ${isNewChat?"demo-header--home":""}`} data-app-shell-main-titlebar="true">

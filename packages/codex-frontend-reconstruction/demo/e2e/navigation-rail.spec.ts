@@ -146,11 +146,11 @@ test("original sbi separator supports keyboard, reset and pointer drag without m
   const rail=page.getByRole("navigation",{name:"App navigation"});
   const sidebar=page.getByRole("complementary",{name:"演示会话导航"});
   const handle=page.getByRole("separator",{name:"调整会话侧边栏宽度"});
-  await expect(handle).toHaveAttribute("aria-valuenow","275");
+  await expect(handle).toHaveAttribute("aria-valuenow","340");
   await handle.focus();
   await page.keyboard.press("ArrowRight");
-  await expect(handle).toHaveAttribute("aria-valuenow","285");
-  await expect(sidebar).toHaveCSS("width","285px");
+  await expect(handle).toHaveAttribute("aria-valuenow","350");
+  await expect(sidebar).toHaveCSS("width","350px");
   await page.keyboard.press("Home");
   await expect(handle).toHaveAttribute("aria-valuenow","240");
   await page.keyboard.press("End");
