@@ -63,7 +63,7 @@ test("native workspace projects persist across Electron restarts without persist
    // not restored until the user explicitly selects that project again.
    assert.equal(await row.locator("[data-app-action-sidebar-select-project]")
      .getAttribute("aria-current"),null);
-   await row.getByRole("button",{name:workspaceName}).click();
+   await row.getByRole("button",{name:workspaceName,exact:true}).click();
    await row.locator('[data-app-action-sidebar-select-project][aria-current="page"]')
      .waitFor({state:"visible",timeout:10000});
    const active=await page.evaluate(()=>window.agentWebDesktopHost.listWorkspaceProjects());
