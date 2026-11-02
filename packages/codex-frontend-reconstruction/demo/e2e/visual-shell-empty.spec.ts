@@ -45,9 +45,10 @@ test("shell-empty visual route mounts the real desktop shell, idle Composer and 
   const modelControl=page.getByTestId("composer-model-control");
   const permissionControl=page.getByTestId("composer-permission-control");
   await expect(modelControl).toBeDisabled();
-  await expect(modelControl).toContainText("模型未连接");
+  await expect(modelControl).toContainText("GPT-6.1 Sol");
+  await expect(modelControl).toContainText("高");
   await expect(permissionControl).toBeDisabled();
-  await expect(permissionControl).toContainText("权限未连接");
+  await expect(permissionControl).toContainText("完全访问");
   await expect(page.getByTestId("composer-microphone-unavailable")).toBeDisabled();
   await expect(page.getByTestId("composer-voice-mode-unavailable")).toBeDisabled();
   await expect(page.getByText("Demo Agent")).toHaveCount(0);
