@@ -84,7 +84,7 @@ function Icon({ name, size = 18 }: { name: "panel" | "panel-right" | "search" | 
     images: <><rect x="4" y="5" width="14" height="13" rx="2"/><path d="M8 18v2h12a2 2 0 0 0 2-2V9h-4"/><circle cx="9" cy="10" r="1.4"/><path d="m6 16 4-4 3 3 2-2 3 3"/></>,
     orbit: <><circle cx="12" cy="12" r="2"/><ellipse cx="12" cy="12" rx="9" ry="4" transform="rotate(-45 12 12)"/><ellipse cx="12" cy="12" rx="9" ry="4" transform="rotate(45 12 12)"/></>,
     user: <><circle cx="12" cy="8" r="3"/><path d="M5 20c.7-3.5 3-5.3 7-5.3s6.3 1.8 7 5.3"/><circle cx="12" cy="12" r="10"/></>,
-    library: <><path d="M4 5h5v15H4zM10 3h5v17h-5zM16 7h4v13h-4z"/></>,
+    library: <><rect x="3.5" y="4.5" width="5.3" height="15" rx="2"/><rect x="9.4" y="3" width="5.3" height="16.5" rx="2"/><path d="m16.1 5.1 2.3-.5a2 2 0 0 1 2.4 1.6l1.4 11.3a2 2 0 0 1-1.6 2.2l-2.4.4z"/></>,
     tiles: <><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></>,
     panel: <><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/></>,
     "panel-right": <><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M15 3v18"/></>,
