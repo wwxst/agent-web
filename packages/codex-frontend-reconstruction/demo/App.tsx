@@ -1931,7 +1931,7 @@ export function App() {
         title="Explore 尚未接入" disabled><Icon name="dots" size={18}/></button>}
       footer={showSidebarReferenceFixture
         ? <span className="codex-navigation-rail__reference-avatar"
-            data-visual-reference-only="account-avatar" aria-hidden="true"/>
+            data-visual-reference-only="account-avatar" aria-hidden="true">KA</span>
         : <button type="button" data-testid="navigation-rail-settings"
             disabled aria-label="Settings（尚未接入）" title="设置尚未接入">
             <Icon name="settings" size={18}/>
@@ -2282,10 +2282,10 @@ export function App() {
                   </p>
                 </div>}
               </div>
-              <CodexComposerPermissionModeControl key={active} controls={composerControls}/>
+              <CodexComposerPermissionModeControl key={active} controls={composerControls} referencePresentation={showSidebarReferenceFixture}/>
             </div>}
             trailingControls={<div className="demo-composer-right">
-              <CodexComposerModelReasoningControl key={active} controls={composerControls}/>
+              <CodexComposerModelReasoningControl key={active} controls={composerControls} referencePresentation={showSidebarReferenceFixture}/>
               {isNewChat&&draft.trim().length===0&&composerAttachments.length===0
                 ?<>
                   <button type="button" className="demo-composer-voice-unavailable"
