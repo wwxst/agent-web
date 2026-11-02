@@ -48,6 +48,8 @@ test("shell-empty visual route mounts the real desktop shell, idle Composer and 
   await expect(modelControl).toContainText("模型未连接");
   await expect(permissionControl).toBeDisabled();
   await expect(permissionControl).toContainText("权限未连接");
+  await expect(page.getByTestId("composer-microphone-unavailable")).toBeDisabled();
+  await expect(page.getByTestId("composer-voice-mode-unavailable")).toBeDisabled();
   await expect(page.getByText("Demo Agent")).toHaveCount(0);
   await expect(page.getByText(/Full access.*mock/)).toHaveCount(0);
   await expect(page.getByTestId("demo-tools")).toHaveCount(0);
@@ -89,6 +91,15 @@ test("shell-empty visual route mounts the real desktop shell, idle Composer and 
     hero:document.querySelector(".demo-home-hero")?.getBoundingClientRect().toJSON()??null,
     heroIcon:document.querySelector(".demo-home-hero__icon")?.getBoundingClientRect().toJSON()??null,
     heroHeading:document.querySelector(".demo-home-hero__heading")?.getBoundingClientRect().toJSON()??null,
+    heroHeadingStyle:(()=>{
+      const node=document.querySelector(".demo-home-hero__heading");
+      if(node==null)return null;
+      const style=getComputedStyle(node);
+      return {fontSize:style.fontSize,lineHeight:style.lineHeight,
+        letterSpacing:style.letterSpacing,fontWeight:style.fontWeight};
+    })(),
+    contextProject:document.querySelector(".demo-home-composer-context__project")?.getBoundingClientRect().toJSON()??null,
+    contextComputer:document.querySelector(".demo-home-composer-context__computer")?.getBoundingClientRect().toJSON()??null,
     composerPlacement:document.querySelector(".demo-composer")?.getAttribute("data-composer-placement"),
     rowCount:document.querySelectorAll(".demo-row").length,
     savedPin:localStorage.getItem("pinned-content-tabs-v1"),
@@ -131,6 +142,11 @@ test("shell-empty visual route mounts the real desktop shell, idle Composer and 
   expect(capture.hero).not.toBeNull();
   expect(capture.heroIcon).not.toBeNull();
   expect(capture.heroHeading).not.toBeNull();
+  expect(capture.heroHeadingStyle).toEqual({
+    fontSize:"28px",lineHeight:"34px",letterSpacing:"0.38px",fontWeight:"400",
+  });
+  expect(capture.contextProject?.left).toBeCloseTo(478,0);
+  expect(capture.contextComputer?.left).toBeCloseTo(578,0);
   expect((capture.heroIcon?.top??0)+(capture.heroIcon?.height??0)/2).toBeCloseTo(327,0);
   expect(capture.heroHeading?.top).toBeCloseTo(379,0);
   expect(capture.composerPlacement).toBe("home");
