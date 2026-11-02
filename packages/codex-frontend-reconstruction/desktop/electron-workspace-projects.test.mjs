@@ -37,6 +37,7 @@ test("native workspace projects persist across Electron restarts without persist
    await first.evaluate(({dialog},directory)=>{
     dialog.showOpenDialog=async()=>({canceled:false,filePaths:[directory]});
    },workspace);
+   await page.locator('[data-app-action-sidebar-section-key="projects"] .demo-sidebar-section__header').hover();
    await page.getByRole("button",{name:"Add new project"}).click();
    const row=page.locator('[data-app-action-sidebar-project-row]');
    await row.waitFor({state:"visible",timeout:15000});
