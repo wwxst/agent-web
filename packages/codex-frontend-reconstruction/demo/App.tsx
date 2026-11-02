@@ -356,6 +356,7 @@ function ConversationSidebar(props: {
                   </div>)}
               </div>
             : <div className="demo-sidebar-local-projects" data-workspace-project-list="">
+                {!isHome&&<div className="demo-project-heading"><Icon name="folder" size={16}/> {workspaceProjectName??"agent web"}</div>}
                 {workspaceProjectName!=null&&activeWorkspaceProjectId==null&&
                   <div className="demo-sidebar-local-project" data-local-workspace-project="">
                     <button type="button" className="demo-sidebar-local-project__name"
