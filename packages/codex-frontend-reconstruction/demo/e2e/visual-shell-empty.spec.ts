@@ -297,7 +297,9 @@ test("real read-only workspace grant updates original home project Hero without 
   await expect(page.locator("[data-local-workspace-project]")).toContainText("Read-only");
   await expect(page.getByText("No projects",{exact:true})).toHaveCount(0);
   await expect(page.locator(".demo-row")).toHaveCount(0);
-  await expect(page.getByTestId("send-button")).toBeDisabled();
+  await expect(page.getByTestId("composer-microphone-unavailable")).toBeDisabled();
+  await expect(page.getByTestId("composer-voice-mode-unavailable")).toBeDisabled();
+  await expect(page.getByTestId("send-button")).toHaveCount(0);
   await page.getByRole("button",{name:"Clear local folder"}).click();
   await expect(page.getByRole("heading",{name:"What should we build?"})).toBeVisible();
   await expect(page.getByText("No projects",{exact:true})).toBeVisible();
