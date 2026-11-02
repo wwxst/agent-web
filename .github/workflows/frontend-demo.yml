@@ -93,6 +93,16 @@ jobs:
           if (!(Test-Path "node_modules/electron/dist/electron.exe")) {
             throw "Electron Windows binary is missing"
           }
+      - name: Prepare Windows desktop for 1090x760 full-window capture
+        shell: powershell
+        run: |
+          Set-DisplayResolution -Width 1920 -Height 1080 -Force
+          Start-Sleep -Seconds 2
+          Add-Type -AssemblyName System.Windows.Forms
+          $bounds = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
+          if ($bounds.Width -lt 1090 -or $bounds.Height -lt 760) {
+            throw "Windows display is $($bounds.Width)x$($bounds.Height); 1090x760 full-window capture is required."
+          }
       - name: Validate Windows visual capture helper
         shell: powershell
         run: npm run visual:capture:windows -- -SelfTest
