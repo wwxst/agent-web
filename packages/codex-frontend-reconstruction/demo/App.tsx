@@ -2286,7 +2286,38 @@ export function App() {
             </div>}
             trailingControls={<div className="demo-composer-right">
               <CodexComposerModelReasoningControl key={active} controls={composerControls}/>
-              <button type={composerAction.type} data-testid="send-button" data-composer-action={composerAction.kind} aria-busy={composerAction.loading} aria-label={isNewChat ? "发送消息（Agent 未连接）" : composerAction.kind === "stop" ? "停止模拟" : "发送模拟消息"} title={isNewChat ? "Agent 未连接，暂不可发送" : composerAction.kind === "stop" ? "停止模拟" : "发送模拟消息"} className="demo-send-button" disabled={composerAction.disabled} onClick={composerAction.kind === "stop" ? stopSample : undefined}><Icon name={composerAction.kind === "stop" ? "stop" : "up"} size={16}/></button>
+              {isNewChat&&draft.trim().length===0&&composerAttachments.length===0
+                ?<>
+                  <button type="button" className="demo-composer-voice-unavailable"
+                    data-testid="composer-microphone-unavailable"
+                    aria-label="麦克风（Agent 未连接）"
+                    title="Agent 未连接，语音输入暂不可用" disabled>
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"
+                      stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"
+                      strokeLinejoin="round" aria-hidden="true">
+                      <rect x="6.25" y="1.5" width="3.5" height="8" rx="1.75"/>
+                      <path d="M3.75 7.5v.5a4.25 4.25 0 0 0 8.5 0v-.5M8 12.25v2.25M5.75 14.5h4.5"/>
+                    </svg>
+                  </button>
+                  <button type="button" className="demo-composer-voice-mode-unavailable"
+                    data-testid="composer-voice-mode-unavailable"
+                    aria-label="语音模式（Agent 未连接）"
+                    title="Agent 未连接，语音模式暂不可用" disabled>
+                    <svg width="18" height="18" viewBox="0 0 18 18" fill="none"
+                      stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"
+                      aria-hidden="true">
+                      <path d="M3 7v4M6 4.5v9M9 2.5v13M12 5.5v7M15 7v4"/>
+                    </svg>
+                  </button>
+                </>
+                :<button type={composerAction.type} data-testid="send-button"
+                  data-composer-action={composerAction.kind} aria-busy={composerAction.loading}
+                  aria-label={isNewChat ? "发送消息（Agent 未连接）" : composerAction.kind === "stop" ? "停止模拟" : "发送模拟消息"}
+                  title={isNewChat ? "Agent 未连接，暂不可发送" : composerAction.kind === "stop" ? "停止模拟" : "发送模拟消息"}
+                  className="demo-send-button" disabled={composerAction.disabled}
+                  onClick={composerAction.kind === "stop" ? stopSample : undefined}>
+                  <Icon name={composerAction.kind === "stop" ? "stop" : "up"} size={16}/>
+                </button>}
             </div>}
           />
         </CodexSourceComposerHostForm>
