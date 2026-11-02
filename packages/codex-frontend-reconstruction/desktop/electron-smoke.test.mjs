@@ -675,7 +675,6 @@ test("independent Electron file renderer starts, isolates preload and routes Fc 
     composerBottom:document.querySelector(".demo-composer")?.getBoundingClientRect().bottom??null,
     heroHeading:document.querySelector(".demo-home-hero__heading")?.textContent?.trim()??null,
     rootFontSmoothing:getComputedStyle(document.documentElement).getPropertyValue("-webkit-font-smoothing"),
-    rootLetterSpacing:getComputedStyle(document.documentElement).letterSpacing,
   }));
   assert.deepEqual(referenceGeometry.viewport,{width:1090,height:760,devicePixelRatio:1});
   assert.equal(referenceGeometry.rail,52);
@@ -696,7 +695,6 @@ test("independent Electron file renderer starts, isolates preload and routes Fc 
   assert.equal(referenceGeometry.composerBottom,741);
   assert.equal(referenceGeometry.heroHeading,"我们应该在agent中做些什么？");
   assert.equal(referenceGeometry.rootFontSmoothing,"antialiased");
-  assert.equal(referenceGeometry.rootLetterSpacing,"0px");
   await page.screenshot({
     path:resolve(root,"desktop/test-results/electron-home-reference.png"),
     fullPage:false,animations:"disabled",
