@@ -177,6 +177,11 @@ button:focus-visible, textarea:focus-visible { outline: 2px solid #578cda; outli
 .demo-desktop:has([data-sidebar-reference-fixture="true"]) .demo-main[data-codex-home="true"] .demo-home-hero {
   height:calc(var(--home-composer-top) + 88px);
 }
+.demo-desktop:has([data-sidebar-reference-fixture="true"]) .demo-home-hero__heading {
+  font-size:28px;
+  line-height:34px;
+  letter-spacing:-.5px;
+}
 .demo-desktop:has([data-sidebar-reference-fixture="true"]) .demo-home-composer-context {
   margin-inline:14px;
   gap:56px;
@@ -1177,11 +1182,11 @@ button:focus-visible, textarea:focus-visible { outline: 2px solid #578cda; outli
 .demo-home-hero__heading {
   margin: 0;
   color: var(--color-text, #292929);
-  /* Current localized Windows home screenshot measures 28px / 34px. */
-  font-size: 28px;
+  /* Default Codex DBt home uses the shared heading-xl scale. */
+  font-size: 32px;
   font-weight: 400;
-  line-height: 34px;
-  letter-spacing: -.5px;
+  line-height: 38px;
+  letter-spacing: -.8px;
   text-align: center;
   white-space: pre-wrap;
 }
