@@ -149,9 +149,13 @@ button:focus-visible, textarea:focus-visible { outline: 2px solid #578cda; outli
   inset-inline-end:3px;
 }
 .demo-desktop[data-independent-electron="true"]:has([data-sidebar-reference-fixture="true"]) .demo-sidebar-scroll {
-  /* The captured sidebar contains additional off-screen recent conversations;
-   * retain the native scrollbar thumb without fabricating visible chat rows. */
-  padding-bottom:430px;
+  /* The source scrollport reaches the sidebar's right edge; the 8px parent
+   * inset is for row content, not for the native scrollbar gutter. */
+  margin-top:8px;
+  margin-right:-8px;
+  padding-top:2px;
+  /* Preserve the original thumb length while representing off-screen rows. */
+  padding-bottom:405px;
 }
 .demo-desktop[data-independent-electron="true"]:has([data-sidebar-reference-fixture="true"]) .demo-sidebar-actions .demo-nav-action {
   transform:translateY(2px);
