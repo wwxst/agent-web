@@ -623,6 +623,16 @@ test("independent Electron file renderer starts, isolates preload and routes Fc 
   // Capture the same empty-home layout with the sanitized source-reference
   // sidebar data. The main process only enables this fixture in an unpackaged
   // Electron test process explicitly marked by AGENT_WEB_VISUAL_SCENARIO.
+  // The user's current Codex reference is 1090×760. Resize the actual
+  // native BrowserWindow (not merely the renderer viewport) before the
+  // matched-state screenshot so Windows caption buttons and shell geometry
+  // are compared at the same physical window dimensions.
+  await app.evaluate(({BrowserWindow})=>{
+    const window=BrowserWindow.getAllWindows()[0];
+    if(window==null)throw new Error("Electron visual window is unavailable");
+    window.setSize(1090,760);
+  });
+  await page.waitForFunction(()=>innerWidth===1090&&innerHeight===760,{timeout:10000});
   const referenceUrl=new URL(homeUrl);
   referenceUrl.searchParams.set("visualScenario","shell-empty-reference");
   await page.goto(referenceUrl.toString());
@@ -630,7 +640,7 @@ test("independent Electron file renderer starts, isolates preload and routes Fc 
   assert.equal(await page.locator('[data-visual-reference-only="pinned"]').count(),1);
   assert.equal(await page.locator('[data-visual-reference-only="project"]').count(),7);
   assert.equal(await page.locator('[data-visual-reference-only="project-thread"]').count(),5);
-  assert.equal(await page.getByRole("heading",{name:"我们要构建什么？"}).count(),1);
+  assert.equal(await page.getByRole("heading",{name:"我们应该在agent中做些什么？"}).count(),1);
   assert.equal(await page.getByRole("textbox",{name:"随心输入"}).count(),1);
   assert.equal(await page.getByTestId("composer-microphone-unavailable").isDisabled(),true);
   assert.equal(await page.getByTestId("composer-voice-mode-unavailable").isDisabled(),true);
@@ -641,6 +651,21 @@ test("independent Electron file renderer starts, isolates preload and routes Fc 
   });
   assert.deepEqual(heroStyle,{fontSize:"32px",lineHeight:"38px",letterSpacing:"-0.8px",fontWeight:"400"});
   await page.evaluate(()=>document.fonts.ready);
+  const referenceGeometry=await page.evaluate(()=>({
+    viewport:{width:innerWidth,height:innerHeight,devicePixelRatio},
+    rail:document.querySelector("[data-app-navigation-rail]")?.getBoundingClientRect().width??null,
+    sidebar:document.querySelector(".demo-sidebar")?.getBoundingClientRect().width??null,
+    mainLeft:document.querySelector(".demo-main")?.getBoundingClientRect().left??null,
+    composer:document.querySelector(".demo-composer")?.getBoundingClientRect().toJSON()??null,
+    heroHeading:document.querySelector(".demo-home-hero__heading")?.textContent?.trim()??null,
+  }));
+  assert.deepEqual(referenceGeometry.viewport,{width:1090,height:760,devicePixelRatio:1});
+  assert.equal(referenceGeometry.rail,52);
+  assert.equal(referenceGeometry.sidebar,240);
+  assert.equal(referenceGeometry.mainLeft,292);
+  assert.equal(referenceGeometry.composer?.width,738);
+  assert.equal(referenceGeometry.composer?.left,321);
+  assert.equal(referenceGeometry.heroHeading,"我们应该在agent中做些什么？");
   await page.screenshot({
     path:resolve(root,"desktop/test-results/electron-home-reference.png"),
     fullPage:false,animations:"disabled",
