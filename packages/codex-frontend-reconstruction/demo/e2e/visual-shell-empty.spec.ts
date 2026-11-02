@@ -258,3 +258,49 @@ test("real read-only workspace grant updates original home project Hero without 
   expect(result?.selects).toBe(1);
   expect(result?.revokes).toBeGreaterThanOrEqual(1);
 });
+
+
+test("titlebar history icon boxes remain centered and mirror the source 16px canvas",async({page})=>{
+  await page.goto("/?visualScenario=shell-empty");
+  await page.waitForFunction(()=>document.fonts.status==="loaded");
+  const icons=page.locator(".demo-window-menu .demo-menubar-back__svg");
+  await expect(icons).toHaveCount(2);
+  await expect(icons.nth(0)).toHaveAttribute("data-menubar-history-direction","back");
+  await expect(icons.nth(1)).toHaveAttribute("data-menubar-history-direction","forward");
+  for(const icon of await icons.all()){
+    await expect(icon).toHaveAttribute("viewBox","0 0 16 16");
+    await expect(icon).toHaveAttribute("stroke-width","1.1");
+    await expect(icon).toHaveAttribute("aria-hidden","true");
+    await expect(icon.locator("path")).toHaveAttribute(
+      "d","M7.05 3.35 2.65 8l4.4 4.65M2.8 8h10.55");
+  }
+  const geometry=await page.locator(".demo-window-menu").evaluate(menu=>{
+    const center=(r:DOMRect)=>({x:r.x+r.width/2,y:r.y+r.height/2});
+    const menuCenterY=center(menu.getBoundingClientRect()).y;
+    const spans=Array.from(menu.querySelectorAll(".demo-menubar-back"));
+    return spans.map(span=>{
+      const svg=span.querySelector("svg")!;
+      const icon=svg.getBoundingClientRect();
+      const slot=span.getBoundingClientRect();
+      return {w:icon.width,h:icon.height,slotHeight:slot.height,
+        iconCenterY:center(icon).y,slotCenterY:center(slot).y,
+        menuCenterY,transform:getComputedStyle(svg).transform,
+        pointerTag:span.tagName.toLowerCase(),
+        ariaHidden:span.getAttribute("aria-hidden"),
+        text:span.textContent};
+    });
+  });
+  expect(geometry).toHaveLength(2);
+  for(const icon of geometry){
+    expect(icon.w).toBe(16);
+    expect(icon.h).toBe(16);
+    expect(icon.slotHeight).toBe(24);
+    expect(Math.abs(icon.iconCenterY-icon.slotCenterY)).toBeLessThanOrEqual(.5);
+    expect(Math.abs(icon.iconCenterY-icon.menuCenterY)).toBeLessThanOrEqual(.5);
+    expect(icon.pointerTag).toBe("span");
+    expect(icon.ariaHidden).toBe("true");
+    expect(icon.text).toBe("");
+  }
+  expect(geometry[0]?.transform).toBe("none");
+  expect(geometry[1]?.transform).toBe("matrix(-1, 0, 0, 1, 0, 0)");
+});
