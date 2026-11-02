@@ -101,8 +101,10 @@ function sameCanonicalPath(left,right,platform=process.platform){
   return platform==="win32"?a.toLowerCase()===b.toLowerCase():a===b;
 }
 function addWorkspaceProject(userData,selectedPath,{filesystem=fs,clock=()=>new Date().toISOString(),platform=process.platform}={}){
-  const directory=canonicalDirectory(selectedPath,{filesystem,platform});
+  // Validate the persisted registry before touching the user-selected path.
+  // A corrupt registry must fail closed consistently on every platform.
   const projects=readWorkspaceProjects(userData,{filesystem});
+  const directory=canonicalDirectory(selectedPath,{filesystem,platform});
   const existing=projects.find(project=>
     sameCanonicalPath(project.path,directory.path,platform)||
     project.device===directory.device&&project.inode===directory.inode);
