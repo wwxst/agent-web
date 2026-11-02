@@ -1,7 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {mkdir} from "node:fs/promises";
-import {resolve,basename} from "node:path";
+import {mkdir,mkdtemp,rm} from "node:fs/promises";
+import {resolve,basename,join} from "node:path";
+import {tmpdir} from "node:os";
 import {fileURLToPath} from "node:url";
 import {_electron as electron} from "playwright";
 
@@ -15,12 +16,13 @@ test("normal packaged Electron launch opens the empty Codex home, never a synthe
 },async()=>{
   // Override the smoke-suite fixture opt-in for this real production-startup
   // assertion. All other native smoke tests keep their original fixture route.
+  const userDataDir=await mkdtemp(join(tmpdir(),"agent-web-default-home-"));
   const app=await electron.launch({
     executablePath,
     args:[".",...(process.platform==="linux"&&process.env.CI?["--no-sandbox"]:[])],
     cwd:root,
     env:{...process.env,AGENT_WEB_DEV_URL:"",AGENT_WEB_DESKTOP_FIXTURE:"",
-      ELECTRON_DISABLE_SECURITY_WARNINGS:"true"},
+      AGENT_WEB_USER_DATA_DIR:userDataDir,ELECTRON_DISABLE_SECURITY_WARNINGS:"true"},
     timeout:40000,
   });
   try{
@@ -146,7 +148,9 @@ test("normal packaged Electron launch opens the empty Codex home, never a synthe
     assert.equal(await projectRow.locator("[data-app-action-sidebar-select-project]")
       .getAttribute("aria-current"),"page");
     assert.equal(await page.getByText("No projects",{exact:true}).count(),0);
-    assert.equal(await page.getByTestId("send-button").isDisabled(),true);
+    assert.equal(await page.getByTestId("composer-microphone-unavailable").isDisabled(),true);
+    assert.equal(await page.getByTestId("composer-voice-mode-unavailable").isDisabled(),true);
+    assert.equal(await page.getByTestId("send-button").count(),0);
     const summaries=await page.evaluate(()=>
       window.agentWebDesktopHost?.listWorkspaceProjects());
     assert.equal(summaries?.length,1);
@@ -180,6 +184,7 @@ test("normal packaged Electron launch opens the empty Codex home, never a synthe
     assert.match(await editor.textContent(),/draft stays here/);
     assert.equal(await page.locator(".demo-row").count(),0);
   }finally{
-    await app.close();
+    try{await app.close();}
+    finally{await rm(userDataDir,{recursive:true,force:true});}
   }
 });
