@@ -76,3 +76,18 @@ test("renderer may request only explicit menu ids and finite window anchors",()=
  for(const anchor of [null,{}, {x:NaN,y:1},{x:1,y:Infinity},{x:"1",y:3}])
   assert.equal(sanitizeMenuAnchor(anchor),null);
 });
+
+test("top-level native menu labels follow OS locale without changing command identities",()=>{
+ const {actions}=makeActions();
+ const zh=buildSourceNativeMenus({platform:"win32",actions,locale:"zh-CN"});
+ assert.deepEqual(zh.map(x=>x.label),["文件","编辑","视图","帮助"]);
+ assert.deepEqual(zh.map(x=>x.id),MENU_IDS);
+ assert.equal(item(zh,"zoomIn").accelerator,"CmdOrCtrl+Plus");
+ assert.equal(item(zh,"closeWindow").accelerator,"Ctrl+W");
+ const zhHans=buildSourceNativeMenus({platform:"win32",actions,locale:"zh-Hans"});
+ assert.deepEqual(zhHans.map(x=>x.label),["文件","编辑","视图","帮助"]);
+ for(const locale of ["en-US","fr-FR",""]){
+   const localized=buildSourceNativeMenus({platform:"win32",actions,locale});
+   assert.deepEqual(localized.map(x=>x.label),["File","Edit","View","Help"]);
+ }
+});

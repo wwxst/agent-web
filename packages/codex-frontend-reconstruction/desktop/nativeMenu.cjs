@@ -8,8 +8,13 @@
  * project commands etc), rather than pretending they work.
  */
 const MENU_IDS=Object.freeze(["file","edit","view","help"]);
-function buildSourceNativeMenus({platform="win32",actions}){
+function buildSourceNativeMenus({platform="win32",actions,locale="en"}){
   const isMac=platform==="darwin";
+  // Native popup templates use the same operating-system locale as the
+  // renderer's navigation menubar. Roles, action IDs and shortcuts stay stable.
+  const topLabels=/^zh(?:-|$)/i.test(locale)
+    ? {file:"文件",edit:"编辑",view:"视图",help:"帮助"}
+    : {file:"File",edit:"Edit",view:"View",help:"Help"};
   const edit=[
     {label:"Undo",role:"undo"},
     {label:"Redo",role:"redo"},
@@ -68,10 +73,10 @@ function buildSourceNativeMenus({platform="win32",actions}){
     {label:"Documentation",id:"documentation",click:actions.documentation},
   ];
   const menus=[
-    {id:"file",label:"File",submenu:file},
-    {id:"edit",label:"Edit",role:"editMenu",submenu:edit},
-    {id:"view",label:"View",submenu:view},
-    {id:"help",label:"Help",role:"help",submenu:help},
+    {id:"file",label:topLabels.file,submenu:file},
+    {id:"edit",label:topLabels.edit,role:"editMenu",submenu:edit},
+    {id:"view",label:topLabels.view,submenu:view},
+    {id:"help",label:topLabels.help,role:"help",submenu:help},
   ];
   return isMac?[
     {label:"agent-web",role:"appMenu",submenu:[{role:"about"},{type:"separator"},{role:"quit"}]},
