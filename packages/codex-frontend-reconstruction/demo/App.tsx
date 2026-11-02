@@ -436,9 +436,25 @@ export function App() {
   // The original standalone demo records are never a production default.
   const launchParams=typeof window==="undefined"?new URLSearchParams():
     new URLSearchParams(window.location.search);
-  const isVisualShellScenario=launchParams.get("visualScenario")==="shell-empty";
-  const showSidebarReferenceFixture=isVisualShellScenario&&import.meta.env.DEV&&
-    (typeof window==="undefined"||window.agentWebDesktopHost==null);
+  const visualScenario=launchParams.get("visualScenario");
+  const isVisualShellScenario=visualScenario==="shell-empty"||
+    visualScenario==="shell-empty-reference";
+  const isElectronReferenceScenario=visualScenario==="shell-empty-reference";
+  const composerControlsHost=typeof window==="undefined"
+    ?undefined:window.agentWebDesktopHost;
+  const [hostVisualScenario,setHostVisualScenario]=React.useState(false);
+  React.useEffect(()=>{
+    if(!isElectronReferenceScenario||composerControlsHost==null)return;
+    let current=true;
+    void composerControlsHost.getHostInfo().then(info=>{
+      if(current)setHostVisualScenario(info.visualScenario==="shell-empty-reference");
+    }).catch(()=>{});
+    return()=>{current=false;};
+  },[composerControlsHost,isElectronReferenceScenario]);
+  const showSidebarReferenceFixture=isVisualShellScenario&&(
+    (import.meta.env.DEV&&composerControlsHost==null)||
+    (isElectronReferenceScenario&&hostVisualScenario)
+  );
   const explicitDemoScenario=launchParams.get("demoScenario");
   const devTestFixtures=import.meta.env.DEV&&
     import.meta.env.VITE_AGENT_WEB_DEMO_FIXTURES==="1";
@@ -450,8 +466,6 @@ export function App() {
     isVisualShellScenario?"visual-empty":
       demoFixtureEnabled?initialDemoConversation:"visual-empty");
   const isNewChat = active === "visual-empty";
-  const composerControlsHost=typeof window==="undefined"
-    ?undefined:window.agentWebDesktopHost;
   const composerControls=useCodexComposerControls(composerControlsHost,active);
   const [generation, setGeneration] = React.useState(0);
   // The host owns this feature flag. The preview chooses rail-enabled mode
