@@ -347,7 +347,8 @@ function ConversationSidebar(props: {
                   <div key={project.name} className="demo-sidebar-reference-project"
                     role="listitem" aria-disabled="true"
                     data-visual-reference-only="project">
-                    <div className="demo-sidebar-reference-project__row">
+                    <div className="demo-sidebar-reference-project__row"
+                      data-visual-reference-selected={project.name==="agent"?"true":undefined}>
                       <Icon name="folder" size={15}/>
                       <span>{project.name}</span>
                     </div>
@@ -2191,14 +2192,14 @@ export function App() {
           {isNewChat&&<div className="demo-home-composer-context"
             data-testid="home-composer-context">
             <button type="button" className="demo-home-composer-context__project"
-              aria-label={workspaceProjectName==null?"选择项目":"更改项目"}
+              aria-label={showSidebarReferenceFixture?"agent":workspaceProjectName==null?"选择项目":"更改项目"}
               title={composerControlsHost?.selectWorkspaceDirectory==null
                 ?"需要 Electron 桌面宿主才能选择本地文件夹"
                 :"选择本地文件夹（只读预览）"}
               disabled={composerControlsHost?.selectWorkspaceDirectory==null||workspaceProjectBusy}
               onClick={()=>void openWorkspaceProject()}>
               <Icon name="folder" size={14}/>
-              <span>{workspaceProjectName??"选择项目"}</span>
+              <span>{showSidebarReferenceFixture?"agent":workspaceProjectName??"选择项目"}</span>
             </button>
             <span className="demo-home-composer-context__computer"
               data-testid="home-computer-context">
