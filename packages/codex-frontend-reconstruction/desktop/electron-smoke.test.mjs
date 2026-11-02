@@ -715,7 +715,7 @@ test("independent Electron file renderer starts, isolates preload and routes Fc 
     const capture=spawnSync("powershell.exe",[
       "-NoProfile","-NonInteractive","-ExecutionPolicy","Bypass","-File",
       resolve(root,"scripts/capture-windows-window.ps1"),
-      "-WindowTitleRegex","^agent-web Codex visual capture$",
+      "-WindowTitleRegex","^"+captureWindowTitle+"$",
       "-OutputPath",fullWindowPath,
       "-ScenarioId","A-shell-empty",
       "-Theme","light",
@@ -724,7 +724,7 @@ test("independent Electron file renderer starts, isolates preload and routes Fc 
       "-WaitMilliseconds","300",
     ],{encoding:"utf8",timeout:30000,windowsHide:true});
     assert.ifError(capture.error);
-    assert.equal(capture.status,0,(capture.stdout??"")+"\\n"+(capture.stderr??""));
+    assert.equal(capture.status,0,(capture.stdout??"")+"\n"+(capture.stderr??""));
     const metadata=JSON.parse(await readFile(fullWindowPath+".json","utf8"));
     assert.equal(metadata.scenarioId,"A-shell-empty");
     assert.equal(metadata.theme,"light");
