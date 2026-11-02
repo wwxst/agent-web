@@ -150,6 +150,12 @@ interface PinnedSidebarItem{
   unavailable:boolean;
   isActive:boolean;
 }
+interface WorkspaceProjectSummary{
+  id:string;
+  name:string;
+  createdAt:string;
+  lastOpenedAt:string|null;
+}
 interface SidebarReferenceProject {
   name:string;
   threads:readonly string[];
@@ -219,7 +225,11 @@ function ConversationSidebar(props: {
   workspaceProjectName:string|null;
   workspaceProjectBusy:boolean;
   workspaceProjectAvailable:boolean;
+  workspaceProjects:readonly WorkspaceProjectSummary[];
+  activeWorkspaceProjectId:string|null;
   onOpenWorkspaceProject:()=>void;
+  onSelectWorkspaceProject:(id:string)=>void;
+  onRemoveWorkspaceProject:(id:string)=>void;
   onClearWorkspaceProject:()=>void;
   navigationRailEnabled: boolean;
   referenceFixture:boolean;
@@ -231,7 +241,9 @@ function ConversationSidebar(props: {
   const {
     active,collapsed,onSelect,onNewChat,navigationRailEnabled,referenceFixture,
     workspaceProjectName,workspaceProjectBusy,workspaceProjectAvailable,
-    onOpenWorkspaceProject,onClearWorkspaceProject,
+    workspaceProjects,activeWorkspaceProjectId,
+    onOpenWorkspaceProject,onSelectWorkspaceProject,onRemoveWorkspaceProject,
+    onClearWorkspaceProject,
     pinnedItems,onSelectPinned,onUnpinPinned,resizeHandle,
   } = props;
   const [collapsedSections,setCollapsedSections]=React.useState<Record<SidebarSectionKey,boolean>>({
@@ -243,7 +255,8 @@ function ConversationSidebar(props: {
     ?{newChat:"新聊天",notifications:"通知",search:"搜索",pinned:"置顶",
       projects:"项目",recents:"最近",addProject:"添加新项目"}
     :{newChat:"New chat",notifications:"Notifications unavailable",search:"Search",
-      pinned:"Pinned",projects:"Projects",recents:"Recents",addProject:"Open local folder"};
+      pinned:"Pinned",projects:"Projects",recents:"Recents",addProject:"Add new project"};
+  const isHome=active==="visual-empty";
   const projectAction=<button type="button" className="demo-sidebar-project-add"
     data-app-action-sidebar-project-create=""
     aria-label={sidebarCopy.addProject} title={referenceFixture?sidebarCopy.addProject:
@@ -254,7 +267,6 @@ function ConversationSidebar(props: {
     onClick={props.onOpenWorkspaceProject}>
     <Icon name="plus" size={15}/>
   </button>;
-  const isHome=active==="visual-empty";
 
   return <aside className={`demo-sidebar ${collapsed ? "demo-sidebar--collapsed" : ""}`}
     aria-label="演示会话导航"
@@ -329,41 +341,63 @@ function ConversationSidebar(props: {
           collapsed={collapsedSections.projects}
           onToggle={()=>toggleSection("projects")}
           actions={projectAction}>
-          {isHome
-            ? referenceFixture
-              ? <div className="demo-sidebar-reference-projects" role="list" aria-label="Reference projects">
-                  {SIDEBAR_REFERENCE_FIXTURE.projects.map(project=>
-                    <div key={project.name} className="demo-sidebar-reference-project"
-                      role="listitem" aria-disabled="true"
-                      data-visual-reference-only="project">
-                      <div className="demo-sidebar-reference-project__row">
-                        <Icon name="folder" size={15}/>
-                        <span>{project.name}</span>
-                      </div>
-                      {project.threads.length>0&&<div className="demo-sidebar-reference-project__threads">
-                        {project.threads.map(thread=>
-                          <div key={thread} className="demo-sidebar-reference-project__thread"
-                            aria-disabled="true" data-visual-reference-only="project-thread">{thread}</div>)}
-                      </div>}
-                    </div>)}
-                </div>
-              : workspaceProjectName==null
-                ? <div className="demo-sidebar-empty">No projects</div>
-                : <div className="demo-sidebar-local-project" data-local-workspace-project="">
-                  <button type="button" className="demo-sidebar-local-project__name"
-                    aria-label="Change local folder" title="Change read-only local folder"
-                    onClick={onOpenWorkspaceProject} disabled={workspaceProjectBusy}>
-                    <Icon name="folder" size={15}/>
-                    <span>{workspaceProjectName}</span>
-                    <small>Read-only</small>
-                  </button>
-                  <button type="button" className="demo-sidebar-local-project__clear"
-                    aria-label="Clear local folder" title="Revoke folder access"
-                    onClick={onClearWorkspaceProject} disabled={workspaceProjectBusy}>×</button>
-                </div>
-            : <nav className="demo-chat-list" aria-label="Projects">
-                <div className="demo-project-heading"><Icon name="folder" size={16}/> agent web</div>
-              </nav>}
+          {referenceFixture
+            ? <div className="demo-sidebar-reference-projects" role="list" aria-label="Reference projects">
+                {SIDEBAR_REFERENCE_FIXTURE.projects.map(project=>
+                  <div key={project.name} className="demo-sidebar-reference-project"
+                    role="listitem" aria-disabled="true"
+                    data-visual-reference-only="project">
+                    <div className="demo-sidebar-reference-project__row">
+                      <Icon name="folder" size={15}/>
+                      <span>{project.name}</span>
+                    </div>
+                    {project.threads.length>0&&<div className="demo-sidebar-reference-project__threads">
+                      {project.threads.map(thread=>
+                        <div key={thread} className="demo-sidebar-reference-project__thread"
+                          aria-disabled="true" data-visual-reference-only="project-thread">{thread}</div>)}
+                    </div>}
+                  </div>)}
+              </div>
+            : <div className="demo-sidebar-local-projects" data-workspace-project-list="">
+                {!isHome&&<div className="demo-project-heading"><Icon name="folder" size={16}/> {workspaceProjectName??"agent web"}</div>}
+                {workspaceProjectName!=null&&activeWorkspaceProjectId==null&&
+                  <div className="demo-sidebar-local-project" data-local-workspace-project="">
+                    <button type="button" className="demo-sidebar-local-project__name"
+                      aria-label="Change temporary local folder" title="Change read-only local folder"
+                      onClick={onOpenWorkspaceProject} disabled={workspaceProjectBusy}>
+                      <Icon name="folder" size={15}/>
+                      <span>{workspaceProjectName}</span>
+                      <small>Read-only</small>
+                    </button>
+                    <button type="button" className="demo-sidebar-local-project__clear"
+                      aria-label="Clear local folder" title="Revoke folder access"
+                      onClick={onClearWorkspaceProject} disabled={workspaceProjectBusy}>×</button>
+                  </div>}
+                {workspaceProjects.map(project=>
+                  <div key={project.id} className="demo-sidebar-local-project"
+                    data-app-action-sidebar-project-row=""
+                    data-app-action-sidebar-project-id={project.id}
+                    data-app-action-sidebar-project-label={project.name}>
+                    <button type="button" className="demo-sidebar-local-project__name"
+                      data-app-action-sidebar-select-project=""
+                      aria-current={activeWorkspaceProjectId===project.id?"page":undefined}
+                      aria-label={project.name}
+                      title={project.name}
+                      onClick={()=>onSelectWorkspaceProject(project.id)}
+                      disabled={workspaceProjectBusy}>
+                      <Icon name="folder" size={15}/>
+                      <span>{project.name}</span>
+                      {activeWorkspaceProjectId===project.id&&<small>Read-only</small>}
+                    </button>
+                    <button type="button" className="demo-sidebar-local-project__clear"
+                      aria-label={`Remove ${project.name} from projects`}
+                      title="Remove project from sidebar"
+                      onClick={()=>onRemoveWorkspaceProject(project.id)}
+                      disabled={workspaceProjectBusy}>×</button>
+                  </div>)}
+                {workspaceProjects.length===0&&workspaceProjectName==null&&
+                  <div className="demo-sidebar-empty">No projects</div>}
+              </div>}
         </SidebarSection>
         <SidebarSection sectionId="recents" title={sidebarCopy.recents}
           collapsed={collapsedSections.recents}
@@ -586,10 +620,12 @@ export function App() {
   });
   const pinnedOwnerTokensRef=React.useRef(new Map<string,string>());
   const workspaceGrantRef=React.useRef(false);
-  // This is a read-only grant display, not a persistent Agent project or a
-  // claim that the selected folder is bound to an execution backend.
+  // This is the currently active read-only workspace grant. A persisted
+  // local project entry is not an Agent session or execution-backend binding.
   const [workspaceProjectName,setWorkspaceProjectName]=React.useState<string|null>(null);
   const [workspaceProjectBusy,setWorkspaceProjectBusy]=React.useState(false);
+  const [workspaceProjects,setWorkspaceProjects]=React.useState<readonly WorkspaceProjectSummary[]>([]);
+  const [activeWorkspaceProjectId,setActiveWorkspaceProjectId]=React.useState<string|null>(null);
   // A file read/dialog is bound to the visible thread lifetime; an old
   // request cannot install a preview after switching/resetting conversations.
   const workspaceRequestEpochRef=React.useRef(0);
@@ -667,6 +703,17 @@ export function App() {
       toastTimerRef.current = setTimeout(() => setToast(null), 3600);
     }, []);
   React.useEffect(()=>{
+    const host=window.agentWebDesktopHost;
+    if(host?.listWorkspaceProjects==null)return;
+    let live=true;
+    void host.listWorkspaceProjects().then(projects=>{
+      if(live)setWorkspaceProjects(projects);
+    }).catch(()=>{
+      if(live)notify("无法读取本地项目列表。");
+    });
+    return ()=>{live=false;};
+  },[notify]);
+  React.useEffect(()=>{
     // A visual-baseline route must not read or overwrite the user's saved pins.
     if(isVisualShellScenario)return;
     const serialized=sourceSerializePinnedContentTabs(pinnedContentTabs);
@@ -726,6 +773,7 @@ export function App() {
     workspaceLatestReadByTabRef.current.clear();
     workspaceGrantRef.current=false;
     setWorkspaceProjectName(null);
+    setActiveWorkspaceProjectId(null);
     setWorkspaceProjectBusy(false);
     setWorkspaceTabs(sourceEmptyLocalReadOnlyTabState());
     // An outstanding native folder picker may resolve after this revoke;
@@ -733,37 +781,104 @@ export function App() {
     const host=window.agentWebDesktopHost;
     if(host!=null)void host.revokeWorkspaceDirectory().catch(()=>{});
   },[]);
+  const clearWorkspacePreviewsForProjectSwitch=React.useCallback(()=>{
+    workspaceRequestEpochRef.current++;
+    workspaceSelectionIntentRef.current++;
+    workspaceLatestPreviewIntentRef.current++;
+    workspaceLatestReadByTabRef.current.clear();
+    workspacePendingPreviewTabIdsRef.current.clear();
+    setWorkspaceTabs(sourceEmptyLocalReadOnlyTabState());
+  },[]);
   const openWorkspaceProject=React.useCallback(async()=>{
     const host=window.agentWebDesktopHost;
-    if(host?.selectWorkspaceDirectory==null||workspacePickerInFlightRef.current)return;
+    if((host?.addWorkspaceProject==null&&host?.selectWorkspaceDirectory==null)||
+      workspacePickerInFlightRef.current)return;
     const epoch=workspaceRequestEpochRef.current;
     workspacePickerInFlightRef.current=true;
     setWorkspaceProjectBusy(true);
     try{
-      const grant=await host.selectWorkspaceDirectory();
-      if(epoch!==workspaceRequestEpochRef.current){
-        // Revocation/route change while the OS picker is open wins.
-        if(grant.selected)await host.revokeWorkspaceDirectory().catch(()=>{});
-        return;
+      if(host.addWorkspaceProject!=null){
+        const result=await host.addWorkspaceProject();
+        if(epoch!==workspaceRequestEpochRef.current){
+          if(result.selected)await host.revokeWorkspaceDirectory().catch(()=>{});
+          return;
+        }
+        if(!result.selected||result.project==null)return;
+        clearWorkspacePreviewsForProjectSwitch();
+        workspaceGrantRef.current=true;
+        setWorkspaceProjectName(result.project.name);
+        setActiveWorkspaceProjectId(result.project.id);
+        setWorkspaceProjects(current=>{
+          const exists=current.some(project=>project.id===result.project!.id);
+          return exists
+            ?current.map(project=>project.id===result.project!.id?result.project!:project)
+            :[...current,result.project!];
+        });
+      }else{
+        const grant=await host.selectWorkspaceDirectory();
+        if(epoch!==workspaceRequestEpochRef.current){
+          if(grant.selected)await host.revokeWorkspaceDirectory().catch(()=>{});
+          return;
+        }
+        if(!grant.selected)return;
+        clearWorkspacePreviewsForProjectSwitch();
+        workspaceGrantRef.current=true;
+        setWorkspaceProjectName(grant.name??null);
+        setActiveWorkspaceProjectId(null);
       }
-      if(!grant.selected)return;
-      // This grant replaces the previous workspace, so invalidate every
-      // outstanding relative file read before showing the new folder.
-      workspaceRequestEpochRef.current++;
-      workspaceSelectionIntentRef.current++;
-      workspaceLatestPreviewIntentRef.current++;
-      workspaceLatestReadByTabRef.current.clear();
-      workspacePendingPreviewTabIdsRef.current.clear();
-      setWorkspaceTabs(sourceEmptyLocalReadOnlyTabState());
-      workspaceGrantRef.current=true;
-      setWorkspaceProjectName(grant.name??null);
     }catch{
-      notify("无法打开本地文件夹，请检查文件系统权限。");
+      notify("无法添加本地项目，请检查文件系统权限。");
     }finally{
       workspacePickerInFlightRef.current=false;
       setWorkspaceProjectBusy(false);
     }
-  },[notify]);
+  },[clearWorkspacePreviewsForProjectSwitch,notify]);
+  const selectWorkspaceProject=React.useCallback(async(id:string)=>{
+    const host=window.agentWebDesktopHost;
+    if(host?.selectWorkspaceProject==null||workspacePickerInFlightRef.current)return;
+    const epoch=workspaceRequestEpochRef.current;
+    workspacePickerInFlightRef.current=true;
+    setWorkspaceProjectBusy(true);
+    try{
+      const result=await host.selectWorkspaceProject(id);
+      if(epoch!==workspaceRequestEpochRef.current){
+        if(result.selected)await host.revokeWorkspaceDirectory().catch(()=>{});
+        return;
+      }
+      if(!result.selected||result.project==null){
+        notify("项目目录已不可用，请移除后重新添加。");
+        return;
+      }
+      clearWorkspacePreviewsForProjectSwitch();
+      workspaceGrantRef.current=true;
+      setWorkspaceProjectName(result.project.name);
+      setActiveWorkspaceProjectId(result.project.id);
+      setWorkspaceProjects(current=>current.map(project=>
+        project.id===result.project!.id?result.project!:project));
+    }catch{
+      notify("无法打开该项目目录，请检查目录是否仍然存在。");
+    }finally{
+      workspacePickerInFlightRef.current=false;
+      setWorkspaceProjectBusy(false);
+    }
+  },[clearWorkspacePreviewsForProjectSwitch,notify]);
+  const removeWorkspaceProject=React.useCallback(async(id:string)=>{
+    const host=window.agentWebDesktopHost;
+    if(host?.removeWorkspaceProject==null||workspacePickerInFlightRef.current)return;
+    workspacePickerInFlightRef.current=true;
+    setWorkspaceProjectBusy(true);
+    try{
+      const removed=await host.removeWorkspaceProject(id);
+      if(!removed)return;
+      setWorkspaceProjects(current=>current.filter(project=>project.id!==id));
+      if(activeWorkspaceProjectId===id)revokeWorkspacePreview();
+    }catch{
+      notify("无法从项目列表中移除该项目。");
+    }finally{
+      workspacePickerInFlightRef.current=false;
+      setWorkspaceProjectBusy(false);
+    }
+  },[activeWorkspaceProjectId,notify,revokeWorkspacePreview]);
 
   const openWorkspaceAttachment=React.useCallback(async(
     request:{path:string;line?:number;endLine?:number;column?:number;resetTabState?:boolean},
@@ -791,6 +906,7 @@ export function App() {
         if(!grant.selected)return;
         workspaceGrantRef.current=true;
         setWorkspaceProjectName(grant.name??null);
+        setActiveWorkspaceProjectId(null);
       }
       // A click dropped while the exclusive native directory chooser is
       // running must not invalidate its first request's result.
@@ -1811,8 +1927,12 @@ export function App() {
       referenceFixture={showSidebarReferenceFixture}
       onToggle={() => setCollapsed((v) => !v)} onSelect={switchConversation} onNewChat={startNewChat}
       workspaceProjectName={workspaceProjectName} workspaceProjectBusy={workspaceProjectBusy}
-      workspaceProjectAvailable={window.agentWebDesktopHost?.selectWorkspaceDirectory!=null}
+      workspaceProjectAvailable={window.agentWebDesktopHost?.addWorkspaceProject!=null||
+        window.agentWebDesktopHost?.selectWorkspaceDirectory!=null}
+      workspaceProjects={workspaceProjects} activeWorkspaceProjectId={activeWorkspaceProjectId}
       onOpenWorkspaceProject={()=>void openWorkspaceProject()}
+      onSelectWorkspaceProject={id=>void selectWorkspaceProject(id)}
+      onRemoveWorkspaceProject={id=>void removeWorkspaceProject(id)}
       onClearWorkspaceProject={revokeWorkspacePreview}
       pinnedItems={pinnedSidebarItems}
       onSelectPinned={selectPinnedContentTab}

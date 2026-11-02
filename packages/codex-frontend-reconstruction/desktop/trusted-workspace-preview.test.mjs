@@ -135,6 +135,44 @@ test("source SXo native clipboard copies paths without grant and contents only a
   }
 });
 
+
+test("registered workspace projects activate through trusted sender and persisted directory identity",async()=>{
+  const root=await mkdtemp(join(tmpdir(),"agent-web-registered-project-"));
+  const replacement=root+"-replacement";
+  const file=join(root,"src.ts");
+  const event={sender:{id:9901}},untrusted={sender:{id:9902}};
+  const host=createTrustedWorkspacePreviewHost({
+    isTrustedRenderer:value=>value===event,
+    chooseDirectory:async()=>({canceled:true,filePaths:[]}),
+  });
+  try{
+    await writeFile(file,"export const project = true;");
+    const identity=await stat(root);
+    assert.deepEqual(await host.selectDirectoryPath(event,root,{
+      device:String(identity.dev),inode:String(identity.ino),
+    }),{selected:true,name:root.split(/[\\/]/u).at(-1)});
+    assert.deepEqual(await host.readTextFile(event,{path:file}),{
+      name:"src.ts",relativePath:"src.ts",text:"export const project = true;",
+      readOnly:true,
+    });
+    await assert.rejects(host.selectDirectoryPath(untrusted,root,{
+      device:String(identity.dev),inode:String(identity.ino),
+    }),/WORKSPACE_UNTRUSTED_RENDERER/);
+    await host.revoke(event);
+    await assert.rejects(host.readTextFile(event,{path:file}),/WORKSPACE_NOT_GRANTED/);
+
+    await rename(root,replacement);
+    await mkdir(root);
+    await writeFile(join(root,"src.ts"),"replacement");
+    await assert.rejects(host.selectDirectoryPath(event,root,{
+      device:String(identity.dev),inode:String(identity.ino),
+    }),/WORKSPACE_PROJECT_CHANGED/);
+  }finally{
+    await rm(root,{recursive:true,force:true});
+    await rm(replacement,{recursive:true,force:true});
+  }
+});
+
 function deferredNativeOperation(){
   let settle;
   const promise=new Promise(resolve=>{settle=resolve;});

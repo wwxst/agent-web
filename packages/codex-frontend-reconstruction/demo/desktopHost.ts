@@ -33,6 +33,19 @@ declare global {
       /** User consent grants a single native folder, scoped to this renderer.
        * Path never comes from React; native folder picker owns the grant. */
       selectWorkspaceDirectory():Promise<{selected:boolean;name?:string}>;
+      /** Persisted local roots are opaque project IDs; absolute paths never
+       * cross the preload boundary. These are local workspaces, not Agent
+       * sessions or proof of backend execution capability. */
+      listWorkspaceProjects?():Promise<readonly {
+        id:string;name:string;createdAt:string;lastOpenedAt:string|null;
+      }[]>;
+      addWorkspaceProject?():Promise<{selected:boolean;created?:boolean;project?:{
+        id:string;name:string;createdAt:string;lastOpenedAt:string|null;
+      }}>;
+      selectWorkspaceProject?(id:string):Promise<{selected:boolean;project?:{
+        id:string;name:string;createdAt:string;lastOpenedAt:string|null;
+      }}>;
+      removeWorkspaceProject?(id:string):Promise<boolean>;
       revokeWorkspaceDirectory():Promise<boolean>;
       /** Source SXo copy-path via narrow trusted main-process clipboard. */
       copyWorkspaceFilePath(path:string):Promise<boolean>;
