@@ -75,12 +75,13 @@ import {
   type DemoConversationId,
 } from "./mockConversation.js";
 
-function Icon({ name, size = 18 }: { name: "panel" | "search" | "plus" | "branch" | "dots" | "up" | "stop" | "bottom" | "top" | "play" | "refresh" | "terminal" | "check" | "menu" | "copy" | "folder" | "file" | "chevron" | "clock" | "plugin" | "settings" | "sliders" | "window" | "square" | "home" | "library" | "tiles"; size?: number }) {
+function Icon({ name, size = 18 }: { name: "panel" | "panel-right" | "search" | "plus" | "branch" | "dots" | "up" | "stop" | "bottom" | "top" | "play" | "refresh" | "terminal" | "check" | "menu" | "copy" | "folder" | "file" | "chevron" | "clock" | "plugin" | "settings" | "sliders" | "window" | "square" | "home" | "library" | "tiles"; size?: number }) {
   const children: Record<typeof name, React.ReactNode> = {
     home: <><path d="m3 11 9-8 9 8v9H3z"/><path d="M9 20v-6h6v6"/></>,
     library: <><path d="M4 5h5v15H4zM10 3h5v17h-5zM16 7h4v13h-4z"/></>,
     tiles: <><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></>,
     panel: <><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/></>,
+    "panel-right": <><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M15 3v18"/></>,
     search: <><circle cx="10.8" cy="10.8" r="6.2"/><path d="m16 16 4.5 4.5"/></>,
     plus: <path d="M12 5v14M5 12h14"/>,
     branch: <><circle cx="6" cy="6" r="2"/><circle cx="18" cy="6" r="2"/><circle cx="6" cy="18" r="2"/><path d="M6 8v8M18 8c0 6-12 1-12 8"/></>,
@@ -383,6 +384,9 @@ export function App() {
   const [workspaceTabs,setWorkspaceTabs]=React.useState<
     SourceLocalReadOnlyTabState<WorkspaceReadOnlyPreview>
   >(sourceEmptyLocalReadOnlyTabState);
+  // Original thread-panel-header-actions toggles the right panel independently
+  // from its tab controller. Keep the local read-only editor mounted while hidden.
+  const [showWorkspacePanel,setShowWorkspacePanel]=React.useState(true);
   const [pinnedContentTabs,setPinnedContentTabs]=React.useState<
     SourcePinnedContentTabsState
   >(()=>{
@@ -625,7 +629,8 @@ export function App() {
           locationRequestId,
         };
         if(epoch===workspaceRequestEpochRef.current&&
-            workspaceLatestReadByTabRef.current.get(tabId)===intent)
+            workspaceLatestReadByTabRef.current.get(tabId)===intent){
+          setShowWorkspacePanel(true);
           setWorkspaceTabs(current=>{
             if(epoch!==workspaceRequestEpochRef.current||
                 workspaceLatestReadByTabRef.current.get(tabId)!==intent)return current;
@@ -646,6 +651,7 @@ export function App() {
               id:tabId,path:request.path,content:locatedFile,
             },intent===workspaceSelectionIntentRef.current);
           });
+        }
       }
     }catch(error){
       if(epoch!==workspaceRequestEpochRef.current)return;
@@ -693,6 +699,7 @@ export function App() {
       tab.content.relativePath.replace(/\\/g,"/")===relative);
     const intent=++workspaceSelectionIntentRef.current;
     if(open!=null){
+      setShowWorkspacePanel(true);
       // Original IX preserves the tab identity and forwards source location
       // props. A resetTabState location intentionally clears the stale
       // scroll snapshot; ordinary re-selection preserves it.
@@ -743,6 +750,7 @@ export function App() {
         workspacePendingPreviewTabIdsRef.current.delete(tabId);
         return;
       }
+      setShowWorkspacePanel(true);
       setWorkspaceTabs(current=>{
         if(epoch!==workspaceRequestEpochRef.current||
           workspaceLatestReadByTabRef.current.get(tabId)!==intent||
@@ -808,6 +816,7 @@ export function App() {
       notify("This source tab is unavailable. You can keep the pin or unpin it.");
       return;
     }
+    setShowWorkspacePanel(true);
     workspaceSelectionIntentRef.current++;
     if(tab.isPreview===true){
       workspaceLatestPreviewIntentRef.current++;
@@ -1568,6 +1577,12 @@ export function App() {
           {!isNewChat && <span className="demo-header-folder"><Icon name="folder" size={17}/></span>}<strong>{DEMO_CONVERSATIONS.find((c) => c.id === active)?.title}</strong></div>
         <div className="demo-header-actions">
           <span className="demo-header-static" title="原版桌面按钮布局参考，暂未接通功能"><Icon name="dots" size={17}/></span>
+          {workspaceTabs.tabs.length>0?<button type="button" className="demo-icon-button"
+            data-testid="toggle-side-panel" aria-label="Toggle side panel"
+            title="Toggle side panel" aria-pressed={showWorkspacePanel}
+            onClick={()=>setShowWorkspacePanel(value=>!value)}>
+            <Icon name="panel-right" size={17}/>
+          </button>:null}
           {!isNewChat && subagentFixture!==null?<button type="button" className="demo-icon-button"
             title="Subagents · synthetic fixture" aria-label="Open Subagents"
             aria-expanded={showSubagentsPanel}
@@ -1861,6 +1876,7 @@ export function App() {
     {workspaceTabs.activeTabId!=null&&
       workspaceTabs.tabs.find(tab=>tab.id===workspaceTabs.activeTabId)!=null?
       <WorkspaceReadOnlyPreviewPanel
+        visible={showWorkspacePanel}
         tabs={workspaceTabs.tabs}
         activeTabId={workspaceTabs.activeTabId}
         preview={workspaceTabs.tabs.find(tab=>
