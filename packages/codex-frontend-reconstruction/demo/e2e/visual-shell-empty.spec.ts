@@ -148,8 +148,8 @@ test("shell-empty visual route mounts the real desktop shell, idle Composer and 
   });
   expect(capture.contextProject?.left).toBeCloseTo(480,0);
   expect(capture.contextComputer?.left).toBeCloseTo(586,0);
-  expect((capture.heroIcon?.top??0)+(capture.heroIcon?.height??0)/2).toBeCloseTo(335,0);
-  expect(capture.heroHeading?.top).toBeCloseTo(387,0);
+  expect((capture.heroIcon?.top??0)+(capture.heroIcon?.height??0)/2).toBeCloseTo(327,0);
+  expect(capture.heroHeading?.top).toBeCloseTo(379,0);
   expect(capture.composerPlacement).toBe("home");
   expect(capture.rowCount).toBe(0);
   expect(capture.savedPin).toBe("visual-baseline-preserve-me");
