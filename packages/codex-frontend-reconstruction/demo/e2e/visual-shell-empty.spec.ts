@@ -17,7 +17,7 @@ test("shell-empty visual route mounts the real desktop shell, idle Composer and 
   await expect(page.getByTestId("home-new-tab-unavailable")).toBeDisabled();
   await expect(page.locator(".demo-header")).toHaveCSS("border-bottom-width","0px");
   await expect(page.getByTestId("home-composer-context")).toBeVisible();
-  await expect(page.getByRole("button",{name:"选择项目"})).toBeVisible();
+  await expect(page.getByRole("button",{name:"agent"})).toBeVisible();
   await expect(page.getByTestId("home-computer-context")).toHaveText("此计算机");
   await expect(page.locator(".demo-row")).toHaveCount(0);
   await expect(page.locator(".demo-composer")).toBeVisible();
@@ -108,7 +108,7 @@ test("shell-empty visual route mounts the real desktop shell, idle Composer and 
   }));
   expect(capture.viewport).toEqual({width:1352,height:760,devicePixelRatio:1});
   // Match the captured Codex A-shell-empty state: 240px saved sidebar,
-  // 46px top action row, bottom Composer + context strip, and Hero placement.
+  // 52px home header, bottom Composer + context strip, and Hero placement.
   // Original TitleBar is 44px; the native Windows caption overlay remains 36px.
   expect(capture.windowMenu).toBe(44);
   expect(capture.captionButtons).toHaveLength(3);
