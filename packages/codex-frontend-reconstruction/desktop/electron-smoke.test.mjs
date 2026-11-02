@@ -654,22 +654,26 @@ test("independent Electron file renderer starts, isolates preload and routes Fc 
     return {fontSize:style.fontSize,lineHeight:style.lineHeight,
       letterSpacing:style.letterSpacing,fontWeight:style.fontWeight};
   });
-  assert.deepEqual(heroStyle,{fontSize:"32px",lineHeight:"38px",letterSpacing:"-0.8px",fontWeight:"400"});
+  assert.deepEqual(heroStyle,{fontSize:"28px",lineHeight:"34px",letterSpacing:"-0.5px",fontWeight:"400"});
   await page.evaluate(()=>document.fonts.ready);
   const referenceGeometry=await page.evaluate(()=>({
     viewport:{width:innerWidth,height:innerHeight,devicePixelRatio},
     rail:document.querySelector("[data-app-navigation-rail]")?.getBoundingClientRect().width??null,
     sidebar:document.querySelector(".demo-sidebar")?.getBoundingClientRect().width??null,
     mainLeft:document.querySelector(".demo-main")?.getBoundingClientRect().left??null,
+    header:document.querySelector(".demo-header")?.getBoundingClientRect().height??null,
     composer:document.querySelector(".demo-composer")?.getBoundingClientRect().toJSON()??null,
+    projectContext:document.querySelector(".demo-home-composer-context__project")?.textContent?.trim()??null,
     heroHeading:document.querySelector(".demo-home-hero__heading")?.textContent?.trim()??null,
   }));
   assert.deepEqual(referenceGeometry.viewport,{width:1090,height:760,devicePixelRatio:1});
   assert.equal(referenceGeometry.rail,52);
-  assert.equal(referenceGeometry.sidebar,240);
-  assert.equal(referenceGeometry.mainLeft,292);
+  assert.equal(referenceGeometry.sidebar,239);
+  assert.equal(referenceGeometry.mainLeft,291);
+  assert.equal(referenceGeometry.header,52);
   assert.equal(referenceGeometry.composer?.width,738);
   assert.equal(referenceGeometry.composer?.left,320);
+  assert.equal(referenceGeometry.projectContext,"agent");
   assert.equal(referenceGeometry.heroHeading,"我们应该在agent中做些什么？");
   await page.screenshot({
     path:resolve(root,"desktop/test-results/electron-home-reference.png"),
