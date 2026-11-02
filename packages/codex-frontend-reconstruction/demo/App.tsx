@@ -78,13 +78,13 @@ import {
   type DemoConversationId,
 } from "./mockConversation.js";
 
-function Icon({ name, size = 18 }: { name: "panel" | "panel-right" | "search" | "bell" | "edit" | "plus" | "branch" | "dots" | "up" | "stop" | "bottom" | "top" | "play" | "refresh" | "terminal" | "check" | "menu" | "copy" | "folder" | "file" | "chevron" | "clock" | "plugin" | "settings" | "sliders" | "window" | "square" | "home" | "images" | "orbit" | "user" | "library" | "tiles" | "square-plus" | "computer"; size?: number }) {
+function Icon({ name, size = 18 }: { name: "panel" | "panel-right" | "search" | "bell" | "edit" | "plus" | "branch" | "dots" | "up" | "stop" | "bottom" | "top" | "play" | "refresh" | "terminal" | "check" | "menu" | "copy" | "folder" | "folder-open" | "file" | "chevron" | "clock" | "plugin" | "settings" | "sliders" | "window" | "square" | "home" | "images" | "orbit" | "user" | "library" | "tiles" | "square-plus" | "computer" | "laptop"; size?: number }) {
   const children: Record<typeof name, React.ReactNode> = {
-    home: <><path d="m3 11 9-8 9 8v9H3z"/><path d="M9 20v-6h6v6"/></>,
-    images: <><rect x="4" y="5" width="14" height="13" rx="2"/><path d="M8 18v2h12a2 2 0 0 0 2-2V9h-4"/><circle cx="9" cy="10" r="1.4"/><path d="m6 16 4-4 3 3 2-2 3 3"/></>,
+    home: <path d="M3 10.5 12 3l9 7.5v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z M9 21v-6h6v6z" fill="currentColor" fillRule="evenodd" stroke="none"/>,
+    images: <><path d="M18 22H4a2 2 0 0 1-2-2V6"/><path d="m22 13-1.296-1.296a2.41 2.41 0 0 0-3.408 0L11 18"/><circle cx="12" cy="8" r="2"/><rect width="16" height="16" x="6" y="2" rx="2"/></>,
     orbit: <><circle cx="12" cy="12" r="2"/><ellipse cx="12" cy="12" rx="9" ry="4" transform="rotate(-45 12 12)"/><ellipse cx="12" cy="12" rx="9" ry="4" transform="rotate(45 12 12)"/></>,
     user: <><circle cx="12" cy="8" r="3"/><path d="M5 20c.7-3.5 3-5.3 7-5.3s6.3 1.8 7 5.3"/><circle cx="12" cy="12" r="10"/></>,
-    library: <><rect x="3.5" y="4.5" width="5.3" height="15" rx="2"/><rect x="9.4" y="3" width="5.3" height="16.5" rx="2"/><path d="m16.1 5.1 2.3-.5a2 2 0 0 1 2.4 1.6l1.4 11.3a2 2 0 0 1-1.6 2.2l-2.4.4z"/></>,
+    library: <><path d="m16 6 4 14"/><path d="M12 6v14"/><path d="M8 8v12"/><path d="M4 4v16"/></>,
     tiles: <><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></>,
     panel: <><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/></>,
     "panel-right": <><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M15 3v18"/></>,
@@ -92,7 +92,7 @@ function Icon({ name, size = 18 }: { name: "panel" | "panel-right" | "search" | 
     bell: <><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></>,
     edit: <><path d="M12 20H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h10"/><path d="m16 3 5 5-9 9-5 1 1-5z"/></>,
     plus: <path d="M12 5v14M5 12h14"/>,
-    branch: <><circle cx="6" cy="6" r="2"/><circle cx="18" cy="6" r="2"/><circle cx="6" cy="18" r="2"/><path d="M6 8v8M18 8c0 6-12 1-12 8"/></>,
+    branch: <><path d="M6 3v12"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></>,
     dots: <><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></>,
     up: <><path d="M12 19V5m-7 7 7-7 7 7"/></>,
     stop: <rect x="6" y="6" width="12" height="12" rx="2"/>,
@@ -104,10 +104,11 @@ function Icon({ name, size = 18 }: { name: "panel" | "panel-right" | "search" | 
     check: <path d="m5 12 4 4L19 6"/>,
     menu: <><path d="M4 7h16M4 12h16M4 17h16"/></>,
     copy: <><rect x="8" y="8" width="11" height="11" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/></>,
-    folder: <><path d="M3 7.5a2 2 0 0 1 2-2h5l2.2 2.5H19a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></>,
+    folder: <path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2z"/>,
+    "folder-open": <path d="m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2"/>,
     file: <><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v5h5M9 13h6M9 17h6"/></>,
     chevron: <path d="m7 10 5 5 5-5"/>,
-    clock: <><circle cx="12" cy="12" r="9"/><path d="M12 6v6l4 2"/></>,
+    clock: <><circle cx="12" cy="12" r="10"/><path d="M12 6v6l2.5-4"/></>,
     plugin: <><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="3"/><path d="M12 3.5v5.5M12 15v5.5"/></>,
     settings: <><circle cx="12" cy="12" r="3"/><path d="M5 12H2m20 0h-3M12 5V2m0 20v-3M5.5 5.5l2.1 2.1m8.8 8.8 2.1 2.1m0-13-2.1 2.1m-8.8 8.8-2.1 2.1"/></>,
     sliders: <><path d="M8 4h12M4 4h0M4 12h12m4 0h0M4 20h4m4 0h8"/><circle cx="6" cy="4" r="2"/><circle cx="18" cy="12" r="2"/><circle cx="10" cy="20" r="2"/></>,
@@ -115,6 +116,7 @@ function Icon({ name, size = 18 }: { name: "panel" | "panel-right" | "search" | 
     square: <rect x="4" y="4" width="16" height="16" rx="3"/>,
     "square-plus": <><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M12 8v8M8 12h8"/></>,
     computer: <><rect x="3" y="4" width="18" height="13" rx="1.5"/><path d="M8 21h8M12 17v4"/></>,
+    laptop: <path d="M20 16V7a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v9m16 0H4m16 0 1.28 2.55a1 1 0 0 1-.9 1.45H3.62a1 1 0 0 1-.9-1.45L4 16"/>,
   };
   return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{children[name]}</svg>;
 }
@@ -158,6 +160,7 @@ interface WorkspaceProjectSummary{
 }
 interface SidebarReferenceProject {
   name:string;
+  open?:boolean;
   threads:readonly string[];
 }
 /**
@@ -168,11 +171,11 @@ interface SidebarReferenceProject {
 const SIDEBAR_REFERENCE_FIXTURE={
   pinned:["帮我下载率土之滨最新版本看看"],
   projects:[
-    {name:"agent",threads:["任务：执行 Codex 原版与 agent-web UI 对比","请拉取 GitHub 仓库： https://github.com/wwxst/agent-web"]},
+    {name:"agent",open:true,threads:["任务：执行 Codex 原版与 agent-web UI 对比","请拉取 GitHub 仓库： https://github.com/wwxst/agent-web"]},
     {name:"promotion-demo",threads:[]},
     {name:"agent-desktop",threads:[]},
-    {name:"atlas",threads:["远程主机连接信息（已脱敏）","Download Free GitHub Logs"]},
-    {name:"kasi-project",threads:["请在本地 kasi-project 项目中继续"]},
+    {name:"atlas",open:true,threads:["远程主机连接信息（已脱敏）","Download Free GitHub Logs"]},
+    {name:"kasi-project",open:true,threads:["请在本地 kasi-project 项目中继续"]},
     {name:"deepseek-harness",threads:[]},
     {name:"ai",threads:[]},
   ] satisfies readonly SidebarReferenceProject[],
@@ -349,7 +352,7 @@ function ConversationSidebar(props: {
                     data-visual-reference-only="project">
                     <div className="demo-sidebar-reference-project__row"
                       data-visual-reference-selected={project.name==="agent"?"true":undefined}>
-                      <Icon name="folder" size={15}/>
+                      <Icon name={project.open?"folder-open":"folder"} size={15}/>
                       <span>{project.name}</span>
                     </div>
                     {project.threads.length>0&&<div className="demo-sidebar-reference-project__threads">
@@ -2200,12 +2203,12 @@ export function App() {
                 :"选择本地文件夹（只读预览）"}
               disabled={composerControlsHost?.selectWorkspaceDirectory==null||workspaceProjectBusy}
               onClick={()=>void openWorkspaceProject()}>
-              <Icon name="folder" size={14}/>
+              <Icon name="folder-open" size={14}/>
               <span>{showSidebarReferenceFixture?"agent":workspaceProjectName??"选择项目"}</span>
             </button>
             <span className="demo-home-composer-context__computer"
               data-testid="home-computer-context">
-              <Icon name="computer" size={15}/>
+              <Icon name="laptop" size={15}/>
               <span>此计算机</span>
             </span>
           </div>}
