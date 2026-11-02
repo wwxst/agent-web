@@ -143,7 +143,7 @@ test("shell-empty visual route mounts the real desktop shell, idle Composer and 
   expect(capture.heroIcon).not.toBeNull();
   expect(capture.heroHeading).not.toBeNull();
   expect(capture.heroHeadingStyle).toEqual({
-    fontSize:"28px",lineHeight:"34px",letterSpacing:"0.38px",fontWeight:"400",
+    fontSize:"32px",lineHeight:"38px",letterSpacing:"-0.8px",fontWeight:"400",
   });
   expect(capture.contextProject?.left).toBeCloseTo(478,0);
   expect(capture.contextComputer?.left).toBeCloseTo(578,0);
