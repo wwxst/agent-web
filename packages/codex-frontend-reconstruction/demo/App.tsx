@@ -1929,7 +1929,7 @@ export function App() {
       onMeasuredWidthChange={setMeasuredRailWidth}
       customize={<button type="button" className="codex-navigation-rail__destination"
         data-testid="navigation-rail-plugins" data-navigation-rail-kind="customize" aria-label="Plugins（尚未接入）"
-        title="Plugins 尚未接入" disabled><Icon name="orbit" size={18}/></button>}
+        title="Plugins 尚未接入" disabled><Icon name="plugin" size={18}/></button>}
       explore={<button type="button" className="codex-navigation-rail__destination"
         data-testid="navigation-rail-explore" data-navigation-rail-kind="explore" aria-label="Explore（尚未接入）"
         title="Explore 尚未接入" disabled><Icon name="dots" size={18}/></button>}
