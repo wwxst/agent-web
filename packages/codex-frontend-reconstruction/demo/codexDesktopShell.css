@@ -174,20 +174,20 @@ button:focus-visible, textarea:focus-visible { outline: 2px solid #578cda; outli
 .demo-desktop[data-independent-electron="true"]:has([data-sidebar-reference-fixture="true"]) .demo-sidebar-reference-project__threads {
   margin-bottom:2px;
 }
-.demo-desktop[data-independent-electron="true"]:has([data-sidebar-reference-fixture="true"]) .demo-home-composer-context {
+.demo-desktop:has([data-sidebar-reference-fixture="true"]) .demo-home-composer-context {
   margin-inline:14px;
   gap:56px;
 }
-.demo-desktop[data-independent-electron="true"]:has([data-sidebar-reference-fixture="true"]) .demo-composer {
+.demo-desktop:has([data-sidebar-reference-fixture="true"]) .demo-composer {
   min-height:100px;
 }
-.demo-desktop[data-independent-electron="true"]:has([data-sidebar-reference-fixture="true"]) .demo-composer-options {
+.demo-desktop:has([data-sidebar-reference-fixture="true"]) .demo-composer-options {
   gap:6px;
 }
-.demo-desktop[data-independent-electron="true"]:has([data-sidebar-reference-fixture="true"]) .demo-composer-right {
+.demo-desktop:has([data-sidebar-reference-fixture="true"]) .demo-composer-right {
   gap:9px;
 }
-.demo-desktop[data-independent-electron="true"]:has([data-sidebar-reference-fixture="true"]) .demo-main[data-codex-home="true"] .demo-header {
+.demo-desktop:has([data-sidebar-reference-fixture="true"]) .demo-main[data-codex-home="true"] .demo-header {
   height:52px;
   min-height:52px;
   padding-inline:15px;
@@ -1147,7 +1147,7 @@ button:focus-visible, textarea:focus-visible { outline: 2px solid #578cda; outli
   top: calc(var(--height-toolbar, 46px) - 8px);
   inset-inline: 0;
   /* Screenshot-calibrated against the current 1090×760 Codex Windows home. */
-  height: calc(var(--home-composer-top) + 84px);
+  height: calc(var(--home-composer-top) + 88px);
   display: flex;
   justify-content: center;
   align-items: flex-end;
