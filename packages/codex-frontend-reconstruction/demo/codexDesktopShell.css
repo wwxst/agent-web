@@ -1090,9 +1090,9 @@ button:focus-visible, textarea:focus-visible { outline: 2px solid #578cda; outli
   position: absolute;
   top: calc(var(--height-toolbar, 46px) - 8px);
   inset-inline: 0;
-  /* DBt renders heading-xl; app-shared resolves it to 32px / 38px.
-   * Keep the source 56px icon center at y≈327 with the larger line box. */
-  height: calc(var(--home-composer-top) + 84px);
+  /* home-58555ba264e5.css: ._hero_69e8b_9 ._title_69e8b_44.
+   * Its source metrics are 28px / 34px; +80px preserves the 327px icon anchor. */
+  height: calc(var(--home-composer-top) + 80px);
   display: flex;
   justify-content: center;
   align-items: flex-end;
@@ -1119,12 +1119,11 @@ button:focus-visible, textarea:focus-visible { outline: 2px solid #578cda; outli
 .demo-home-hero__heading {
   margin: 0;
   color: var(--color-text, #292929);
-  /* app-primary DBt applies heading-xl + font-normal; app-shared
-   * resolves heading-xl to 32px / 38px with tracking-tight. */
-  font-size: 32px;
+  /* Exact home-58555ba264e5.css source: 28px / 34px / .38px. */
+  font-size: 28px;
   font-weight: 400;
-  line-height: 38px;
-  letter-spacing: -.8px;
+  line-height: 34px;
+  letter-spacing: .38px;
   text-align: center;
   white-space: pre-wrap;
 }
