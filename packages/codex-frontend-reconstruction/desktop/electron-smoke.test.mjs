@@ -632,7 +632,7 @@ test("independent Electron file renderer starts, isolates preload and routes Fc 
     if(window==null)throw new Error("Electron visual window is unavailable");
     window.setSize(1090,760);
   });
-  await page.waitForFunction(()=>innerWidth===1090&&innerHeight===760,{timeout:10000});
+  await page.waitForFunction(()=>innerWidth===1090&&innerHeight===760,null,{timeout:10000});
   const referenceUrl=new URL(homeUrl);
   referenceUrl.searchParams.set("visualScenario","shell-empty-reference");
   await page.goto(referenceUrl.toString());
