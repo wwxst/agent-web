@@ -340,7 +340,20 @@ try {
 }
 
 $windowDpi = [CodexWindowCaptureNative]::GetDpiForWindow($handle)
-$hash = (Get-FileHash -LiteralPath $outputFullPath -Algorithm SHA256).Hash.ToLowerInvariant()
+# Use the .NET hashing API directly. Windows CI's non-interactive
+# PowerShell host may not auto-load Microsoft.PowerShell.Utility.
+$sha256 = [System.Security.Cryptography.SHA256]::Create()
+try {
+  $fileStream = [System.IO.File]::OpenRead($outputFullPath)
+  try {
+    $hashBytes = $sha256.ComputeHash($fileStream)
+  } finally {
+    $fileStream.Dispose()
+  }
+} finally {
+  $sha256.Dispose()
+}
+$hash = ([System.BitConverter]::ToString($hashBytes)).Replace("-", "").ToLowerInvariant()
 $metadata = [ordered]@{
   schemaVersion = 1
   scenarioId = $ScenarioId
