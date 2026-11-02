@@ -174,14 +174,20 @@ test("a large pinned registry scrolls in a bounded sidebar list without pushing 
   const sidebar=page.getByRole("complementary",{name:"演示会话导航"});
   const pins=sidebar.getByRole("navigation",{name:"Pinned content tabs"});
   await expect(pins.locator("[data-pinned-content-tab-id]")).toHaveCount(30);
+  const projectsHeader=sidebar.locator('[data-app-action-sidebar-section-heading="Projects"] .demo-sidebar-section__header');
+  const recentsHeader=sidebar.locator('[data-app-action-sidebar-section-heading="Recents"] .demo-sidebar-section__header');
+  await expect(projectsHeader).toHaveCount(1);
+  await expect(recentsHeader).toHaveCount(1);
   const geometry=await page.evaluate(()=>{
     const nav=document.querySelector<HTMLElement>("[data-sidebar-navigation-scroll]")!;
     const list=document.querySelector<HTMLElement>(".demo-pinned-list")!;
     const sidebar=document.querySelector<HTMLElement>(".demo-sidebar")!;
-    const projects=Array.from(document.querySelectorAll(".demo-section-heading"))
-      .find(node=>node.textContent==="Projects")!.getBoundingClientRect();
-    const recents=Array.from(document.querySelectorAll(".demo-section-heading"))
-      .find(node=>node.textContent==="Recents")!.getBoundingClientRect();
+    const projects=document.querySelector<HTMLElement>(
+      '[data-app-action-sidebar-section-heading="Projects"] .demo-sidebar-section__header',
+    )!.getBoundingClientRect();
+    const recents=document.querySelector<HTMLElement>(
+      '[data-app-action-sidebar-section-heading="Recents"] .demo-sidebar-section__header',
+    )!.getBoundingClientRect();
     return {
       navOverflow:getComputedStyle(nav).overflowY,
       navHeight:nav.clientHeight,sidebarHeight:sidebar.clientHeight,
