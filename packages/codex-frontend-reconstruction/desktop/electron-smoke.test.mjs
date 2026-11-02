@@ -629,6 +629,14 @@ test("independent Electron file renderer starts, isolates preload and routes Fc 
   assert.equal(await page.locator('[data-visual-reference-only="project-thread"]').count(),5);
   assert.equal(await page.getByRole("heading",{name:"我们要构建什么？"}).count(),1);
   assert.equal(await page.getByRole("textbox",{name:"随心输入"}).count(),1);
+  assert.equal(await page.getByTestId("composer-microphone-unavailable").isDisabled(),true);
+  assert.equal(await page.getByTestId("composer-voice-mode-unavailable").isDisabled(),true);
+  const heroStyle=await page.locator(".demo-home-hero__heading").evaluate(node=>{
+    const style=getComputedStyle(node);
+    return {fontSize:style.fontSize,lineHeight:style.lineHeight,
+      letterSpacing:style.letterSpacing,fontWeight:style.fontWeight};
+  });
+  assert.deepEqual(heroStyle,{fontSize:"28px",lineHeight:"34px",letterSpacing:"0.38px",fontWeight:"400"});
   await page.evaluate(()=>document.fonts.ready);
   await page.screenshot({
     path:resolve(root,"desktop/test-results/electron-home-reference.png"),
