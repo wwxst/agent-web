@@ -148,10 +148,21 @@ button:focus-visible, textarea:focus-visible { outline: 2px solid #578cda; outli
 .demo-desktop[data-independent-electron="true"]:has([data-sidebar-reference-fixture="true"]) .demo-page-surface {
   inset-inline-end:3px;
 }
+.demo-desktop[data-independent-electron="true"]:has([data-sidebar-reference-fixture="true"]) .demo-sidebar-scroll {
+  /* The captured sidebar contains additional off-screen recent conversations;
+   * retain the native scrollbar thumb without fabricating visible chat rows. */
+  padding-bottom:430px;
+}
+.demo-desktop[data-independent-electron="true"]:has([data-sidebar-reference-fixture="true"]) .demo-sidebar-actions .demo-nav-action {
+  transform:translateY(2px);
+}
 .demo-desktop[data-independent-electron="true"]:has([data-sidebar-reference-fixture="true"]) .demo-sidebar-section[data-app-action-sidebar-section-key="pinned"] .demo-sidebar-section__header,
 .demo-desktop[data-independent-electron="true"]:has([data-sidebar-reference-fixture="true"]) .demo-sidebar-section[data-app-action-sidebar-section-key="pinned"] .demo-sidebar-section__toggle {
   min-height:29px;
   height:29px;
+}
+.demo-desktop[data-independent-electron="true"]:has([data-sidebar-reference-fixture="true"]) .demo-sidebar-section[data-app-action-sidebar-section-key="pinned"] .demo-sidebar-section__label {
+  transform:translateY(2px);
 }
 .demo-desktop[data-independent-electron="true"]:has([data-sidebar-reference-fixture="true"]) .demo-sidebar-section[data-app-action-sidebar-section-key="projects"] {
   margin-top:13px;
@@ -160,6 +171,23 @@ button:focus-visible, textarea:focus-visible { outline: 2px solid #578cda; outli
 .demo-desktop[data-independent-electron="true"]:has([data-sidebar-reference-fixture="true"]) .demo-sidebar-section[data-app-action-sidebar-section-key="projects"] .demo-sidebar-section__toggle {
   min-height:27px;
   height:27px;
+}
+.demo-desktop[data-independent-electron="true"]:has([data-sidebar-reference-fixture="true"]) .demo-sidebar-section[data-app-action-sidebar-section-key="projects"] .demo-sidebar-section__label {
+  transform:translateY(4px);
+}
+.demo-desktop[data-independent-electron="true"]:has([data-sidebar-reference-fixture="true"]) .demo-sidebar-reference-projects {
+  gap:1px;
+}
+.demo-desktop[data-independent-electron="true"]:has([data-sidebar-reference-fixture="true"]) .demo-sidebar-section[data-app-action-sidebar-section-key="recents"] {
+  margin-top:12px;
+}
+.demo-desktop[data-independent-electron="true"]:has([data-sidebar-reference-fixture="true"]) .demo-sidebar-section[data-app-action-sidebar-section-key="recents"] .demo-sidebar-section__header,
+.demo-desktop[data-independent-electron="true"]:has([data-sidebar-reference-fixture="true"]) .demo-sidebar-section[data-app-action-sidebar-section-key="recents"] .demo-sidebar-section__toggle {
+  min-height:34px;
+  height:34px;
+}
+.demo-desktop[data-independent-electron="true"]:has([data-sidebar-reference-fixture="true"]) .demo-sidebar-section[data-app-action-sidebar-section-key="recents"] .demo-sidebar-section__label {
+  transform:translateY(1px);
 }
 .demo-desktop[data-independent-electron="true"]:has([data-sidebar-reference-fixture="true"]) .demo-sidebar-reference-project__row {
   min-height:32px;
@@ -175,7 +203,8 @@ button:focus-visible, textarea:focus-visible { outline: 2px solid #578cda; outli
   margin-bottom:2px;
 }
 .demo-desktop:has([data-sidebar-reference-fixture="true"]) .demo-main[data-codex-home="true"] .demo-home-hero {
-  height:calc(var(--home-composer-top) + 88px);
+  /* Pixel-aligned to the user's 1090×760 Codex reference: icon center y=327. */
+  height:calc(var(--home-composer-top) + 80px);
 }
 .demo-desktop:has([data-sidebar-reference-fixture="true"]) .demo-home-hero__heading {
   font-size:28px;
