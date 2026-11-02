@@ -322,7 +322,12 @@ export function CodexComposerPermissionModeControl(props:{
       title={disabled?title:"更改权限模式"}
       disabled={disabled}
       onClick={()=>setOpen(value=>!value)}>
-      <span className="demo-composer-control-trigger__shield" aria-hidden="true">◇</span>
+      <svg className="demo-composer-control-trigger__shield" width="16" height="16"
+        viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.2"
+        strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
+        <path d="M8 1.8 13 3.6v3.8c0 3.1-1.9 5.7-5 6.9-3.1-1.2-5-3.8-5-6.9V3.6L8 1.8Z"/>
+        <path d="M8 5v3.3m0 2.1h.01"/>
+      </svg>
       <span className="demo-composer-control-trigger__label">{label}</span>
       <ComposerControlChevron/>
     </button>
