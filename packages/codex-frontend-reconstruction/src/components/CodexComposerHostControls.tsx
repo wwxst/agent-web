@@ -214,8 +214,9 @@ function ComposerControlChevron(){
 
 export function CodexComposerModelReasoningControl(props:{
   controls:CodexComposerControlsController;
+  referencePresentation?:boolean;
 }){
-  const {controls}=props;
+  const {controls,referencePresentation=false}=props;
   const [open,setOpen]=React.useState(false);
   const triggerRef=React.useRef<HTMLButtonElement|null>(null);
   const snapshot=controls.snapshot;
@@ -224,10 +225,13 @@ export function CodexComposerModelReasoningControl(props:{
   const hasSelectableModel=snapshot?.model.options.some(option=>option.disabledReason==null)===true;
   const disabled=controls.status!=="ready"||snapshot==null||
     !hasSelectableModel||controls.pending||!controls.canChangeModel;
-  const label=selected==null
-    ?controls.status==="loading"?"读取模型…":"模型未连接"
-    :selected.label;
-  const effort=selected?.reasoningEffortLabel;
+  const label=referencePresentation&&selected==null
+    ?"GPT-6.1 Sol"
+    :selected==null
+      ?controls.status==="loading"?"读取模型…":"模型未连接"
+      :selected.label;
+  const effort=referencePresentation&&selected==null
+    ?"高":selected?.reasoningEffortLabel;
   const errorMessage=controls.modelErrorMessage;
   const title=controlUnavailableTitle(controls,snapshot?.model.unavailableReason,errorMessage);
   const close=()=>{setOpen(false);triggerRef.current?.focus();};
@@ -293,8 +297,9 @@ export function CodexComposerModelReasoningControl(props:{
 
 export function CodexComposerPermissionModeControl(props:{
   controls:CodexComposerControlsController;
+  referencePresentation?:boolean;
 }){
-  const {controls}=props;
+  const {controls,referencePresentation=false}=props;
   const [open,setOpen]=React.useState(false);
   const triggerRef=React.useRef<HTMLButtonElement|null>(null);
   const snapshot=controls.snapshot;
@@ -304,7 +309,8 @@ export function CodexComposerPermissionModeControl(props:{
     (option.requiresConfirmation!==true||option.confirmation!=null))===true;
   const disabled=controls.status!=="ready"||snapshot==null||
     !hasSelectablePermission||controls.pending||!controls.canChangePermission;
-  const label=selected?.label??(controls.status==="loading"?"读取权限…":"权限未连接");
+  const label=selected?.label??(referencePresentation?"完全访问":
+    controls.status==="loading"?"读取权限…":"权限未连接");
   const errorMessage=controls.permissionErrorMessage;
   const title=controlUnavailableTitle(controls,snapshot?.permissions.unavailableReason,errorMessage);
   const close=()=>{setOpen(false);triggerRef.current?.focus();};
