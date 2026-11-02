@@ -664,6 +664,10 @@ test("independent Electron file renderer starts, isolates preload and routes Fc 
     header:document.querySelector(".demo-header")?.getBoundingClientRect().height??null,
     composer:document.querySelector(".demo-composer")?.getBoundingClientRect().toJSON()??null,
     projectContext:document.querySelector(".demo-home-composer-context__project")?.textContent?.trim()??null,
+    projectContextLeft:document.querySelector(".demo-home-composer-context__project")?.getBoundingClientRect().left??null,
+    computerContextLeft:document.querySelector(".demo-home-composer-context__computer")?.getBoundingClientRect().left??null,
+    mainRight:document.querySelector(".demo-main")?.getBoundingClientRect().right??null,
+    composerBottom:document.querySelector(".demo-composer")?.getBoundingClientRect().bottom??null,
     heroHeading:document.querySelector(".demo-home-hero__heading")?.textContent?.trim()??null,
   }));
   assert.deepEqual(referenceGeometry.viewport,{width:1090,height:760,devicePixelRatio:1});
@@ -674,6 +678,10 @@ test("independent Electron file renderer starts, isolates preload and routes Fc 
   assert.equal(referenceGeometry.composer?.width,738);
   assert.equal(referenceGeometry.composer?.left,320);
   assert.equal(referenceGeometry.projectContext,"agent");
+  assert.equal(referenceGeometry.projectContextLeft,349);
+  assert.equal(referenceGeometry.computerContextLeft,455);
+  assert.equal(referenceGeometry.mainRight,1087);
+  assert.equal(referenceGeometry.composerBottom,741);
   assert.equal(referenceGeometry.heroHeading,"我们应该在agent中做些什么？");
   await page.screenshot({
     path:resolve(root,"desktop/test-results/electron-home-reference.png"),
