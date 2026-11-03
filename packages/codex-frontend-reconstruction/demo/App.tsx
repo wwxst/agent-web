@@ -47,6 +47,7 @@ import { CodexSourceComposerHostForm } from "../src/components/CodexSourceCompos
 import { CodexSourceScrollToBottomButton } from "../src/components/CodexSourceScrollToBottomButton.js";
 import { DemoProseMirrorComposerEditor } from "./DemoProseMirrorComposerEditor.js";
 import { CodexNavigationRail, type CodexRailDestination } from "../src/components/CodexNavigationRail.js";
+import { CodexSettingsPage } from "./CodexSettingsPage.js";
 import { CodexSourceSidebarResizeHandle } from "../src/components/CodexSourceSidebarResizeHandle.js";
 import {
   clampSourceSidebarWidth,SOURCE_SIDEBAR_DEFAULT_WIDTH,SOURCE_SIDEBAR_MIN_WIDTH,
@@ -476,6 +477,7 @@ export function App() {
   // to exercise the independently reconstructed original navigation layout.
   const navigationRailEnabled = true;
   const [collapsed, setCollapsed] = React.useState(false);
+  const [settingsOpen, setSettingsOpen] = React.useState(false);
   // The original stores the resizable panel in localStorage["sidebar-width"].
   // Its real default is 340px; the 240px visual fixture is a saved-width
   // reference state and must never overwrite the user's normal preference.
@@ -1920,6 +1922,7 @@ export function App() {
       </span>
     </div>
     <div className="demo-app" data-codex-shell-preview="light">
+    {settingsOpen ? <CodexSettingsPage onBack={() => setSettingsOpen(false)}/> : <>
     <div className="demo-page-surface" data-testid="page-surface-shadow"
       data-app-shell-page-surface-overlay="true" aria-hidden="true"/>
     {navigationRailEnabled && <CodexNavigationRail
@@ -1937,7 +1940,7 @@ export function App() {
         ? <span className="codex-navigation-rail__reference-avatar"
             data-visual-reference-only="account-avatar" aria-hidden="true">KA</span>
         : <button type="button" data-testid="navigation-rail-settings"
-            disabled aria-label="Settings（尚未接入）" title="设置尚未接入">
+            aria-label="Settings" title="Settings" onClick={() => setSettingsOpen(true)}>
             <Icon name="settings" size={18}/>
           </button>}
     />}
@@ -2408,5 +2411,6 @@ export function App() {
           RowComponent={DemoRow}/>}/>
     </div>:null}
     {toast && <div className="demo-toast" role="status"><Icon name="check" size={17}/>{toast}</div>}
+    </>}
   </div></div>;
 }
