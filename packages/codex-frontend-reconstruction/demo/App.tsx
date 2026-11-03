@@ -1849,7 +1849,15 @@ export function App() {
   }
   function switchConversation(id: DemoConversationId) {
     if (id === active) return;
-    revokeWorkspacePreview();
+    // Returning from a real Agent CIL thread to a fresh Home keeps the
+    // explicitly selected project. Read-only preview tabs are cleared,
+    // but the trusted main-process project grant is not revoked.
+    // Demo thread switches retain their original full-revocation behavior.
+    if(nativeAgentSession&&id==="visual-empty"){
+      clearWorkspacePreviewsForProjectSwitch();
+    }else{
+      revokeWorkspacePreview();
+    }
     scrollController.cancelSourceScrollToBottomAnimation();
     // Snapshot the existing controller before React remounts the source
     // virtualizer. The outgoing viewport and its follow policy are owned by
