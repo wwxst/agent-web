@@ -643,7 +643,10 @@ export function App() {
     agentCilSourceRef.current!=null;
   React.useEffect(()=>{
     const host=window.agentWebDesktopHost;
-    if(host==null)return;
+    // Browser visual/E2E adapters intentionally implement only a subset of
+    // preload capabilities. Absence of Agent CIL host-info must not unmount
+    // the entire recovered conversation page.
+    if(typeof host?.getHostInfo!=="function")return;
     let live=true;
     void host.getHostInfo().then(info=>{
       if(live)setAgentCilAvailable(info.agentCilAvailable===true);
