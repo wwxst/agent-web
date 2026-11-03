@@ -5,6 +5,9 @@
  * No generic IPC send/invoke, shell access, Node globals, or command runner.
  */
 const {contextBridge,ipcRenderer}=require("electron");
+const AGENT_CIL_START_CHANNEL="agent-web:agent-cil-start";
+const AGENT_CIL_CANCEL_CHANNEL="agent-web:agent-cil-cancel";
+const AGENT_CIL_EVENT_CHANNEL="agent-web:agent-cil-event";
 const HOST_INFO_CHANNEL="agent-web:host-info";
 const HOST_EVENT_CHANNEL="agent-web:host-event";
 const OPEN_MENU_CHANNEL="agent-web:open-menu";
@@ -42,6 +45,7 @@ function validAbsoluteWorkspacePath(value){
     (value.startsWith("/")||/^[A-Za-z]:[\\\\/]/u.test(value)||value.startsWith("\\\\"));
 }
 const draftThreadIds=new Set(["frontend","review"]);
+const agentCilRequestId=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const allowedUiCommands=new Set([
   "toggle-sidebar","previous-thread","next-thread",
   "find-in-thread","find-next-in-thread","find-previous-in-thread",
@@ -58,7 +62,49 @@ ipcRenderer.on(HOST_EVENT_CHANNEL,(_event,payload)=>{
   // Never expose Electron's IpcRendererEvent or MessagePort to the page.
   for(const listener of [...listeners])listener(payload);
 });
+const agentCilListeners=new Set();
+ipcRenderer.on(AGENT_CIL_EVENT_CHANNEL,(_event,payload)=>{
+  if(payload==null||typeof payload!=="object"||
+    !agentCilRequestId.test(payload.requestId)||
+    !["started","delta","finished"].includes(payload.type))return;
+  const event=payload.type==="delta"
+    ?typeof payload.text==="string"&&payload.text.length<=65536
+      ?{type:"delta",requestId:payload.requestId,text:payload.text}:null
+    :payload.type==="finished"
+      ?{type:"finished",requestId:payload.requestId,
+        exitCode:Number.isInteger(payload.exitCode)?payload.exitCode:null,
+        cancelled:payload.cancelled===true,
+        errorCode:typeof payload.errorCode==="string"&&
+          payload.errorCode.length<=80?payload.errorCode:null}
+      :{type:"started",requestId:payload.requestId};
+  if(event==null)return;
+  for(const listener of [...agentCilListeners])listener(event);
+});
 contextBridge.exposeInMainWorld("agentWebDesktopHost",Object.freeze({
+  // Only one fixed prompt per run; project path and CLI argv are host-owned.
+  startAgentCilTurn(request){
+    if(request==null||typeof request!=="object"||Array.isArray(request)||
+      Object.keys(request).length!==2||
+      !agentCilRequestId.test(request.requestId)||
+      typeof request.prompt!=="string"||
+      !request.prompt.trim()||request.prompt.length>16384||
+      /[\\u0000]/u.test(request.prompt))
+      return Promise.reject(new TypeError("AGENT_CIL_INVALID_REQUEST"));
+    return ipcRenderer.invoke(AGENT_CIL_START_CHANNEL,{
+      requestId:request.requestId,prompt:request.prompt,
+    });
+  },
+  cancelAgentCilTurn(requestId){
+    if(typeof requestId!=="string"||!agentCilRequestId.test(requestId))
+      return Promise.resolve(false);
+    return ipcRenderer.invoke(AGENT_CIL_CANCEL_CHANNEL,requestId);
+  },
+  subscribeAgentCilEvents(callback){
+    if(typeof callback!=="function")
+      throw new TypeError("Agent CIL event listener must be a function");
+    agentCilListeners.add(callback);
+    return ()=>agentCilListeners.delete(callback);
+  },
   getHostInfo:()=>ipcRenderer.invoke(HOST_INFO_CHANNEL),
   /**
    * Only this fixed request-scoped MCP reply crosses context isolation.
