@@ -88,7 +88,7 @@ contextBridge.exposeInMainWorld("agentWebDesktopHost",Object.freeze({
       !agentCilRequestId.test(request.requestId)||
       typeof request.prompt!=="string"||
       !request.prompt.trim()||request.prompt.length>16384||
-      /[\\u0000]/u.test(request.prompt))
+      /[\u0000]/u.test(request.prompt))
       return Promise.reject(new TypeError("AGENT_CIL_INVALID_REQUEST"));
     return ipcRenderer.invoke(AGENT_CIL_START_CHANNEL,{
       requestId:request.requestId,prompt:request.prompt,
