@@ -130,14 +130,24 @@
 .demo-desktop:not([data-independent-electron="true"]):has([data-sidebar-reference-fixture="true"]) .codex-navigation-rail__destination:disabled {
   opacity:1;
 }
-/* The reference account dot is an inert silhouette only. Never inject the
- * original screenshot's initials or an actual account into the demo app. */
+/* Anonymous visual-only initials reproduce the current screenshot's
+ * account badge geometry without reading or exposing any account identity. */
+.demo-desktop[data-independent-electron="true"]:has([data-sidebar-reference-fixture="true"]) .codex-navigation-rail {
+  padding-top:12px;
+  padding-bottom:12px;
+}
 .codex-navigation-rail__reference-avatar {
-  display:block;
+  display:grid;
+  place-items:center;
   flex:0 0 24px;
   width:24px;
   height:24px;
   border-radius:50%;
   background:#e64d44;
+  color:#fff;
+  font-size:9px;
+  font-weight:600;
+  line-height:1;
+  letter-spacing:-.2px;
   pointer-events:none;
 }

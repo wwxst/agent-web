@@ -99,7 +99,8 @@ declare global {
       /** Source ei text-only form envelope, no backend => explicit rejection. */
       replyToTextForm(envelope:SourceTextFormReply):Promise<void>;
       getHostInfo():Promise<{
-        windowType:"electron";platform:string;theme:string;backendConnected:false
+        windowType:"electron";platform:string;theme:string;backendConnected:false;
+        visualScenario?:"shell-empty-reference";
       }>;
       /** Independent draft persistence; IDs are local demo threads only. */
       getComposerDrafts():Promise<Partial<Record<"frontend"|"review",string>>>;

@@ -1,7 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {mkdir} from "node:fs/promises";
-import {resolve} from "node:path";
+import {spawnSync} from "node:child_process";
+import {mkdir,mkdtemp,readFile,rm,stat} from "node:fs/promises";
+import {resolve,join} from "node:path";
+import {tmpdir} from "node:os";
 import {fileURLToPath} from "node:url";
 import {_electron as electron} from "playwright";
 
@@ -14,11 +16,13 @@ test("independent Electron file renderer starts, isolates preload and routes Fc 
 },async()=>{
  const executablePath=resolve(root,"node_modules","electron","dist",
   process.platform==="win32"?"electron.exe":process.platform==="darwin"?"Electron.app/Contents/MacOS/Electron":"electron");
+ const userDataDir=await mkdtemp(join(tmpdir(),"agent-web-electron-smoke-"));
  const app=await electron.launch({
   executablePath,
   args:[".",...(process.platform==="linux"&&process.env.CI?["--no-sandbox"]:[])],
   cwd:root,
-  env:{...process.env,AGENT_WEB_DEV_URL:"",ELECTRON_DISABLE_SECURITY_WARNINGS:"true"},
+  env:{...process.env,AGENT_WEB_DEV_URL:"",AGENT_WEB_VISUAL_SCENARIO:"shell-empty-reference",
+   AGENT_WEB_USER_DATA_DIR:userDataDir,ELECTRON_DISABLE_SECURITY_WARNINGS:"true"},
   timeout:40000,
  });
  try{
@@ -36,6 +40,7 @@ test("independent Electron file renderer starts, isolates preload and routes Fc 
   assert.equal(host.hasHost,true);
   assert.equal(host.info.windowType,"electron");
   assert.equal(host.info.backendConnected,false);
+  assert.equal(host.info.visualScenario,"shell-empty-reference");
   assert.equal(host.exposedNode,"undefined");
   assert.equal(host.processType,"undefined");
   // Confirm the real context-isolated preload routes both new scoped tree
@@ -615,5 +620,162 @@ test("independent Electron file renderer starts, isolates preload and routes Fc 
     path:resolve(root,"desktop/test-results/electron-home-new-chat.png"),
     fullPage:false,animations:"disabled",
   });
- }finally{await app.close();}
+
+  // Capture the same empty-home layout with the sanitized source-reference
+  // sidebar data. The main process only enables this fixture in an unpackaged
+  // Electron test process explicitly marked by AGENT_WEB_VISUAL_SCENARIO.
+  // The user's current Codex reference is 1090×760. Resize the actual
+  // native BrowserWindow (not merely the renderer viewport) before the
+  // matched-state screenshot so Windows caption buttons and shell geometry
+  // are compared at the same physical window dimensions.
+  await app.evaluate(({BrowserWindow})=>{
+    const window=BrowserWindow.getAllWindows()[0];
+    if(window==null)throw new Error("Electron visual window is unavailable");
+    window.setSize(1090,760);
+  });
+  await page.waitForFunction(()=>innerWidth===1090&&innerHeight===760,null,{timeout:10000});
+  const referenceUrl=new URL(homeUrl);
+  referenceUrl.searchParams.set("visualScenario","shell-empty-reference");
+  await page.goto(referenceUrl.toString());
+  await page.locator('[data-sidebar-reference-fixture="true"]').waitFor({timeout:15000});
+  assert.equal(await page.locator('[data-visual-reference-only="pinned"]').count(),1);
+  assert.equal(await page.locator('[data-visual-reference-only="project"]').count(),7);
+  assert.equal(await page.locator('[data-visual-reference-only="project-thread"]').count(),5);
+  assert.equal(await page.getByRole("heading",{name:"我们应该在agent中做些什么？"}).count(),1);
+  assert.equal(await page.getByRole("textbox",{name:"随心输入"}).count(),1);
+  assert.equal(await page.getByTestId("composer-microphone-unavailable").isDisabled(),true);
+  assert.equal(await page.getByTestId("composer-voice-mode-unavailable").isDisabled(),true);
+  assert.equal(await page.getByTestId("composer-model-control").isDisabled(),true);
+  assert.equal(await page.getByTestId("composer-model-control").textContent(),"GPT-6.1 Sol高");
+  assert.equal(await page.getByTestId("composer-permission-control").isDisabled(),true);
+  assert.equal(await page.getByTestId("composer-permission-control").textContent(),"完全访问");
+  const referenceControlStyles=await page.evaluate(()=>{
+    const style=testId=>{
+      const node=document.querySelector(`[data-testid="${testId}"]`);
+      if(node==null)throw new Error(`Missing reference control: ${testId}`);
+      const computed=getComputedStyle(node);
+      return {opacity:computed.opacity,color:computed.color,background:computed.backgroundColor};
+    };
+    return {
+      model:style("composer-model-control"),
+      permission:style("composer-permission-control"),
+      microphone:style("composer-microphone-unavailable"),
+      voice:style("composer-voice-mode-unavailable"),
+    };
+  });
+  assert.equal(referenceControlStyles.model.opacity,"1");
+  assert.deepEqual({
+    opacity:referenceControlStyles.permission.opacity,
+    color:referenceControlStyles.permission.color,
+  },{opacity:"1",color:"rgb(226, 85, 7)"});
+  assert.equal(referenceControlStyles.microphone.opacity,"1");
+  assert.deepEqual({
+    opacity:referenceControlStyles.voice.opacity,
+    background:referenceControlStyles.voice.background,
+  },{opacity:"1",background:"rgb(58, 131, 247)"});
+  assert.equal(await page.locator('[data-visual-reference-only="account-avatar"]').textContent(),"KA");
+  const heroStyle=await page.locator(".demo-home-hero__heading").evaluate(node=>{
+    const style=getComputedStyle(node);
+    return {fontSize:style.fontSize,lineHeight:style.lineHeight,
+      letterSpacing:style.letterSpacing,fontWeight:style.fontWeight};
+  });
+  assert.deepEqual(heroStyle,{fontSize:"28px",lineHeight:"34px",letterSpacing:"-0.125px",fontWeight:"400"});
+  await page.evaluate(()=>document.fonts.ready);
+  const referenceGeometry=await page.evaluate(()=>({
+    viewport:{width:innerWidth,height:innerHeight,devicePixelRatio},
+    rail:document.querySelector("[data-app-navigation-rail]")?.getBoundingClientRect().width??null,
+    sidebar:document.querySelector(".demo-sidebar")?.getBoundingClientRect().width??null,
+    mainLeft:document.querySelector(".demo-main")?.getBoundingClientRect().left??null,
+    header:document.querySelector(".demo-header")?.getBoundingClientRect().height??null,
+    composer:document.querySelector(".demo-composer")?.getBoundingClientRect().toJSON()??null,
+    contextTop:document.querySelector(".demo-home-composer-context")?.getBoundingClientRect().top??null,
+    projectContext:document.querySelector(".demo-home-composer-context__project")?.textContent?.trim()??null,
+    projectContextLeft:document.querySelector(".demo-home-composer-context__project")?.getBoundingClientRect().left??null,
+    projectContextColor:getComputedStyle(document.querySelector(".demo-home-composer-context__project")).color,
+    computerContextLeft:document.querySelector(".demo-home-composer-context__computer")?.getBoundingClientRect().left??null,
+    selectedProjectRight:document.querySelector('[data-visual-reference-selected="true"]')?.getBoundingClientRect().right??null,
+    logoFontSize:getComputedStyle(document.querySelector(".demo-logo")).fontSize,
+    mainRight:document.querySelector(".demo-main")?.getBoundingClientRect().right??null,
+    composerBottom:document.querySelector(".demo-composer")?.getBoundingClientRect().bottom??null,
+    voiceModeRect:document.querySelector('[data-testid="composer-voice-mode-unavailable"]')
+      ?.getBoundingClientRect().toJSON()??null,
+    heroHeading:document.querySelector(".demo-home-hero__heading")?.textContent?.trim()??null,
+    rootFontSmoothing:getComputedStyle(document.documentElement).getPropertyValue("-webkit-font-smoothing"),
+  }));
+  assert.deepEqual(referenceGeometry.viewport,{width:1090,height:760,devicePixelRatio:1});
+  assert.equal(referenceGeometry.rail,52);
+  assert.equal(referenceGeometry.sidebar,239);
+  assert.equal(referenceGeometry.mainLeft,291);
+  assert.equal(referenceGeometry.header,52);
+  assert.equal(referenceGeometry.composer?.width,738);
+  assert.equal(referenceGeometry.composer?.left,320);
+  assert.equal(referenceGeometry.composer?.top,642);
+  assert.equal(referenceGeometry.contextTop,604);
+  assert.equal(referenceGeometry.projectContext,"agent");
+  assert.equal(referenceGeometry.projectContextLeft,349);
+  assert.equal(referenceGeometry.projectContextColor,"rgb(54, 54, 54)");
+  assert.ok(Math.abs(referenceGeometry.computerContextLeft-435)<0.5);
+  assert.equal(referenceGeometry.selectedProjectRight,272);
+  assert.equal(referenceGeometry.logoFontSize,"17px");
+  assert.equal(referenceGeometry.mainRight,1087);
+  assert.equal(referenceGeometry.composerBottom,741);
+  // Native screenshot source: the 28px voice circle occupies
+  // x=1021..1048 and y=704..731 at exactly 1090×760.
+  assert.equal(referenceGeometry.voiceModeRect?.x,1021);
+  assert.equal(referenceGeometry.voiceModeRect?.y,704);
+  assert.equal(referenceGeometry.voiceModeRect?.width,28);
+  assert.equal(referenceGeometry.voiceModeRect?.height,28);
+  assert.equal(referenceGeometry.heroHeading,"我们应该在agent中做些什么？");
+  // Windows and Linux Chromium report "auto" when the renderer leaves
+  // font smoothing to the host OS. Forcing macOS-style antialiasing here
+  // changes the actual Codex Windows appearance and is not a valid fix.
+  if(process.platform==="win32"||process.platform==="linux"){
+    assert.equal(referenceGeometry.rootFontSmoothing,"auto");
+  }
+  await page.screenshot({
+    path:resolve(root,"desktop/test-results/electron-home-reference.png"),
+    fullPage:false,animations:"disabled",
+  });
+
+  // Keep the renderer-only image for DOM/layout debugging, but also capture
+  // the actual Windows HWND through the existing DWM full-window helper.
+  // Playwright page.screenshot omits native title-bar overlay controls; it is
+  // not a valid full-window Codex comparison image.
+  if(process.platform==="win32"){
+    const captureWindowTitle="agent-web Codex visual capture";
+    await app.evaluate(({BrowserWindow})=>{
+      const window=BrowserWindow.getAllWindows()[0];
+      if(window==null)throw new Error("Electron visual window is unavailable");
+      // Unique selector avoids colliding with the concurrently running
+      // default-home smoke process, which owns the same production title.
+      window.setTitle("agent-web Codex visual capture");
+      window.focus();
+    });
+    const fullWindowPath=resolve(root,"desktop/test-results/electron-home-reference-window.png");
+    const capture=spawnSync("powershell.exe",[
+      "-NoProfile","-NonInteractive","-ExecutionPolicy","Bypass","-File",
+      resolve(root,"scripts/capture-windows-window.ps1"),
+      "-WindowTitleRegex","^"+captureWindowTitle+"$",
+      "-OutputPath",fullWindowPath,
+      "-ScenarioId","A-shell-empty",
+      "-Theme","light",
+      "-Width","1090",
+      "-Height","760",
+      "-WaitMilliseconds","300",
+    ],{encoding:"utf8",timeout:30000,windowsHide:true});
+    assert.ifError(capture.error);
+    assert.equal(capture.status,0,(capture.stdout??"")+"\n"+(capture.stderr??""));
+    const metadata=JSON.parse(await readFile(fullWindowPath+".json","utf8"));
+    assert.equal(metadata.scenarioId,"A-shell-empty");
+    assert.equal(metadata.theme,"light");
+    assert.equal(metadata.captureBoundary,"dwm-extended-frame-bounds");
+    assert.equal(metadata.width,1090);
+    assert.equal(metadata.height,760);
+    assert.equal(metadata.windowScaleFactor,1);
+    assert.ok((await stat(fullWindowPath)).size>10000);
+  }
+ }finally{
+  try{await app.close();}
+  finally{await rm(userDataDir,{recursive:true,force:true});}
+ }
 });

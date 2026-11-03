@@ -17,11 +17,11 @@ test("shell-empty visual route mounts the real desktop shell, idle Composer and 
   await expect(page.getByTestId("home-new-tab-unavailable")).toBeDisabled();
   await expect(page.locator(".demo-header")).toHaveCSS("border-bottom-width","0px");
   await expect(page.getByTestId("home-composer-context")).toBeVisible();
-  await expect(page.getByRole("button",{name:"选择项目"})).toBeVisible();
+  await expect(page.getByTestId("home-composer-context").getByRole("button",{name:"agent"})).toBeVisible();
   await expect(page.getByTestId("home-computer-context")).toHaveText("此计算机");
   await expect(page.locator(".demo-row")).toHaveCount(0);
   await expect(page.locator(".demo-composer")).toBeVisible();
-  await expect(page.getByRole("heading",{name:"我们要构建什么？"})).toBeVisible();
+  await expect(page.getByRole("heading",{name:"我们应该在agent中做些什么？"})).toBeVisible();
   await expect(page.locator(".demo-home-hero__icon")).toHaveAttribute("width","56");
   await expect(page.locator(".demo-composer")).toHaveAttribute("data-composer-placement","home");
   await expect(page.locator('.demo-composer [contenteditable="true"]')).toBeVisible();
@@ -45,9 +45,32 @@ test("shell-empty visual route mounts the real desktop shell, idle Composer and 
   const modelControl=page.getByTestId("composer-model-control");
   const permissionControl=page.getByTestId("composer-permission-control");
   await expect(modelControl).toBeDisabled();
-  await expect(modelControl).toContainText("模型未连接");
+  await expect(modelControl).toContainText("GPT-6.1 Sol");
+  await expect(modelControl).toContainText("高");
   await expect(permissionControl).toBeDisabled();
-  await expect(permissionControl).toContainText("权限未连接");
+  await expect(permissionControl).toContainText("完全访问");
+  await expect(page.getByTestId("composer-microphone-unavailable")).toBeDisabled();
+  await expect(page.getByTestId("composer-voice-mode-unavailable")).toBeDisabled();
+  // Reference-only styling must not imply active host capabilities: every
+  // real control remains disabled while colors match the supplied screenshot.
+  const referenceControlStyles=await page.evaluate(()=>{
+    const style=(testId:string)=>{
+      const node=document.querySelector<HTMLElement>(`[data-testid="${testId}"]`);
+      if(node==null)throw new Error(`Missing reference control: ${testId}`);
+      const computed=getComputedStyle(node);
+      return {opacity:computed.opacity,color:computed.color,background:computed.backgroundColor};
+    };
+    return {
+      model:style("composer-model-control"),
+      permission:style("composer-permission-control"),
+      microphone:style("composer-microphone-unavailable"),
+      voice:style("composer-voice-mode-unavailable"),
+    };
+  });
+  expect(referenceControlStyles.model.opacity).toBe("1");
+  expect(referenceControlStyles.permission).toMatchObject({opacity:"1",color:"rgb(226, 85, 7)"});
+  expect(referenceControlStyles.microphone.opacity).toBe("1");
+  expect(referenceControlStyles.voice).toMatchObject({opacity:"1",background:"rgb(58, 131, 247)"});
   await expect(page.getByText("Demo Agent")).toHaveCount(0);
   await expect(page.getByText(/Full access.*mock/)).toHaveCount(0);
   await expect(page.getByTestId("demo-tools")).toHaveCount(0);
@@ -89,6 +112,16 @@ test("shell-empty visual route mounts the real desktop shell, idle Composer and 
     hero:document.querySelector(".demo-home-hero")?.getBoundingClientRect().toJSON()??null,
     heroIcon:document.querySelector(".demo-home-hero__icon")?.getBoundingClientRect().toJSON()??null,
     heroHeading:document.querySelector(".demo-home-hero__heading")?.getBoundingClientRect().toJSON()??null,
+    heroHeadingStyle:(()=>{
+      const node=document.querySelector(".demo-home-hero__heading");
+      if(node==null)return null;
+      const style=getComputedStyle(node);
+      return {fontSize:style.fontSize,lineHeight:style.lineHeight,
+        letterSpacing:style.letterSpacing,fontWeight:style.fontWeight};
+    })(),
+    contextProject:document.querySelector(".demo-home-composer-context__project")?.getBoundingClientRect().toJSON()??null,
+    contextProjectColor:getComputedStyle(document.querySelector(".demo-home-composer-context__project")!).color,
+    contextComputer:document.querySelector(".demo-home-composer-context__computer")?.getBoundingClientRect().toJSON()??null,
     composerPlacement:document.querySelector(".demo-composer")?.getAttribute("data-composer-placement"),
     rowCount:document.querySelectorAll(".demo-row").length,
     savedPin:localStorage.getItem("pinned-content-tabs-v1"),
@@ -96,7 +129,7 @@ test("shell-empty visual route mounts the real desktop shell, idle Composer and 
   }));
   expect(capture.viewport).toEqual({width:1352,height:760,devicePixelRatio:1});
   // Match the captured Codex A-shell-empty state: 240px saved sidebar,
-  // 46px top action row, bottom Composer + context strip, and Hero placement.
+  // 52px home header, bottom Composer + context strip, and Hero placement.
   // Original TitleBar is 44px; the native Windows caption overlay remains 36px.
   expect(capture.windowMenu).toBe(44);
   expect(capture.captionButtons).toHaveLength(3);
@@ -119,7 +152,7 @@ test("shell-empty visual route mounts the real desktop shell, idle Composer and 
     pointerEvents:"none",
   });
   expect(capture.pageSurface?.shadow).not.toBe("none");
-  expect(capture.header).toBe(46);
+  expect(capture.header).toBe(52);
   expect(capture.headerBorderBottom).toBe("0px");
   expect(capture.sidebarScroll).toBeGreaterThan(100);
   expect(capture.composer?.width).toBe(738);
@@ -131,6 +164,12 @@ test("shell-empty visual route mounts the real desktop shell, idle Composer and 
   expect(capture.hero).not.toBeNull();
   expect(capture.heroIcon).not.toBeNull();
   expect(capture.heroHeading).not.toBeNull();
+  expect(capture.heroHeadingStyle).toEqual({
+    fontSize:"28px",lineHeight:"34px",letterSpacing:"-0.125px",fontWeight:"400",
+  });
+  expect(capture.contextProject?.left).toBeCloseTo(480,0);
+  expect(capture.contextProjectColor).toBe("rgb(54, 54, 54)");
+  expect(capture.contextComputer?.left).toBeCloseTo(566,0);
   expect((capture.heroIcon?.top??0)+(capture.heroIcon?.height??0)/2).toBeCloseTo(327,0);
   expect(capture.heroHeading?.top).toBeCloseTo(379,0);
   expect(capture.composerPlacement).toBe("home");
@@ -248,7 +287,7 @@ test("empty Codex home preserves drafts and never silently sends to the demo res
   await expect(editor).toContainText("实际任务不能变成模拟回复");
   await expect(page.locator(".demo-row")).toHaveCount(0);
   await expect(page.getByText("已收到你的消息",{exact:false})).toHaveCount(0);
-  await expect(page.getByRole("heading",{name:"我们要构建什么？"})).toBeVisible();
+  await expect(page.getByRole("heading",{name:"我们应该在agent中做些什么？"})).toBeVisible();
 });
 
 
@@ -281,7 +320,9 @@ test("real read-only workspace grant updates original home project Hero without 
   await expect(page.locator("[data-local-workspace-project]")).toContainText("Read-only");
   await expect(page.getByText("No projects",{exact:true})).toHaveCount(0);
   await expect(page.locator(".demo-row")).toHaveCount(0);
-  await expect(page.getByTestId("send-button")).toBeDisabled();
+  await expect(page.getByTestId("composer-microphone-unavailable")).toBeDisabled();
+  await expect(page.getByTestId("composer-voice-mode-unavailable")).toBeDisabled();
+  await expect(page.getByTestId("send-button")).toHaveCount(0);
   await page.getByRole("button",{name:"Clear local folder"}).click();
   await expect(page.getByRole("heading",{name:"What should we build?"})).toBeVisible();
   await expect(page.getByText("No projects",{exact:true})).toBeVisible();

@@ -349,12 +349,18 @@ function setupIpc(){
     Menu.buildFromTemplate(menu.submenu).popup({window:win,x,y});
     return true;
   });
-  ipcMain.handle(HOST_INFO_CHANNEL,()=>({
-    windowType:"electron",platform:process.platform,
-    theme:nativeTheme.shouldUseDarkColors?"dark":"light",
-    /** No Agent backend or proprietary Codex host attached. */
-    backendConnected:false,
-  }));
+  ipcMain.handle(HOST_INFO_CHANNEL,()=>{
+    const visualScenario=!app.isPackaged&&
+      process.env.AGENT_WEB_VISUAL_SCENARIO==="shell-empty-reference"
+      ?"shell-empty-reference":undefined;
+    return {
+      windowType:"electron",platform:process.platform,
+      theme:nativeTheme.shouldUseDarkColors?"dark":"light",
+      /** No Agent backend or proprietary Codex host attached. */
+      backendConnected:false,
+      ...(visualScenario==null?{}:{visualScenario}),
+    };
+  });
 }
 app.on("window-all-closed",()=>{if(process.platform!=="darwin")app.quit();});
 app.on("activate",()=>{if(BrowserWindow.getAllWindows().length===0)createWindow();});

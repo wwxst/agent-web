@@ -24,7 +24,7 @@
   --color-surface-elevated-secondary: #fff;
   --color-surface: #fff;
 
-  font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   color-scheme: light;
   --demo-surface: #fff;
   --demo-sidebar: #f5f5f5;
@@ -38,7 +38,7 @@
   --color-codex-diff-deleted: #ffe1e0;
   --color-codex-diff-added: #dff2e2;
 }
-html,body,#root { background:#fff; color:#242424; }
+html,body,#root { background:#fff; color:#242424; letter-spacing:0em; }
 button:focus-visible, textarea:focus-visible { outline: 2px solid #578cda; outline-offset: 2px; }
 .demo-desktop { height:100%; width:100%; display:flex; flex-direction:column; overflow:hidden; background:#f5f5f5; }
 .demo-window-menu {
@@ -136,6 +136,130 @@ button:focus-visible, textarea:focus-visible { outline: 2px solid #578cda; outli
 .demo-chat-link-title{font-size:12.5px;}
 .demo-recent-heading {border-top:1px solid #dedede;padding-top:12px;margin-top:0;}
 .demo-sidebar-foot {display:flex;align-items:center;gap:8px;padding:7px 12px 2px;border-top:1px solid #e0e0e0;color:#858585;font-size:11px;}
+/* Latest user-provided 1090×760 Codex Windows reference only.
+ * Native shell keeps its regular sizing outside this opt-in visual scene. */
+.demo-desktop[data-independent-electron="true"]:has([data-sidebar-reference-fixture="true"]) .demo-sidebar {
+  width:239px;
+  min-width:239px;
+}
+.demo-desktop[data-independent-electron="true"]:has([data-sidebar-reference-fixture="true"]) .demo-logo {
+  margin-left:1px;
+  font-size:17px;
+}
+.demo-desktop[data-independent-electron="true"]:has([data-sidebar-reference-fixture="true"]) .demo-main {
+  margin-right:3px;
+}
+.demo-desktop[data-independent-electron="true"]:has([data-sidebar-reference-fixture="true"]) .demo-page-surface {
+  inset-inline-end:3px;
+}
+.demo-desktop[data-independent-electron="true"]:has([data-sidebar-reference-fixture="true"]) .demo-sidebar-scroll {
+  /* The source scrollport reaches the sidebar's right edge; the 8px parent
+   * inset is for row content, not for the native scrollbar gutter. */
+  margin-top:8px;
+  margin-right:-8px;
+  padding-top:2px;
+  /* Preserve the original thumb length while representing off-screen rows. */
+  padding-bottom:380px;
+}
+.demo-desktop[data-independent-electron="true"]:has([data-sidebar-reference-fixture="true"]) .demo-sidebar-actions .demo-nav-action {
+  transform:translateY(2px);
+}
+.demo-desktop[data-independent-electron="true"]:has([data-sidebar-reference-fixture="true"]) .demo-sidebar-section[data-app-action-sidebar-section-key="pinned"] .demo-sidebar-section__header,
+.demo-desktop[data-independent-electron="true"]:has([data-sidebar-reference-fixture="true"]) .demo-sidebar-section[data-app-action-sidebar-section-key="pinned"] .demo-sidebar-section__toggle {
+  min-height:29px;
+  height:29px;
+}
+.demo-desktop[data-independent-electron="true"]:has([data-sidebar-reference-fixture="true"]) .demo-sidebar-section[data-app-action-sidebar-section-key="pinned"] .demo-sidebar-section__label {
+  transform:translateY(2px);
+}
+.demo-desktop[data-independent-electron="true"]:has([data-sidebar-reference-fixture="true"]) .demo-sidebar-section[data-app-action-sidebar-section-key="projects"] {
+  margin-top:13px;
+}
+.demo-desktop[data-independent-electron="true"]:has([data-sidebar-reference-fixture="true"]) .demo-sidebar-section[data-app-action-sidebar-section-key="projects"] .demo-sidebar-section__header,
+.demo-desktop[data-independent-electron="true"]:has([data-sidebar-reference-fixture="true"]) .demo-sidebar-section[data-app-action-sidebar-section-key="projects"] .demo-sidebar-section__toggle {
+  min-height:27px;
+  height:27px;
+}
+.demo-desktop[data-independent-electron="true"]:has([data-sidebar-reference-fixture="true"]) .demo-sidebar-section[data-app-action-sidebar-section-key="projects"] .demo-sidebar-section__label {
+  transform:translateY(4px);
+}
+.demo-desktop[data-independent-electron="true"]:has([data-sidebar-reference-fixture="true"]) .demo-sidebar-reference-projects {
+  gap:1px;
+}
+.demo-desktop[data-independent-electron="true"]:has([data-sidebar-reference-fixture="true"]) .demo-sidebar-section[data-app-action-sidebar-section-key="recents"] {
+  margin-top:12px;
+}
+.demo-desktop[data-independent-electron="true"]:has([data-sidebar-reference-fixture="true"]) .demo-sidebar-section[data-app-action-sidebar-section-key="recents"] .demo-sidebar-section__header,
+.demo-desktop[data-independent-electron="true"]:has([data-sidebar-reference-fixture="true"]) .demo-sidebar-section[data-app-action-sidebar-section-key="recents"] .demo-sidebar-section__toggle {
+  min-height:34px;
+  height:34px;
+}
+.demo-desktop[data-independent-electron="true"]:has([data-sidebar-reference-fixture="true"]) .demo-sidebar-section[data-app-action-sidebar-section-key="recents"] .demo-sidebar-section__label {
+  transform:translateY(1px);
+}
+.demo-desktop[data-independent-electron="true"]:has([data-sidebar-reference-fixture="true"]) .demo-sidebar-reference-project__row {
+  min-height:32px;
+}
+.demo-desktop[data-independent-electron="true"]:has([data-sidebar-reference-fixture="true"]) .demo-sidebar-reference-project__row[data-visual-reference-selected="true"] {
+  min-height:36px;
+  margin-inline-start:-8px;
+  margin-inline-end:0;
+  padding-inline:8px;
+  background:linear-gradient(#ededed 0 0) center / 100% 30px no-repeat;
+  border-radius:9px;
+}
+.demo-desktop[data-independent-electron="true"]:has([data-sidebar-reference-fixture="true"]) .demo-sidebar-reference-project__threads {
+  margin-bottom:2px;
+}
+.demo-desktop:has([data-sidebar-reference-fixture="true"]) .demo-main[data-codex-home="true"] .demo-home-hero {
+  /* Pixel-aligned to the user's 1090×760 Codex reference: icon center y=327. */
+  height:calc(var(--home-composer-top) + 80px);
+}
+.demo-desktop:has([data-sidebar-reference-fixture="true"]) .demo-home-hero__heading {
+  font-size:28px;
+  line-height:34px;
+  letter-spacing:-.125px;
+}
+.demo-desktop:has([data-sidebar-reference-fixture="true"]) .demo-home-composer-context {
+  margin-inline:14px;
+  gap:36px;
+}
+.demo-desktop:has([data-sidebar-reference-fixture="true"]) .demo-composer {
+  min-height:99px;
+}
+.demo-desktop:has([data-sidebar-reference-fixture="true"]) .demo-composer-options {
+  gap:6px;
+}
+.demo-desktop:has([data-sidebar-reference-fixture="true"]) .demo-composer-right {
+  gap:9px;
+}
+/* Reference-only presentation: keep actual host controls disabled, but do
+ * not wash out their screenshot colors. Native capabilities stay unavailable. */
+.demo-desktop:has([data-sidebar-reference-fixture="true"]) .demo-composer-control-trigger:disabled,
+.demo-desktop:has([data-sidebar-reference-fixture="true"]) .demo-composer-voice-unavailable:disabled,
+.demo-desktop:has([data-sidebar-reference-fixture="true"]) .demo-composer-voice-mode-unavailable:disabled {
+  opacity:1;
+}
+.demo-desktop:has([data-sidebar-reference-fixture="true"]) .demo-composer-control-trigger--permissions:disabled {
+  color:#e25507;
+}
+.demo-desktop:has([data-sidebar-reference-fixture="true"]) .demo-composer-voice-mode-unavailable:disabled {
+  background:#3a83f7;
+  /* The native 1090x760 reference has a 28px blue circle, not 30px. */
+  width:28px;
+  height:28px;
+  flex-basis:28px;
+}
+.demo-desktop:has([data-sidebar-reference-fixture="true"]) .codex-composer-layout__footer {
+  /* Comparing HWND captures places all original footer controls 6px lower
+   * than the reconstructed footer. Keep this correction screenshot-scoped. */
+  transform:translateY(6px);
+}
+.demo-desktop:has([data-sidebar-reference-fixture="true"]) .demo-main[data-codex-home="true"] .demo-header {
+  height:52px;
+  min-height:52px;
+  padding-inline:15px;
+}
 .demo-main{
   position:relative;z-index:1;height:auto;min-height:0;
   margin:8px 4px 4px 0;
@@ -397,7 +521,7 @@ button:focus-visible, textarea:focus-visible { outline: 2px solid #578cda; outli
 .demo-composer-control-trigger--model{color:#363636;}
 .demo-composer-control-trigger__effort,
 .demo-composer-control-trigger__tier{color:#929292;}
-.demo-composer-control-trigger__shield{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;flex:0 0 16px;font-size:13px;line-height:1;}
+.demo-composer-control-trigger__shield{display:block;width:16px;height:16px;flex:0 0 16px;color:currentColor;}
 .demo-composer-control-menu{
   position:absolute;bottom:calc(100% + 9px);z-index:90;display:flex;flex-direction:column;
   width:max-content;min-width:248px;max-width:min(360px,calc(100vw - 32px));
@@ -445,6 +569,21 @@ button:focus-visible, textarea:focus-visible { outline: 2px solid #578cda; outli
 .demo-send-button{width:29px;height:29px;border-radius:50%;background:#909090;color:#fff;}
 .demo-send-button:hover:not(:disabled){background:#595959;}
 .demo-send-button:disabled {background:#bebebe;color:#fff;}
+/* Empty Codex home keeps the source microphone + voice-mode affordances.
+ * This host has no dictation/realtime voice capability yet, so both controls
+ * remain genuinely disabled while preserving the original control geometry. */
+.demo-composer-voice-unavailable{
+  display:grid;place-items:center;flex:0 0 24px;width:24px;height:28px;
+  padding:0;border:0;border-radius:7px;background:transparent;color:#555;
+  cursor:not-allowed;
+}
+.demo-composer-voice-unavailable:disabled{opacity:.72;}
+.demo-composer-voice-mode-unavailable{
+  display:grid;place-items:center;flex:0 0 30px;width:30px;height:30px;
+  padding:0;border:0;border-radius:50%;background:#3478f6;color:#fff;
+  cursor:not-allowed;
+}
+.demo-composer-voice-mode-unavailable:disabled{opacity:.62;}
 .demo-toast{background:#fff;color:#444;border:1px solid #e1e1e1;box-shadow:0 7px 25px #0002;}
 @media(max-width:860px){.demo-sidebar--collapsed{width:56px;min-width:56px}.demo-transcript-column{width:min(100% - 35px,var(--thread-content-max-width))}.demo-composer-zone{padding:8px 17px 12px}}
 @media(max-width:600px){.demo-window-menu{gap:12px;padding:0 9px}.demo-window-buttons{font-size:11px}.demo-sidebar:not(.demo-sidebar--collapsed){width:56px;min-width:56px}.demo-sidebar:not(.demo-sidebar--collapsed) .demo-sidebar-actions{display:grid}.demo-sidebar:not(.demo-sidebar--collapsed) .demo-nav-action{font-size:0;padding:7px}.demo-sidebar:not(.demo-sidebar--collapsed) .demo-nav-action span,.demo-sidebar:not(.demo-sidebar--collapsed) .demo-section-heading,.demo-sidebar:not(.demo-sidebar--collapsed) .demo-chat-list,.demo-sidebar:not(.demo-sidebar--collapsed) .demo-sidebar-foot{display:none}.demo-header{padding:0 12px}.demo-composer-model{font-size:11px}.demo-transcript-column{width:calc(100% - 26px)}}
@@ -985,10 +1124,10 @@ button:focus-visible, textarea:focus-visible { outline: 2px solid #578cda; outli
   box-sizing: border-box;
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 32px;
   height: 38px;
   margin: 0 12px;
-  padding: 0 10px;
+  padding: 0 15px;
   border-radius: 9px 9px 0 0;
   background: #f5f5f5;
   color: #858585;
@@ -1017,7 +1156,11 @@ button:focus-visible, textarea:focus-visible { outline: 2px solid #578cda; outli
   color: #858585;
   cursor: not-allowed;
 }
-.demo-home-composer-context__computer { color: #555; font-weight: 500; }
+.demo-desktop:has([data-sidebar-reference-fixture="true"]) .demo-home-composer-context__project {
+  color:#363636;
+  -webkit-text-fill-color:#363636;
+}
+.demo-home-composer-context__computer { color: #363636; font-weight: 500; }
 .demo-main[data-codex-home="true"] .demo-header {
   padding-inline: 18px;
   border-bottom: 0;
@@ -1075,9 +1218,8 @@ button:focus-visible, textarea:focus-visible { outline: 2px solid #578cda; outli
   position: absolute;
   top: calc(var(--height-toolbar, 46px) - 8px);
   inset-inline: 0;
-  /* The main surface now begins at y=44. Keep the captured Hero anchor at
-   * y≈82 in window coordinates, matching the original 327px icon center. */
-  height: calc(var(--home-composer-top) + 70px);
+  /* Screenshot-calibrated against the current 1090×760 Codex Windows home. */
+  height: calc(var(--home-composer-top) + 84px);
   display: flex;
   justify-content: center;
   align-items: flex-end;
@@ -1104,9 +1246,11 @@ button:focus-visible, textarea:focus-visible { outline: 2px solid #578cda; outli
 .demo-home-hero__heading {
   margin: 0;
   color: var(--color-text, #292929);
-  font-size: var(--text-xl, 20px);
+  /* Default Codex DBt home uses the shared heading-xl scale. */
+  font-size: 32px;
   font-weight: 400;
-  line-height: 1.2;
+  line-height: 38px;
+  letter-spacing: -.8px;
   text-align: center;
   white-space: pre-wrap;
 }

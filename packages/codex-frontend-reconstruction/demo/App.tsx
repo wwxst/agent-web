@@ -78,21 +78,21 @@ import {
   type DemoConversationId,
 } from "./mockConversation.js";
 
-function Icon({ name, size = 18 }: { name: "panel" | "panel-right" | "search" | "bell" | "edit" | "plus" | "branch" | "dots" | "up" | "stop" | "bottom" | "top" | "play" | "refresh" | "terminal" | "check" | "menu" | "copy" | "folder" | "file" | "chevron" | "clock" | "plugin" | "settings" | "sliders" | "window" | "square" | "home" | "images" | "orbit" | "user" | "library" | "tiles" | "square-plus" | "computer"; size?: number }) {
+function Icon({ name, size = 18 }: { name: "panel" | "panel-right" | "search" | "bell" | "edit" | "plus" | "branch" | "dots" | "up" | "stop" | "bottom" | "top" | "play" | "refresh" | "terminal" | "check" | "menu" | "copy" | "folder" | "folder-open" | "file" | "chevron" | "clock" | "plugin" | "settings" | "sliders" | "window" | "square" | "home" | "images" | "orbit" | "user" | "library" | "tiles" | "square-plus" | "computer" | "laptop"; size?: number }) {
   const children: Record<typeof name, React.ReactNode> = {
-    home: <><path d="m3 11 9-8 9 8v9H3z"/><path d="M9 20v-6h6v6"/></>,
-    images: <><rect x="4" y="5" width="14" height="13" rx="2"/><path d="M8 18v2h12a2 2 0 0 0 2-2V9h-4"/><circle cx="9" cy="10" r="1.4"/><path d="m6 16 4-4 3 3 2-2 3 3"/></>,
-    orbit: <><circle cx="12" cy="12" r="2"/><ellipse cx="12" cy="12" rx="9" ry="4" transform="rotate(-45 12 12)"/><ellipse cx="12" cy="12" rx="9" ry="4" transform="rotate(45 12 12)"/></>,
+    home: <path d="M3 10.5 12 3l9 7.5v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z" fill="currentColor" stroke="none"/>,
+    images: <><rect x="8" y="2.5" width="13.5" height="15" rx="2"/><rect x="2.5" y="6.5" width="14" height="15" rx="2"/><circle cx="7" cy="11.5" r="1.3"/><path d="m3.5 18.5 3.5-4 3 3 2-2 4 3"/></>,
+    orbit: <><circle cx="12" cy="12" r="3"/><circle cx="19" cy="5" r="2"/><circle cx="5" cy="19" r="2"/><path d="M10.4 21.9a10 10 0 0 0 9.941-15.416"/><path d="M13.5 2.1a10 10 0 0 0-9.841 15.416"/></>,
     user: <><circle cx="12" cy="8" r="3"/><path d="M5 20c.7-3.5 3-5.3 7-5.3s6.3 1.8 7 5.3"/><circle cx="12" cy="12" r="10"/></>,
-    library: <><path d="M4 5h5v15H4zM10 3h5v17h-5zM16 7h4v13h-4z"/></>,
-    tiles: <><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></>,
+    library: <><rect x="3" y="4" width="6" height="16" rx="1.5"/><rect x="9" y="3.5" width="6" height="16.5" rx="1.5"/><path d="m15 4.2 2.5-.6a1.8 1.8 0 0 1 2.1 1.4l2.4 13.1a1.8 1.8 0 0 1-1.4 2.1l-2.5.5z"/></>,
+    tiles: <><rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="15" y="3" width="6" height="6" rx="1.3"/><rect x="3" y="15" width="6" height="6" rx="1.3"/><rect x="12" y="12" width="9" height="9" rx="1.5"/></>,
     panel: <><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/></>,
     "panel-right": <><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M15 3v18"/></>,
     search: <><circle cx="10.8" cy="10.8" r="6.2"/><path d="m16 16 4.5 4.5"/></>,
     bell: <><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></>,
     edit: <><path d="M12 20H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h10"/><path d="m16 3 5 5-9 9-5 1 1-5z"/></>,
     plus: <path d="M12 5v14M5 12h14"/>,
-    branch: <><circle cx="6" cy="6" r="2"/><circle cx="18" cy="6" r="2"/><circle cx="6" cy="18" r="2"/><path d="M6 8v8M18 8c0 6-12 1-12 8"/></>,
+    branch: <><circle cx="6" cy="6" r="2.2"/><circle cx="6" cy="18" r="2.2"/><circle cx="18" cy="18" r="2.2"/><path d="M6 8.2v7.6"/><path d="M8.2 6H12a6 6 0 0 1 6 6v3.8"/><path d="m15.5 13.2 2.5 2.6 2.5-2.6"/></>,
     dots: <><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></>,
     up: <><path d="M12 19V5m-7 7 7-7 7 7"/></>,
     stop: <rect x="6" y="6" width="12" height="12" rx="2"/>,
@@ -104,10 +104,11 @@ function Icon({ name, size = 18 }: { name: "panel" | "panel-right" | "search" | 
     check: <path d="m5 12 4 4L19 6"/>,
     menu: <><path d="M4 7h16M4 12h16M4 17h16"/></>,
     copy: <><rect x="8" y="8" width="11" height="11" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/></>,
-    folder: <><path d="M3 7.5a2 2 0 0 1 2-2h5l2.2 2.5H19a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></>,
+    folder: <path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2z"/>,
+    "folder-open": <path d="m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2"/>,
     file: <><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v5h5M9 13h6M9 17h6"/></>,
     chevron: <path d="m7 10 5 5 5-5"/>,
-    clock: <><circle cx="12" cy="12" r="9"/><path d="M12 6v6l4 2"/></>,
+    clock: <><circle cx="12" cy="12" r="10"/><path d="M12 6v6l-3 3"/></>,
     plugin: <><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="3"/><path d="M12 3.5v5.5M12 15v5.5"/></>,
     settings: <><circle cx="12" cy="12" r="3"/><path d="M5 12H2m20 0h-3M12 5V2m0 20v-3M5.5 5.5l2.1 2.1m8.8 8.8 2.1 2.1m0-13-2.1 2.1m-8.8 8.8-2.1 2.1"/></>,
     sliders: <><path d="M8 4h12M4 4h0M4 12h12m4 0h0M4 20h4m4 0h8"/><circle cx="6" cy="4" r="2"/><circle cx="18" cy="12" r="2"/><circle cx="10" cy="20" r="2"/></>,
@@ -115,6 +116,7 @@ function Icon({ name, size = 18 }: { name: "panel" | "panel-right" | "search" | 
     square: <rect x="4" y="4" width="16" height="16" rx="3"/>,
     "square-plus": <><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M12 8v8M8 12h8"/></>,
     computer: <><rect x="3" y="4" width="18" height="13" rx="1.5"/><path d="M8 21h8M12 17v4"/></>,
+    laptop: <path d="M20 16V7a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v9m16 0H4m16 0 1.28 2.55a1 1 0 0 1-.9 1.45H3.62a1 1 0 0 1-.9-1.45L4 16"/>,
   };
   return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{children[name]}</svg>;
 }
@@ -158,6 +160,7 @@ interface WorkspaceProjectSummary{
 }
 interface SidebarReferenceProject {
   name:string;
+  open?:boolean;
   threads:readonly string[];
 }
 /**
@@ -166,17 +169,17 @@ interface SidebarReferenceProject {
  * never sourced from, persisted to, or presented as the user's Agent data.
  */
 const SIDEBAR_REFERENCE_FIXTURE={
-  pinned:["Codex 原版界面还原任务"],
+  pinned:["帮我下载率土之滨最新版本看看"],
   projects:[
-    {name:"agent",threads:["任务：执行 Codex 原版 UI 还原","同步 agent-web GitHub 仓库"]},
+    {name:"agent",open:true,threads:["任务：执行 Codex 原版与 agent-web UI 对比","请拉取 GitHub 仓库： https://github.com/wwxst/agent-web"]},
     {name:"promotion-demo",threads:[]},
     {name:"agent-desktop",threads:[]},
-    {name:"atlas",threads:["远程服务器环境维护","GitHub 日志下载任务"]},
-    {name:"kasi-project",threads:["本地 kasi-project 项目任务"]},
+    {name:"atlas",open:true,threads:["远程主机连接信息（已脱敏）","Download Free GitHub Logs"]},
+    {name:"kasi-project",open:true,threads:["请在本地 kasi-project 项目中继续"]},
     {name:"deepseek-harness",threads:[]},
     {name:"ai",threads:[]},
   ] satisfies readonly SidebarReferenceProject[],
-  recents:["Codex 原版 UI 还原任务","远程环境维护任务"],
+  recents:["任务：执行 Codex 原版与 agent-web UI 对比","远程主机连接信息（已脱敏）"],
 } as const;
 type SidebarSectionKey="pinned"|"projects"|"recents";
 
@@ -347,8 +350,9 @@ function ConversationSidebar(props: {
                   <div key={project.name} className="demo-sidebar-reference-project"
                     role="listitem" aria-disabled="true"
                     data-visual-reference-only="project">
-                    <div className="demo-sidebar-reference-project__row">
-                      <Icon name="folder" size={15}/>
+                    <div className="demo-sidebar-reference-project__row"
+                      data-visual-reference-selected={project.name==="agent"?"true":undefined}>
+                      <Icon name={project.open?"folder-open":"folder"} size={15}/>
                       <span>{project.name}</span>
                     </div>
                     {project.threads.length>0&&<div className="demo-sidebar-reference-project__threads">
@@ -436,9 +440,25 @@ export function App() {
   // The original standalone demo records are never a production default.
   const launchParams=typeof window==="undefined"?new URLSearchParams():
     new URLSearchParams(window.location.search);
-  const isVisualShellScenario=launchParams.get("visualScenario")==="shell-empty";
-  const showSidebarReferenceFixture=isVisualShellScenario&&import.meta.env.DEV&&
-    (typeof window==="undefined"||window.agentWebDesktopHost==null);
+  const visualScenario=launchParams.get("visualScenario");
+  const isVisualShellScenario=visualScenario==="shell-empty"||
+    visualScenario==="shell-empty-reference";
+  const isElectronReferenceScenario=visualScenario==="shell-empty-reference";
+  const composerControlsHost=typeof window==="undefined"
+    ?undefined:window.agentWebDesktopHost;
+  const [hostVisualScenario,setHostVisualScenario]=React.useState(false);
+  React.useEffect(()=>{
+    if(!isElectronReferenceScenario||composerControlsHost==null)return;
+    let current=true;
+    void composerControlsHost.getHostInfo().then(info=>{
+      if(current)setHostVisualScenario(info.visualScenario==="shell-empty-reference");
+    }).catch(()=>{});
+    return()=>{current=false;};
+  },[composerControlsHost,isElectronReferenceScenario]);
+  const showSidebarReferenceFixture=isVisualShellScenario&&(
+    (import.meta.env.DEV&&composerControlsHost==null)||
+    (isElectronReferenceScenario&&hostVisualScenario)
+  );
   const explicitDemoScenario=launchParams.get("demoScenario");
   const devTestFixtures=import.meta.env.DEV&&
     import.meta.env.VITE_AGENT_WEB_DEMO_FIXTURES==="1";
@@ -450,8 +470,6 @@ export function App() {
     isVisualShellScenario?"visual-empty":
       demoFixtureEnabled?initialDemoConversation:"visual-empty");
   const isNewChat = active === "visual-empty";
-  const composerControlsHost=typeof window==="undefined"
-    ?undefined:window.agentWebDesktopHost;
   const composerControls=useCodexComposerControls(composerControlsHost,active);
   const [generation, setGeneration] = React.useState(0);
   // The host owns this feature flag. The preview chooses rail-enabled mode
@@ -1917,7 +1935,7 @@ export function App() {
         title="Explore 尚未接入" disabled><Icon name="dots" size={18}/></button>}
       footer={showSidebarReferenceFixture
         ? <span className="codex-navigation-rail__reference-avatar"
-            data-visual-reference-only="account-avatar" aria-hidden="true"/>
+            data-visual-reference-only="account-avatar" aria-hidden="true">KA</span>
         : <button type="button" data-testid="navigation-rail-settings"
             disabled aria-label="Settings（尚未接入）" title="设置尚未接入">
             <Icon name="settings" size={18}/>
@@ -1978,15 +1996,17 @@ export function App() {
           <svg className="demo-home-hero__icon" aria-hidden="true" focusable="false"
             width="56" height="56" viewBox="149 149 418 418" fill="none"
             xmlns="http://www.w3.org/2000/svg">
-            <path d="M247.429 247.43C257.73 208.911 292.871 180.543 334.638 180.543C359.555 180.543 382.115 190.64 398.449 206.964C405.906 204.97 413.743 203.905 421.829 203.905C471.681 203.906 512.096 244.32 512.096 294.173C512.096 302.259 511.031 310.096 509.037 317.553C525.361 333.887 535.458 356.446 535.458 381.364C535.458 423.131 507.09 458.271 468.571 468.572C458.271 507.091 423.131 535.459 381.364 535.459C356.446 535.459 333.886 525.362 317.552 509.037C310.095 511.031 302.258 512.097 294.172 512.097C244.319 512.097 203.906 471.682 203.906 421.829C203.906 413.743 204.969 405.905 206.963 398.448C190.639 382.115 180.543 359.555 180.543 334.638C180.543 292.871 208.91 257.73 247.429 247.43Z"
-              stroke="currentColor" strokeWidth="20.581"/>
+            <mask id="codex-home-hero-logo-mask" fill="white">
+              <path fillRule="evenodd" clipRule="evenodd" d="M247.429 247.43C257.73 208.911 292.871 180.543 334.638 180.543C359.555 180.543 382.115 190.64 398.449 206.964C405.906 204.97 413.743 203.905 421.829 203.905C471.681 203.906 512.096 244.32 512.096 294.173C512.096 302.259 511.031 310.096 509.037 317.553C525.361 333.887 535.458 356.446 535.458 381.364C535.458 423.131 507.09 458.271 468.571 468.572C458.271 507.091 423.131 535.459 381.364 535.459C356.446 535.459 333.886 525.362 317.552 509.037C310.095 511.031 302.258 512.097 294.172 512.097C244.319 512.097 203.906 471.682 203.906 421.829C203.906 413.743 204.969 405.905 206.963 398.448C190.639 382.115 180.543 359.555 180.543 334.638C180.543 292.871 208.91 257.73 247.429 247.43Z"/>
+            </mask>
+            <path d="M247.429 247.43L252.746 267.312L264.238 264.239L267.311 252.747L247.429 247.43ZM334.638 180.543L334.638 159.962L334.638 159.962L334.638 180.543ZM398.449 206.964L383.9 221.521L392.297 229.913L403.765 226.846L398.449 206.964ZM421.829 203.905L421.829 183.325L421.829 183.325L421.829 203.905ZM512.096 294.173L532.677 294.173L532.677 294.173L512.096 294.173ZM509.037 317.553L489.155 312.236L486.087 323.705L494.48 332.102L509.037 317.553ZM535.458 381.364L556.039 381.364L556.039 381.364L535.458 381.364ZM468.571 468.572L463.255 448.69L451.762 451.763L448.689 463.255L468.571 468.572ZM381.364 535.459L381.364 556.04L381.364 556.04L381.364 535.459ZM317.552 509.037L332.101 494.481L323.704 486.088L312.235 489.155L317.552 509.037ZM294.172 512.097L294.172 532.678L294.173 532.678L294.172 512.097ZM203.906 421.829L183.325 421.829L183.325 421.829L203.906 421.829ZM206.963 398.448L226.845 403.765L229.912 392.297L221.52 383.9L206.963 398.448ZM180.543 334.638L159.962 334.638L159.962 334.639L180.543 334.638ZM247.429 247.43L267.311 252.747C275.266 223.003 302.423 201.124 334.638 201.124L334.638 180.543L334.638 159.962C283.319 159.962 240.195 194.819 227.547 242.113L247.429 247.43ZM334.638 180.543L334.638 201.124C353.88 201.124 371.268 208.896 383.9 221.521L398.449 206.964L412.997 192.407C392.962 172.383 365.231 159.962 334.638 159.962L334.638 180.543ZM398.449 206.964L403.765 226.846C409.506 225.311 415.557 224.486 421.829 224.486L421.829 203.905L421.829 183.325C411.929 183.325 402.305 184.629 393.132 187.082L398.449 206.964ZM421.829 203.905L421.828 224.486C460.315 224.486 491.516 255.687 491.516 294.173L512.096 294.173L532.677 294.173C532.677 232.953 483.048 183.325 421.829 183.325L421.829 203.905ZM512.096 294.173L491.516 294.173C491.516 300.444 490.69 306.494 489.155 312.236L509.037 317.553L528.919 322.87C531.372 313.698 532.677 304.074 532.677 294.173L512.096 294.173ZM509.037 317.553L494.48 332.102C507.105 344.735 514.877 362.122 514.877 381.364L535.458 381.364L556.039 381.364C556.039 350.771 543.618 323.04 523.594 303.005L509.037 317.553ZM535.458 381.364L514.877 381.364C514.877 413.578 492.999 440.735 463.255 448.69L468.571 468.572L473.888 488.454C521.182 475.806 556.039 432.683 556.039 381.364L535.458 381.364ZM468.571 468.572L448.689 463.255C440.735 492.999 413.578 514.878 381.364 514.878L381.364 535.459L381.364 556.04C432.683 556.04 475.806 521.183 488.454 473.889L468.571 468.572ZM381.364 535.459L381.364 514.878C362.122 514.878 344.733 507.106 332.101 494.481L317.552 509.037L303.003 523.594C323.038 543.619 350.77 556.04 381.364 556.04L381.364 535.459ZM317.552 509.037L312.235 489.155C306.493 490.691 300.443 491.516 294.172 491.516L294.172 512.097L294.173 532.678C304.073 532.678 313.698 531.372 322.869 528.919L317.552 509.037ZM294.172 512.097L294.172 491.516C255.686 491.516 224.486 460.316 224.486 421.829L203.906 421.829L183.325 421.829C183.325 483.048 232.953 532.678 294.172 532.678L294.172 512.097ZM203.906 421.829L224.486 421.829C224.486 415.555 225.311 409.504 226.845 403.765L206.963 398.448L187.081 393.131C184.627 402.307 183.325 411.932 183.325 421.829L203.906 421.829ZM206.963 398.448L221.52 383.9C208.895 371.268 201.124 353.88 201.124 334.638L180.543 334.638L159.962 334.639C159.962 365.231 172.382 392.962 192.406 412.997L206.963 398.448ZM180.543 334.638L201.124 334.638C201.124 302.423 223.002 275.266 252.746 267.312L247.429 247.43L242.112 227.547C194.818 240.195 159.962 283.319 159.962 334.638L180.543 334.638Z" fill="currentColor" mask="url(#codex-home-hero-logo-mask)"/>
             <path d="M436.706 408.738H370.021" stroke="currentColor" strokeWidth="24" strokeLinecap="round"/>
             <path d="M276.533 309.154L303.468 357.831C304.433 359.575 304.412 361.698 303.414 363.423L276.533 409.854"
               stroke="currentColor" strokeWidth="24" strokeLinecap="round"/>
           </svg>
           <h1 className="demo-home-hero__heading">
             {workspaceProjectName==null
-              ? showSidebarReferenceFixture?"我们要构建什么？":"What should we build?"
+              ? showSidebarReferenceFixture?"我们应该在agent中做些什么？":"What should we build?"
               : <>
               What should we work on in{" "}
               <button type="button" className="demo-home-hero__project-select"
@@ -2177,18 +2197,18 @@ export function App() {
           {isNewChat&&<div className="demo-home-composer-context"
             data-testid="home-composer-context">
             <button type="button" className="demo-home-composer-context__project"
-              aria-label={workspaceProjectName==null?"选择项目":"更改项目"}
+              aria-label={showSidebarReferenceFixture?"agent":workspaceProjectName==null?"选择项目":"更改项目"}
               title={composerControlsHost?.selectWorkspaceDirectory==null
                 ?"需要 Electron 桌面宿主才能选择本地文件夹"
                 :"选择本地文件夹（只读预览）"}
               disabled={composerControlsHost?.selectWorkspaceDirectory==null||workspaceProjectBusy}
               onClick={()=>void openWorkspaceProject()}>
-              <Icon name="folder" size={14}/>
-              <span>{workspaceProjectName??"选择项目"}</span>
+              <Icon name="folder-open" size={14}/>
+              <span>{showSidebarReferenceFixture?"agent":workspaceProjectName??"选择项目"}</span>
             </button>
             <span className="demo-home-composer-context__computer"
               data-testid="home-computer-context">
-              <Icon name="computer" size={15}/>
+              <Icon name="laptop" size={15}/>
               <span>此计算机</span>
             </span>
           </div>}
@@ -2268,11 +2288,42 @@ export function App() {
                   </p>
                 </div>}
               </div>
-              <CodexComposerPermissionModeControl key={active} controls={composerControls}/>
+              <CodexComposerPermissionModeControl key={active} controls={composerControls} referencePresentation={showSidebarReferenceFixture}/>
             </div>}
             trailingControls={<div className="demo-composer-right">
-              <CodexComposerModelReasoningControl key={active} controls={composerControls}/>
-              <button type={composerAction.type} data-testid="send-button" data-composer-action={composerAction.kind} aria-busy={composerAction.loading} aria-label={isNewChat ? "发送消息（Agent 未连接）" : composerAction.kind === "stop" ? "停止模拟" : "发送模拟消息"} title={isNewChat ? "Agent 未连接，暂不可发送" : composerAction.kind === "stop" ? "停止模拟" : "发送模拟消息"} className="demo-send-button" disabled={composerAction.disabled} onClick={composerAction.kind === "stop" ? stopSample : undefined}><Icon name={composerAction.kind === "stop" ? "stop" : "up"} size={16}/></button>
+              <CodexComposerModelReasoningControl key={active} controls={composerControls} referencePresentation={showSidebarReferenceFixture}/>
+              {isNewChat&&draft.trim().length===0&&composerAttachments.length===0
+                ?<>
+                  <button type="button" className="demo-composer-voice-unavailable"
+                    data-testid="composer-microphone-unavailable"
+                    aria-label="麦克风（Agent 未连接）"
+                    title="Agent 未连接，语音输入暂不可用" disabled>
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"
+                      stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"
+                      strokeLinejoin="round" aria-hidden="true">
+                      <rect x="6.25" y="1.5" width="3.5" height="8" rx="1.75"/>
+                      <path d="M3.75 7.5v.5a4.25 4.25 0 0 0 8.5 0v-.5M8 12.25v2.25M5.75 14.5h4.5"/>
+                    </svg>
+                  </button>
+                  <button type="button" className="demo-composer-voice-mode-unavailable"
+                    data-testid="composer-voice-mode-unavailable"
+                    aria-label="语音模式（Agent 未连接）"
+                    title="Agent 未连接，语音模式暂不可用" disabled>
+                    <svg width="18" height="18" viewBox="0 0 18 18" fill="none"
+                      stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"
+                      aria-hidden="true">
+                      <path d="M3 7v4M6 4.5v9M9 2.5v13M12 5.5v7M15 7v4"/>
+                    </svg>
+                  </button>
+                </>
+                :<button type={composerAction.type} data-testid="send-button"
+                  data-composer-action={composerAction.kind} aria-busy={composerAction.loading}
+                  aria-label={isNewChat ? "发送消息（Agent 未连接）" : composerAction.kind === "stop" ? "停止模拟" : "发送模拟消息"}
+                  title={isNewChat ? "Agent 未连接，暂不可发送" : composerAction.kind === "stop" ? "停止模拟" : "发送模拟消息"}
+                  className="demo-send-button" disabled={composerAction.disabled}
+                  onClick={composerAction.kind === "stop" ? stopSample : undefined}>
+                  <Icon name={composerAction.kind === "stop" ? "stop" : "up"} size={16}/>
+                </button>}
             </div>}
           />
         </CodexSourceComposerHostForm>
