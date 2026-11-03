@@ -108,6 +108,10 @@ function createAgentCilPrintBridge({
     child.stdin.end(prompt,"utf8");
     return {accepted:true,requestId};
   }
+  function cancelOwner(owner){
+    const run=active.get(owner);
+    return run?cancel(owner,run.requestId):false;
+  }
   function close(){
     for(const [owner,run] of [...active]){
       cancel(owner,run.requestId);
@@ -115,6 +119,6 @@ function createAgentCilPrintBridge({
       finish(owner,run,null,"CLI_HOST_CLOSED");
     }
   }
-  return Object.freeze({ready,start,cancel,close,activeCount:()=>active.size});
+  return Object.freeze({ready,start,cancel,cancelOwner,close,activeCount:()=>active.size});
 }
 module.exports={createAgentCilPrintBridge,safeAgentCilEntry,MAX_PROMPT_CHARS};
