@@ -51,6 +51,26 @@ test("shell-empty visual route mounts the real desktop shell, idle Composer and 
   await expect(permissionControl).toContainText("完全访问");
   await expect(page.getByTestId("composer-microphone-unavailable")).toBeDisabled();
   await expect(page.getByTestId("composer-voice-mode-unavailable")).toBeDisabled();
+  // Reference-only styling must not imply active host capabilities: every
+  // real control remains disabled while colors match the supplied screenshot.
+  const referenceControlStyles=await page.evaluate(()=>{
+    const style=(testId:string)=>{
+      const node=document.querySelector<HTMLElement>(`[data-testid="${testId}"]`);
+      if(node==null)throw new Error(`Missing reference control: ${testId}`);
+      const computed=getComputedStyle(node);
+      return {opacity:computed.opacity,color:computed.color,background:computed.backgroundColor};
+    };
+    return {
+      model:style("composer-model-control"),
+      permission:style("composer-permission-control"),
+      microphone:style("composer-microphone-unavailable"),
+      voice:style("composer-voice-mode-unavailable"),
+    };
+  });
+  expect(referenceControlStyles.model.opacity).toBe("1");
+  expect(referenceControlStyles.permission).toMatchObject({opacity:"1",color:"rgb(226, 85, 7)"});
+  expect(referenceControlStyles.microphone.opacity).toBe("1");
+  expect(referenceControlStyles.voice).toMatchObject({opacity:"1",background:"rgb(58, 131, 247)"});
   await expect(page.getByText("Demo Agent")).toHaveCount(0);
   await expect(page.getByText(/Full access.*mock/)).toHaveCount(0);
   await expect(page.getByTestId("demo-tools")).toHaveCount(0);
