@@ -57,7 +57,7 @@ test("rail Explore stays in the scroll stack while Settings remains in the foote
   await expect(explore).toBeVisible();
   await expect(explore).toBeDisabled();
   await expect(settings).toBeVisible();
-  await expect(settings).toBeDisabled();
+  await expect(settings).toBeEnabled();
   const layout=await page.evaluate(()=>{
     const rail=document.querySelector("[data-app-navigation-rail]")!;
     const stack=rail.querySelector("[data-navigation-rail-scroll]")!;
