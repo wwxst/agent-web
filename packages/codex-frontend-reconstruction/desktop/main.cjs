@@ -9,6 +9,8 @@
  * We intentionally DO NOT impersonate its private electronBridge API.
  */
 const path = require("node:path");
+const {canonicalDirectory}=require("./workspaceProjectStore.cjs");
+const {createAgentCilPrintBridge}=require("./agentCilPrintBridge.cjs");
 const {app, BrowserWindow, ipcMain, shell, nativeTheme, screen, Menu, dialog, clipboard} = require("electron");
 const {
   PRIMARY_MIN_WIDTH,PRIMARY_MIN_HEIGHT,sourcePrimaryChromeOptions,
@@ -28,6 +30,9 @@ const {
   markWorkspaceProjectOpened,removeWorkspaceProject,
 }=require("./workspaceProjectStore.cjs");
 
+const AGENT_CIL_START_CHANNEL="agent-web:agent-cil-start";
+const AGENT_CIL_CANCEL_CHANNEL="agent-web:agent-cil-cancel";
+const AGENT_CIL_EVENT_CHANNEL="agent-web:agent-cil-event";
 const HOST_INFO_CHANNEL = "agent-web:host-info";
 const HOST_EVENT_CHANNEL = "agent-web:host-event";
 const UI_COMMAND_CHANNEL = "agent-web:ui-command";
@@ -65,6 +70,13 @@ if(typeof dataDirOverride==="string"&&path.isAbsolute(dataDirOverride)){
 let mainWindow=null;
 let workspacePreviewHost=null;
 const activeWorkspaceProjectBySender=new Map();
+// Trusted host configuration only. No CLI path, flags or workspace path IPC.
+// A sibling agent-cil checkout works in development. Packaged hosts must
+// explicitly install or configure their own backend CLI entry.
+const agentCilBridge=createAgentCilPrintBridge({
+  cliEntry:process.env.AGENT_CIL_ENTRY||
+    path.resolve(__dirname,"../../../../agent-cil/packages/cli/src/index.js"),
+});
 const workspaceProjectPickers=new Set();
 
 function isAllowedNavigation(url){
@@ -94,6 +106,7 @@ function createWindow(){
   // every Electron/Windows build and can interrupt app shutdown.
   const workspaceSenderId=win.webContents.id;
   win.webContents.on("did-navigate",()=>{
+    agentCilBridge.cancelOwner(workspaceSenderId);
     workspacePreviewHost?.clearSender(workspaceSenderId);
     activeWorkspaceProjectBySender.delete(workspaceSenderId);
   });
@@ -218,6 +231,7 @@ function setupIpc(){
   });
   ipcMain.handle(SELECT_WORKSPACE_CHANNEL,(event)=>{
     if(!isTrustedRenderer(event))return {selected:false};
+    agentCilBridge.cancelOwner(event.sender.id);
     activeWorkspaceProjectBySender.delete(event.sender.id);
     return workspacePreviewHost.selectDirectory(event);
   });
@@ -253,6 +267,7 @@ function setupIpc(){
         if(added.created)removeWorkspaceProject(app.getPath("userData"),project.id);
         return {selected:false};
       }
+      agentCilBridge.cancelOwner(senderId);
       markWorkspaceProjectOpened(app.getPath("userData"),project.id);
       activeWorkspaceProjectBySender.set(senderId,project.id);
       const updated=getWorkspaceProject(app.getPath("userData"),project.id);
@@ -271,6 +286,7 @@ function setupIpc(){
       device:project.device,inode:project.inode,
     });
     if(!grant.selected)return {selected:false};
+    agentCilBridge.cancelOwner(event.sender.id);
     markWorkspaceProjectOpened(app.getPath("userData"),project.id);
     activeWorkspaceProjectBySender.set(event.sender.id,project.id);
     const updated=getWorkspaceProject(app.getPath("userData"),project.id);
@@ -284,6 +300,7 @@ function setupIpc(){
     if(!isTrustedRenderer(event))return false;
     const removed=removeWorkspaceProject(app.getPath("userData"),id);
     if(removed&&activeWorkspaceProjectBySender.get(event.sender.id)===id){
+      agentCilBridge.cancelOwner(event.sender.id);
       workspacePreviewHost.revoke(event);
       activeWorkspaceProjectBySender.delete(event.sender.id);
     }
@@ -299,6 +316,7 @@ function setupIpc(){
     workspacePreviewHost.searchDirectoryFiles(event,request));
   ipcMain.handle(REVOKE_WORKSPACE_CHANNEL,event=>{
     if(!isTrustedRenderer(event))return false;
+    agentCilBridge.cancelOwner(event.sender.id);
     activeWorkspaceProjectBySender.delete(event.sender.id);
     return workspacePreviewHost.revoke(event);
   });
@@ -310,6 +328,45 @@ function setupIpc(){
     workspacePreviewHost.getLanguageCapabilities(event,request));
   ipcMain.handle(GET_WORKSPACE_LANGUAGE_LOCATIONS_CHANNEL,(event,request)=>
     workspacePreviewHost.getLanguageLocations(event,request));
+  // Real Agent CIL one-shot print transport. Project must have been
+  // explicitly selected in this renderer, and the persisted path identity
+  // must still match. No UI-supplied path, argv, approval or shell command.
+  ipcMain.handle(AGENT_CIL_START_CHANNEL,(event,request)=>{
+    if(!isTrustedRenderer(event))return {accepted:false,reason:"UNTRUSTED_RENDERER"};
+    const projectId=activeWorkspaceProjectBySender.get(event.sender.id);
+    if(projectId==null)return {accepted:false,reason:"WORKSPACE_NOT_SELECTED"};
+    const project=getWorkspaceProject(app.getPath("userData"),projectId);
+    if(project==null)return {accepted:false,reason:"WORKSPACE_UNAVAILABLE"};
+    let verified;
+    try{verified=canonicalDirectory(project.path);}catch{
+      return {accepted:false,reason:"WORKSPACE_UNAVAILABLE"};
+    }
+    if(verified.device!==project.device||verified.inode!==project.inode||
+      (process.platform==="win32"
+        ?verified.path.toLowerCase()!==project.path.toLowerCase()
+        :verified.path!==project.path))
+      return {accepted:false,reason:"WORKSPACE_IDENTITY_CHANGED"};
+    try{
+      return agentCilBridge.start({
+        owner:event.sender.id,requestId:request?.requestId,
+        prompt:request?.prompt,workspace:verified.path,
+        send:payload=>{
+          if(!event.sender.isDestroyed()&&isTrustedRenderer(event))
+            event.sender.send(AGENT_CIL_EVENT_CHANNEL,payload);
+        },
+      });
+    }catch(error){
+      const permitted=new Set([
+        "AGENT_CIL_UNAVAILABLE","AGENT_CIL_INVALID_REQUEST",
+        "AGENT_CIL_INVALID_PROMPT","AGENT_CIL_BUSY",
+        "AGENT_CIL_INVALID_WORKSPACE","AGENT_CIL_START_FAILED",
+      ]);
+      return {accepted:false,reason:permitted.has(error?.code)
+        ?error.code:"AGENT_CIL_START_FAILED"};
+    }
+  });
+  ipcMain.handle(AGENT_CIL_CANCEL_CHANNEL,(event,requestId)=>
+    isTrustedRenderer(event)&&agentCilBridge.cancel(event.sender.id,requestId));
   // Original mcp-request-card ye calls a request-scoped host reply method;
   // this standalone app does NOT have that Agent backend protocol. Use
   // existing main-frame navigation/sender guards and fail closed.
@@ -354,13 +411,17 @@ function setupIpc(){
     theme:nativeTheme.shouldUseDarkColors?"dark":"light",
     /** No Agent backend or proprietary Codex host attached. */
     backendConnected:false,
+    // Installed executable != authenticated live session; never call this a
+    // connected Agent until an actual run succeeds.
+    agentCilAvailable:agentCilBridge.ready(),
   }));
 }
 app.on("window-all-closed",()=>{if(process.platform!=="darwin")app.quit();});
 app.on("activate",()=>{if(BrowserWindow.getAllWindows().length===0)createWindow();});
 app.whenReady().then(()=>{setupIpc();createWindow();});
 app.on("before-quit",()=>{
-  for(const channel of [HOST_INFO_CHANNEL,OPEN_MENU_CHANNEL,READ_DRAFTS_CHANNEL,WRITE_DRAFT_CHANNEL,MCP_APPROVAL_REPLY_CHANNEL,OPEN_EXTERNAL_URL_CHANNEL,USER_VERIFICATION_CANCEL_CHANNEL,UNSUPPORTED_FORM_REPLY_CHANNEL,TEXT_FORM_REPLY_CHANNEL,SELECT_WORKSPACE_CHANNEL,LIST_WORKSPACE_PROJECTS_CHANNEL,ADD_WORKSPACE_PROJECT_CHANNEL,SELECT_WORKSPACE_PROJECT_CHANNEL,REMOVE_WORKSPACE_PROJECT_CHANNEL,READ_WORKSPACE_TEXT_CHANNEL,
+  agentCilBridge.close();
+  for(const channel of [AGENT_CIL_START_CHANNEL,AGENT_CIL_CANCEL_CHANNEL,HOST_INFO_CHANNEL,OPEN_MENU_CHANNEL,READ_DRAFTS_CHANNEL,WRITE_DRAFT_CHANNEL,MCP_APPROVAL_REPLY_CHANNEL,OPEN_EXTERNAL_URL_CHANNEL,USER_VERIFICATION_CANCEL_CHANNEL,UNSUPPORTED_FORM_REPLY_CHANNEL,TEXT_FORM_REPLY_CHANNEL,SELECT_WORKSPACE_CHANNEL,LIST_WORKSPACE_PROJECTS_CHANNEL,ADD_WORKSPACE_PROJECT_CHANNEL,SELECT_WORKSPACE_PROJECT_CHANNEL,REMOVE_WORKSPACE_PROJECT_CHANNEL,READ_WORKSPACE_TEXT_CHANNEL,
     LIST_WORKSPACE_DIRECTORY_CHANNEL,READ_WORKSPACE_TREE_TEXT_CHANNEL,
     SEARCH_WORKSPACE_FILES_CHANNEL,
     REVOKE_WORKSPACE_CHANNEL,COPY_WORKSPACE_PATH_CHANNEL,COPY_WORKSPACE_CONTENTS_CHANNEL]){
