@@ -697,6 +697,8 @@ test("independent Electron file renderer starts, isolates preload and routes Fc 
     logoFontSize:getComputedStyle(document.querySelector(".demo-logo")).fontSize,
     mainRight:document.querySelector(".demo-main")?.getBoundingClientRect().right??null,
     composerBottom:document.querySelector(".demo-composer")?.getBoundingClientRect().bottom??null,
+    voiceModeRect:document.querySelector('[data-testid="composer-voice-mode-unavailable"]')
+      ?.getBoundingClientRect().toJSON()??null,
     heroHeading:document.querySelector(".demo-home-hero__heading")?.textContent?.trim()??null,
     rootFontSmoothing:getComputedStyle(document.documentElement).getPropertyValue("-webkit-font-smoothing"),
   }));
@@ -717,6 +719,12 @@ test("independent Electron file renderer starts, isolates preload and routes Fc 
   assert.equal(referenceGeometry.logoFontSize,"17px");
   assert.equal(referenceGeometry.mainRight,1087);
   assert.equal(referenceGeometry.composerBottom,741);
+  // Native screenshot source: the 28px voice circle occupies
+  // x=1021..1048 and y=704..731 at exactly 1090×760.
+  assert.equal(referenceGeometry.voiceModeRect?.x,1021);
+  assert.equal(referenceGeometry.voiceModeRect?.y,704);
+  assert.equal(referenceGeometry.voiceModeRect?.width,28);
+  assert.equal(referenceGeometry.voiceModeRect?.height,28);
   assert.equal(referenceGeometry.heroHeading,"我们应该在agent中做些什么？");
   // Windows and Linux Chromium report "auto" when the renderer leaves
   // font smoothing to the host OS. Forcing macOS-style antialiasing here
