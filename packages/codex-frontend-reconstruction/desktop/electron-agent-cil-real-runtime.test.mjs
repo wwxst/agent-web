@@ -79,8 +79,10 @@ test("actual Agent CIL CLI and AgentLoop stream through native Electron into Rea
     await app.evaluate(({dialog},directory)=>{
       dialog.showOpenDialog=async()=>({canceled:false,filePaths:[directory]});
     },workspace);
-    await page.locator('[data-app-action-sidebar-section-key="projects"] .demo-sidebar-section__header').hover();
-    await page.getByRole("button",{name:"Add new project"}).click();
+    // Home Composer's native project picker is the stable product action.
+    // The sidebar's hover-only plus icon can be covered by its section
+    // heading at Linux/Xvfb pixel scales; test the real user-visible route.
+    await page.getByRole("button",{name:"选择项目"}).click();
     await page.locator('[data-app-action-sidebar-select-project][aria-current="page"]')
       .waitFor({state:"visible",timeout:15000});
     await page.getByRole("textbox",{name:"Do anything"}).fill(prompt);
