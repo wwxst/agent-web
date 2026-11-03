@@ -116,6 +116,27 @@ test("normal packaged Electron launch opens the empty Codex home, never a synthe
       animations:"disabled",fullPage:false,
     });
 
+    // Verify the actual packaged Electron renderer can navigate to Settings,
+    // without changing the conversation or enabling unsupported host preferences.
+    await page.getByTestId("navigation-rail-settings").click();
+    await page.locator('[data-codex-settings-page="true"]')
+      .waitFor({state:"visible",timeout:10000});
+    assert.equal(await page.getByRole("heading",{name:"General",exact:true,level:1}).count(),1);
+    assert.equal(await page.getByRole("button",{name:"Light"}).isDisabled(),true);
+    await page.screenshot({
+      path:resolve(root,"desktop/test-results/electron-settings-general.png"),
+      animations:"disabled",fullPage:false,
+    });
+    await page.keyboard.press("Control+f");
+    await page.getByRole("searchbox",{name:"Search settings"}).fill("appearance");
+    await page.getByRole("navigation",{name:"Settings"})
+      .getByRole("button",{name:"Appearance"}).click();
+    assert.equal(await page.getByRole("heading",{name:"Appearance",exact:true,level:1}).count(),1);
+    await page.getByRole("button",{name:"Back to app"}).click();
+    await page.locator('.demo-composer[data-composer-placement="home"]')
+      .waitFor({state:"visible",timeout:10000});
+    assert.equal(await page.locator('[data-codex-settings-page="true"]').count(),0);
+
     // Verify the original plus-button context entry in the actual Windows
     // renderer, not a screenshot-only component or a fake upload dialog.
     const addContext=page.getByRole("button",{name:"添加文件"});
