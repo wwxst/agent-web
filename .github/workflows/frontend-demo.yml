@@ -25,6 +25,12 @@ jobs:
         working-directory: packages/codex-frontend-reconstruction
     steps:
       - uses: actions/checkout@v4
+      - name: Checkout pinned Agent CIL for real-runtime integration smoke
+        uses: actions/checkout@v4
+        with:
+          repository: wwxst/agent-cil
+          ref: ea463476964f061b28f49c82054429787e8f6a87
+          path: agent-cil
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
@@ -53,6 +59,7 @@ jobs:
         run: xvfb-run -a -s "-screen 0 1600x900x24" npm run desktop:test:smoke
         env:
           CI: "true"
+          AGENT_CIL_REQUIRE_REAL_RUNTIME: "1"
       - name: Upload Electron desktop screenshot
         if: always()
         uses: actions/upload-artifact@v4
@@ -76,6 +83,12 @@ jobs:
         working-directory: packages/codex-frontend-reconstruction
     steps:
       - uses: actions/checkout@v4
+      - name: Checkout pinned Agent CIL for real-runtime integration smoke
+        uses: actions/checkout@v4
+        with:
+          repository: wwxst/agent-cil
+          ref: ea463476964f061b28f49c82054429787e8f6a87
+          path: agent-cil
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
@@ -100,6 +113,8 @@ jobs:
         run: node --test scripts/capture-windows-window.test.mjs scripts/visual-acceptance-baseline.test.mjs
       - name: Real Windows Electron window, preload, IPC and native menu smoke
         run: npm run desktop:test:smoke
+        env:
+          AGENT_CIL_REQUIRE_REAL_RUNTIME: "1"
       - name: Upload Windows Electron screenshot
         if: always()
         uses: actions/upload-artifact@v4
