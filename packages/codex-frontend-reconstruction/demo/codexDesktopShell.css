@@ -233,6 +233,19 @@ button:focus-visible, textarea:focus-visible { outline: 2px solid #578cda; outli
 .demo-desktop:has([data-sidebar-reference-fixture="true"]) .demo-composer-right {
   gap:9px;
 }
+/* Reference-only presentation: keep actual host controls disabled, but do
+ * not wash out their screenshot colors. Native capabilities stay unavailable. */
+.demo-desktop:has([data-sidebar-reference-fixture="true"]) .demo-composer-control-trigger:disabled,
+.demo-desktop:has([data-sidebar-reference-fixture="true"]) .demo-composer-voice-unavailable:disabled,
+.demo-desktop:has([data-sidebar-reference-fixture="true"]) .demo-composer-voice-mode-unavailable:disabled {
+  opacity:1;
+}
+.demo-desktop:has([data-sidebar-reference-fixture="true"]) .demo-composer-control-trigger--permissions:disabled {
+  color:#e25507;
+}
+.demo-desktop:has([data-sidebar-reference-fixture="true"]) .demo-composer-voice-mode-unavailable:disabled {
+  background:#3a83f7;
+}
 .demo-desktop:has([data-sidebar-reference-fixture="true"]) .demo-main[data-codex-home="true"] .demo-header {
   height:52px;
   min-height:52px;
