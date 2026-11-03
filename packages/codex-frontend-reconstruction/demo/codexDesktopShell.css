@@ -245,6 +245,15 @@ button:focus-visible, textarea:focus-visible { outline: 2px solid #578cda; outli
 }
 .demo-desktop:has([data-sidebar-reference-fixture="true"]) .demo-composer-voice-mode-unavailable:disabled {
   background:#3a83f7;
+  /* The native 1090x760 reference has a 28px blue circle, not 30px. */
+  width:28px;
+  height:28px;
+  flex-basis:28px;
+}
+.demo-desktop:has([data-sidebar-reference-fixture="true"]) .codex-composer-layout__footer {
+  /* Comparing HWND captures places all original footer controls 6px lower
+   * than the reconstructed footer. Keep this correction screenshot-scoped. */
+  transform:translateY(6px);
 }
 .demo-desktop:has([data-sidebar-reference-fixture="true"]) .demo-main[data-codex-home="true"] .demo-header {
   height:52px;
