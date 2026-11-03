@@ -111,6 +111,7 @@ function createWindow(){
     activeWorkspaceProjectBySender.delete(workspaceSenderId);
   });
   win.on("closed",()=>{
+    agentCilBridge.cancelOwner(workspaceSenderId);
     workspacePreviewHost?.clearSender(workspaceSenderId);
     activeWorkspaceProjectBySender.delete(workspaceSenderId);
   });
