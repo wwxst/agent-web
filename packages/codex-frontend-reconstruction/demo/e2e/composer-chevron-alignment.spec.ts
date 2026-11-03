@@ -53,4 +53,11 @@ test("Composer model and permission chevrons match source SVG geometry and place
   await expect(page.locator(".demo-composer")).toHaveAttribute("data-composer-placement","thread");
   // Thread placement uses the original --spacing token (4px).
   await assertControlsAligned(4,["权限未连接","模型未连接"],null);
+  // The bright colors are exclusive to a visual reference fixture. A normal
+  // disconnected thread still communicates disabled/unavailable capabilities.
+  for(const testId of ["composer-model-control","composer-permission-control"]){
+    const control=page.getByTestId(testId);
+    await expect(control).toBeDisabled();
+    expect(await control.evaluate(node=>getComputedStyle(node).opacity)).toBe("0.62");
+  }
 });
