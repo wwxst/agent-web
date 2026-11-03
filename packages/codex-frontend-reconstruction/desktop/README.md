@@ -82,3 +82,53 @@ integration**. Before connecting to the user's Agent backend, verify its
 actual request IDs, authority and authorization protocol and require a
 backend-maintained outstanding-request registry; never bridge arbitrary
 renderer-provided request IDs directly into permission execution.
+
+
+## Agent CIL single-turn bridge (2026-11-03)
+
+The standalone Electron Home Composer can execute **one actual** `agent-cil
+--print` turn against a selected local project. This is a narrow CLI
+integration, not Codex's private `electronBridge`, not a working multi-turn
+conversation service, and not proof of authenticated model availability.
+
+Use a local Agent CIL checkout and Node.js 22+; build the renderer from
+`packages/codex-frontend-reconstruction` before launching. In Windows PowerShell:
+
+```powershell
+$env:AGENT_CIL_ENTRY = "C:\\path\\to\\agent-cil\\packages\\cli\\src\\index.js"
+$env:ANTHROPIC_API_KEY = "<your locally configured key>"
+npm run demo:build
+npm run desktop:start
+```
+
+In the desktop app, use **Projects → Add new project** to select a folder,
+then enter a plain-text prompt in the Home Composer. The native main process
+verifies the selected project's persisted canonical path and directory identity.
+It passes a fixed CLI entry and `--print --cwd` arguments; the prompt is sent
+over stdin and stdout streams into the existing conversation timeline. The
+local CLI process can be interrupted via the Composer Stop action. No
+arbitrary executable, shell command, filesystem path, CLI option or permission
+grant is accepted from the renderer. File attachments are not submitted.
+
+The `agentCilAvailable` host-info flag means **only** that the configured
+CLI entry exists. `backendConnected` remains `false` until an actual
+authenticated model session has been established. A missing API key, network
+failure or unavailable provider produces a failed CLI run (and must never be
+reported as a successful AI response). CLI stderr is intentionally not exposed
+to the renderer; check trusted local CLI diagnostics separately.
+
+A single `--print` invocation has no reliable conversation follow-up, turn
+resumption, authenticated approval round trips, structured tool-event
+timeline or persistence in this bridge. The agent-cil CLI itself decides its
+default non-interactive permissions: neither `--allow-edits` nor a Bash approval
+option is passed. Local workspace preview grants are still read-only;
+backend filesystem policy is enforced by Agent CIL, not by a frontend UI
+toggle or a mock approval card.
+
+Tests: `node --test desktop/agent-cil-print-bridge.test.mjs` covers a real
+child process, bounds and cancellation. The separate
+`desktop/electron-agent-cil-turn.test.mjs` tests real Electron IPC,
+project selection, rendered stream and stop **using a benign CLI fixture
+process**; it is not a credentialed provider test. Production integration
+requires an opt-in model-provider test and an explicit packaging/CLI
+distribution decision.
