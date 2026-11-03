@@ -649,6 +649,30 @@ test("independent Electron file renderer starts, isolates preload and routes Fc 
   assert.equal(await page.getByTestId("composer-model-control").textContent(),"GPT-6.1 Sol高");
   assert.equal(await page.getByTestId("composer-permission-control").isDisabled(),true);
   assert.equal(await page.getByTestId("composer-permission-control").textContent(),"完全访问");
+  const referenceControlStyles=await page.evaluate(()=>{
+    const style=testId=>{
+      const node=document.querySelector(`[data-testid="${testId}"]`);
+      if(node==null)throw new Error(`Missing reference control: ${testId}`);
+      const computed=getComputedStyle(node);
+      return {opacity:computed.opacity,color:computed.color,background:computed.backgroundColor};
+    };
+    return {
+      model:style("composer-model-control"),
+      permission:style("composer-permission-control"),
+      microphone:style("composer-microphone-unavailable"),
+      voice:style("composer-voice-mode-unavailable"),
+    };
+  });
+  assert.equal(referenceControlStyles.model.opacity,"1");
+  assert.deepEqual({
+    opacity:referenceControlStyles.permission.opacity,
+    color:referenceControlStyles.permission.color,
+  },{opacity:"1",color:"rgb(226, 85, 7)"});
+  assert.equal(referenceControlStyles.microphone.opacity,"1");
+  assert.deepEqual({
+    opacity:referenceControlStyles.voice.opacity,
+    background:referenceControlStyles.voice.background,
+  },{opacity:"1",background:"rgb(58, 131, 247)"});
   assert.equal(await page.locator('[data-visual-reference-only="account-avatar"]').textContent(),"KA");
   const heroStyle=await page.locator(".demo-home-hero__heading").evaluate(node=>{
     const style=getComputedStyle(node);
