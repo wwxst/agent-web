@@ -2086,7 +2086,7 @@ export function App() {
                   title="Subagents · synthetic fixture" aria-label="Open Subagents"
                   aria-expanded={showSubagentsPanel}
                   onClick={()=>setShowSubagentsPanel(true)}><Icon name="branch" size={17}/></button>:null}
-                {demoFixtureEnabled&&<button type="button" className="demo-icon-button" title={showDemoTools ? "收起演示工具" : "打开演示工具"} aria-label={showDemoTools ? "收起演示工具" : "打开演示工具"} aria-expanded={showDemoTools} onClick={() => setShowDemoTools((value) => !value)}><Icon name="sliders" size={17}/></button>}
+                {(demoFixtureEnabled||window.agentWebDesktopHost==null)&&<button type="button" className="demo-icon-button" title={showDemoTools ? "收起演示工具" : "打开演示工具"} aria-label={showDemoTools ? "收起演示工具" : "打开演示工具"} aria-expanded={showDemoTools} onClick={() => setShowDemoTools((value) => !value)}><Icon name="sliders" size={17}/></button>}
                 <button type="button" className="demo-icon-button demo-collapse-toggle" aria-label={collapsed ? "展开侧边栏" : "收起侧边栏"} onClick={() => setCollapsed((value) => !value)}><Icon name="panel" size={17}/></button>
               </div>
             </div>}
@@ -2399,9 +2399,9 @@ export function App() {
               <CodexComposerModelReasoningControl key={active} controls={composerControls}/>
               <button type={composerAction.type} data-testid="send-button" data-composer-action={composerAction.kind} aria-busy={composerAction.loading}
                 aria-label={composerAction.kind==="stop"?(nativeAgentSession||agentCilBusy?"停止 Agent CIL":"停止模拟"):
-                  isNewChat?"发送至 Agent CIL":nativeAgentSession?"单轮任务已结束":"发送模拟消息"}
+                  isNewChat?(window.agentWebDesktopHost==null?"发送消息（Agent 未连接）":"发送至 Agent CIL"):nativeAgentSession?"单轮任务已结束":"发送模拟消息"}
                 title={composerAction.kind==="stop"?(nativeAgentSession||agentCilBusy?"中断本地 CLI 任务":"停止模拟"):
-                  isNewChat?agentCilAvailable?(activeWorkspaceProjectId!=null?"发送真实 Agent CIL 请求":"请先在项目列表中添加并选择本地文件夹"):"Agent CIL 未安装或未配置":
+                  isNewChat?window.agentWebDesktopHost==null?"Agent 未连接，暂不可发送":agentCilAvailable?(activeWorkspaceProjectId!=null?"发送真实 Agent CIL 请求":"请先在项目列表中添加并选择本地文件夹"):"Agent CIL 未安装或未配置":
                   nativeAgentSession?"此 CLI 桥接仅支持单轮；请新建聊天":"发送模拟消息"}
                 className="demo-send-button" disabled={composerAction.disabled}
                 onClick={composerAction.kind==="stop"?(nativeAgentSession||agentCilBusy?stopAgentCilTurn:stopSample):undefined}>
