@@ -20,6 +20,11 @@ import type {
 } from "../src/conversation/SourceLanguageNavigationModel.js";
 import type {SourceComposerControlsHost} from "../src/conversation/SourceComposerControlsModel.js";
 
+export type AgentCilTurnEvent =
+  |{type:"started";requestId:string}
+  |{type:"delta";requestId:string;text:string}
+  |{type:"finished";requestId:string;exitCode:number|null;cancelled:boolean;errorCode:string|null};
+
 /**
  * The original private preload exposes electronBridge (documented in
  * reports/ELECTRON_DESKTOP_HOST_STARTUP.md). This is OUR own intentionally
@@ -98,8 +103,15 @@ declare global {
       replyToUnsupportedForm(envelope:SourceUnsupportedOpenAIFormReply):Promise<void>;
       /** Source ei text-only form envelope, no backend => explicit rejection. */
       replyToTextForm(envelope:SourceTextFormReply):Promise<void>;
+      /** Real single-turn CLI process bridge. Main owns argv and selected project. */
+      startAgentCilTurn?(request:{requestId:string;prompt:string}):Promise<{
+        accepted:boolean;requestId?:string;reason?:string;
+      }>;
+      cancelAgentCilTurn?(requestId:string):Promise<boolean>;
+      subscribeAgentCilEvents?(listener:(event:AgentCilTurnEvent)=>void):()=>void;
       getHostInfo():Promise<{
-        windowType:"electron";platform:string;theme:string;backendConnected:false
+        windowType:"electron";platform:string;theme:string;backendConnected:false;
+        agentCilAvailable?:boolean;
       }>;
       /** Independent draft persistence; IDs are local demo threads only. */
       getComposerDrafts():Promise<Partial<Record<"frontend"|"review",string>>>;

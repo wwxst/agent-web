@@ -1,4 +1,8 @@
 import * as React from "react";
+import {
+  createAgentCilConversationSource,appendAgentCilMessage,updateAgentCilAssistant,
+  type AgentCilConversationSource,
+} from "./agentCilConversation.js";
 import { createPortal } from "react-dom";
 import { CodexComposerLayout } from "../src/components/CodexComposerLayout.js";
 import {
@@ -626,6 +630,29 @@ export function App() {
   const [workspaceProjectBusy,setWorkspaceProjectBusy]=React.useState(false);
   const [workspaceProjects,setWorkspaceProjects]=React.useState<readonly WorkspaceProjectSummary[]>([]);
   const [activeWorkspaceProjectId,setActiveWorkspaceProjectId]=React.useState<string|null>(null);
+  // A real Electron CLI turn is single-shot. Its stdout is kept in the same
+  // canonical virtualized timeline, separate from isolated demo fixtures.
+  const [agentCilAvailable,setAgentCilAvailable]=React.useState(false);
+  const [agentCilBusy,setAgentCilBusy]=React.useState(false);
+  const [agentCilStatus,setAgentCilStatus]=React.useState<string|null>(null);
+  const agentCilRequestRef=React.useRef<string|null>(null);
+  const agentCilSourceRef=React.useRef<AgentCilConversationSource|null>(null);
+  const agentCilTextRef=React.useRef("");
+  const agentCilAssistantIdRef=React.useRef<string|null>(null);
+  const nativeAgentSession=active==="frontend"&&!demoFixtureEnabled&&
+    agentCilSourceRef.current!=null;
+  React.useEffect(()=>{
+    const host=window.agentWebDesktopHost;
+    // Browser visual/E2E adapters intentionally implement only a subset of
+    // preload capabilities. Absence of Agent CIL host-info must not unmount
+    // the entire recovered conversation page.
+    if(typeof host?.getHostInfo!=="function")return;
+    let live=true;
+    void host.getHostInfo().then(info=>{
+      if(live)setAgentCilAvailable(info.agentCilAvailable===true);
+    }).catch(()=>{if(live)setAgentCilAvailable(false);});
+    return ()=>{live=false;};
+  },[]);
   // A file read/dialog is bound to the visible thread lifetime; an old
   // request cannot install a preview after switching/resetting conversations.
   const workspaceRequestEpochRef=React.useRef(0);
@@ -702,6 +729,37 @@ export function App() {
       if (toastTimerRef.current != null) clearTimeout(toastTimerRef.current);
       toastTimerRef.current = setTimeout(() => setToast(null), 3600);
     }, []);
+  React.useEffect(()=>{
+    const host=window.agentWebDesktopHost;
+    if(host?.subscribeAgentCilEvents==null)return;
+    return host.subscribeAgentCilEvents(event=>{
+      if(event.requestId!==agentCilRequestRef.current)return;
+      const session=agentCilSourceRef.current;
+      if(session==null)return;
+      if(event.type==="delta"){
+        if(!event.text)return;
+        agentCilTextRef.current+=event.text;
+        const assistantId=agentCilAssistantIdRef.current;
+        if(assistantId==null){
+          const id=`agent-cil-assistant-${event.requestId}`;
+          agentCilAssistantIdRef.current=id;
+          appendAgentCilMessage(session,"assistant",id,agentCilTextRef.current,false);
+        }else{
+          updateAgentCilAssistant(session,assistantId,agentCilTextRef.current,false);
+        }
+      }else if(event.type==="finished"){
+        const id=agentCilAssistantIdRef.current;
+        if(id!=null)updateAgentCilAssistant(session,id,agentCilTextRef.current,true);
+        agentCilRequestRef.current=null;
+        setAgentCilBusy(false);
+        setAgentCilStatus(event.cancelled?"CLI 执行已中断":
+          event.errorCode!=null?`CLI 执行失败：${event.errorCode}`:
+          "单轮请求已完成。新建聊天可以发起另一轮独立请求。");
+        if(event.errorCode!=null&&!event.cancelled)
+          notify(`Agent CIL 未成功完成：${event.errorCode}`);
+      }
+    });
+  },[notify]);
   React.useEffect(()=>{
     const host=window.agentWebDesktopHost;
     if(host?.listWorkspaceProjects==null)return;
@@ -1440,9 +1498,9 @@ export function App() {
     hasSubmissionMarker: false,
     isWaitingForFileUploads: false,
     canStopWhileSubmitting: false,
-    isStreaming: playing,
-    streamState: playing ? "streaming" : "ready",
-    hasHostStopSignal: false,
+    isStreaming: playing||agentCilBusy,
+    streamState: playing||agentCilBusy ? "streaming" : "ready",
+    hasHostStopSignal: agentCilBusy,
     isSteeringEnabled: false,
     canQueueNativeAnswerSubmission: false,
     hasUploadPolicy: false,
@@ -1450,15 +1508,63 @@ export function App() {
     hasAttachments: composerAttachments.length>0,
     // The blank home has no Agent send host. Do not route it into the
     // synthetic demo responder or claim a submission succeeded.
-    hostSendDisabled: isNewChat || (draft.trim().length === 0&&composerAttachments.length===0),
+    hostSendDisabled: (isNewChat
+      ? !(agentCilAvailable&&activeWorkspaceProjectId!=null&&
+        !agentCilBusy&&composerAttachments.length===0&&draft.trim().length>0)
+      : nativeAgentSession ||
+        (draft.trim().length===0&&composerAttachments.length===0)),
     submitLoading: false,
   });
 
+  function sendAgentCilTurn(){
+    const host=window.agentWebDesktopHost;
+    const prompt=draft.trim();
+    if(!host?.startAgentCilTurn||!agentCilAvailable||
+      activeWorkspaceProjectId==null||agentCilBusy||!prompt||
+      composerAttachmentsRef.current.length!==0)return;
+    const requestId=crypto.randomUUID();
+    const session=createAgentCilConversationSource();
+    const previous=sessionSourcesRef.current.get("frontend");
+    previous?.dispose();
+    sessionSourcesRef.current.set("frontend",session);
+    agentCilSourceRef.current=session;
+    agentCilRequestRef.current=requestId;
+    agentCilAssistantIdRef.current=null;
+    agentCilTextRef.current="";
+    appendAgentCilMessage(session,"user",`agent-cil-user-${requestId}`,prompt);
+    setAgentCilBusy(true);
+    setAgentCilStatus("CLI 正在执行单轮请求…");
+    void host.startAgentCilTurn({requestId,prompt}).then(result=>{
+      if(!result.accepted)throw new Error(result.reason??"AGENT_CIL_REJECTED");
+      markFollow();
+      updateDraft("");
+      setActiveComposerAttachments([]);
+      setActive("frontend");
+    }).catch(error=>{
+      if(agentCilRequestRef.current!==requestId)return;
+      agentCilRequestRef.current=null;
+      agentCilSourceRef.current=null;
+      if(sessionSourcesRef.current.get("frontend")===session){
+        sessionSourcesRef.current.delete("frontend");
+        session.dispose();
+      }
+      setAgentCilBusy(false);
+      setAgentCilStatus(null);
+      notify(`无法启动 Agent CIL：${error instanceof Error?error.message:"不可用"}`);
+    });
+  }
+  function stopAgentCilTurn(){
+    const requestId=agentCilRequestRef.current;
+    if(requestId==null)return;
+    void window.agentWebDesktopHost?.cancelAgentCilTurn?.(requestId)
+      .then(cancelled=>{if(!cancelled)notify("Agent CIL 中断请求未被接受。");})
+      .catch(()=>notify("无法发送 Agent CIL 中断请求。"));
+  }
   function sendMessage() {
-    // The empty Codex home is a visual/interaction shell, not a fake Agent.
-    // Once the native host exposes real thread creation, route that action
-    // here; until then preserve its draft and refuse synthetic submission.
-    if (isNewChat) return;
+    if(isNewChat){sendAgentCilTurn();return;}
+    // Real CLI mode is one-shot; do not fake multi-turn context by launching
+    // another independent --print command in the same conversation.
+    if(nativeAgentSession)return;
     const message = draft.trim();
     const stagedAttachments=composerAttachmentsRef.current;
     if (!message&&stagedAttachments.length===0) return;
@@ -1746,7 +1852,15 @@ export function App() {
   }
   function switchConversation(id: DemoConversationId) {
     if (id === active) return;
-    revokeWorkspacePreview();
+    // Returning from a real Agent CIL thread to a fresh Home keeps the
+    // explicitly selected project. Read-only preview tabs are cleared,
+    // but the trusted main-process project grant is not revoked.
+    // Demo thread switches retain their original full-revocation behavior.
+    if(nativeAgentSession&&id==="visual-empty"){
+      clearWorkspacePreviewsForProjectSwitch();
+    }else{
+      revokeWorkspacePreview();
+    }
     scrollController.cancelSourceScrollToBottomAnimation();
     // Snapshot the existing controller before React remounts the source
     // virtualizer. The outgoing viewport and its follow policy are owned by
@@ -1780,6 +1894,12 @@ export function App() {
     setFindOrdinal(0);
   }
   function startNewChat() {
+    if(agentCilRequestRef.current!=null){
+      void window.agentWebDesktopHost?.cancelAgentCilTurn?.(agentCilRequestRef.current)
+        .catch(()=>{});
+      agentCilRequestRef.current=null;
+      setAgentCilBusy(false);
+    }
     if (active === "visual-empty") {
       reset();
       return;
@@ -1954,7 +2074,8 @@ export function App() {
               data-app-shell-focus-area="main">
               <div className="demo-header-location" data-app-shell-titlebar-content="true">
                 <span className="demo-header-folder"><Icon name="folder" size={17}/></span>
-                <strong>{DEMO_CONVERSATIONS.find((c) => c.id === active)?.title}</strong>
+                <strong>{nativeAgentSession?"Agent CIL · 单轮任务":
+                  DEMO_CONVERSATIONS.find((c) => c.id === active)?.title}</strong>
               </div>
               <div className="demo-header-actions">
                 <span className="demo-header-static" title="原版桌面按钮布局参考，暂未接通功能"><Icon name="dots" size={17}/></span>
@@ -1968,7 +2089,7 @@ export function App() {
                   title="Subagents · synthetic fixture" aria-label="Open Subagents"
                   aria-expanded={showSubagentsPanel}
                   onClick={()=>setShowSubagentsPanel(true)}><Icon name="branch" size={17}/></button>:null}
-                <button type="button" className="demo-icon-button" title={showDemoTools ? "收起演示工具" : "打开演示工具"} aria-label={showDemoTools ? "收起演示工具" : "打开演示工具"} aria-expanded={showDemoTools} onClick={() => setShowDemoTools((value) => !value)}><Icon name="sliders" size={17}/></button>
+                {(demoFixtureEnabled||window.agentWebDesktopHost==null)&&<button type="button" className="demo-icon-button" title={showDemoTools ? "收起演示工具" : "打开演示工具"} aria-label={showDemoTools ? "收起演示工具" : "打开演示工具"} aria-expanded={showDemoTools} onClick={() => setShowDemoTools((value) => !value)}><Icon name="sliders" size={17}/></button>}
                 <button type="button" className="demo-icon-button demo-collapse-toggle" aria-label={collapsed ? "展开侧边栏" : "收起侧边栏"} onClick={() => setCollapsed((value) => !value)}><Icon name="panel" size={17}/></button>
               </div>
             </div>}
@@ -2141,7 +2262,14 @@ export function App() {
       }} data-testid="transcript-scroll">
         <div className="demo-thread-scroll-content" data-source-thread-scroll-content="">
         <div className="demo-transcript-column">
-          <div className="demo-conversation-intro"><h1>{DEMO_CONVERSATIONS.find((c) => c.id === active)?.title}</h1></div>
+          <div className="demo-conversation-intro">
+            <h1>{nativeAgentSession?"Agent CIL · 本地任务":
+              DEMO_CONVERSATIONS.find((c) => c.id === active)?.title}</h1>
+            {nativeAgentSession&&<p className="demo-agent-cil-status"
+              role="status" data-testid="agent-cil-run-status">
+              {agentCilBusy?"Agent CIL 正在运行…":agentCilStatus}
+            </p>}
+          </div>
           <ConnectedLiveConversationTranscript
             key={`${active}-${generation}`}
             source={source}
@@ -2212,7 +2340,7 @@ export function App() {
               onPastedText={() => false}
               placeholder={isNewChat
                 ? showSidebarReferenceFixture?"随心输入":"Do anything"
-                : "Work with Codex"}
+                : nativeAgentSession?"单轮请求结束后，请新建聊天":"Work with Codex"}
               ariaLabel={isNewChat
                 ? showSidebarReferenceFixture?"随心输入":"Do anything"
                 : "演示消息输入"}
@@ -2272,7 +2400,16 @@ export function App() {
             </div>}
             trailingControls={<div className="demo-composer-right">
               <CodexComposerModelReasoningControl key={active} controls={composerControls}/>
-              <button type={composerAction.type} data-testid="send-button" data-composer-action={composerAction.kind} aria-busy={composerAction.loading} aria-label={isNewChat ? "发送消息（Agent 未连接）" : composerAction.kind === "stop" ? "停止模拟" : "发送模拟消息"} title={isNewChat ? "Agent 未连接，暂不可发送" : composerAction.kind === "stop" ? "停止模拟" : "发送模拟消息"} className="demo-send-button" disabled={composerAction.disabled} onClick={composerAction.kind === "stop" ? stopSample : undefined}><Icon name={composerAction.kind === "stop" ? "stop" : "up"} size={16}/></button>
+              <button type={composerAction.type} data-testid="send-button" data-composer-action={composerAction.kind} aria-busy={composerAction.loading}
+                aria-label={composerAction.kind==="stop"?(nativeAgentSession||agentCilBusy?"停止 Agent CIL":"停止模拟"):
+                  isNewChat?(window.agentWebDesktopHost==null?"发送消息（Agent 未连接）":"发送至 Agent CIL"):nativeAgentSession?"单轮任务已结束":"发送模拟消息"}
+                title={composerAction.kind==="stop"?(nativeAgentSession||agentCilBusy?"中断本地 CLI 任务":"停止模拟"):
+                  isNewChat?window.agentWebDesktopHost==null?"Agent 未连接，暂不可发送":agentCilAvailable?(activeWorkspaceProjectId!=null?"发送真实 Agent CIL 请求":"请先在项目列表中添加并选择本地文件夹"):"Agent CIL 未安装或未配置":
+                  nativeAgentSession?"此 CLI 桥接仅支持单轮；请新建聊天":"发送模拟消息"}
+                className="demo-send-button" disabled={composerAction.disabled}
+                onClick={composerAction.kind==="stop"?(nativeAgentSession||agentCilBusy?stopAgentCilTurn:stopSample):undefined}>
+                <Icon name={composerAction.kind === "stop" ? "stop" : "up"} size={16}/>
+              </button>
             </div>}
           />
         </CodexSourceComposerHostForm>
